@@ -1,0 +1,166 @@
+<?xml version="1.0"?>
+<SAL>
+	<PlatformConfiguration>
+		<general>
+			<logging />
+			<readingDirectory>/home/sensor_user/readings</readingDirectory>
+		</general>
+		<logicalPorts>
+			<LogicalPort name="1wtree">
+				<EndPoint name="usb" type="usb" />
+				<Protocol name="1wirefs" type="owfs">
+					<parameters>
+						<Param name="Location" value="/opt/owfs/bin/owfs" />
+						<Param name="MountPoint" value="/mnt/w1" />
+					</parameters>
+				</Protocol>
+			</LogicalPort>
+			<LogicalPort name="IDU">
+				<EndPoint name="eth0" type="ethernet" />
+				<Protocol name="EMS_serial" type="EMS_IDU">
+					<parameters>
+						<Param name="AgentIP" value="192.168.0.2" />
+						<Param name="CommunityString" value="EMSOLUTIONS" />
+						<Param name="SNMPVersion" value="1" />
+					</parameters>
+				</Protocol>
+			</LogicalPort>
+			<LogicalPort name="ChargeController">
+				<EndPoint name="serial0" type="serial">
+					<parameters>
+						<Param name="PortSpeed" value="9600" />
+						<Param name="DataBits" value="8" />
+						<Param name="Parity" value="0" />
+						<Param name="StopBit" value="1" />
+						<Param name="PortNumber" value="0" />
+					</parameters>
+				</EndPoint>
+				<Protocol name="PL40" type="PL40" />
+			</LogicalPort>
+			<LogicalPort name="osData">
+				<EndPoint name="filesystem" type="fs" />
+				<Protocol name="osdata" type="PlatformData" />
+			</LogicalPort>
+		</logicalPorts>
+	</PlatformConfiguration>
+	<SensorConfiguration>
+		<Sensor sid="1">
+			<LogicalPortID>1wtree</LogicalPortID>
+			<Address>10.1C5AC9000800</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<Sensor sid="2">
+			<LogicalPortID>1wtree</LogicalPortID>
+			<Address>10.2211C9000800</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<Sensor sid="3">
+			<LogicalPortID>1wtree</LogicalPortID>
+			<Address>10.3F9D99000800</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<Sensor sid="4">
+			<LogicalPortID>1wtree</LogicalPortID>
+			<Address>10.9A6DC9000800</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<Sensor sid="5">
+			<LogicalPortID>1wtree</LogicalPortID>
+			<Address>10.F104E5000800</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<!-- ***************************************** -->
+		<Sensor sid="6">
+			<LogicalPortID>IDU</LogicalPortID>
+			<Address>1.3.6.1.4.1.10132.7.1.4.7.0</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<Sensor sid="7">
+			<LogicalPortID>IDU</LogicalPortID>
+			<Address>1.3.6.1.4.1.10132.7.1.4.25.0</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<Sensor sid="8">
+			<LogicalPortID>IDU</LogicalPortID>
+			<Address>1.3.6.1.4.1.10132.7.1.2.18.0</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<Sensor sid="9">
+			<LogicalPortID>IDU</LogicalPortID>
+			<Address>1.3.6.1.4.1.10132.7.1.2.17.0</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<Sensor sid="10">
+			<LogicalPortID>IDU</LogicalPortID>
+			<Address>1.3.6.1.4.1.10132.7.1.2.9.0</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<Sensor sid="11">
+			<LogicalPortID>IDU</LogicalPortID>
+			<Address>1.3.6.1.4.1.10132.7.1.2.16.0</Address>
+			<SamplingInterval>10</SamplingInterval>
+		</Sensor>
+		<!-- ***************************************** -->
+		<Sensor sid="12">
+			<LogicalPortID>PL40</LogicalPortID>
+			<Address>20 50 0 235</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>	
+		<!-- ***************************************** -->
+		<Sensor sid="13">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>FreeMem</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+		<Sensor sid="14">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>UserTime</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+		<Sensor sid="15">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>NiceTime</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+		<Sensor sid="16">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>SystemTime</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+		<Sensor sid="17">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>IdleTime</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+		<Sensor sid="18">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>CPUTemp</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+		<Sensor sid="19">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>NBTemp</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+		<Sensor sid="20">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>SBTemp</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+		<Sensor sid="21">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>LoadAvg1</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+		<Sensor sid="22">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>LoadAvg5</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+		<Sensor sid="23">
+			<LogicalPortID>osData</LogicalPortID>
+			<Address>LoadAvg15</Address>
+			<SamplingInterval>30</SamplingInterval>
+		</Sensor>
+	</SensorConfiguration>
+</SAL>
