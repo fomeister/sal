@@ -19,7 +19,13 @@ public interface Identifier {
 	 * @param id the identifier to be tested
 	 * @return ture or false
 	 */
-	public boolean equals(Identifier id);
+	public boolean equals(Object id);
+	
+	/**
+	 * Returns a hash value of this object
+	 * @return the has code
+	 */
+	public int hashCode();
 	
 	/**
 	 * returns a string representation of the identifier

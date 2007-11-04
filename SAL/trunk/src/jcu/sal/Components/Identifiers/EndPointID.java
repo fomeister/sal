@@ -8,7 +8,7 @@ package jcu.sal.Components.Identifiers;
  * @author gilles
  *
  */
-public class EndPointID implements Identifier {
+public class EndPointID implements Identifier{
 	/* the name of the endpoint */
 	private String name;
 	
@@ -23,10 +23,17 @@ public class EndPointID implements Identifier {
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Identifiers.Identifier#equals(jcu.sal.Components.Identifiers.Identifier)
 	 */
-	public boolean equals(Identifier id) {
-		return id.getName().equals(this.name);
+	public boolean equals(Object id) {
+		return id.toString().equals(this.name);
 	}
 
+	/* (non-Javadoc)
+	 * @see jcu.sal.Components.Identifiers.Identifier#hashCode(jcu.sal.Components.Identifiers.Identifier)
+	 */
+	public int hashCode() {
+		return name.hashCode();
+	}
+	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Identifiers.Identifier#getName()
 	 */
