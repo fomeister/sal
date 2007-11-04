@@ -5,7 +5,7 @@ package jcu.sal.Managers;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 
@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 public class EndPointManager extends ManagerFactory<EndPoint> {
 	
 	public static final String ENPOINT_TAG="EndPoint";
+	public static final String ENDPOINTNAME_TAG = "name";
 	public static final String ENDPOINTTYPE_TAG = "type";
 	public static final String ENDPOINTPARAM_TAG = "Param";	
 	public static final String ENDPOINTPARAMNAME_TAG = "name";
@@ -52,14 +53,18 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		EndPoint endPoint = null;
 		this.logger.debug("building EndPoint");
 		try {
-			Identifier id = this.getComponentIdentifier(doc);
-			String n = id.getName();
-			this.logger.debug("Component identifier: " +n);
-			String className = EndPointModulesList.getClassName(n);
-			
-			endPoint = (EndPoint) Class.forName(className).newInstance();
-			
-			endPoint.setConfig(getComponentConfig(doc));
+			String type = this.getComponentType(doc);
+			Identifier i = this.getComponentID(doc);
+			this.logger.debug("Component type: " +type);
+			String className = EndPointModulesList.getClassName(type);
+			if(className!=null) {
+				endPoint = (EndPoint) Class.forName(className).newInstance();
+				endPoint.setConfig(getComponentConfig(doc));
+				endPoint.setID(i);
+				endPoint.setType(type);
+			} else {
+				this.logger.error("No EndPoint class matching");				
+			}
 		} catch (ParseException e) {
 			this.logger.error("Error while parsing the DOM document");
 			e.printStackTrace();
@@ -89,7 +94,9 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	 */
 	@Override
 	protected Hashtable<String, String> getComponentConfig(Document doc) throws ParseException {
-		Hashtable<String,String> xml = null, config = new Hashtable<String,String>();
+		ArrayList<String> xml = null;
+		Hashtable<String, String> config = new Hashtable<String, String>();
+		String name = null, value = null;
 		
 		try {
 			xml = XMLhelper.getAttributeListFromElements("//" + ENDPOINTPARAM_TAG, doc);
@@ -98,31 +105,51 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 			throw new ParseException("Cannot find parameters for this EndPoint", 0);
 		}
 		
-		Collection<String> values = xml.values();
-		Iterator<String> iter = values.iterator();
+		Iterator<String> iter = xml.iterator();
 		
-		while(iter.hasNext())
-			config.put(iter.next(), iter.next());
+		while(iter.hasNext()) {
+			iter.next();
+			name = iter.next();
+			iter.next();
+			value = iter.next();
+			config.put(name,value);
+		}
 		
 		return config;
 	}
 	
 	/* (non-Javadoc)
-	 * @see jcu.sal.Managers.ManagerFactory#getComponentIdentifier(org.w3c.dom.Document)
+	 * @see jcu.sal.Managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Identifier getComponentIdentifier(Document doc) throws ParseException{
+	protected String getComponentType(Document doc) throws ParseException{
+		String type = null;
+		try {
+			type = XMLhelper.getAttributeFromName("//" + ENPOINT_TAG, ENDPOINTTYPE_TAG, doc);
+		} catch (XPathExpressionException e) {
+			this.logger.error("Couldnt find the component type");
+			e.printStackTrace();
+			throw new ParseException("Couldnt find the component type", 0);
+		}
+		return type;
+	}
+	
+	/* (non-Javadoc)
+	 * @see jcu.sal.Managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
+	 */
+	@Override
+	protected Identifier getComponentID(Document doc) throws ParseException {
 		Identifier id = null;
 		try {
-			id = new EndPointID(XMLhelper.getAttributeFromName("//" + ENPOINT_TAG, ENDPOINTTYPE_TAG, doc));
+			id = new EndPointID(XMLhelper.getAttributeFromName("//" + ENPOINT_TAG, ENDPOINTNAME_TAG, doc));
 		} catch (XPathExpressionException e) {
-			this.logger.error("Couldnt find the component identifier");
+			this.logger.error("Couldnt find the component name");
 			e.printStackTrace();
-			throw new ParseException("Couldnt find the component identifier", 0);
+			throw new ParseException("Couldnt create the component identifier", 0);
 		}
 		return id;
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Managers.ManagerFactory#remove(java.lang.Object)
 	 */
@@ -135,9 +162,10 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	
 	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException {
 		EndPointManager e = new EndPointManager();
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb' type='usb'><parameters><Param name='portNumber' value='1' /></parameters></EndPoint>"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb' type='usb' />"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial1' type='serial'><parameters><Param name='PortNumber' value='1' /></parameters></EndPoint>"));
-		e.destroyComponent(new EndPointID("usb"));
+		//e.createComponent(XMLhelper.createDocument("<EndPoint name='usb1' type='usb'><parameters><Param name='portNumber' value='1' /></parameters></EndPoint>"));
+		//e.createComponent(XMLhelper.createDocument("<EndPoint name='usb2' type='usb' />"));
+		//e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
+		e.createComponent(XMLhelper.createDocument("<EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='ath0' /><Param name='IPAddress' value='192.168.3.11' /></parameters></EndPoint>"));
+		e.destroyComponent(new EndPointID("eth01"));
 	}
 }

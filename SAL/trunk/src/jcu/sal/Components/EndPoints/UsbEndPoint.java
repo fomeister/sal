@@ -26,7 +26,7 @@ public class UsbEndPoint extends EndPoint {
 	public UsbEndPoint() {
 		super();
 		Slog.setupLogger(this.logger);
-		this.logger.error("ctor USBEndPoint");
+		this.logger.debug("ctor USBEndPoint");
 	}
 
 	/* (non-Javadoc)
@@ -42,8 +42,10 @@ public class UsbEndPoint extends EndPoint {
 			if(!b.readLine().contains("Bus"))
 				throw new RuntimeException("Did not detect USB ports");
 			configured = true;
+			this.logger.debug("USB EndPoint initialised");
 		} catch (IOException e) {
 			e.printStackTrace();
+			this.logger.debug("Problem capturing output of lsusb");
 			throw new RuntimeException("Did not detect USB ports");
 		}
 	}

@@ -42,11 +42,18 @@ public abstract class ManagerFactory<T> {
 	protected abstract void remove(T component);
 	
 	/**
+	 * returns the type of a component from its DOM document
+	 * @param doc the DOM document
+	 * @return the type of the component
+	 */
+	protected abstract String getComponentType(Document doc) throws ParseException;
+	
+	/**
 	 * returns the name of a component from its DOM document
 	 * @param doc the DOM document
-	 * @return the name of the component
+	 * @return the ID of the component
 	 */
-	protected abstract Identifier getComponentIdentifier(Document doc) throws ParseException;
+	protected abstract Identifier getComponentID(Document doc) throws ParseException;
 	
 	/**
 	 * returns the configuration directives for this component
@@ -62,16 +69,19 @@ public abstract class ManagerFactory<T> {
 	 */
 	public T createComponent(Document doc) {
 		T newc = null;
+		String type;
 		Identifier id;
 		try {
-			id = getComponentIdentifier(doc);
+			type = getComponentType(doc);
+			id = getComponentID(doc);
+			this.logger.debug("About to create a component of type " + type + " named " + id.getName());
 			if(!ctable.containsKey(id)) {
 				newc = build(doc);
 				ctable.put(id, newc);
 			} else 
-				this.logger.error("Couldnt create component "+id.getName()+", already exist");
+				this.logger.error("Couldnt create component "+type+", it already exist");
 		} catch (Exception e) {
-			this.logger.error("Couldnt create component from document: " + doc);
+			this.logger.error("Couldnt create component from XML doc");
 			e.printStackTrace();
 		}
 
@@ -80,16 +90,32 @@ public abstract class ManagerFactory<T> {
 	
 	/** 
 	 * Removes a previoulsy creatd component
-	 * @param id the component identifier
+	 * @param type the component type
 	 */
-	public void destroyComponent(Identifier id) {
-		remove(ctable.get(id));
-		dumpTable();
-		if(ctable.remove(id) == null)
-			this.logger.debug("Cant remove element with key " + id.toString() +  ": No such element");
-		else
-			this.logger.debug("Element " + id.toString() + " Removed");
+	public void destroyComponent(Identifier i) {
+		if(ctable.containsKey(i)) {
+			remove(ctable.get(i));
+			dumpTable();
+			if(ctable.remove(i) == null)
+				this.logger.debug("Cant remove element with key " + i.toString() +  ": No such element");
+			else
+				this.logger.debug("Element " + i.toString()+ " Removed");
+		} else
+			this.logger.error("Element " + i.toString()+ " doesnt exist and can NOT be removed");
 	}
+	
+	/** 
+	 * Removes a previoulsy creatd component
+	 * @param component the component to be removed
+	 */
+/*	public void destroyComponent(T component) {
+		if(ctable.containsValue(component))
+		remove(component);
+		if(ctable.remove(component.) == null)
+			this.logger.debug("Cant remove element with key " + type +  ": No such element");
+		else
+			this.logger.debug("Element " + type + " Removed");
+*/	
 	
 	private void dumpTable() {
 		Enumeration<Identifier> keys = ctable.keys();

@@ -23,6 +23,5 @@ public abstract class EndPoint extends AbstractComponent {
 		super();
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor Endpoint");
-	}
-
+	}	
 }
