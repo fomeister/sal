@@ -7,6 +7,7 @@ import java.util.Hashtable;
 
 import javax.management.BadAttributeValueExpException;
 
+import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -21,6 +22,8 @@ public abstract class AbstractComponent implements HWComponent {
 	private Logger logger = Logger.getLogger(AbstractComponent.class);
 	protected boolean started = false;
 	protected boolean configured = false;
+	protected String type = null;
+	protected Identifier id = null;
 	
 	public AbstractComponent() {
 		Slog.setupLogger(this.logger);
@@ -75,5 +78,41 @@ public abstract class AbstractComponent implements HWComponent {
 	 * Most likely there is a problem with the component's configuration
 	 */
 	protected abstract void parseConfig() throws RuntimeException;
+	
+	
+	/**
+	 * Sets the type of a component
+	 * @param t the type
+	 */
+			
+	public void setType(String t) {
+		this.type = t;
+	}
 
+	/**
+	 * Sets the Identifier of a component
+	 * @param i the Identifier
+	 */
+			
+	public void setID(Identifier i) {
+		this.id = i;
+	}
+	
+	/**
+	 * Gets the type of a component
+	 * @return the type
+	 */
+			
+	public String getType() {
+		return this.type;
+	}
+
+	/**
+	 * Gets the Identifier of a component
+	 * @return the Identifier
+	 */
+			
+	public Identifier getID() {
+		return this.id;
+	}
 }

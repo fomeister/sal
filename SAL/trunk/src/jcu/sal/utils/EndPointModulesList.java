@@ -25,15 +25,15 @@ public class EndPointModulesList {
 		Slog.setupLogger(this.logger);
 		table.put("usb", EndPointModulesList.SALcomponentPackage + "UsbEndPoint");
 		table.put("serial", EndPointModulesList.SALcomponentPackage + "SerialEndPoint");
+		table.put("ethernet", EndPointModulesList.SALcomponentPackage + "EthernetEndPoint");
 	}
 	
 	public static String getClassName(String type)
 	{	
 		String c = e.table.get(type);
-		if (c==null)
-			e.logger.error("Cant find the class name from EndPointID: " + type);
+		if (c==null) e.logger.error("Cant find the class name from EndPointID: " + type);
+		else e.logger.debug("Found class " + c + " for type " + type);
 		
-		e.logger.debug("Found class " + c + " for type " + type);
 		return c;
 	}
 }

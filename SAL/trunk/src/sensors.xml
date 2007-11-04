@@ -17,6 +17,11 @@
 			</LogicalPort>
 			<LogicalPort name="IDU">
 				<EndPoint name="eth0" type="ethernet" />
+					<parameters>
+						<Param name="EthernetDevice" value="ath0" />
+						<Param name="IPAddress" value="192.168.3.11" />
+					</parameters>
+				</EndPoint>
 				<Protocol name="EMS_SNMP" type="EMS_IDU_SNMP">
 					<parameters>
 						<Param name="AgentIP" value="192.168.0.2" />
@@ -32,7 +37,7 @@
 						<Param name="DataBits" value="8" />
 						<Param name="Parity" value="0" />
 						<Param name="StopBit" value="1" />
-						<Param name="PortNumber" value="0" />
+						<Param name="PortDeviceFile" value="/dev/ttyS0" />
 					</parameters>
 				</EndPoint>
 				<Protocol name="PL40" type="PL40" />

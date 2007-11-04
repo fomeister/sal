@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.Hashtable;
+import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -200,17 +200,19 @@ public class XMLhelper {
      * Returns the combined attributes of multiple elements retrieved from an XPATH query
      * @param xpath_expression the XPATH expression
      * @param doc the DOM document
-     * @return the attributes and their values in a hashtable
+     * @return the attributes and their values in a ArrayList: 0:1st Attr name, 1:1st attr value, 2:2nd attr name,3:2nd attr value...
      * @throws XPathExpressionException 
      */
-    public static Hashtable<String,String> getAttributeListFromElements(String xpath_expression, Document doc) throws XPathExpressionException {
-    	Hashtable<String, String> table = new Hashtable<String, String>();
+    public static ArrayList<String> getAttributeListFromElements(String xpath_expression, Document doc) throws XPathExpressionException {
+    	ArrayList<String> table = new ArrayList<String>();
     	
     	NodeList list = getNodeList(xpath_expression, doc);
 		for(int i = 0; i < list.getLength(); i++) {
 			NamedNodeMap nnp = list.item(i).getAttributes();
-			for (int j = 0; j < nnp.getLength(); j++) 
-				table.put(nnp.item(j).getNodeName(), nnp.item(j).getNodeValue());
+			for (int j = 0; j < nnp.getLength(); j++) { 
+				table.add(nnp.item(j).getNodeName());
+				table.add(nnp.item(j).getNodeValue());
+			}
 		}
 		return table;	
     }
@@ -219,16 +221,17 @@ public class XMLhelper {
      * Returns the attributes of a single element retrieved from an XPATH query
      * @param xpath_expression the XPATH expression
      * @param doc the DOM document
-     * @return the attributes and their values in a hashtable
+     * @return the attributes and their values in a ArrayList: 0:1st Attr name, 1:1st attr value, 2:2nd attr name,3:2nd attr value...  
      * @throws XPathExpressionException 
      */
-    public static Hashtable<String,String> getAttributeListFromElement(String xpath_expression, Document doc) throws XPathExpressionException {
-    	Hashtable<String, String> table = new Hashtable<String, String>();
+    public static ArrayList getAttributeListFromElement(String xpath_expression, Document doc) throws XPathExpressionException {
+    	ArrayList<String> table = new ArrayList<String>();
     	
 		Node node = getNode(xpath_expression, doc);
 		NamedNodeMap nnp = node.getAttributes();
 		for (int i = 0; i < nnp.getLength(); i++) {
-			table.put(nnp.item(i).getNodeName(), nnp.item(i).getNodeValue());
+			table.add(nnp.item(i).getNodeName());
+			table.add(nnp.item(i).getNodeValue());
 		}
 		
 		return table;	
