@@ -17,7 +17,7 @@
 			</LogicalPort>
 			<LogicalPort name="IDU">
 				<EndPoint name="eth0" type="ethernet" />
-				<Protocol name="EMS_serial" type="EMS_IDU">
+				<Protocol name="EMS_SNMP" type="EMS_IDU_SNMP">
 					<parameters>
 						<Param name="AgentIP" value="192.168.0.2" />
 						<Param name="CommunityString" value="EMSOLUTIONS" />

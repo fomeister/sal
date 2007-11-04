@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.Hashtable;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -26,6 +27,7 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -39,11 +41,12 @@ import org.xml.sax.SAXException;
 
 public class XMLhelper {
 	
-	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, DOMException, XPathExpressionException {
-		final String ENPOINT_TAG="EndPoint";
-		final String ENDPOINTNAME_TAG = "name";
-		Document d = XMLhelper.createDocument("<EndPoint name='usb' type='usb' />");
-		System.out.println(XMLhelper.getNode("//" + ENPOINT_TAG, d).getAttributes().getNamedItem(ENDPOINTNAME_TAG).getNodeValue());
+	public static void main(String[] args) 
+	throws ParserConfigurationException, SAXException, IOException,
+			DOMException, XPathExpressionException {
+		//Document d = XMLhelper.createDocument("<EndPoint name='usb' type='usb' />");
+		Document d = XMLhelper.createDocument(new File("/home/gilles/workspace/SALv1/src/sensors.xml"));
+		XMLhelper.getAttributeListFromElements("//EndPoint[@name='serial0']/parameters/Param", d);
 		
 	}
 	
@@ -191,6 +194,67 @@ public class XMLhelper {
         node = (Node) xpath.evaluate(xpath_expression, doc, XPathConstants.NODE);
 
         return node;
+    }
+
+    /**
+     * Returns the combined attributes of multiple elements retrieved from an XPATH query
+     * @param xpath_expression the XPATH expression
+     * @param doc the DOM document
+     * @return the attributes and their values in a hashtable
+     * @throws XPathExpressionException 
+     */
+    public static Hashtable<String,String> getAttributeListFromElements(String xpath_expression, Document doc) throws XPathExpressionException {
+    	Hashtable<String, String> table = new Hashtable<String, String>();
+    	
+    	NodeList list = getNodeList(xpath_expression, doc);
+		for(int i = 0; i < list.getLength(); i++) {
+			NamedNodeMap nnp = list.item(i).getAttributes();
+			for (int j = 0; j < nnp.getLength(); j++) 
+				table.put(nnp.item(j).getNodeName(), nnp.item(j).getNodeValue());
+		}
+		return table;	
+    }
+    
+    /**
+     * Returns the attributes of a single element retrieved from an XPATH query
+     * @param xpath_expression the XPATH expression
+     * @param doc the DOM document
+     * @return the attributes and their values in a hashtable
+     * @throws XPathExpressionException 
+     */
+    public static Hashtable<String,String> getAttributeListFromElement(String xpath_expression, Document doc) throws XPathExpressionException {
+    	Hashtable<String, String> table = new Hashtable<String, String>();
+    	
+		Node node = getNode(xpath_expression, doc);
+		NamedNodeMap nnp = node.getAttributes();
+		for (int i = 0; i < nnp.getLength(); i++) {
+			table.put(nnp.item(i).getNodeName(), nnp.item(i).getNodeValue());
+		}
+		
+		return table;	
+    }
+    
+    /**
+     * Returns a node's attribute using its name
+     * @param attr_name the name of the attribute whose value is to be returned
+     * @param n the node
+     * @return the value from the attribute
+     * @throws XPathExpressionException 
+     */
+    public static String getAttributeFromName(String attr_name, Node n) throws XPathExpressionException {
+        return n.getAttributes().getNamedItem(attr_name).getNodeValue();
+    }
+    
+    /**
+     * Returns an element's attribute using an XPATH query and the attribute's name 
+     * @param xpath_expression the XPATH expression
+     * @param attr_name the name of the attribute whose value is to be returned
+     * @param doc the DOM document
+     * @return the value of the attribute
+     * @throws XPathExpressionException 
+     */
+    public static String getAttributeFromName(String xpath_expression, String attr_name, Document doc) throws XPathExpressionException {
+        return getNode(xpath_expression, doc).getAttributes().getNamedItem(attr_name).getNodeValue();
     }
     
     /**
