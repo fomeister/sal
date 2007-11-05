@@ -16,6 +16,11 @@ import org.apache.log4j.Logger;
 public abstract class EndPoint extends AbstractComponent {
 
 	private Logger logger = Logger.getLogger(EndPoint.class);
+	public static final String ENDPOINTPARAMNAME_TAG = "name";
+	public static final String ENDPOINTPARAM_TAG = "Param";
+	public static final String ENDPOINTTYPE_TAG = "type";
+	public static final String ENDPOINTNAME_TAG = "name";
+	public static final String ENPOINT_TAG="EndPoint";
 	/**
 	 * 
 	 */

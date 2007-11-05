@@ -16,7 +16,7 @@
 				</Protocol>
 			</LogicalPort>
 			<LogicalPort name="IDU">
-				<EndPoint name="eth0" type="ethernet" />
+				<EndPoint name="eth0" type="ethernet">
 					<parameters>
 						<Param name="EthernetDevice" value="ath0" />
 						<Param name="IPAddress" value="192.168.3.11" />

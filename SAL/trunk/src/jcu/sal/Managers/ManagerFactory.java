@@ -75,11 +75,11 @@ public abstract class ManagerFactory<T> {
 			type = getComponentType(doc);
 			id = getComponentID(doc);
 			this.logger.debug("About to create a component of type " + type + " named " + id.getName());
-			if(!ctable.containsKey(id)) {
-				newc = build(doc);
-				ctable.put(id, newc);
-			} else 
-				this.logger.error("Couldnt create component "+type+", it already exist");
+			if(!ctable.containsKey(id)) newc = build(doc);
+			else this.logger.error("Couldnt create component "+type+", it already exist");
+			
+			if(newc!=null) ctable.put(id, newc);
+			else this.logger.error("Couldnt create component "+type);
 		} catch (Exception e) {
 			this.logger.error("Couldnt create component from XML doc");
 			e.printStackTrace();

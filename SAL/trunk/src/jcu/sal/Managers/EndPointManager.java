@@ -30,19 +30,24 @@ import org.xml.sax.SAXException;
  */
 public class EndPointManager extends ManagerFactory<EndPoint> {
 	
-	public static final String ENPOINT_TAG="EndPoint";
-	public static final String ENDPOINTNAME_TAG = "name";
-	public static final String ENDPOINTTYPE_TAG = "type";
-	public static final String ENDPOINTPARAM_TAG = "Param";	
-	public static final String ENDPOINTPARAMNAME_TAG = "name";
+	private static EndPointManager e = new EndPointManager();
 	private Logger logger = Logger.getLogger(EndPointManager.class);
 	
+	
 	/**
-	 * 
+	 * Private constructor
 	 */
-	public EndPointManager() {
+	private EndPointManager() {
 		super();
 		Slog.setupLogger(this.logger);
+	}
+	
+	/**
+	 * Returns the instance of the EndPointManager 
+	 * @return
+	 */
+	public static EndPointManager getEndPointManager() {
+		return e;
 	}
 
 	/* (non-Javadoc)
@@ -99,7 +104,7 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		String name = null, value = null;
 		
 		try {
-			xml = XMLhelper.getAttributeListFromElements("//" + ENDPOINTPARAM_TAG, doc);
+			xml = XMLhelper.getAttributeListFromElements("//" + EndPoint.ENDPOINTPARAM_TAG, doc);
 		} catch (XPathExpressionException e) {
 			this.logger.error("Cannot find parameters for this EndPoint");
 			throw new ParseException("Cannot find parameters for this EndPoint", 0);
@@ -125,11 +130,11 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	protected String getComponentType(Document doc) throws ParseException{
 		String type = null;
 		try {
-			type = XMLhelper.getAttributeFromName("//" + ENPOINT_TAG, ENDPOINTTYPE_TAG, doc);
+			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, doc);
 		} catch (XPathExpressionException e) {
-			this.logger.error("Couldnt find the component type");
+			this.logger.error("Couldnt find the EndPoint type");
 			e.printStackTrace();
-			throw new ParseException("Couldnt find the component type", 0);
+			throw new ParseException("Couldnt find the EndPoint type", 0);
 		}
 		return type;
 	}
@@ -141,11 +146,11 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	protected Identifier getComponentID(Document doc) throws ParseException {
 		Identifier id = null;
 		try {
-			id = new EndPointID(XMLhelper.getAttributeFromName("//" + ENPOINT_TAG, ENDPOINTNAME_TAG, doc));
+			id = new EndPointID(XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTNAME_TAG, doc));
 		} catch (XPathExpressionException e) {
-			this.logger.error("Couldnt find the component name");
+			this.logger.error("Couldnt find the EndPoint name");
 			e.printStackTrace();
-			throw new ParseException("Couldnt create the component identifier", 0);
+			throw new ParseException("Couldnt create the EndPoint identifier", 0);
 		}
 		return id;
 	}
@@ -161,11 +166,17 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 
 	
 	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException {
-		EndPointManager e = new EndPointManager();
-		//e.createComponent(XMLhelper.createDocument("<EndPoint name='usb1' type='usb'><parameters><Param name='portNumber' value='1' /></parameters></EndPoint>"));
-		//e.createComponent(XMLhelper.createDocument("<EndPoint name='usb2' type='usb' />"));
-		//e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='ath0' /><Param name='IPAddress' value='192.168.3.11' /></parameters></EndPoint>"));
+		EndPointManager e = getEndPointManager();
+		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb1' type='usb'><parameters><Param name='portNumber' value='1' /></parameters></EndPoint>"));
+		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb2' type='usb' />"));
+		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
+		e.createComponent(XMLhelper.createDocument("<EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='eth0' /><Param name='IPAddress' value='' /></parameters></EndPoint>"));
+		e.createComponent(XMLhelper.createDocument("<EndPoint name='files' type='fs' />"));
 		e.destroyComponent(new EndPointID("eth01"));
+		e.destroyComponent(new EndPointID("usb1"));
+		e.destroyComponent(new EndPointID("usb2"));
+		e.destroyComponent(new EndPointID("serial0"));
+		e.destroyComponent(new EndPointID("eth0"));
+		e.destroyComponent(new EndPointID("files"));
 	}
 }
