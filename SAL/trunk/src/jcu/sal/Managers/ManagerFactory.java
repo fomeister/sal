@@ -4,8 +4,10 @@
 package jcu.sal.Managers;
 
 import java.text.ParseException;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.utils.Slog;
@@ -75,13 +77,20 @@ public abstract class ManagerFactory<T> {
 			type = getComponentType(doc);
 			id = getComponentID(doc);
 			this.logger.debug("About to create a component of type " + type + " named " + id.getName());
-			if(!ctable.containsKey(id)) newc = build(doc);
-			else this.logger.error("Couldnt create component "+type+", it already exist");
-			
-			if(newc!=null) ctable.put(id, newc);
-			else this.logger.error("Couldnt create component "+type);
-		} catch (Exception e) {
-			this.logger.error("Couldnt create component from XML doc");
+			if(!ctable.containsKey(id)) {
+				newc = build(doc);
+				if(newc!=null) ctable.put(id, newc);
+				else this.logger.error("Couldnt create component "+type);
+			}
+			else {
+				this.logger.error("Couldnt create component "+type+", it already exist");
+				return null;
+			}
+		} catch (ParseException e) {
+			this.logger.error("Couldnt parse component's XML doc");
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			this.logger.error("Couldnt instanciate component from XML doc");
 			e.printStackTrace();
 		}
 
@@ -117,10 +126,12 @@ public abstract class ManagerFactory<T> {
 			this.logger.debug("Element " + type + " Removed");
 */	
 	
-	private void dumpTable() {
+	public void dumpTable() {
 		Enumeration<Identifier> keys = ctable.keys();
-		while ( keys.hasMoreElements() )
-		   this.logger.debug("key: " + keys.nextElement().toString());
+		Collection<T> cvalues = ctable.values();
+		Iterator<T> iter = cvalues.iterator();
+		while ( keys.hasMoreElements() &&  iter.hasNext())
+		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
 	}
 
 }
