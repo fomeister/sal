@@ -62,14 +62,12 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 			Identifier i = this.getComponentID(doc);
 			this.logger.debug("Component type: " +type);
 			String className = EndPointModulesList.getClassName(type);
-			if(className!=null) {
-				endPoint = (EndPoint) Class.forName(className).newInstance();
-				endPoint.setConfig(getComponentConfig(doc));
-				endPoint.setID(i);
-				endPoint.setType(type);
-			} else {
-				this.logger.error("No EndPoint class matching");				
-			}
+
+			endPoint = (EndPoint) Class.forName(className).newInstance();
+			endPoint.setConfig(getComponentConfig(doc));
+			endPoint.setID(i);
+			endPoint.setType(type);
+			
 		} catch (ParseException e) {
 			this.logger.error("Error while parsing the DOM document");
 			e.printStackTrace();
@@ -169,6 +167,7 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		EndPointManager e = getEndPointManager();
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb1' type='usb'><parameters><Param name='portNumber' value='1' /></parameters></EndPoint>"));
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb2' type='usb' />"));
+		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='eth0' /><Param name='IPAddress' value='' /></parameters></EndPoint>"));
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='files' type='fs' />"));

@@ -29,10 +29,13 @@ public class EndPointModulesList {
 		table.put("fs", EndPointModulesList.SALcomponentPackage + "FSEndPoint");
 	}
 	
-	public static String getClassName(String type)
+	public static String getClassName(String type) throws ClassNotFoundException
 	{	
 		String c = e.table.get(type);
-		if (c==null) e.logger.error("Cant find the class name from EndPointID: " + type);
+		if (c==null) {
+			e.logger.error("Cant find the class name from EndPointID: " + type);
+			throw new ClassNotFoundException("Cant find the class name from EndPointID: " + type);
+		}
 		else e.logger.debug("Found class " + c + " for type " + type);
 		
 		return c;

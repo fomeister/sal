@@ -10,14 +10,12 @@ import java.util.Hashtable;
 import javax.management.BadAttributeValueExpException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Identifiers.EndPointID;
 import jcu.sal.Components.Identifiers.Identifier;
+import jcu.sal.Components.Identifiers.LogicalPortID;
 import jcu.sal.Components.LogicalPorts.LogicalPort;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -75,9 +73,12 @@ public class LogicalPortManager extends ManagerFactory<LogicalPort> {
 			//Create the Protocol here and pass it to lp
 			//TODO 
 			
-			lport = new LogicalPort(e);
-			lport.setID(i);
-			lport.setType("");
+			if(e!=null) { // TODO && Protocol != null
+				lport = new LogicalPort(e);
+				lport.setID(i);
+				lport.setType(getComponentType(d));
+			} else
+				throw new InstantiationException("Couldnt create the Endpoint/Protocol and logical Port");
 			
 		} catch (ParseException e) {
 			this.logger.error("Cant get the LogicalPort's name");
@@ -142,15 +143,17 @@ public class LogicalPortManager extends ManagerFactory<LogicalPort> {
 	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException {
 		LogicalPortManager l = getLogicalPortManager();
 		l.createComponent(XMLhelper.createDocument("<LogicalPort name='IDU'><EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='ath0' /><Param name='IPAddress' value='192.168.3.11' /></parameters></EndPoint><Protocol name='EMS_SNMP' type='EMS_IDU_SNMP'><parameters><Param name='AgentIP' value='192.168.0.2' /><Param name='CommunityString' value='EMSOLUTIONS' /><Param name='SNMPVersion' value='1' /></parameters></Protocol></LogicalPort>"));
-		/*l.createComponent(XMLhelper.createDocument("<LogicalPort name='usb2' type='usb' />"));
-		l.createComponent(XMLhelper.createDocument("<LogicalPort name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></LogicalPort>"));
-		l.createComponent(XMLhelper.createDocument("<LogicalPort name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='eth0' /><Param name='IPAddress' value='' /></parameters></LogicalPort>"));
-		l.createComponent(XMLhelper.createDocument("<LogicalPort name='files' type='fs' />"));
-		l.destroyComponent(new EndPointID("eth01"));
-		l.destroyComponent(new EndPointID("usb1"));
-		l.destroyComponent(new EndPointID("usb2"));
-		l.destroyComponent(new EndPointID("serial0"));
-		l.destroyComponent(new EndPointID("eth0"));*/
-		l.destroyComponent(new EndPointID("IDU"));
+		//l.createComponent(XMLhelper.createDocument("<LogicalPort name='PL40'><EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint></LogicalPort>"));
+		l.createComponent(XMLhelper.createDocument("<LogicalPort name='owfs'><EndPoint name='usb2' type='usb' /></LogicalPort>"));
+		l.createComponent(XMLhelper.createDocument("<LogicalPort name='owfs1'><EndPoint name='usb2' type='usb' /></LogicalPort>"));
+		//l.createComponent(XMLhelper.createDocument("<LogicalPort name='PL401'><EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint></LogicalPort>"));
+		l.createComponent(XMLhelper.createDocument("<LogicalPort name='IDU2'><EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='eth0' /><Param name='IPAddress' value='' /></parameters></EndPoint></LogicalPort>"));
+		l.createComponent(XMLhelper.createDocument("<LogicalPort name='osData'><EndPoint name='files' type='fs' /></LogicalPort>"));
+		l.destroyComponent(new LogicalPortID("osData"));
+		l.destroyComponent(new LogicalPortID("usb1"));
+		l.destroyComponent(new LogicalPortID("usb2"));
+		l.destroyComponent(new LogicalPortID("serial0"));
+		l.destroyComponent(new LogicalPortID("eth0"));
+		l.destroyComponent(new LogicalPortID("IDU"));
 	}
 }

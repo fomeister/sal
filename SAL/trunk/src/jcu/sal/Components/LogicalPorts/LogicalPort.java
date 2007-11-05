@@ -5,6 +5,7 @@ package jcu.sal.Components.LogicalPorts;
 
 import jcu.sal.Components.AbstractComponent;
 import jcu.sal.Components.EndPoints.EndPoint;
+import jcu.sal.Components.Identifiers.LogicalPortID;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -28,6 +29,8 @@ public class LogicalPort extends AbstractComponent {
 		super();
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor LogicalPort");
+		id = new LogicalPortID("");
+		type = new String("");
 	}
 	
 	/**
@@ -36,28 +39,31 @@ public class LogicalPort extends AbstractComponent {
 	public LogicalPort(EndPoint e) {
 		this();
 		this.ep = e;
-		this.logger.debug("Attached EndPoint "+e.getID().getName()+" to the new LogicalPort "+getID().getName());
+		/* do not use any other var here as they are not initialised yet
+		they will be after the creator calls setID and setType */
 	}
 		
 	
 	@Override
 	protected void parseConfig() throws RuntimeException {
-		// TODO Auto-generated method stub
-		
+		// Not much to do here...
 	}
 	@Override
 	public void remove() {
-		// TODO Auto-generated method stub
-		
+		ep.stop();
+		ep.remove();
 	}
 	@Override
 	public void start() {
-		// TODO Auto-generated method stub
-		
+		// Not much to do here...
 	}
 	@Override
 	public void stop() {
-		// TODO Auto-generated method stub
-		
+		// Not much to do here...
+	}
+
+	@Override
+	public String toString() {
+		return "LogicalPort " + id.getName() + " : " +ep.getID().getName();
 	}	
 }

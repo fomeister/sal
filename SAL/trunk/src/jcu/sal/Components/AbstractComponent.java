@@ -79,6 +79,11 @@ public abstract class AbstractComponent implements HWComponent {
 	 */
 	protected abstract void parseConfig() throws RuntimeException;
 	
+	/**
+	 * returns a textual representation of a Logical Port's instance
+	 * @return the textual representation of the Logical Port's instance
+	 */
+	public abstract String toString();
 	
 	/**
 	 * Sets the type of a component
