@@ -26,6 +26,7 @@ public class EndPointModulesList {
 		table.put("usb", EndPointModulesList.SALcomponentPackage + "UsbEndPoint");
 		table.put("serial", EndPointModulesList.SALcomponentPackage + "SerialEndPoint");
 		table.put("ethernet", EndPointModulesList.SALcomponentPackage + "EthernetEndPoint");
+		table.put("fs", EndPointModulesList.SALcomponentPackage + "FSEndPoint");
 	}
 	
 	public static String getClassName(String type)

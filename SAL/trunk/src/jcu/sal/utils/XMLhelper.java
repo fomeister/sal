@@ -16,6 +16,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
@@ -107,6 +108,21 @@ public class XMLhelper {
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document document = builder.parse(new InputSource(new StringReader(xmlstr)));
         return document;
+    }
+    
+    /**
+     * Creates a DOM document from a Node
+     * @param node the XML node
+     * @return the DOM document
+     * @throws ParserConfigurationException 
+     * @throws TransformerException 
+     * @throws TransformerFactoryConfigurationError 
+     */   
+    public static Document createDocument(Node node) 
+    	throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException  {
+    	Document d = XMLhelper.createEmptyDocument();
+    	XMLhelper.transform(new DOMSource(node), new DOMResult(d));
+        return d;
     }
 
     /**
@@ -340,5 +356,16 @@ public class XMLhelper {
         return buffer.toString();
     }
 
-
+    /**
+     * This method is used to generate a result from a source.
+     * @param source
+     * @param result
+     * @throws TransformerFactoryConfigurationError
+     * @throws TransformerException
+     */
+    public static void transform(Source source, Result result)
+        throws TransformerFactoryConfigurationError, TransformerException {
+        Transformer xformer = TransformerFactory.newInstance().newTransformer();
+        xformer.transform(source, result);
+    }
 }
