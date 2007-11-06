@@ -340,17 +340,21 @@ public class XMLhelper {
      * @see java.lang.Object#toString()
      * @param doc the DOM document
      * @throws TransformerFactoryConfigurationError 
-     * @throws TransformerException 
      * @Returns a String representation of the DOM
      */
-    public static String toString(Document doc)
-    	throws TransformerFactoryConfigurationError, TransformerException {
+    public static String toString(Document doc) {
         Source source = new DOMSource(doc);
         StringWriter writer = new StringWriter();
         Result result = new StreamResult(writer);
 
-        Transformer xformer = TransformerFactory.newInstance().newTransformer();
-        xformer.transform(source, result);
+        Transformer xformer;
+		try {
+			xformer = TransformerFactory.newInstance().newTransformer();
+			xformer.transform(source, result);
+		} catch (TransformerException e) {
+			System.out.println("Cant toString() this DOM doc !");
+		}
+        
         StringBuffer buffer = writer.getBuffer();
 
         return buffer.toString();

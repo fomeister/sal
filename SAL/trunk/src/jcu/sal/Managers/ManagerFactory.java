@@ -71,8 +71,8 @@ public abstract class ManagerFactory<T> {
 	 */
 	public T createComponent(Document doc) {
 		T newc = null;
-		String type;
-		Identifier id;
+		String type = "";
+		Identifier id= null;
 		try {
 			type = getComponentType(doc);
 			id = getComponentID(doc);
@@ -87,11 +87,11 @@ public abstract class ManagerFactory<T> {
 				return null;
 			}
 		} catch (ParseException e) {
-			this.logger.error("Couldnt parse component's XML doc");
-			e.printStackTrace();
+			this.logger.error("Couldnt parse component "+type+"'s XML doc");
+			//e.printStackTrace();
 		} catch (InstantiationException e) {
-			this.logger.error("Couldnt instanciate component from XML doc");
-			e.printStackTrace();
+			this.logger.error("Couldnt instanciate component "+type+" from XML doc");
+			//e.printStackTrace();
 		}
 
 		return newc; 
@@ -102,11 +102,12 @@ public abstract class ManagerFactory<T> {
 	 * @param type the component type
 	 */
 	public void destroyComponent(Identifier i) {
+		this.logger.debug("About to remove element " + i.toString());
 		if(ctable.containsKey(i)) {
-			remove(ctable.get(i));
 			dumpTable();
+			remove(ctable.get(i));
 			if(ctable.remove(i) == null)
-				this.logger.debug("Cant remove element with key " + i.toString() +  ": No such element");
+				this.logger.error("Cant remove element with key " + i.toString() +  ": No such element");
 			else
 				this.logger.debug("Element " + i.toString()+ " Removed");
 		} else
@@ -127,6 +128,7 @@ public abstract class ManagerFactory<T> {
 */	
 	
 	public void dumpTable() {
+		this.logger.debug("current table contents:" );
 		Enumeration<Identifier> keys = ctable.keys();
 		Collection<T> cvalues = ctable.values();
 		Iterator<T> iter = cvalues.iterator();

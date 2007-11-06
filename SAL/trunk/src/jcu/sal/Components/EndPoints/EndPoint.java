@@ -34,11 +34,11 @@ public abstract class EndPoint extends AbstractComponent {
 	}
 	
 	/**
-	 * returns a textual representation of a Logical Port's instance
+	 * returns a textual representation of a End Point's instance
 	 * @return the textual representation of the Logical Port's instance
 	 */
 	public String toString() {
-		return id.getName();
+		return "EndPoint "+id.getName()+"("+type+")";
 	}
 	
 }

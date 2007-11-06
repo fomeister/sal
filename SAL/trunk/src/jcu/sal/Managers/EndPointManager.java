@@ -68,27 +68,32 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 			endPoint.setID(i);
 			endPoint.setType(type);
 			
-		} catch (ParseException e) {
-			this.logger.error("Error while parsing the DOM document");
-			e.printStackTrace();
 		} catch (InstantiationException e) {
-			this.logger.error("Error in new Endpoint instanciation");
+			this.logger.error("Error in new Endpoint instanciation. XML doc:");
+			 this.logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
 			throw e;
 		} catch (IllegalAccessException e) {
-			this.logger.error("Error in new Endpoint instanciation");
+			this.logger.error("Error in new Endpoint instanciation. XML doc:");
+			this.logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
 			throw new InstantiationException();
 		} catch (ClassNotFoundException e) {
-			this.logger.error("Error in new Endpoint instanciation");
+			this.logger.error("Error in new Endpoint instanciation. XML doc:");
+			this.logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
 			throw new InstantiationException();
 		} catch (RuntimeException e) {
-			this.logger.error("Error in new Endpoint configuration");
+			this.logger.error("Error in new Endpoint configuration. XML doc:");
+			this.logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
 			throw new InstantiationException();
-		}
-	
+		} catch (ParseException e) {
+			this.logger.error("Error while parsing the DOM document. XML doc:");
+			this.logger.error(XMLhelper.toString(doc));
+			e.printStackTrace();
+			throw new InstantiationException();
+		} 
 		return endPoint;
 	}
 
