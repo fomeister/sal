@@ -50,20 +50,21 @@ public class LogicalPort extends AbstractComponent {
 	}
 	@Override
 	public void remove() {
+		this.logger.debug("Removing logical port" + toString());
 		ep.stop();
 		ep.remove();
 	}
 	@Override
 	public void start() {
-		// Not much to do here...
+		this.logger.debug("Starting logical port" + toString());
 	}
 	@Override
 	public void stop() {
-		// Not much to do here...
+		this.logger.debug("Stopping logical port" + toString());
 	}
 
 	@Override
 	public String toString() {
-		return "LogicalPort " + id.getName() + " : " +ep.getID().getName();
+		return "LogicalPort " + id.getName() + " ("+type+") with " +ep.toString();
 	}	
 }

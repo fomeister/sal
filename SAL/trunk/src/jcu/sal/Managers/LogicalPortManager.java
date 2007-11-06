@@ -58,17 +58,15 @@ public class LogicalPortManager extends ManagerFactory<LogicalPort> {
 	@Override
 	protected LogicalPort build(Document doc) throws InstantiationException {
 		LogicalPort lport = null;
-		Document d = null;
 
 		this.logger.debug("building LogicalPort");
 		try {
 			Identifier i = this.getComponentID(doc);
+			String type = getComponentType(doc);
 			this.logger.debug("LogicalPort name " + i.getName());
 			//Create the Endpoint
 			Node n = XMLhelper.getNode("/" + LOGICALPORT_TAG + "/" + EndPoint.ENPOINT_TAG, doc);
-			d = XMLhelper.createDocument(n);
-			XMLhelper.toString(d);
-			EndPoint e = EndPointManager.getEndPointManager().createComponent(d);
+			EndPoint e = EndPointManager.getEndPointManager().createComponent(XMLhelper.createDocument(n));
 			
 			//Create the Protocol here and pass it to lp
 			//TODO 
@@ -76,23 +74,34 @@ public class LogicalPortManager extends ManagerFactory<LogicalPort> {
 			if(e!=null) { // TODO && Protocol != null
 				lport = new LogicalPort(e);
 				lport.setID(i);
-				lport.setType(getComponentType(d));
-			} else
+				lport.setType(type);
+			} else {
+				this.logger.error("Couldnt create the Endpoint/Protocol and logical Port");
 				throw new InstantiationException("Couldnt create the Endpoint/Protocol and logical Port");
+			}
+			this.logger.debug("Created Logical Port "+lport.toString());
+
 			
 		} catch (ParseException e) {
-			this.logger.error("Cant get the LogicalPort's name");
+			this.logger.error("Cant get the LogicalPort's ID / type. XML doc:");
+			this.logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
 			throw new InstantiationException("Cant create the logical port");
 		} catch (XPathExpressionException e) {
-			this.logger.error("Error in new LogicalPort's EndPoint/Protocol XML configuration");
+			this.logger.error("Error in XPATH expression for new LogicalPort's EndPoint/Protocol XML configuration. XML doc:");
+			this.logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
+			throw new InstantiationException("Cant create the logical port");
 		} catch (TransformerException e) {
-			this.logger.error("Error in new LogicalPort's EndPoint/Protocol XML configuration");
+			this.logger.error("Error in transforming new LogicalPort's EndPoint/Protocol XML configuration. XML doc:");
+			this.logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
+			throw new InstantiationException("Cant create the logical port");
 		} catch (ParserConfigurationException e) {
-			this.logger.error("Cant create an empty DOM document");
+			this.logger.error("Error in transforming new LogicalPort's EndPoint/Protocol XML configuration. XML doc:");
+			this.logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
+			throw new InstantiationException("Cant create the logical port");
 		}
 	
 		return lport;
@@ -155,5 +164,6 @@ public class LogicalPortManager extends ManagerFactory<LogicalPort> {
 		l.destroyComponent(new LogicalPortID("serial0"));
 		l.destroyComponent(new LogicalPortID("eth0"));
 		l.destroyComponent(new LogicalPortID("IDU"));
+		l.destroyComponent(new LogicalPortID("IDU2"));
 	}
 }
