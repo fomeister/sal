@@ -9,6 +9,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
+import javax.naming.ConfigurationException;
 
 import jcu.sal.utils.Slog;
 
@@ -50,9 +51,9 @@ public abstract class AbstractComponent<T> implements HWComponent {
 	}
 
 	/* (non-Javadoc)
-	 * @see jcu.sal.Components.HWComponent#setConfig(java.util.Hashtable)
+	 * @see jcu.sal.Components.HWComponent#updateConfig(java.util.Hashtable)
 	 */
-	public void updateConfig(Hashtable<String, String> config) throws RuntimeException
+	public void updateConfig(Hashtable<String, String> config) throws ConfigurationException
 	{
 		if (!started) {
 			this.config = config;
@@ -70,12 +71,12 @@ public abstract class AbstractComponent<T> implements HWComponent {
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#start()
 	 */
-	public abstract void start() ;
+	public abstract void start() throws ConfigurationException;
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#stop()
 	 */
-	public abstract void stop() ;
+	public abstract void stop();
 	
 	/**
 	 * Parses the component's configuration directives stored in config,
@@ -83,7 +84,7 @@ public abstract class AbstractComponent<T> implements HWComponent {
 	 * @throws RuntimeException Indicates a error parsing/setting configuration. 
 	 * Most likely there is a problem with the component's configuration
 	 */
-	protected abstract void parseConfig() throws RuntimeException;
+	protected abstract void parseConfig() throws ConfigurationException;
 	
 	/**
 	 * returns a textual representation of a Logical Port's instance
@@ -137,5 +138,21 @@ public abstract class AbstractComponent<T> implements HWComponent {
 			
 	public T getID() {
 		return this.id;
+	}
+
+	public boolean isConfigured() {
+		return configured;
+	}
+
+	public void setConfigured(boolean configured) {
+		this.configured = configured;
+	}
+
+	public boolean isStarted() {
+		return started;
+	}
+
+	public void setStarted(boolean started) {
+		this.started = started;
 	}
 }

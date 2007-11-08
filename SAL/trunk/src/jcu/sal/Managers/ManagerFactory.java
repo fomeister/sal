@@ -67,7 +67,7 @@ public abstract class ManagerFactory<T> {
 	/**
 	 * Create a new instance of a fully configured component from its DOM document
 	 * @param doc
-	 * @return
+	 * @return an instance of the component
 	 */
 	public T createComponent(Document doc) {
 		T newc = null;

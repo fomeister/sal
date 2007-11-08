@@ -5,6 +5,8 @@ package jcu.sal.Components.EndPoints;
 
 import java.util.Hashtable;
 
+import javax.naming.ConfigurationException;
+
 import jcu.sal.Components.Identifiers.EndPointID;
 import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
@@ -19,9 +21,10 @@ public class FSEndPoint extends EndPoint {
 	private Logger logger = Logger.getLogger(FSEndPoint.class);
 	
 	/**
+	 * @throws ConfigurationException 
 	 * 
 	 */
-	public FSEndPoint(EndPointID i, String t, Hashtable<String,String> c) {
+	public FSEndPoint(EndPointID i, String t, Hashtable<String,String> c) throws ConfigurationException {
 		super(i,t,c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor FSEndPoint");
@@ -32,7 +35,7 @@ public class FSEndPoint extends EndPoint {
 	 * @see jcu.sal.Components.AbstractComponent#parseConfig()
 	 */
 	@Override
-	protected void parseConfig() throws RuntimeException {
+	protected void parseConfig() throws ConfigurationException {
 		// Not much to do here 
 		this.logger.debug("Found filesystem");
 		this.configured = true;
@@ -45,6 +48,9 @@ public class FSEndPoint extends EndPoint {
 	public void remove() {
 		//Not much to do here...
 		this.logger.debug("Removing Filesystem Endpoint.");
+		if(started)
+			stop();
+		this.logger.debug("Filesystem Endpoint removed");
 	}
 
 	/* (non-Javadoc)
@@ -69,7 +75,7 @@ public class FSEndPoint extends EndPoint {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ConfigurationException {
 		/* tries building a new FSEndPoint */
 		new FSEndPoint(new EndPointID("fs"), "fs", new Hashtable<String,String>());
 	}

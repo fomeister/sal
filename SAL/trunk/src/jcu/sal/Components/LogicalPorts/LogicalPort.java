@@ -3,13 +3,11 @@
  */
 package jcu.sal.Components.LogicalPorts;
 
-import java.util.Hashtable;
+import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.AbstractComponent;
-import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Identifiers.LogicalPortID;
-import jcu.sal.Components.Identifiers.SensorID;
-import jcu.sal.Components.Sensors.Sensor;
+import jcu.sal.Components.Protocols.Protocol;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -21,23 +19,20 @@ import org.apache.log4j.Logger;
  */
 public class LogicalPort extends AbstractComponent<LogicalPortID> {
 	
-	private EndPoint ep;
-	private Hashtable<SensorID, Sensor> sensorTable;
-	//private Protocol p = null;
+	private Protocol protocol;
 
 	private Logger logger = Logger.getLogger(LogicalPort.class);
 	public static final String LOGICALPORT_TYPE = "LogicalPort";
 	/**
 	 * 
 	 */
-	public LogicalPort(LogicalPortID i, String t, EndPoint e) {
+	public LogicalPort(LogicalPortID i, String t, Protocol p) {
 		super();
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor LogicalPort");
 		id = i;
 		type =t;
-		ep = e;
-		sensorTable = new Hashtable<SensorID, Sensor>();
+		protocol = p;
 	}
 		
 	
@@ -48,21 +43,21 @@ public class LogicalPort extends AbstractComponent<LogicalPortID> {
 	@Override
 	public void remove() {
 		this.logger.debug("Removing logical port" + toString());
-		ep.stop();
-		ep.remove();
+		protocol.stop();
+		protocol.remove();
 	}
 	@Override
-	public void start() {
+	public void start() throws ConfigurationException{
 		this.logger.debug("Starting logical port" + toString());
 	}
 	@Override
 	public void stop() {
 		this.logger.debug("Stopping logical port" + toString());
-		ep.stop();
+		protocol.stop();
 	}
 
 	@Override
 	public String toString() {
-		return "LogicalPort " + id.getName() + " ("+type+") with " +ep.toString();
+		return "LogicalPort " + id.getName() + " ("+type+") with " +protocol.toString();
 	}	
 }

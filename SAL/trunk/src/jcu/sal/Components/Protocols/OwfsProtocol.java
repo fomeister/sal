@@ -6,8 +6,10 @@ package jcu.sal.Components.Protocols;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
+import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.Command;
 import jcu.sal.Components.Identifiers.ProtocolID;
@@ -26,6 +28,12 @@ public class OwfsProtocol extends Protocol {
 	private Logger logger = Logger.getLogger(OwfsProtocol.class);
 	public final static String OWFSLOCATION_TAG = "Location";
 	public final static String OWFSMOUNTPOINT_TAG = "MountPoint";
+
+	static { 
+		OWFS_SUPPORTED_ENDPOINTS.add("usb");
+		OWFS_SUPPORTED_ENDPOINTS.add("serial");
+	}
+	
 	
 	/**
 	 * 
@@ -33,7 +41,9 @@ public class OwfsProtocol extends Protocol {
 	public OwfsProtocol(ProtocolID i, String t, Hashtable<String,String> c) {
 		super(i,t,c);
 		Slog.setupLogger(logger);
-		parseConfig();
+		//parseConfig can not be called here, and configured can not be set to true here
+		//since we are missing our EndPoint, so all of this is differed to setEp()
+		
 	}
 
 	/* (non-Javadoc)
@@ -49,10 +59,20 @@ public class OwfsProtocol extends Protocol {
 	 * @see jcu.sal.Components.AbstractComponent#parseConfig()
 	 */
 	@Override
-	protected void parseConfig() throws RuntimeException {
+	protected void parseConfig() throws ConfigurationException {
 		String mtpt, temp;
-		logger.debug("Checking OWFS software");
 
+		logger.debug("Parsing our configuration");
+		logger.debug("1st, Check the EndPoint");
+		if(!ep.isConfigured() || !OWFS_SUPPORTED_ENDPOINTS.contains(ep.getType())) {
+			logger.error("This Protocol has been setup with the wrong enpoint: got endpoint type: " +ep.getType()+", expected: ");
+			Iterator<String> iter = OWFS_SUPPORTED_ENDPOINTS.iterator();
+			while(iter.hasNext())
+				logger.error(iter.next());
+			throw new ConfigurationException("Wrong Endpoint type");
+		}
+			
+		logger.debug("2nd Check OWFS software");
 		try {
 			mtpt = getConfig(OWFSMOUNTPOINT_TAG);
 			if(mtpt.length()==0) throw new BadAttributeValueExpException("Empty mount point directive...");
@@ -65,7 +85,7 @@ public class OwfsProtocol extends Protocol {
 			}
 
 			//Next, we check that OWFS is installed in the given directory
-			this.logger.debug("Detecting OWFS version");
+			logger.debug("Detecting OWFS version");
 			BufferedReader[] b = ProcessHelper.captureOutputs(getConfig(OWFSLOCATION_TAG) + " --version");
 			while((temp = b[0].readLine()) != null) logger.debug(temp);
 			while((temp = b[1].readLine()) != null) logger.debug(temp);
@@ -74,31 +94,32 @@ public class OwfsProtocol extends Protocol {
 			logger.debug("OWFS protocol configured");
 			
 		} catch (IOException e) {
-			this.logger.error("Could NOT run/read owfs");
+			logger.error("Could NOT run/read owfs");
 			e.printStackTrace();
-			throw new RuntimeException("Could NOT run/read owfs");
+			throw new ConfigurationException("Could NOT run/read owfs");
 		} catch (BadAttributeValueExpException e) {
-			this.logger.error("incorrect OWFS configuration directives...");
+			logger.error("incorrect OWFS configuration directives...");
 			e.printStackTrace();
-			throw new RuntimeException("Could not setup OWFS protocol");
+			throw new ConfigurationException("Could not setup OWFS protocol");
 		}
 	}
 
 	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#remove()
+	 * @see jcu.sal.Components.Protocol#internal_remove()
 	 */
-	@Override
-	public void remove() {
-		// TODO Auto-generated method stub
+	protected void internal_stop() {
+		logger.debug("OWFS internal stop");
 
 	}
 
 	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#start()
+	 * @see jcu.sal.Components.Protocol#internal_start()
 	 */
-	@Override
-	public void start() {
-		// TODO Auto-generated method stub
+	public void internal_start() {
+		logger.debug("OWFS internal start");
+		// TODO Check that the sensors table has some sensors
+		// TODO start owfs with arguments
+		// TODO call probeSensors
 
 	}
 
@@ -108,6 +129,7 @@ public class OwfsProtocol extends Protocol {
 	@Override
 	public void stop() {
 		// TODO Auto-generated method stub
+		logger.debug("OWFS internal stopped");
 
 	}
 
@@ -127,6 +149,11 @@ public class OwfsProtocol extends Protocol {
 		c.put(OwfsProtocol.OWFSMOUNTPOINT_TAG, "/mnt/w1");
 		OwfsProtocol o = new OwfsProtocol(new ProtocolID("owfs"), "owfs", c);
 		o.dumpConfig();
+	}
+
+	@Override
+	protected void internal_remove() {
+		logger.debug("OWFS internal removed");
 	}
 	
 }

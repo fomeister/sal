@@ -25,7 +25,6 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Attr;
-import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -43,11 +42,15 @@ import org.xml.sax.SAXException;
 public class XMLhelper {
 	
 	public static void main(String[] args) 
-	throws ParserConfigurationException, SAXException, IOException,
-			DOMException, XPathExpressionException {
-		//Document d = XMLhelper.createDocument("<EndPoint name='usb' type='usb' />");
-		Document d = XMLhelper.createDocument(new File("/home/gilles/workspace/SALv1/src/sensors.xml"));
-		XMLhelper.getAttributeListFromElements("//EndPoint[@name='serial0']/parameters/Param", d);
+	throws ParserConfigurationException {
+		Document d;
+		try {
+			d = XMLhelper.createDocument(new File("/home/gilles/workspace/SALv1/src/sensors.xml"));
+			XMLhelper.getAttributeListFromElements("//EndPoint[@name='serial0']/parameters/Param", d);
+		} catch (Exception e) {
+			throw new ParserConfigurationException();
+		}
+		
 		
 	}
 	
@@ -73,9 +76,14 @@ public class XMLhelper {
      * @throws SAXException 
      */
     public static Document createDocument(InputStream in) 
-    	throws ParserConfigurationException, SAXException, IOException {
+    	throws ParserConfigurationException {
+    	Document document = null;
+    	try {
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document document = builder.parse(in);
+        document = builder.parse(in);
+    	} catch (Exception e) {
+    		throw new ParserConfigurationException();
+    	}
         return document;
     }
 
@@ -89,10 +97,15 @@ public class XMLhelper {
      * @throws SAXException
      */
     public static Document createDocument(File f) 
-    	throws ParserConfigurationException, SAXException, IOException {
+    	throws ParserConfigurationException {
+    	Document document = null;
+    	try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            Document document = builder.parse(f);
-            return document;
+            document = builder.parse(f);
+    	} catch (Exception e) {
+    		throw new ParserConfigurationException();
+    	}
+        return document;
     }
     
     /**
@@ -104,9 +117,14 @@ public class XMLhelper {
      * @throws SAXException 
      */   
     public static Document createDocument(String xmlstr) 
-    	throws ParserConfigurationException, SAXException, IOException {
-        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document document = builder.parse(new InputSource(new StringReader(xmlstr)));
+    	throws ParserConfigurationException {
+    	Document document = null;
+    	try {
+	        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+	        document = builder.parse(new InputSource(new StringReader(xmlstr)));
+    	} catch (Exception e) {
+    		throw new ParserConfigurationException();
+    	}
         return document;
     }
     
@@ -119,9 +137,10 @@ public class XMLhelper {
      * @throws TransformerFactoryConfigurationError 
      */   
     public static Document createDocument(Node node) 
-    	throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException  {
+    	throws ParserConfigurationException {
     	Document d = XMLhelper.createEmptyDocument();
-    	XMLhelper.transform(new DOMSource(node), new DOMResult(d));
+    	try { XMLhelper.transform(new DOMSource(node), new DOMResult(d)); }
+    	catch (Exception e) { throw new ParserConfigurationException(); }
         return d;
     }
 
