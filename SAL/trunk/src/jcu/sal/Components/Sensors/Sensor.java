@@ -5,6 +5,8 @@ package jcu.sal.Components.Sensors;
 
 import java.util.Hashtable;
 
+import javax.naming.ConfigurationException;
+
 import jcu.sal.Components.AbstractComponent;
 import jcu.sal.Components.Identifiers.SensorID;
 import jcu.sal.utils.Slog;
@@ -47,7 +49,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 	
 	@Override
-	protected void parseConfig() throws RuntimeException {
+	protected void parseConfig() throws ConfigurationException {
 		// Not much to do here...
 	}
 	@Override

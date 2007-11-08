@@ -10,6 +10,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 import javax.management.BadAttributeValueExpException;
+import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.Identifiers.EndPointID;
 import jcu.sal.utils.Slog;
@@ -29,9 +30,10 @@ public class EthernetEndPoint extends EndPoint {
 	private Logger logger = Logger.getLogger(EthernetEndPoint.class);
 	
 	/**
+	 * @throws ConfigurationException 
 	 * 
 	 */
-	public EthernetEndPoint(EndPointID i, String t, Hashtable<String,String> c) {
+	public EthernetEndPoint(EndPointID i, String t, Hashtable<String,String> c) throws ConfigurationException {
 		super(i, t, c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor EthernetEndPoint");
@@ -42,7 +44,7 @@ public class EthernetEndPoint extends EndPoint {
 	 * @see jcu.sal.Components.AbstractComponent#updateConfig()
 	 */
 	@Override
-	protected void parseConfig() throws RuntimeException {
+	protected void parseConfig() throws ConfigurationException {
 		// Check if we have this ethernet device on this platform
 		NetworkInterface n = null;
 		String intName = null, ipAddress = null;
@@ -83,22 +85,22 @@ public class EthernetEndPoint extends EndPoint {
 				this.logger.debug("Found ethernet port: " + n.getDisplayName());
 				if (!n.isUp()) {
 					this.logger.error("The ethernet port is down");
-					throw new RuntimeException("The ethernet port is down");
+					throw new ConfigurationException("The ethernet port is down");
 				}
 				this.configured = true;
 				this.logger.debug("The ethernet port was successfully configured");
 			} else {
 				this.logger.error("The ethernet port could not be found");
-				throw new RuntimeException("The ethernet port could not be found");
+				throw new ConfigurationException("The ethernet port could not be found");
 			}
 		} catch (SocketException e) {
 			this.logger.error("Couldnt find the ethernet port...");
 			e.printStackTrace();
-			throw new RuntimeException("Couldnt find the ethernet port...");
+			throw new ConfigurationException("Couldnt find the ethernet port...");
 		} catch (BadAttributeValueExpException e) {
 			this.logger.debug("Bad ethernet EndPoint XML config");
 			e.printStackTrace();
-			throw new RuntimeException("Couldnt initialise the ethernet port...");
+			throw new ConfigurationException("Couldnt initialise the ethernet port...");
 		} 
 	}
 
@@ -109,13 +111,16 @@ public class EthernetEndPoint extends EndPoint {
 	public void remove() {
 		//Not much to do here...
 		this.logger.debug("Removing Ethernet Endpoint.");
+		if(started)
+			stop();
+		this.logger.debug("Ethernet Endpoint removed");
 	}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.AbstractComponent#start()
 	 */
 	@Override
-	public void start() {
+	public void start(){
 		if(configured && !started) {
 			this.logger.debug("Starting Ethernet Endpoint.");
 			started=true;
@@ -133,7 +138,7 @@ public class EthernetEndPoint extends EndPoint {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ConfigurationException {
 		/* Tries building a new ethernet Endpoint*/
 		Hashtable<String,String> c = new Hashtable<String,String>();
 		c.put("EthernetDevice","eth0");

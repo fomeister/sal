@@ -12,6 +12,7 @@ import javax.comm.PortInUseException;
 import javax.comm.SerialPort;
 import javax.comm.UnsupportedCommOperationException;
 import javax.management.BadAttributeValueExpException;
+import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.Identifiers.EndPointID;
 import jcu.sal.utils.Slog;
@@ -33,9 +34,10 @@ public class SerialEndPoint extends EndPoint {
 	private Logger logger = Logger.getLogger(SerialEndPoint.class);
 	
 	/**
+	 * @throws ConfigurationException 
 	 * 
 	 */
-	public SerialEndPoint(EndPointID i, String t, Hashtable<String,String> c) {
+	public SerialEndPoint(EndPointID i, String t, Hashtable<String,String> c) throws ConfigurationException {
 		super(i,t,c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor SerialEndPoint");
@@ -46,7 +48,7 @@ public class SerialEndPoint extends EndPoint {
 	 * @see jcu.sal.Components.AbstractComponent#parseConfig()
 	 */
 	@Override
-	protected void parseConfig() throws RuntimeException {
+	protected void parseConfig() throws ConfigurationException {
 		// Check if we have this serial port on this platform
 		CommPortIdentifier id;
 		this.logger.debug("check if we can setup the serial port");
@@ -54,7 +56,7 @@ public class SerialEndPoint extends EndPoint {
 			id = CommPortIdentifier.getPortIdentifier(getConfig(PORTDEVICEATTRIBUTE_TAG));
 			if(id.getPortType()!=CommPortIdentifier.PORT_SERIAL) {
 				this.logger.error("The supplied device file is NOT a serial port");
-				throw new RuntimeException("Could not setup the serial port");
+				throw new ConfigurationException("Could not setup the serial port");
 			}
 
 			this.logger.debug("The serial port name is " + id.getName());
@@ -69,18 +71,18 @@ public class SerialEndPoint extends EndPoint {
 		} catch (PortInUseException e) {
 			this.logger.warn("The serial port cannot be opened and is currently in use ...");
 			e.printStackTrace();
-			throw new RuntimeException("Could not setup the serial port");
+			throw new ConfigurationException("Could not setup the serial port");
 		} catch (NoSuchPortException e) {
 			e.printStackTrace();
-			throw new RuntimeException("Could not setup the serial port");
+			throw new ConfigurationException("Could not setup the serial port");
 		} catch (BadAttributeValueExpException e) {
 			e.printStackTrace();
 			this.logger.debug("Bad serial EndPoint XML config");
-			throw new RuntimeException("Could not setup the serial port");
+			throw new ConfigurationException("Could not setup the serial port");
 		} catch (UnsupportedCommOperationException e) {
 			this.logger.warn("The serial port cannot be setup");
 			e.printStackTrace();
-			throw new RuntimeException("Could not setup the serial port");
+			throw new ConfigurationException("Could not setup the serial port");
 		}
 	}
 
@@ -91,6 +93,9 @@ public class SerialEndPoint extends EndPoint {
 	public void remove() {
 		//Not much to do here...
 		this.logger.debug("Removing serial Endpoint.");
+		if(started)
+			stop();
+		this.logger.debug("serial Endpoint removed");
 	}
 
 	/* (non-Javadoc)

@@ -6,6 +6,7 @@ package jcu.sal.Components;
 import java.util.Hashtable;
 
 import javax.management.BadAttributeValueExpException;
+import javax.naming.ConfigurationException;
 
 
 /**
@@ -22,7 +23,7 @@ public interface HWComponent {
 	 * @param config the component's configuration
 	 * 
 	 */
-	public void updateConfig(Hashtable<String, String> config) throws RuntimeException;
+	public void updateConfig(Hashtable<String, String> config) throws ConfigurationException;
 	
 	/**
 	 * Retrieves the component'entire configuration
@@ -43,13 +44,13 @@ public interface HWComponent {
 	 * Starts a component or do nothing for those that cant be started
 	 *
 	 */
-	public void start();
+	public void start() throws ConfigurationException;
 
 	/**
 	 * Stops a component
 	 *
 	 */
-	public void stop();
+	public void stop() ;
 	
 	/**
 	 * Destroy a component 

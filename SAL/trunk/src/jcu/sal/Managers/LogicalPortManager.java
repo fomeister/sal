@@ -8,14 +8,15 @@ import java.text.ParseException;
 import java.util.Hashtable;
 
 import javax.management.BadAttributeValueExpException;
+import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.Components.Identifiers.LogicalPortID;
 import jcu.sal.Components.LogicalPorts.LogicalPort;
+import jcu.sal.Components.Protocols.Protocol;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -57,48 +58,58 @@ public class LogicalPortManager extends ManagerFactory<LogicalPort> {
 	@Override
 	protected LogicalPort build(Document doc) throws InstantiationException {
 		LogicalPort lport = null;
+		EndPoint ep = null;
+		Protocol p = null;
 
 		this.logger.debug("building LogicalPort");
 		try {
 			LogicalPortID i = (LogicalPortID) this.getComponentID(doc);
 			String type = getComponentType(doc);
-			this.logger.debug("LogicalPort name " + i.getName());
+			logger.debug("LogicalPort name " + i.getName());
+			
 			//Create the Endpoint
 			Node n = XMLhelper.getNode("/" + LOGICALPORT_TAG + "/" + EndPoint.ENPOINT_TAG, doc);
-			EndPoint e = EndPointManager.getEndPointManager().createComponent(XMLhelper.createDocument(n));
+			ep = EndPointManager.getEndPointManager().createComponent(XMLhelper.createDocument(n));
+						
+			//Create the Protocol and pass it to lp
+			if(ep != null) {
+				n = XMLhelper.getNode("/" + LOGICALPORT_TAG + "/" + Protocol.PROTOCOL_TAG, doc);
+				p = ProtocolManager.getProcotolManager().createComponent(XMLhelper.createDocument(n)); 
 			
-			//Create the Protocol here and pass it to lp
-			//TODO 
-			
-			if(e!=null) { // TODO && Protocol != null
-				lport = new LogicalPort(i, type, e);
+				if(p!=null) {
+					p.setEp(ep);
+					lport = new LogicalPort(i, type, p);
+				} else {
+					EndPointManager.getEndPointManager().destroyComponent(ep.getID());
+					logger.error("Couldnt create the Protocol / logical Port");
+					throw new InstantiationException("Couldnt create the Protocol / logical Port");
+				}
 			} else {
-				this.logger.error("Couldnt create the Endpoint/Protocol and logical Port");
-				throw new InstantiationException("Couldnt create the Endpoint/Protocol and logical Port");
+				logger.error("Couldnt create the Endpoint / logical Port");
+				throw new InstantiationException("Couldnt create the Endpoint / logical Port");
 			}
-			this.logger.debug("Created Logical Port "+lport.toString());
+			logger.debug("done building Logical Port "+lport.toString());
 
 			
 		} catch (ParseException e) {
-			this.logger.error("Cant get the LogicalPort's ID / type. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
+			logger.error("Cant get the LogicalPort's ID / type. XML doc:");
+			logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
 			throw new InstantiationException("Cant create the logical port");
 		} catch (XPathExpressionException e) {
-			this.logger.error("Error in XPATH expression for new LogicalPort's EndPoint/Protocol XML configuration. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
-			e.printStackTrace();
-			throw new InstantiationException("Cant create the logical port");
-		} catch (TransformerException e) {
-			this.logger.error("Error in transforming new LogicalPort's EndPoint/Protocol XML configuration. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
+			logger.error("Error in XPATH expression for new LogicalPort's EndPoint/Protocol XML configuration. XML doc:");
+			logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
 			throw new InstantiationException("Cant create the logical port");
 		} catch (ParserConfigurationException e) {
-			this.logger.error("Error in transforming new LogicalPort's EndPoint/Protocol XML configuration. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
+			logger.error("Error in transforming new LogicalPort's EndPoint/Protocol XML configuration. XML doc:");
+			logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
 			throw new InstantiationException("Cant create the logical port");
+		} catch (ConfigurationException e) {
+			logger.error("Error in Protocol's XML configuration.");
+			e.printStackTrace();
+			throw new InstantiationException("Cant configure the protocol");
 		}
 	
 		return lport;
