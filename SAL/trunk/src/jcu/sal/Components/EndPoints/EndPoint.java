@@ -3,20 +3,18 @@
  */
 package jcu.sal.Components.EndPoints;
 
+import java.util.Hashtable;
+
 import jcu.sal.Components.AbstractComponent;
 import jcu.sal.Components.Identifiers.EndPointID;
-import jcu.sal.utils.Slog;
-
-import org.apache.log4j.Logger;
 
 
 /**
  * @author gilles
  *
  */
-public abstract class EndPoint extends AbstractComponent {
+public abstract class EndPoint extends AbstractComponent<EndPointID> {
 
-	private Logger logger = Logger.getLogger(EndPoint.class);
 	public static final String ENDPOINTPARAMNAME_TAG = "name";
 	public static final String ENDPOINTPARAM_TAG = "Param";
 	public static final String ENDPOINTTYPE_TAG = "type";
@@ -25,12 +23,11 @@ public abstract class EndPoint extends AbstractComponent {
 	/**
 	 * 
 	 */
-	public EndPoint() {
+	public EndPoint(EndPointID i, String t, Hashtable<String,String> c) {
 		super();
-		Slog.setupLogger(this.logger);
-		this.logger.debug("ctor Endpoint");
-		id = new EndPointID("");
-		type = new String("");
+		id = i;
+		type = t;
+		config = c;
 	}
 	
 	/**

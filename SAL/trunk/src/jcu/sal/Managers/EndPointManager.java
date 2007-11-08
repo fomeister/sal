@@ -4,6 +4,7 @@
 package jcu.sal.Managers;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -59,30 +60,27 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		this.logger.debug("building EndPoint");
 		try {
 			String type = this.getComponentType(doc);
-			Identifier i = this.getComponentID(doc);
+			EndPointID i = (EndPointID) this.getComponentID(doc);
 			this.logger.debug("Component type: " +type);
 			String className = EndPointModulesList.getClassName(type);
-
-			endPoint = (EndPoint) Class.forName(className).newInstance();
-			endPoint.setConfig(getComponentConfig(doc));
-			endPoint.setID(i);
-			endPoint.setType(type);
 			
-		} catch (InstantiationException e) {
-			this.logger.error("Error in new Endpoint instanciation. XML doc:");
-			 this.logger.error(XMLhelper.toString(doc));
-			e.printStackTrace();
-			throw e;
-		} catch (IllegalAccessException e) {
-			this.logger.error("Error in new Endpoint instanciation. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
-			e.printStackTrace();
-			throw new InstantiationException();
-		} catch (ClassNotFoundException e) {
-			this.logger.error("Error in new Endpoint instanciation. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
-			e.printStackTrace();
-			throw new InstantiationException();
+			Class<?>[] p = new Class<?>[3];
+			p[0] = EndPointID.class;
+			p[1] = String.class;
+			p[2] = Hashtable.class;
+			Constructor<?> c = Class.forName(className).getConstructor(p);
+			Object[] o = new Object[3];
+			o[0] = i;
+			o[1] = type;
+			o[2] = getComponentConfig(doc);
+			endPoint = (EndPoint) c.newInstance(o);
+
+			//endPoint = (EndPoint) Class.forName(className).newInstance();
+			//endPoint = (EndPoint) Class.forName(className).getConstructor(new Array().);
+			//endPoint.setConfig(getComponentConfig(doc));
+			//endPoint.setID(i);
+			//endPoint.setType(type);
+			
 		} catch (RuntimeException e) {
 			this.logger.error("Error in new Endpoint configuration. XML doc:");
 			this.logger.error(XMLhelper.toString(doc));
@@ -93,7 +91,12 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 			this.logger.error(XMLhelper.toString(doc));
 			e.printStackTrace();
 			throw new InstantiationException();
-		} 
+		}catch (Exception e) {
+			this.logger.error("Error in new Endpoint instanciation. XML doc:");
+			 this.logger.error(XMLhelper.toString(doc));
+			e.printStackTrace();
+			throw new InstantiationException();
+		}
 		return endPoint;
 	}
 

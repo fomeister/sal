@@ -3,11 +3,13 @@
  */
 package jcu.sal.Components;
 
+import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
 
-import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -16,20 +18,20 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public abstract class AbstractComponent implements HWComponent {
+public abstract class AbstractComponent<T> implements HWComponent {
 	
 	protected Hashtable<String, String> config;
 	private Logger logger = Logger.getLogger(AbstractComponent.class);
 	protected boolean started = false;
 	protected boolean configured = false;
 	protected String type = null;
-	protected Identifier id = null;
+	protected T id = null;
 	
 	public AbstractComponent() {
 		Slog.setupLogger(this.logger);
 		config = new Hashtable<String,String>();
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#getConfig()
 	 */
@@ -50,10 +52,14 @@ public abstract class AbstractComponent implements HWComponent {
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#setConfig(java.util.Hashtable)
 	 */
-	public void setConfig(Hashtable<String, String> config) throws RuntimeException
+	public void updateConfig(Hashtable<String, String> config) throws RuntimeException
 	{
-		this.config = config;
-		parseConfig();
+		if (!started) {
+			this.config = config;
+			parseConfig();
+		} else {
+			logger.debug("NOT IMPLEMENTED: attempting to change the configuration while running");
+		}
 	}
 	
 	/* (non-Javadoc)
@@ -86,11 +92,23 @@ public abstract class AbstractComponent implements HWComponent {
 	public abstract String toString();
 	
 	/**
+	 * Dumps the contents of the configuration table
+	 */
+	public void dumpConfig() {
+		this.logger.debug("current configuration for " + id.toString() +":" );
+		Enumeration<String> keys = config.keys();
+		Collection<String> cvalues = config.values();
+		Iterator<String> iter = cvalues.iterator();
+		while ( keys.hasMoreElements() &&  iter.hasNext())
+		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
+	}
+	
+	/**
 	 * Sets the type of a component
 	 * @param t the type
 	 */
 			
-	public void setType(String t) {
+	protected void setType(String t) {
 		this.type = t;
 	}
 
@@ -99,7 +117,7 @@ public abstract class AbstractComponent implements HWComponent {
 	 * @param i the Identifier
 	 */
 			
-	public void setID(Identifier i) {
+	protected void setID(T i) {
 		this.id = i;
 	}
 	
@@ -117,7 +135,7 @@ public abstract class AbstractComponent implements HWComponent {
 	 * @return the Identifier
 	 */
 			
-	public Identifier getID() {
+	public T getID() {
 		return this.id;
 	}
 }

@@ -6,7 +6,9 @@ package jcu.sal.Components.EndPoints;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Hashtable;
 
+import jcu.sal.Components.Identifiers.EndPointID;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -23,10 +25,11 @@ public class UsbEndPoint extends EndPoint {
 	/**
 	 * 
 	 */
-	public UsbEndPoint() {
-		super();
+	public UsbEndPoint(EndPointID i, String t, Hashtable<String,String> c) {
+		super(i,t,c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor USBEndPoint");
+		parseConfig();
 	}
 
 	/* (non-Javadoc)
@@ -42,7 +45,7 @@ public class UsbEndPoint extends EndPoint {
 			if(!b.readLine().contains("Bus"))
 				throw new RuntimeException("Did not detect USB ports");
 			configured = true;
-			this.logger.debug("USB EndPoint initialised");
+			this.logger.debug("Yes we have. USB EndPoint initialised");
 		} catch (IOException e) {
 			e.printStackTrace();
 			this.logger.debug("Problem capturing output of lsusb");

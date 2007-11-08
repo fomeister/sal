@@ -13,7 +13,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.EndPoints.EndPoint;
-import jcu.sal.Components.Identifiers.EndPointID;
 import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.Components.Identifiers.LogicalPortID;
 import jcu.sal.Components.LogicalPorts.LogicalPort;
@@ -61,7 +60,7 @@ public class LogicalPortManager extends ManagerFactory<LogicalPort> {
 
 		this.logger.debug("building LogicalPort");
 		try {
-			Identifier i = this.getComponentID(doc);
+			LogicalPortID i = (LogicalPortID) this.getComponentID(doc);
 			String type = getComponentType(doc);
 			this.logger.debug("LogicalPort name " + i.getName());
 			//Create the Endpoint
@@ -72,9 +71,7 @@ public class LogicalPortManager extends ManagerFactory<LogicalPort> {
 			//TODO 
 			
 			if(e!=null) { // TODO && Protocol != null
-				lport = new LogicalPort(e);
-				lport.setID(i);
-				lport.setType(type);
+				lport = new LogicalPort(i, type, e);
 			} else {
 				this.logger.error("Couldnt create the Endpoint/Protocol and logical Port");
 				throw new InstantiationException("Couldnt create the Endpoint/Protocol and logical Port");
@@ -130,7 +127,7 @@ public class LogicalPortManager extends ManagerFactory<LogicalPort> {
 	protected Identifier getComponentID(Document doc) throws ParseException {
 		Identifier id = null;
 		try {
-			id = new EndPointID(XMLhelper.getAttributeFromName("//" + LOGICALPORT_TAG, LOGICALPORTNAME_TAG, doc));
+			id = new LogicalPortID(XMLhelper.getAttributeFromName("//" + LOGICALPORT_TAG, LOGICALPORTNAME_TAG, doc));
 		} catch (XPathExpressionException e) {
 			this.logger.error("Couldnt find the logical port name");
 			e.printStackTrace();
@@ -163,7 +160,6 @@ public class LogicalPortManager extends ManagerFactory<LogicalPort> {
 		l.destroyComponent(new LogicalPortID("usb2"));
 		l.destroyComponent(new LogicalPortID("serial0"));
 		l.destroyComponent(new LogicalPortID("eth0"));
-		l.destroyComponent(new LogicalPortID("IDU"));
 		l.destroyComponent(new LogicalPortID("IDU2"));
 	}
 }

@@ -3,6 +3,9 @@
  */
 package jcu.sal.Components.EndPoints;
 
+import java.util.Hashtable;
+
+import jcu.sal.Components.Identifiers.EndPointID;
 import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
 
@@ -18,10 +21,11 @@ public class FSEndPoint extends EndPoint {
 	/**
 	 * 
 	 */
-	public FSEndPoint() {
-		super();
+	public FSEndPoint(EndPointID i, String t, Hashtable<String,String> c) {
+		super(i,t,c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor FSEndPoint");
+		parseConfig();
 	}
 
 	/* (non-Javadoc)
@@ -66,7 +70,9 @@ public class FSEndPoint extends EndPoint {
 	}
 	
 	public static void main(String[] args) {
-		FSEndPoint e = new FSEndPoint();
+		Hashtable<String,String> c = new Hashtable<String,String>();
+		c.put("","");
+		FSEndPoint e = new FSEndPoint(new EndPointID("fs"), "fs", c);
 		e.parseConfig();
 	}
 }
