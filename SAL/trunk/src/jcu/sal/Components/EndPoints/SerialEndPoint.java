@@ -126,5 +126,7 @@ public class SerialEndPoint extends EndPoint {
 				System.out.println("Port: " +portId.getName() + " - Currently used? " + portId.isCurrentlyOwned());
 			} 
 		}
+		
+		/* Tries building a serial EndPoint*/
 	}
 }

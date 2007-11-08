@@ -5,10 +5,10 @@ package jcu.sal.Components.EndPoints;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Hashtable;
 
 import jcu.sal.Components.Identifiers.EndPointID;
+import jcu.sal.utils.ProcessHelper;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -40,9 +40,10 @@ public class UsbEndPoint extends EndPoint {
 		// Check if we have any USB ports on this platform
 		this.logger.debug("check if we have USB ports.");
 		try {
-			Process p = Runtime.getRuntime().exec("lsusb");
-			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			if(!b.readLine().contains("Bus"))
+			BufferedReader b[] = ProcessHelper.captureOutputs("lsusb");
+/*			Process p = Runtime.getRuntime().exec("lsusb");
+			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));*/
+			if(!b[0].readLine().contains("Bus"))
 				throw new RuntimeException("Did not detect USB ports");
 			configured = true;
 			this.logger.debug("Yes we have. USB EndPoint initialised");
@@ -82,5 +83,10 @@ public class UsbEndPoint extends EndPoint {
 			this.logger.debug("Stopping USB Endpoint.");
 			started=false;
 		}
+	}
+	
+	public static void main(String[] args) {
+		/* tries to build a USB EndPoint */
+		new UsbEndPoint(new EndPointID("usb"), "usb", new Hashtable<String,String>());
 	}
 }

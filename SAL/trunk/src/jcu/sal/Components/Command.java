@@ -14,14 +14,16 @@ import jcu.sal.utils.XMLhelper;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
+
 public class Command {
 	
 	private Logger logger = Logger.getLogger(Protocol.class);
 	private Hashtable<String,String> parameters;
+	//private int cid;
 	public static final String COMMAND_TAG = "Command";
 	public static final String PARAMETER_TAG = "Param";
 	
-	public Command(int c, Document d) throws ParseException {
+	public Command(Document d) throws ParseException {
 		Slog.setupLogger(this.logger);
 		ArrayList<String> xml = null;
 		parameters = new Hashtable<String, String>();
@@ -45,4 +47,6 @@ public class Command {
 		}
 
 	}
+	
+	
 }

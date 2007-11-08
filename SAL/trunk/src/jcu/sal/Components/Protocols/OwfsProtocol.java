@@ -5,7 +5,6 @@ package jcu.sal.Components.Protocols;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Hashtable;
 
 import javax.management.BadAttributeValueExpException;
@@ -26,6 +25,7 @@ public class OwfsProtocol extends Protocol {
 
 	private Logger logger = Logger.getLogger(OwfsProtocol.class);
 	public final static String OWFSLOCATION_TAG = "Location";
+	public final static String OWFSMOUNTPOINT_TAG = "MountPoint";
 	
 	/**
 	 * 
@@ -50,30 +50,38 @@ public class OwfsProtocol extends Protocol {
 	 */
 	@Override
 	protected void parseConfig() throws RuntimeException {
-		//concurrent instances of owfs can coexist as long as their mount point is different
-		//Check whether an instance is is using the same mount point as ours
-		
+		String mtpt, temp;
+		logger.debug("Checking OWFS software");
 
-		//Check that OWFS is installed
-		logger.debug("Checking OWFS version");
 		try {
-			Process p = ProcessHelper.createProcess(getConfig(OWFSLOCATION_TAG) + " --version");
-			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			while(b.ready()) logger.debug(b.readLine());
-			b = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-			while(b.ready()) logger.debug(b.readLine());
+			mtpt = getConfig(OWFSMOUNTPOINT_TAG);
+			if(mtpt.length()==0) throw new BadAttributeValueExpException("Empty mount point directive...");
+			
+			//concurrent instances of owfs can coexist as long as their mount points are different
+			//Check whether instances of owfs are using the same mount point as ours
+			if(ProcessHelper.getRunningProcessArgs("owfs").containsValue(mtpt)) {
+				logger.error("An instance of owfs seems to be using the same mountpoint as ours: " + mtpt);
+				throw new BadAttributeValueExpException("Wrong OWFS mount point configuration");
+			}
 
+			//Next, we check that OWFS is installed in the given directory
+			this.logger.debug("Detecting OWFS version");
+			BufferedReader[] b = ProcessHelper.captureOutputs(getConfig(OWFSLOCATION_TAG) + " --version");
+			while((temp = b[0].readLine()) != null) logger.debug(temp);
+			while((temp = b[1].readLine()) != null) logger.debug(temp);
+			
+			configured = true;
+			logger.debug("OWFS protocol configured");
+			
 		} catch (IOException e) {
-			this.logger.debug("Could NOT run/read from owfs");
+			this.logger.error("Could NOT run/read owfs");
 			e.printStackTrace();
-			throw new RuntimeException("Did not detect OWFS");
+			throw new RuntimeException("Could NOT run/read owfs");
 		} catch (BadAttributeValueExpException e) {
-			this.logger.debug("unable to find OWFS configuration directives...");
+			this.logger.error("incorrect OWFS configuration directives...");
 			e.printStackTrace();
-			throw new RuntimeException("Did not detect OWFS");
+			throw new RuntimeException("Could not setup OWFS protocol");
 		}
-		
-
 	}
 
 	/* (non-Javadoc)
@@ -116,6 +124,7 @@ public class OwfsProtocol extends Protocol {
 	public static void main(String[] args) {
 		Hashtable<String, String> c = new Hashtable<String, String>();
 		c.put(OwfsProtocol.OWFSLOCATION_TAG, "/opt/owfs/bin/owfs");
+		c.put(OwfsProtocol.OWFSMOUNTPOINT_TAG, "/mnt/w1");
 		OwfsProtocol o = new OwfsProtocol(new ProtocolID("owfs"), "owfs", c);
 		o.dumpConfig();
 	}
