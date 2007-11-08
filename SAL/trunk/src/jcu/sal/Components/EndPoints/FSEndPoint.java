@@ -70,9 +70,7 @@ public class FSEndPoint extends EndPoint {
 	}
 	
 	public static void main(String[] args) {
-		Hashtable<String,String> c = new Hashtable<String,String>();
-		c.put("","");
-		FSEndPoint e = new FSEndPoint(new EndPointID("fs"), "fs", c);
-		e.parseConfig();
+		/* tries building a new FSEndPoint */
+		new FSEndPoint(new EndPointID("fs"), "fs", new Hashtable<String,String>());
 	}
 }

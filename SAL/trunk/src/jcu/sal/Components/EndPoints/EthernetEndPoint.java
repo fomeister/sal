@@ -134,9 +134,10 @@ public class EthernetEndPoint extends EndPoint {
 	}
 	
 	public static void main(String[] args) {
+		/* Tries building a new ethernet Endpoint*/
 		Hashtable<String,String> c = new Hashtable<String,String>();
 		c.put("EthernetDevice","eth0");
-		EthernetEndPoint e = new EthernetEndPoint(new EndPointID("eth0"), "ethernet", c);
-		e.parseConfig();
+		c.put("IPAddress","");
+		new EthernetEndPoint(new EndPointID("eth0"), "ethernet", c);
 	}
 }
