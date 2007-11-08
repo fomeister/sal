@@ -33,8 +33,8 @@ public class EndPointModulesList {
 	{	
 		String c = e.table.get(type);
 		if (c==null) {
-			e.logger.error("Cant find the class name from EndPointID: " + type);
-			throw new ClassNotFoundException("Cant find the class name from EndPointID: " + type);
+			e.logger.error("Cant find the class name from EndPoint type: " + type);
+			throw new ClassNotFoundException("Cant find the class name from EndPoint type: " + type);
 		}
 		else e.logger.debug("Found class " + c + " for type " + type);
 		

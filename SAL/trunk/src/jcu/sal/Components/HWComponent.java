@@ -22,7 +22,7 @@ public interface HWComponent {
 	 * @param config the component's configuration
 	 * 
 	 */
-	public void setConfig(Hashtable<String, String> config) throws RuntimeException;
+	public void updateConfig(Hashtable<String, String> config) throws RuntimeException;
 	
 	/**
 	 * Retrieves the component'entire configuration

@@ -7,10 +7,13 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
+import java.util.Hashtable;
 
 import javax.management.BadAttributeValueExpException;
 
+import jcu.sal.Components.Identifiers.EndPointID;
 import jcu.sal.utils.Slog;
+
 import org.apache.log4j.Logger;
 
 
@@ -28,14 +31,15 @@ public class EthernetEndPoint extends EndPoint {
 	/**
 	 * 
 	 */
-	public EthernetEndPoint() {
-		super();
+	public EthernetEndPoint(EndPointID i, String t, Hashtable<String,String> c) {
+		super(i, t, c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor EthernetEndPoint");
+		parseConfig();
 	}
 
 	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#parseConfig()
+	 * @see jcu.sal.Components.AbstractComponent#updateConfig()
 	 */
 	@Override
 	protected void parseConfig() throws RuntimeException {
@@ -77,14 +81,19 @@ public class EthernetEndPoint extends EndPoint {
 			
 			if(found) {
 				this.logger.debug("Found ethernet port: " + n.getDisplayName());
-				if (!n.isUp()) throw new RuntimeException("The ethernet port is down");
+				if (!n.isUp()) {
+					this.logger.error("The ethernet port is down");
+					throw new RuntimeException("The ethernet port is down");
+				}
 				this.configured = true;
 				this.logger.debug("The ethernet port was successfully configured");
-			} else 
+			} else {
+				this.logger.error("The ethernet port could not be found");
 				throw new RuntimeException("The ethernet port could not be found");
+			}
 		} catch (SocketException e) {
+			this.logger.error("Couldnt find the ethernet port...");
 			e.printStackTrace();
-			this.logger.debug("Couldnt find the ethernet port...");
 			throw new RuntimeException("Couldnt find the ethernet port...");
 		} catch (BadAttributeValueExpException e) {
 			this.logger.debug("Bad ethernet EndPoint XML config");
@@ -125,7 +134,9 @@ public class EthernetEndPoint extends EndPoint {
 	}
 	
 	public static void main(String[] args) {
-		EthernetEndPoint e = new EthernetEndPoint();
+		Hashtable<String,String> c = new Hashtable<String,String>();
+		c.put("EthernetDevice","eth0");
+		EthernetEndPoint e = new EthernetEndPoint(new EndPointID("eth0"), "ethernet", c);
 		e.parseConfig();
 	}
 }

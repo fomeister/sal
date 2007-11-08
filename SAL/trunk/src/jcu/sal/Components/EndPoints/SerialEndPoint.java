@@ -4,6 +4,8 @@
 package jcu.sal.Components.EndPoints;
 
 import java.util.Enumeration;
+import java.util.Hashtable;
+
 import javax.comm.CommPortIdentifier;
 import javax.comm.NoSuchPortException;
 import javax.comm.PortInUseException;
@@ -11,6 +13,7 @@ import javax.comm.SerialPort;
 import javax.comm.UnsupportedCommOperationException;
 import javax.management.BadAttributeValueExpException;
 
+import jcu.sal.Components.Identifiers.EndPointID;
 import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
 
@@ -32,10 +35,11 @@ public class SerialEndPoint extends EndPoint {
 	/**
 	 * 
 	 */
-	public SerialEndPoint() {
-		super();
+	public SerialEndPoint(EndPointID i, String t, Hashtable<String,String> c) {
+		super(i,t,c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor SerialEndPoint");
+		parseConfig();
 	}
 
 	/* (non-Javadoc)

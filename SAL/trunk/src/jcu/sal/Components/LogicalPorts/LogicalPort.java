@@ -3,9 +3,13 @@
  */
 package jcu.sal.Components.LogicalPorts;
 
+import java.util.Hashtable;
+
 import jcu.sal.Components.AbstractComponent;
 import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Identifiers.LogicalPortID;
+import jcu.sal.Components.Identifiers.SensorID;
+import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -15,9 +19,10 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public class LogicalPort extends AbstractComponent {
+public class LogicalPort extends AbstractComponent<LogicalPortID> {
 	
-	private EndPoint ep = null;
+	private EndPoint ep;
+	private Hashtable<SensorID, Sensor> sensorTable;
 	//private Protocol p = null;
 
 	private Logger logger = Logger.getLogger(LogicalPort.class);
@@ -25,22 +30,14 @@ public class LogicalPort extends AbstractComponent {
 	/**
 	 * 
 	 */
-	public LogicalPort() {
+	public LogicalPort(LogicalPortID i, String t, EndPoint e) {
 		super();
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor LogicalPort");
-		id = new LogicalPortID("");
-		type = new String("");
-	}
-	
-	/**
-	 * 
-	 */
-	public LogicalPort(EndPoint e) {
-		this();
-		this.ep = e;
-		/* do not use any other var here as they are not initialised yet
-		they will be after the creator calls setID and setType */
+		id = i;
+		type =t;
+		ep = e;
+		sensorTable = new Hashtable<SensorID, Sensor>();
 	}
 		
 	
@@ -61,6 +58,7 @@ public class LogicalPort extends AbstractComponent {
 	@Override
 	public void stop() {
 		this.logger.debug("Stopping logical port" + toString());
+		ep.stop();
 	}
 
 	@Override
