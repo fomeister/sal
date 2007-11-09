@@ -13,7 +13,7 @@ import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 /**
  * Creates manager classes, which create, delete and manage components (Endpoints, Protocol, ...)
@@ -31,11 +31,11 @@ public abstract class ManagerFactory<T> {
 	}
 	/**
 	 * Creates the component from a DOM document
-	 * @param doc the DOM document
+	 * @param n the DOM document
 	 * @return the component
 	 * @throws InstantiationException 
 	 */
-	protected abstract T build(Document doc) throws InstantiationException;
+	protected abstract T build(Node n) throws InstantiationException;
 	
 	/**
 	 * Deletes the component and give the subclass a chance to turn things off properly
@@ -45,40 +45,40 @@ public abstract class ManagerFactory<T> {
 	
 	/**
 	 * returns the type of a component from its DOM document
-	 * @param doc the DOM document
+	 * @param n the DOM document
 	 * @return the type of the component
 	 */
-	protected abstract String getComponentType(Document doc) throws ParseException;
+	protected abstract String getComponentType(Node n) throws ParseException;
 	
 	/**
 	 * returns the name of a component from its DOM document
-	 * @param doc the DOM document
+	 * @param n the DOM document
 	 * @return the ID of the component
 	 */
-	protected abstract Identifier getComponentID(Document doc) throws ParseException;
+	protected abstract Identifier getComponentID(Node n) throws ParseException;
 	
 	/**
 	 * returns the configuration directives for this component
-	 * @param doc the DOM document
+	 * @param n the DOM document
 	 * @return the config directives in a hastable
 	 */
-	protected abstract Hashtable<String,String> getComponentConfig(Document doc) throws ParseException;
+	protected abstract Hashtable<String,String> getComponentConfig(Node n);
 	
 	/**
 	 * Create a new instance of a fully configured component from its DOM document
-	 * @param doc
+	 * @param n the XML configuration node
 	 * @return an instance of the component
 	 */
-	public T createComponent(Document doc) {
+	public T createComponent(Node n) {
 		T newc = null;
 		String type = "";
 		Identifier id= null;
 		try {
-			type = getComponentType(doc);
-			id = getComponentID(doc);
+			type = getComponentType(n);
+			id = getComponentID(n);
 			this.logger.debug("About to create a component of type " + type + " named " + id.getName());
 			if(!ctable.containsKey(id)) {
-				newc = build(doc);
+				newc = build(n);
 				if(newc!=null) ctable.put(id, newc);
 				else this.logger.error("Couldnt create component "+type);
 			}

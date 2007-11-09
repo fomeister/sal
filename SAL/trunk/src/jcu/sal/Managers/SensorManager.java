@@ -20,7 +20,7 @@ import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 /**
@@ -53,19 +53,19 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	 * @see jcu.sal.Managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Sensor build(Document doc) throws InstantiationException {
+	protected Sensor build(Node n) throws InstantiationException {
 		Sensor sensor = null;
 		this.logger.debug("building Sensor");
 		try {
-			String type = this.getComponentType(doc);
-			SensorID i = (SensorID) this.getComponentID(doc);
+			String type = this.getComponentType(n);
+			SensorID i = (SensorID) this.getComponentID(n);
 			this.logger.debug("Component type: " +type);
 
-			sensor = new Sensor(i, type, getComponentConfig(doc));
+			sensor = new Sensor(i, type, getComponentConfig(n));
 			
 		} catch (ParseException e) {
 			this.logger.error("Error while parsing the DOM document. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
+			this.logger.error(XMLhelper.toString(n));
 			e.printStackTrace();
 			throw new InstantiationException();
 		} 
@@ -76,28 +76,24 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentConfig(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Hashtable<String, String> getComponentConfig(Document doc) throws ParseException {
+	protected Hashtable<String, String> getComponentConfig(Node n){
 		ArrayList<String> xml = null;
 		Hashtable<String, String> config = new Hashtable<String, String>();
 		String name = null, value = null;
 		
 		try {
-			xml = XMLhelper.getAttributeListFromElements("//" + Sensor.SENSORPARAM_TAG, doc);
+			xml = XMLhelper.getAttributeListFromElements("//" + Sensor.SENSORPARAM_TAG, n);			
+			Iterator<String> iter = xml.iterator();
+			while(iter.hasNext()) {
+				iter.next();
+				name = iter.next();
+				iter.next();
+				value = iter.next();
+				config.put(name,value);
+			}
 		} catch (XPathExpressionException e) {
-			this.logger.error("Cannot find parameters for this Sensor");
-			throw new ParseException("Cannot find parameters for this Sensor", 0);
+			this.logger.error("Did not find any parameters for this Sensor");
 		}
-		
-		Iterator<String> iter = xml.iterator();
-		
-		while(iter.hasNext()) {
-			iter.next();
-			name = iter.next();
-			iter.next();
-			value = iter.next();
-			config.put(name,value);
-		}
-		
 		return config;
 	}
 	
@@ -105,7 +101,7 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
 	 */
 	@Override
-	protected String getComponentType(Document doc) throws ParseException{
+	protected String getComponentType(Node n) throws ParseException{
 		return new String(Sensor.SENSOR_TYPE);
 	}
 	
@@ -113,10 +109,10 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Identifier getComponentID(Document doc) throws ParseException {
+	protected Identifier getComponentID(Node n) throws ParseException {
 		Identifier id = null;
 		try {
-			id = new SensorID(XMLhelper.getAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, doc));
+			id = new SensorID(XMLhelper.getAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, n));
 		} catch (XPathExpressionException e) {
 			this.logger.error("Couldnt find the Sensor id");
 			e.printStackTrace();

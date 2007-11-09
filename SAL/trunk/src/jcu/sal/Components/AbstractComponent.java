@@ -59,6 +59,7 @@ public abstract class AbstractComponent<T> implements HWComponent {
 			this.config = config;
 			parseConfig();
 		} else {
+			// TODO
 			logger.debug("NOT IMPLEMENTED: attempting to change the configuration while running");
 		}
 	}
@@ -81,7 +82,7 @@ public abstract class AbstractComponent<T> implements HWComponent {
 	/**
 	 * Parses the component's configuration directives stored in config,
 	 * and applies them
-	 * @throws RuntimeException Indicates a error parsing/setting configuration. 
+	 * @throws ConfigurationException Indicates a error parsing/setting configuration. 
 	 * Most likely there is a problem with the component's configuration
 	 */
 	protected abstract void parseConfig() throws ConfigurationException;
