@@ -61,7 +61,6 @@ public class UsbEndPoint extends EndPoint {
 	@Override
 	public void remove() {
 		//Not much to do here...
-		this.logger.debug("Removing USB Endpoint.");
 		if(started)
 			stop();
 		this.logger.debug("USB Endpoint removed");

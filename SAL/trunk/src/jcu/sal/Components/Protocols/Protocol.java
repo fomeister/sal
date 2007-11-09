@@ -17,9 +17,11 @@ import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Identifiers.SensorID;
 import jcu.sal.Components.Sensors.Sensor;
+import jcu.sal.Managers.EndPointManager;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
 
 
 /**
@@ -40,20 +42,24 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 		OWFS_SUPPORTED_ENDPOINTS = new Vector<String>();
 	}
 	
-	private Hashtable<SensorID, Sensor> sensors;
-	
+	protected Hashtable<SensorID, Sensor> sensors;
 	protected EndPoint ep; 
 	/**
+	 * @throws ConfigurationException 
 	 * 
 	 */
-	public Protocol(ProtocolID i, String t, Hashtable<String,String> c) {
+	public Protocol(ProtocolID i, String t, Hashtable<String,String> c, Document d) throws ConfigurationException {
 		super();
 		Slog.setupLogger(logger);		
 		id = i;
 		type = t;
 		config = c;
 		sensors = new Hashtable<SensorID, Sensor>();
-		ep = null; 
+		ep = EndPointManager.getEndPointManager().createComponent(d);
+		if(ep==null)
+			throw new ConfigurationException("Couldnt create the EdnPoint");
+		else
+			parseConfig();
 	}
 	
 	/**
@@ -99,66 +105,49 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 * @return the textual representation of the Logical Port's instance
 	 */
 	public String toString() {
-		if (ep!= null)
-			return "Protocol "+id.getName()+"("+type+"), EndPoint: " + ep.toString();
-		else
-			return "Protocol "+id.getName()+"("+type+"), EndPoint: not set yet";
+		return "Protocol "+id.getName()+"("+type+"), EndPoint: " + ep.toString();
+
 	}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#remove()
 	 */
-	public void remove() {
+	public final void remove() {
 		if(started)
 			stop();
 		internal_remove();
-		this.logger.debug("protocol removed - ENDPOINT NOT REMOVED !!!");
+		ep.remove();
+		this.logger.debug("protocol removed");
 	}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#start()
 	 */
-	public void start() throws ConfigurationException{
+	public final void start() throws ConfigurationException{
 		this.logger.debug("starting Procol");
 		if(!configured)
 			parseConfig();
 		if(!ep.isStarted())
 			ep.start();
 		internal_start();
+		started = true;
 		this.logger.debug("protocol started");
 	}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#stop()
 	 */
-	public void stop() {
+	public final void stop() {
 		this.logger.debug("stopping Procol");
-		if(started)
-			stop();
-		internal_stop();
-		if(ep.isStarted())
-			ep.stop();
+		if(started) {
+			internal_stop();
+			if(ep.isStarted())
+				ep.stop();
+			started = false;
+		}
 		this.logger.debug("protocol stopped");
 	}
-	
-	/**
-	 * Associates an EndPoint with this protocol and parse the protocol's configuration
-	 * @param ep the EndPoint
-	 * @throws ConfigurationException if there is a problem with the protocol's configuration
-	 */
-	public void setEp(EndPoint ep) throws ConfigurationException {
-		this.ep = ep;
-		if (ep!=null) {
-			if(ep.isConfigured())
-				parseConfig();
-			else
-				logger.error("EndPoint not configured, can not configure protocol");
-		} else {
-			logger.error("trying to set a null EndPoint on this protocol");
-			logger.error("therefore, Protocol configuration not parsed");
-		}
-	}
-	
+
 	/**
 	 * Sends a command to a sensor
 	 * @param c the command

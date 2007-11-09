@@ -22,7 +22,7 @@ import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 /**
@@ -55,12 +55,12 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	 * @see jcu.sal.Managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected EndPoint build(Document doc) throws InstantiationException {
+	protected EndPoint build(Node config) throws InstantiationException {
 		EndPoint endPoint = null;
 		this.logger.debug("building EndPoint");
 		try {
-			String type = this.getComponentType(doc);
-			EndPointID i = (EndPointID) this.getComponentID(doc);
+			String type = this.getComponentType(config);
+			EndPointID i = (EndPointID) this.getComponentID(config);
 			this.logger.debug("EndPoint type: " +type);
 			String className = EndPointModulesList.getClassName(type);
 			
@@ -72,24 +72,24 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 			Object[] o = new Object[3];
 			o[0] = i;
 			o[1] = type;
-			o[2] = getComponentConfig(doc);
+			o[2] = getComponentConfig(config);
 			endPoint = (EndPoint) c.newInstance(o);
 
 			this.logger.debug("Done building EndPoint " + endPoint.toString());
 			
 		} catch (RuntimeException e) {
 			this.logger.error("Error in new Endpoint configuration. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
+			this.logger.error(XMLhelper.toString(config));
 			e.printStackTrace();
 			throw new InstantiationException();
 		} catch (ParseException e) {
 			this.logger.error("Error while parsing the DOM document. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
+			this.logger.error(XMLhelper.toString(config));
 			e.printStackTrace();
 			throw new InstantiationException();
 		}catch (Exception e) {
 			this.logger.error("Error in new Endpoint instanciation. XML doc:");
-			 this.logger.error(XMLhelper.toString(doc));
+			 this.logger.error(XMLhelper.toString(config));
 			e.printStackTrace();
 			throw new InstantiationException();
 		}
@@ -100,28 +100,25 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentConfig(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Hashtable<String, String> getComponentConfig(Document doc) throws ParseException {
+	protected Hashtable<String, String> getComponentConfig(Node n){
 		ArrayList<String> xml = null;
 		Hashtable<String, String> config = new Hashtable<String, String>();
 		String name = null, value = null;
 		
 		try {
-			xml = XMLhelper.getAttributeListFromElements("//" + EndPoint.ENDPOINTPARAM_TAG, doc);
+			xml = XMLhelper.getAttributeListFromElements("//" + EndPoint.ENDPOINTPARAM_TAG, n);
+			Iterator<String> iter = xml.iterator();
+			
+			while(iter.hasNext()) {
+				iter.next();
+				name = iter.next();
+				iter.next();
+				value = iter.next();
+				config.put(name,value);
+			}
 		} catch (XPathExpressionException e) {
-			this.logger.error("Cannot find parameters for this EndPoint");
-			throw new ParseException("Cannot find parameters for this EndPoint", 0);
+			this.logger.error("Did not find any parameters for this EndPoint");
 		}
-		
-		Iterator<String> iter = xml.iterator();
-		
-		while(iter.hasNext()) {
-			iter.next();
-			name = iter.next();
-			iter.next();
-			value = iter.next();
-			config.put(name,value);
-		}
-		
 		return config;
 	}
 	
@@ -129,10 +126,10 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
 	 */
 	@Override
-	protected String getComponentType(Document doc) throws ParseException{
+	protected String getComponentType(Node n) throws ParseException{
 		String type = null;
 		try {
-			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, doc);
+			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, n);
 		} catch (XPathExpressionException e) {
 			this.logger.error("Couldnt find the EndPoint type");
 			e.printStackTrace();
@@ -145,10 +142,10 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Identifier getComponentID(Document doc) throws ParseException {
+	protected Identifier getComponentID(Node n) throws ParseException {
 		Identifier id = null;
 		try {
-			id = new EndPointID(XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTNAME_TAG, doc));
+			id = new EndPointID(XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTNAME_TAG, n));
 		} catch (XPathExpressionException e) {
 			this.logger.error("Couldnt find the EndPoint name");
 			e.printStackTrace();

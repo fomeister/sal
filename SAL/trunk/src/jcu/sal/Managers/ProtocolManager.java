@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 
-import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
@@ -23,6 +22,7 @@ import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 /**
  * @author gilles
@@ -54,41 +54,42 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @see jcu.sal.Managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Protocol build(Document doc) throws InstantiationException {
+	protected Protocol build(Node config) throws InstantiationException {
 		Protocol p = null;
+		Node n = null;
 		this.logger.debug("building Protocol");
 		try {
-			String type = this.getComponentType(doc);
-			ProtocolID i = (ProtocolID) this.getComponentID(doc);
+			String type = this.getComponentType(config);
+			ProtocolID i = (ProtocolID) this.getComponentID(config);
 			this.logger.debug("Protocol type: " +type);
 			String className = ProtocolModulesList.getClassName(type);
 
-			Class<?>[] params = new Class<?>[3];
+			Class<?>[] params = new Class<?>[4];
 			params[0] = ProtocolID.class;
 			params[1] = String.class;
 			params[2] = Hashtable.class;
+			params[3] = Document.class;
 			Constructor<?> c = Class.forName(className).getConstructor(params);
-			Object[] o = new Object[3];
+			Object[] o = new Object[4];
 			o[0] = i;
 			o[1] = type;
-			o[2] = getComponentConfig(doc);
+			o[2] = getComponentConfig(config);
+			logger.debug("Protocol config: " + XMLhelper.toString(config));
+			n = XMLhelper.getNode("/" + Protocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config);
+			o[3] = XMLhelper.createDocument(n);
+			logger.debug("EndPoint config: " + XMLhelper.toString((Document) o[3])); 
 			p = (Protocol) c.newInstance(o);
 			
-			this.logger.debug("done building protocol"+p.toString());
+			this.logger.debug("done building protocol "+p.toString());
 			
-		} catch (RuntimeException e) {
-			this.logger.error("Error in new Protocol configuration. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
-			e.printStackTrace();
-			throw new InstantiationException();
 		} catch (ParseException e) {
 			this.logger.error("Error while parsing the DOM document. XML doc:");
-			this.logger.error(XMLhelper.toString(doc));
-			e.printStackTrace();
+			this.logger.error(XMLhelper.toString(config));
+			//e.printStackTrace();
 			throw new InstantiationException();
 		}catch (Exception e) {
 			this.logger.error("Error in new Protocol instanciation. XML doc:");
-			 this.logger.error(XMLhelper.toString(doc));
+			 this.logger.error(XMLhelper.toString(config));
 			e.printStackTrace();
 			throw new InstantiationException();
 		}
@@ -99,27 +100,25 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentConfig(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Hashtable<String, String> getComponentConfig(Document doc) throws ParseException {
+	protected Hashtable<String, String> getComponentConfig(Node n){
 		ArrayList<String> xml = null;
 		Hashtable<String, String> config = new Hashtable<String, String>();
 		String name = null, value = null;
 		
 		try {
-			xml = XMLhelper.getAttributeListFromElements("//" + Protocol.PROTOCOLPARAM_TAG, doc);
+			xml = XMLhelper.getAttributeListFromElements("//" + Protocol.PROTOCOLPARAM_TAG, n);
+			Iterator<String> iter = xml.iterator();
+			while(iter.hasNext()) {
+				iter.next();
+				name = iter.next();
+				iter.next();
+				value = iter.next();
+				config.put(name,value);
+			}
 		} catch (XPathExpressionException e) {
-			this.logger.error("Cannot find parameters for this Protocol");
-			throw new ParseException("Cannot find parameters for this Protocol", 0);
+			this.logger.debug("Did not find any parameters for this Protocol");
 		}
 		
-		Iterator<String> iter = xml.iterator();
-		
-		while(iter.hasNext()) {
-			iter.next();
-			name = iter.next();
-			iter.next();
-			value = iter.next();
-			config.put(name,value);
-		}
 		
 		return config;
 	}
@@ -128,10 +127,10 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
 	 */
 	@Override
-	protected String getComponentType(Document doc) throws ParseException{
+	protected String getComponentType(Node n) throws ParseException{
 		String type = null;
 		try {
-			type = XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLTYPE_TAG, doc);
+			type = XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLTYPE_TAG, n);
 		} catch (XPathExpressionException e) {
 			this.logger.error("Couldnt find the protocol type");
 			e.printStackTrace();
@@ -144,10 +143,10 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Identifier getComponentID(Document doc) throws ParseException {
+	protected Identifier getComponentID(Node n) throws ParseException {
 		Identifier id = null;
 		try {
-			id = new ProtocolID(XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLNAME_TAG, doc));
+			id = new ProtocolID(XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLNAME_TAG, n));
 		} catch (XPathExpressionException e) {
 			this.logger.error("Couldnt find the Protocol name");
 			e.printStackTrace();
@@ -161,7 +160,6 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 */
 	@Override
 	protected void remove(Protocol component) {
-		component.stop();
 		component.remove();
 	}
 
@@ -169,41 +167,13 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	public static void main(String[] args)  {
 		ProtocolManager e = getProcotolManager();
 		Protocol p = null;
-		EndPointManager epm = EndPointManager.getEndPointManager();
-		EndPoint ep = null;
 		try {
-			ep = epm.createComponent(XMLhelper.createDocument("<EndPoint name='usb1' type='usb' />"));
-
-			if(ep!=null) {
-				p = e.createComponent(XMLhelper.createDocument("<Protocol name='1wirefs' type='owfs'><parameters><Param name='Location' value='/opt/owfs/bin/owfs' /><Param name='MountPoint' value='/mnt/w1' /></parameters></Protocol>"));
-				if(p!=null)
-					p.setEp(ep);
-				else 
-					e.destroyComponent(p.getID());
-			}
+			p = e.createComponent(XMLhelper.createDocument("<Protocol name='1wirefs' type='owfs'><EndPoint name='usb' type='usb' /><parameters><Param name='Location' value='/opt/owfs/bin/owfs' /><Param name='MountPoint' value='/mnt/w1' /></parameters></Protocol>"));
 		} catch (ParserConfigurationException ex) {
 			System.out.println("Cannot parse Endpoint / PRotocol configuration");
-		}  catch (ConfigurationException ex) {
-			// TODO Auto-generated catch block
-			ex.printStackTrace();
-			System.out.println("Cannot configure PRotocol");
 		}
+		
 		if(p!=null)
 			e.destroyComponent(p.getID());
-		if(ep!=null)
-			epm.destroyComponent(ep.getID());
-
-		/*e.createComponent(XMLhelper.createDocument("<EndPoint name='usb2' type='usb' />"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='eth0' /><Param name='IPAddress' value='' /></parameters></EndPoint>"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='files' type='fs' />"));
-		
-		e.destroyComponent(new ProtocolID("eth01"));
-		e.destroyComponent(new ProtocolID("usb1"));
-		e.destroyComponent(new EndPointID("usb2"));
-		e.destroyComponent(new EndPointID("serial0"));
-		e.destroyComponent(new EndPointID("eth0"));
-		e.destroyComponent(new EndPointID("files"));*/
 	}
 }

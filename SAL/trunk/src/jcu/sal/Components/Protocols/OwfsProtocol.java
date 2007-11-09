@@ -10,14 +10,17 @@ import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
+import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.Components.Command;
 import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.ProcessHelper;
 import jcu.sal.utils.Slog;
+import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
 
 /**
  * @author gilles
@@ -25,25 +28,23 @@ import org.apache.log4j.Logger;
  */
 public class OwfsProtocol extends Protocol {
 
-	private Logger logger = Logger.getLogger(OwfsProtocol.class);
-	public final static String OWFSLOCATION_TAG = "Location";
-	public final static String OWFSMOUNTPOINT_TAG = "MountPoint";
+	private static Logger logger = Logger.getLogger(OwfsProtocol.class);
+	public final static String OWFSLOCATIONATTRIBUTE_TAG = "Location";
+	public final static String OWFSMOUNTPOINTATTRIBUTE_TAG = "MountPoint";
 
 	static { 
+		Slog.setupLogger(logger);
 		OWFS_SUPPORTED_ENDPOINTS.add("usb");
 		OWFS_SUPPORTED_ENDPOINTS.add("serial");
 	}
 	
 	
 	/**
+	 * @throws ConfigurationException 
 	 * 
 	 */
-	public OwfsProtocol(ProtocolID i, String t, Hashtable<String,String> c) {
-		super(i,t,c);
-		Slog.setupLogger(logger);
-		//parseConfig can not be called here, and configured can not be set to true here
-		//since we are missing our EndPoint, so all of this is differed to setEp()
-		
+	public OwfsProtocol(ProtocolID i, String t, Hashtable<String,String> c, Document d) throws ConfigurationException {
+		super(i,t,c,d);
 	}
 
 	/* (non-Javadoc)
@@ -71,10 +72,10 @@ public class OwfsProtocol extends Protocol {
 				logger.error(iter.next());
 			throw new ConfigurationException("Wrong Endpoint type");
 		}
-			
+		logger.debug("EndPoint OK");	
 		logger.debug("2nd Check OWFS software");
 		try {
-			mtpt = getConfig(OWFSMOUNTPOINT_TAG);
+			mtpt = getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG);
 			if(mtpt.length()==0) throw new BadAttributeValueExpException("Empty mount point directive...");
 			
 			//concurrent instances of owfs can coexist as long as their mount points are different
@@ -86,7 +87,7 @@ public class OwfsProtocol extends Protocol {
 
 			//Next, we check that OWFS is installed in the given directory
 			logger.debug("Detecting OWFS version");
-			BufferedReader[] b = ProcessHelper.captureOutputs(getConfig(OWFSLOCATION_TAG) + " --version");
+			BufferedReader[] b = ProcessHelper.captureOutputs(getConfig(OWFSLOCATIONATTRIBUTE_TAG) + " --version");
 			while((temp = b[0].readLine()) != null) logger.debug(temp);
 			while((temp = b[1].readLine()) != null) logger.debug(temp);
 			
@@ -124,17 +125,15 @@ public class OwfsProtocol extends Protocol {
 	}
 
 	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#stop()
+	 * @see jcu.sal.Components.Protocol#internal_stop()
 	 */
-	@Override
-	public void stop() {
-		// TODO Auto-generated method stub
-		logger.debug("OWFS internal stopped");
-
+	protected void internal_remove() {
+		logger.debug("OWFS internal removed");
 	}
 
-
-	@Override
+	/**
+	 * Check whether all the sensors are connected, and change their status accordingly
+	 */
 	public void probeSensors() {
 		// TODO Auto-generated method stub
 		
@@ -142,18 +141,17 @@ public class OwfsProtocol extends Protocol {
 	
 	/**
 	 * @param args
+	 * @throws ParserConfigurationException 
+	 * @throws ConfigurationException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ParserConfigurationException, ConfigurationException {
+		Document d = XMLhelper.createDocument("<EndPoint name='usb' type='usb' />");
 		Hashtable<String, String> c = new Hashtable<String, String>();
-		c.put(OwfsProtocol.OWFSLOCATION_TAG, "/opt/owfs/bin/owfs");
-		c.put(OwfsProtocol.OWFSMOUNTPOINT_TAG, "/mnt/w1");
-		OwfsProtocol o = new OwfsProtocol(new ProtocolID("owfs"), "owfs", c);
+		c.put(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG, "/opt/owfs/bin/owfs");
+		c.put(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG, "/mnt/w1");
+		OwfsProtocol o = new OwfsProtocol(new ProtocolID("owfs"), "owfs", c, d);
 		o.dumpConfig();
+		o.remove();
 	}
 
-	@Override
-	protected void internal_remove() {
-		logger.debug("OWFS internal removed");
-	}
-	
 }
