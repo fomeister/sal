@@ -13,6 +13,8 @@ public class SensorState {
 	private int config_state = 0;
 	private int error_state = 0;
 	
+	public static final int STATE_UNCHANGED = -1;
+	
 	public static final int USESTATE_DISABLED = 0;
 	public static final int USESTATE_INUSE = 1;
 	public static final int USESTATE_ENABLED_IDLE = 2;
@@ -42,7 +44,11 @@ public class SensorState {
 	public int getConfigState() {return config_state;}
 	public int getErrorState() {return error_state;}
 	
-	public void setUseState(int state ) { this.use_state = state; }
-	public void setConfigState(int state ) { this.config_state = state; }
-	public void setErrorState(int state ) { this.error_state = state; }
+	private void setUseState(int state ) { if(state!=STATE_UNCHANGED)  use_state = state;} 
+	private void setConfigState(int state ) { if(state!=STATE_UNCHANGED) config_state = state;} 
+	private void setErrorState(int state ) { if(state!=STATE_UNCHANGED) error_state = state;} 
+	
+	public void setState(int us, int cs, int es) { synchronized(this) {setUseState(us); setConfigState(cs); setErrorState(es);} }
+	
+	public boolean isAvailable() { synchronized (this) {return use_state==USESTATE_ENABLED_IDLE && config_state==CONFIGSTATE_CONFIGURED && error_state==ERRORSTATE_PRESENT;}}
 }

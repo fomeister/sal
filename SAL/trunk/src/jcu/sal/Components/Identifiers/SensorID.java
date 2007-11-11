@@ -21,6 +21,7 @@ public class SensorID implements Identifier{
 	 */
 	public SensorID(String id) {
 		name = id;
+		nativeAddress = "";
 	}
 
 	/**
@@ -33,6 +34,7 @@ public class SensorID implements Identifier{
 	}
 	
 	public String getNativeAddress() { return nativeAddress; }
+	public void setNativeAddress(String s) { nativeAddress = s; }
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Identifiers.Identifier#equals(jcu.sal.Components.Identifiers.Identifier)

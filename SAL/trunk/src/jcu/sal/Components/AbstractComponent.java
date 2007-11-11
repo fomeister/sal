@@ -105,24 +105,7 @@ public abstract class AbstractComponent<T> implements HWComponent {
 		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
 	}
 	
-	/**
-	 * Sets the type of a component
-	 * @param t the type
-	 */
-			
-	protected void setType(String t) {
-		this.type = t;
-	}
 
-	/**
-	 * Sets the Identifier of a component
-	 * @param i the Identifier
-	 */
-			
-	protected void setID(T i) {
-		this.id = i;
-	}
-	
 	/**
 	 * Gets the type of a component
 	 * @return the type

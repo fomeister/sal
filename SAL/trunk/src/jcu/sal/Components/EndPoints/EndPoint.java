@@ -15,8 +15,6 @@ import jcu.sal.Components.Identifiers.EndPointID;
  */
 public abstract class EndPoint extends AbstractComponent<EndPointID> {
 
-	public static final String ENDPOINTPARAMNAME_TAG = "name";
-	public static final String ENDPOINTPARAM_TAG = "Param";
 	public static final String ENDPOINTTYPE_TAG = "type";
 	public static final String ENDPOINTNAME_TAG = "name";
 	public static final String ENPOINT_TAG="EndPoint";

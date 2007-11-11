@@ -4,6 +4,7 @@
 package jcu.sal.Agent;
 
 import javax.naming.ConfigurationException;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.Protocols.Protocol;
@@ -35,11 +36,11 @@ public class SALAgent {
 		ProtocolManager pm = ProtocolManager.getProcotolManager();
 		
 		try {
-			conf.init("/home/gilles/workspace/SALv1/src/sensors1.xml", "/home/gilles/workspace/SALv1/src/sensors.xml");
+			conf.init("/home/gilles/workspace/SALv1/src/platformConfig.xml", "/home/gilles/workspace/SALv1/src/sensors.xml");
 			d = conf.getPlatformConfig();
 			nl = XMLhelper.getNodeList("//" + Protocol.PROTOCOL_TAG, d);
 			for(int i=0; i<nl.getLength(); i++) {
-				n = nl.item(i);
+				n = XMLhelper.duplicateNode(nl.item(i));
 				logger.debug("about to create a protocol: ");
 				logger.debug(XMLhelper.toString(n));
 				pm.createComponent(n);
@@ -50,12 +51,15 @@ public class SALAgent {
 		} catch (XPathExpressionException e) {
 			logger.error("Cannot parse the XML document");
 			e.printStackTrace();
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
 	}
 	
 	public static void main(String[] args) {
-		SALAgent s = new SALAgent();
+		new SALAgent();
 	}
 
 }

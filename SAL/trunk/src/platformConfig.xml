@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<SAL>
+	<PlatformConfiguration>
+		<general>
+			<logging />
+			<readingDirectory>/home/sensor_user/readings</readingDirectory>
+		</general>
+		<protocols>
+			<Protocol name="1wirefs" type="owfs">
+				<EndPoint name="usb" type="usb" />
+				<parameters>
+					<Param name="Location" value="/opt/owfs/bin/owfs" />
+					<Param name="MountPoint" value="/mnt/w1" />
+				</parameters>
+			</Protocol>
+			<Protocol name="EMS_SNMP" type="EMS_IDU_SNMP">
+				<EndPoint name="eth0" type="ethernet">
+					<parameters>
+						<Param name="EthernetDevice" value="ath0" />
+						<Param name="IPAddress" value="192.168.3.11" />
+					</parameters>
+				</EndPoint>
+				<parameters>
+					<Param name="AgentIP" value="192.168.0.2" />
+					<Param name="CommunityString" value="EMSOLUTIONS" />
+					<Param name="SNMPVersion" value="1" />
+				</parameters>
+			</Protocol>
+			<Protocol name="PL40" type="PL40">
+				<EndPoint name="serial0" type="serial">
+					<parameters>
+						<Param name="PortSpeed" value="9600" />
+						<Param name="DataBits" value="8" />
+						<Param name="Parity" value="0" />
+						<Param name="StopBit" value="1" />
+						<Param name="PortDeviceFile" value="/dev/ttyS0" />
+					</parameters>
+				</EndPoint>
+				<parameters>
+					<Param name="CPUTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp2_input" />
+					<Param name="NBTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp1_input" />
+					<Param name="SBTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp3_input" />
+				</parameters>
+			</Protocol>
+			<Protocol name="osdata" type="PlatformData">
+				<EndPoint name="filesystem" type="fs" />
+			</Protocol>
+		</protocols>
+	</PlatformConfiguration>
+</SAL>

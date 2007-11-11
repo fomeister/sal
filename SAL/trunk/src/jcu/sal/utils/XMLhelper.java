@@ -129,6 +129,18 @@ public class XMLhelper {
     	catch (Exception e) { throw new ParserConfigurationException(); }
         return d;
     }
+    
+    /**
+     * Duplicates a node and put it in its own document
+     * @param node the XML node to be duplicated
+     * @return the node (in its new document)
+     * @throws ParserConfigurationException 
+     */   
+    public static Node duplicateNode(Node node) 
+    	throws ParserConfigurationException {
+    	Document d = createEmptyDocument();
+    	return d.appendChild(d.importNode(node,true));
+    }
 
     /**
      * Adds a child to the parent node in the DOM document
@@ -213,18 +225,13 @@ public class XMLhelper {
      */
     public static Node getNode(String xpath_expression, Document doc, boolean newdoc) throws XPathExpressionException, ParserConfigurationException {
         Node node = null;
+
         XPath xpath = XPathFactory.newInstance().newXPath();
         node = (Node) xpath.evaluate(xpath_expression, doc, XPathConstants.NODE);
-        if(newdoc) {
-        	Document d =createEmptyDocument();
-        	Element r = d.getDocumentElement();
-        	Node n = d.importNode(node,true);
-        	r.appendChild(n);
-        	
-        	
-        }
+        if(newdoc)
+        	node = duplicateNode(node);
 
-       	return node;
+        return node;
     }
     
     /**
@@ -241,15 +248,11 @@ public class XMLhelper {
      */
     public static Node getNode(String xpath_expression, Node n, boolean newdoc) throws XPathExpressionException, ParserConfigurationException {
         Node node = null;
+
         XPath xpath = XPathFactory.newInstance().newXPath();
         node = (Node) xpath.evaluate(xpath_expression, n, XPathConstants.NODE);
-        if (newdoc) {
-        	Document d =createDocument("<SAL></SAL>"); 
-        	node = d.importNode(node,true);
-        	d.getDocumentElement().appendChild(node);
-        }
-
-
+        if(newdoc)
+        	node = duplicateNode(node);
         return node;
     }
     
@@ -452,6 +455,25 @@ public class XMLhelper {
         XPath xpath = factory.newXPath();
 
         value = (String) xpath.evaluate(xpath_expression, doc, XPathConstants.STRING);
+
+        return value;
+    }
+    
+    /**
+     * Returns the value of the node corresponding to the given xpath expression or null if there is no
+     * such node.
+     * @param xpath_expression the XPATH expression
+     * @return the value of the node corresponding to the given xpath expression or null if there is no
+     * such node.
+     * @throws XPathExpressionException 
+     */
+    public static String getTextValue(String xpath_expression, Node n)
+    throws XPathExpressionException {
+        String value = null;
+        XPathFactory factory = XPathFactory.newInstance();
+        XPath xpath = factory.newXPath();
+
+        value = (String) xpath.evaluate(xpath_expression, n, XPathConstants.STRING);
 
         return value;
     }
