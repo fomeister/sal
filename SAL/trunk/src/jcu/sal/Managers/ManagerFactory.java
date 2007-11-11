@@ -4,13 +4,18 @@
 package jcu.sal.Managers;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 
+import javax.xml.xpath.XPathExpressionException;
+
+import jcu.sal.Components.HWComponent;
 import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.utils.Slog;
+import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Node;
@@ -20,10 +25,12 @@ import org.w3c.dom.Node;
  * @author gilles
  *
  */
-public abstract class ManagerFactory<T> {
+public abstract class ManagerFactory<T extends HWComponent> {
+	
+	public static String COMPONENTPARAM_TAG = "Param";
 	
 	private Logger logger = Logger.getLogger(ManagerFactory.class);
-	private Hashtable<Identifier, T> ctable;
+	protected Hashtable<Identifier, T> ctable;
 	
 	public ManagerFactory() {
 		Slog.setupLogger(this.logger);
@@ -62,7 +69,26 @@ public abstract class ManagerFactory<T> {
 	 * @param n the DOM document
 	 * @return the config directives in a hastable
 	 */
-	protected abstract Hashtable<String,String> getComponentConfig(Node n);
+	protected Hashtable<String, String> getComponentConfig(Node n){
+		ArrayList<String> xml = null;
+		Hashtable<String, String> config = new Hashtable<String, String>();
+		String name = null, value = null;
+		
+		try {
+			xml = XMLhelper.getAttributeListFromElements("//" + COMPONENTPARAM_TAG, n);			
+			Iterator<String> iter = xml.iterator();
+			while(iter.hasNext()) {
+				iter.next();
+				name = iter.next();
+				iter.next();
+				value = iter.next();
+				config.put(name,value);
+			}
+		} catch (XPathExpressionException e) {
+			this.logger.error("Did not find any parameters for this Sensor");
+		}
+		return config;
+	}
 	
 	/**
 	 * Create a new instance of a fully configured component from its DOM document
@@ -118,15 +144,15 @@ public abstract class ManagerFactory<T> {
 	 * Removes a previoulsy creatd component
 	 * @param component the component to be removed
 	 */
-/*	public void destroyComponent(T component) {
+	public void destroyComponent(T component) {
 		if(ctable.containsValue(component))
 		remove(component);
-		if(ctable.remove(component.) == null)
-			this.logger.debug("Cant remove element with key " + type +  ": No such element");
+		if(ctable.remove(component) == null)
+			this.logger.debug("Cant remove element "+ component.toString() + ": No such element");
 		else
-			this.logger.debug("Element " + type + " Removed");
-*/	
-	
+			this.logger.debug("Element " + component.toString() + " Removed");
+	}
+		
 	public void dumpTable() {
 		this.logger.debug("current table contents:" );
 		Enumeration<Identifier> keys = ctable.keys();

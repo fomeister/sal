@@ -6,21 +6,19 @@ package jcu.sal.Components.Protocols;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Hashtable;
-import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.Components.Command;
 import jcu.sal.Components.Identifiers.ProtocolID;
-import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.ProcessHelper;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 /**
  * @author gilles
@@ -34,46 +32,26 @@ public class OwfsProtocol extends Protocol {
 
 	static { 
 		Slog.setupLogger(logger);
-		OWFS_SUPPORTED_ENDPOINTS.add("usb");
-		OWFS_SUPPORTED_ENDPOINTS.add("serial");
+		SUPPORTED_ENDPOINTS.add("usb");
+		SUPPORTED_ENDPOINTS.add("serial");
 	}
 	
 	
 	/**
-	 * @throws ConfigurationException 
-	 * 
+	 * Construct the OwfsProtocol object. (parseConfig is called in super())
+	 * @throws ConfigurationException if there is a problem with the component's config
 	 */
-	public OwfsProtocol(ProtocolID i, String t, Hashtable<String,String> c, Document d) throws ConfigurationException {
+	public OwfsProtocol(ProtocolID i, String t, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super(i,t,c,d);
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.Protocols.Protocol#execute(jcu.sal.Components.Command)
-	 */
-	@Override
-	public String execute(Command c, Sensor s) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.AbstractComponent#parseConfig()
 	 */
 	@Override
-	protected void parseConfig() throws ConfigurationException {
+	protected void internal_parseConfig() throws ConfigurationException {
 		String mtpt, temp;
 
-		logger.debug("Parsing our configuration");
-		logger.debug("1st, Check the EndPoint");
-		if(!ep.isConfigured() || !OWFS_SUPPORTED_ENDPOINTS.contains(ep.getType())) {
-			logger.error("This Protocol has been setup with the wrong enpoint: got endpoint type: " +ep.getType()+", expected: ");
-			Iterator<String> iter = OWFS_SUPPORTED_ENDPOINTS.iterator();
-			while(iter.hasNext())
-				logger.error(iter.next());
-			throw new ConfigurationException("Wrong Endpoint type");
-		}
-		logger.debug("EndPoint OK");	
-		logger.debug("2nd Check OWFS software");
 		try {
 			mtpt = getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG);
 			if(mtpt.length()==0) throw new BadAttributeValueExpException("Empty mount point directive...");

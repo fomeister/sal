@@ -5,9 +5,6 @@ package jcu.sal.Managers;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -59,8 +56,8 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		try {
 			String type = this.getComponentType(n);
 			SensorID i = (SensorID) this.getComponentID(n);
+			i.setNativeAddress(getComponentNativeAddress(n));
 			this.logger.debug("Component type: " +type);
-
 			sensor = new Sensor(i, type, getComponentConfig(n));
 			
 		} catch (ParseException e) {
@@ -71,31 +68,6 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		} 
 		return sensor;
 	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Managers.ManagerFactory#getComponentConfig(org.w3c.dom.Document)
-	 */
-	@Override
-	protected Hashtable<String, String> getComponentConfig(Node n){
-		ArrayList<String> xml = null;
-		Hashtable<String, String> config = new Hashtable<String, String>();
-		String name = null, value = null;
-		
-		try {
-			xml = XMLhelper.getAttributeListFromElements("//" + Sensor.SENSORPARAM_TAG, n);			
-			Iterator<String> iter = xml.iterator();
-			while(iter.hasNext()) {
-				iter.next();
-				name = iter.next();
-				iter.next();
-				value = iter.next();
-				config.put(name,value);
-			}
-		} catch (XPathExpressionException e) {
-			this.logger.error("Did not find any parameters for this Sensor");
-		}
-		return config;
-	}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
@@ -103,6 +75,15 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	@Override
 	protected String getComponentType(Node n) throws ParseException{
 		return new String(Sensor.SENSOR_TYPE);
+	}
+	
+	protected String getComponentNativeAddress(Node n) throws ParseException{
+		try { return XMLhelper.getTextValue("//" + Sensor.SENSORADDRESSNODE_TAG, n);}
+		catch (XPathExpressionException e) {
+			logger.error("Cannot find the sensor s native address");
+			throw new ParseException("", 0);
+		} 
+
 	}
 	
 	/* (non-Javadoc)
@@ -113,7 +94,7 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		Identifier id = null;
 		try {
 			id = new SensorID(XMLhelper.getAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, n));
-		} catch (XPathExpressionException e) {
+		} catch (Exception e) {
 			this.logger.error("Couldnt find the Sensor id");
 			e.printStackTrace();
 			throw new ParseException("Couldnt create the Sensor identifier", 0);

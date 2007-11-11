@@ -6,13 +6,10 @@ package jcu.sal.Managers;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Identifiers.EndPointID;
@@ -96,31 +93,6 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		return endPoint;
 	}
 
-	/* (non-Javadoc)
-	 * @see jcu.sal.Managers.ManagerFactory#getComponentConfig(org.w3c.dom.Document)
-	 */
-	@Override
-	protected Hashtable<String, String> getComponentConfig(Node n){
-		ArrayList<String> xml = null;
-		Hashtable<String, String> config = new Hashtable<String, String>();
-		String name = null, value = null;
-		
-		try {
-			xml = XMLhelper.getAttributeListFromElements("//" + EndPoint.ENDPOINTPARAM_TAG, n);
-			Iterator<String> iter = xml.iterator();
-			
-			while(iter.hasNext()) {
-				iter.next();
-				name = iter.next();
-				iter.next();
-				value = iter.next();
-				config.put(name,value);
-			}
-		} catch (XPathExpressionException e) {
-			this.logger.error("Did not find any parameters for this EndPoint");
-		}
-		return config;
-	}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
@@ -130,7 +102,7 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		String type = null;
 		try {
 			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, n);
-		} catch (XPathExpressionException e) {
+		} catch (Exception e) {
 			this.logger.error("Couldnt find the EndPoint type");
 			e.printStackTrace();
 			throw new ParseException("Couldnt find the EndPoint type", 0);
@@ -146,7 +118,7 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		Identifier id = null;
 		try {
 			id = new EndPointID(XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTNAME_TAG, n));
-		} catch (XPathExpressionException e) {
+		} catch (Exception e) {
 			this.logger.error("Couldnt find the EndPoint name");
 			e.printStackTrace();
 			throw new ParseException("Couldnt create the EndPoint identifier", 0);

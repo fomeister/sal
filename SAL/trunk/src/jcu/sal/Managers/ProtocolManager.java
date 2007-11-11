@@ -5,12 +5,12 @@ package jcu.sal.Managers;
 
 import java.lang.reflect.Constructor;
 import java.text.ParseException;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
 
+import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Identifiers.Identifier;
@@ -21,7 +21,6 @@ import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 /**
@@ -56,7 +55,6 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	@Override
 	protected Protocol build(Node config) throws InstantiationException {
 		Protocol p = null;
-		Node n = null;
 		this.logger.debug("building Protocol");
 		try {
 			String type = this.getComponentType(config);
@@ -64,20 +62,15 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			this.logger.debug("Protocol type: " +type);
 			String className = ProtocolModulesList.getClassName(type);
 
-			Class<?>[] params = new Class<?>[4];
-			params[0] = ProtocolID.class;
-			params[1] = String.class;
-			params[2] = Hashtable.class;
-			params[3] = Document.class;
+			Class<?>[] params = {ProtocolID.class, String.class, Hashtable.class, Node.class};
 			Constructor<?> c = Class.forName(className).getConstructor(params);
 			Object[] o = new Object[4];
 			o[0] = i;
 			o[1] = type;
 			o[2] = getComponentConfig(config);
 			logger.debug("Protocol config: " + XMLhelper.toString(config));
-			n = XMLhelper.getNode("/" + Protocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config);
-			o[3] = XMLhelper.createDocument(n);
-			logger.debug("EndPoint config: " + XMLhelper.toString((Document) o[3])); 
+			o[3] = XMLhelper.getNode("/" + Protocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config, true);
+			logger.debug("EndPoint config: " + XMLhelper.toString((Node) o[3])); 
 			p = (Protocol) c.newInstance(o);
 			
 			this.logger.debug("done building protocol "+p.toString());
@@ -90,37 +83,10 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		}catch (Exception e) {
 			this.logger.error("Error in new Protocol instanciation. XML doc:");
 			 this.logger.error(XMLhelper.toString(config));
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw new InstantiationException();
 		}
 		return p;
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Managers.ManagerFactory#getComponentConfig(org.w3c.dom.Document)
-	 */
-	@Override
-	protected Hashtable<String, String> getComponentConfig(Node n){
-		ArrayList<String> xml = null;
-		Hashtable<String, String> config = new Hashtable<String, String>();
-		String name = null, value = null;
-		
-		try {
-			xml = XMLhelper.getAttributeListFromElements("//" + Protocol.PROTOCOLPARAM_TAG, n);
-			Iterator<String> iter = xml.iterator();
-			while(iter.hasNext()) {
-				iter.next();
-				name = iter.next();
-				iter.next();
-				value = iter.next();
-				config.put(name,value);
-			}
-		} catch (XPathExpressionException e) {
-			this.logger.debug("Did not find any parameters for this Protocol");
-		}
-		
-		
-		return config;
 	}
 	
 	/* (non-Javadoc)
@@ -131,7 +97,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		String type = null;
 		try {
 			type = XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLTYPE_TAG, n);
-		} catch (XPathExpressionException e) {
+		} catch (Exception e) {
 			this.logger.error("Couldnt find the protocol type");
 			e.printStackTrace();
 			throw new ParseException("Couldnt find the protocol type", 0);
@@ -147,7 +113,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		Identifier id = null;
 		try {
 			id = new ProtocolID(XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLNAME_TAG, n));
-		} catch (XPathExpressionException e) {
+		} catch (Exception e) {
 			this.logger.error("Couldnt find the Protocol name");
 			e.printStackTrace();
 			throw new ParseException("Couldnt create the Protocol identifier", 0);
@@ -161,6 +127,22 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	@Override
 	protected void remove(Protocol component) {
 		component.remove();
+	}
+	
+
+	/**
+	 * Starts all the components at once
+	 * @return the config directives in a hastable
+	 */
+	public void startAll(){
+		Collection<Protocol> cvalues = ctable.values();
+		Iterator<Protocol> iter = cvalues.iterator();
+		while (iter.hasNext()) {
+			Protocol e = iter.next();
+		   logger.debug("Starting protocol" + e.toString());
+		   try { e.start(); }
+		   catch (ConfigurationException ex) { logger.error("Couldnt start protocol " + e.toString()); }
+		}
 	}
 
 	
