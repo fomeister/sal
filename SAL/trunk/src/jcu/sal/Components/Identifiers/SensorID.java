@@ -11,9 +11,7 @@ package jcu.sal.Components.Identifiers;
 public class SensorID implements Identifier{
 	/* the name of the SensorID */
 	private String name;
-	
-	/* the name of the SensorID */
-	private String nativeAddress;
+
 	
 	/**
 	 * Creates a new SensorID with an initial name
@@ -21,20 +19,8 @@ public class SensorID implements Identifier{
 	 */
 	public SensorID(String id) {
 		name = id;
-		nativeAddress = "";
-	}
-
-	/**
-	 * Creates a new SensorID with an initial name and a native Address
-	 * @param id
-	 */
-	public SensorID(String id, String address) {
-		name = id;
-		nativeAddress = address;
 	}
 	
-	public String getNativeAddress() { return nativeAddress; }
-	public void setNativeAddress(String s) { nativeAddress = s; }
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Identifiers.Identifier#equals(jcu.sal.Components.Identifiers.Identifier)

@@ -145,14 +145,47 @@ public abstract class ManagerFactory<T extends HWComponent> {
 	 * @param component the component to be removed
 	 */
 	public void destroyComponent(T component) {
-		if(ctable.containsValue(component))
-		remove(component);
-		if(ctable.remove(component) == null)
+		Identifier i = null;
+		if(ctable.containsValue(component)) {
+			Enumeration<Identifier> keys = ctable.keys();
+			Collection<T> cvalues = ctable.values();
+			Iterator<T> iter = cvalues.iterator();
+			while ( keys.hasMoreElements() &&  iter.hasNext()) {
+				i = keys.nextElement();
+				if(iter.next() == component) {
+					destroyComponent(i);
+					break;
+				}
+			}
+		} else 
 			this.logger.debug("Cant remove element "+ component.toString() + ": No such element");
-		else
-			this.logger.debug("Element " + component.toString() + " Removed");
 	}
-		
+	
+	/** 
+	 * Removes all previoulsy creatd components
+	 *
+	 */
+	public void destroyAllComponents() {
+		this.logger.debug("removing all components" );
+		Collection<T> cvalues = ctable.values();
+		Iterator<T> iter = cvalues.iterator();
+		while (iter.hasNext())
+			destroyComponent(iter.next());
+	}
+	
+	/** 
+	 * Get a component based on its identifer
+	 * @param i the identifier
+	 *
+	 */
+	public T getComponent(Identifier i) {
+		return ctable.get(i);
+	}
+	
+	/**
+	 * Prints the content of this manager's component table
+	 *
+	 */	
 	public void dumpTable() {
 		this.logger.debug("current table contents:" );
 		Enumeration<Identifier> keys = ctable.keys();

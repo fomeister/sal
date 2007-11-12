@@ -5,9 +5,7 @@ package jcu.sal.Components.Protocols;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.Collection;
 import java.util.Hashtable;
-import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
@@ -117,26 +115,22 @@ public class OSDataProtocol extends Protocol {
 	/**
 	 * Check whether all the sensors are connected, and change their status accordingly
 	 */
-	public void probeSensors() throws ConfigurationException{
-		Sensor s = null;
-		boolean error = false;
-		logger.debug("probing sensors");
-		Collection<Sensor> c = sensors.values();
-		Iterator<Sensor> iter = c.iterator();
-		while(iter.hasNext()) {
-			s = iter.next();
-			if(supportedSensors.containsKey(s.getNativeAddress())) {
-				logger.debug("found sensor " + s.toString());
-				try {
-					ProcessHelper.captureOutputs(supportedSensors.get(s.getNativeAddress()));
-				} catch (IOException e) {
-					logger.error("Cannot read from the sensor");
-					error = true;
-				}
+	public void probeSensor(Sensor sensor) throws ConfigurationException{
+		if(supportedSensors.containsKey(sensor.getNativeAddress())) {
+			logger.debug("Sensor " + sensor.toString()+" supported");
+			try {
+				ProcessHelper.captureOutputs(supportedSensors.get(sensor.getNativeAddress()));
+				logger.debug("Sensor probed successfully");
+			} catch (IOException e) {
+				logger.error("Cannot read from the sensor");
+				throw new ConfigurationException();
 			}
-		}		
-		if(error) throw new ConfigurationException();
+		} else {
+			logger.debug("Sensor not supported");
+			throw new ConfigurationException();
+		}
 	}
+	
 	
 	public String getReading(Hashtable<String,String> c, Sensor s) {
 		logger.debug("getReading method called on sensor " +s.toString());
@@ -151,6 +145,9 @@ public class OSDataProtocol extends Protocol {
 	public static void main(String[] args) throws ParserConfigurationException, ConfigurationException {
 		Document d = XMLhelper.createDocument("<EndPoint name='osData' type='fs' />");
 		Hashtable<String, String> c = new Hashtable<String, String>();
+		c.put("CPUTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp2_input");
+		c.put("NBTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp1_input");
+		c.put("SBTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp3_input");
 		SensorID sid = new SensorID("fictifSensor");
 		Sensor s = new Sensor(sid, "Sensor",c);
 		OSDataProtocol o = new OSDataProtocol(new ProtocolID("OSData"), "OSData", c, d);

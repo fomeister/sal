@@ -5,27 +5,34 @@ package jcu.sal.Config;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
+import jcu.sal.Components.Protocols.Protocol;
+import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * @author gilles
  * Makes configuration documents available to SAL components
  */
-public class ConfigService {
+public class ConfigService{
 	
 	public static String PLATFORMCONFIG_TAG = "PlatformConfiguration";
 	public static String SENSORCONFIG_TAG = "SensorConfiguration";
 	
-	private Document platformconfig = null, sensorconfig = null;  
+	private Document platformconfig, sensorconfig;
+	private Vector<Node> cprotocol, csensor;
 	
 	private Logger logger = Logger.getLogger(ConfigService.class);
 	private static ConfigService c =  new ConfigService();
@@ -34,18 +41,34 @@ public class ConfigService {
 	
 	private ConfigService() {
 		Slog.setupLogger(this.logger);
+		cprotocol = new Vector<Node>();
+		csensor = new Vector<Node>();
 	}
 	
 	public void init(String platformConfigFile, String sensorConfigFile) throws ConfigurationException{
+		NodeList nl = null;
 		try {
 			platformconfig = XMLhelper.createDocument(new File(platformConfigFile));
 			sensorconfig = XMLhelper.createDocument(new File(sensorConfigFile));
+			
+			nl = XMLhelper.getNodeList("//" + Protocol.PROTOCOL_TAG, platformconfig);
+			for(int i=0; i<nl.getLength(); i++)
+				cprotocol.add(XMLhelper.duplicateNode(nl.item(i)));
+			
+			nl = XMLhelper.getNodeList("//" + Sensor.SENSOR_TAG, sensorconfig);
+			for(int i=0; i<nl.getLength(); i++)
+				csensor.add(XMLhelper.duplicateNode(nl.item(i)));
+			
 		} catch (ParserConfigurationException e) {
 			logger.error("Could not parse the XML configuration file");
 			e.printStackTrace();
 			throw new ConfigurationException();
 		} catch (IOException e) {
 			logger.error("Could not find configuration file: " + e.getMessage());
+			e.printStackTrace();
+			throw new ConfigurationException();
+		} catch (XPathExpressionException e) {
+			logger.error("Could not parse the XML configuration file");
 			e.printStackTrace();
 			throw new ConfigurationException();
 		}
@@ -55,6 +78,7 @@ public class ConfigService {
 		Document d = null;
 		try {
 			d = XMLhelper.getSubDocument("//" + PLATFORMCONFIG_TAG, platformconfig);
+			
 		} catch (XPathExpressionException e) {
 			logger.error("error parsing the document");
 			e.printStackTrace();
@@ -71,6 +95,14 @@ public class ConfigService {
 			e.printStackTrace();
 		}
 		return d;
+	}
+	
+	public Iterator<Node> getProtocolIterator() {
+		return cprotocol.iterator();
+	}
+	
+	public Iterator<Node> getSensorIterator() {
+		return csensor.iterator();
 	}
 	
 	public static void main(String[] args) throws ConfigurationException {

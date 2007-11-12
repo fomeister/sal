@@ -21,8 +21,10 @@ public class Sensor extends AbstractComponent<SensorID> {
 	private SensorState state;
 	public static final String SENSOR_TAG= "Sensor";
 	public static final String SENSORID_TAG= "sid";
-	public static final String SENSORADDRESSNODE_TAG= "Address";
+	public static final String SENSORADDRESSATTRIBUTE_TAG= "Address";
+	public static final String PROTOCOLATTRIBUTE_TAG = "ProtocolName";
 	public static final String SENSOR_TYPE = "Sensor";
+	
 	private Logger logger = Logger.getLogger(Sensor.class);
 	
 	/**
@@ -46,7 +48,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 	
 	public String getNativeAddress() {
-		return id.getNativeAddress();
+		return config.get(SENSORADDRESSATTRIBUTE_TAG);
 	}
 	
 	public boolean isAvailable() {
@@ -55,10 +57,53 @@ public class Sensor extends AbstractComponent<SensorID> {
 		}
 	}
 	
+	public void setAvailable() {
+		synchronized(this) {
+			state.setStateAvailable();
+		}
+	}
+	
+	public void setUseState(int s) {
+		synchronized(this) {
+			state.setState(s,SensorState.STATE_UNCHANGED,SensorState.STATE_UNCHANGED);
+		}
+	}
+	
+	public void setConfigState(int s) {
+		synchronized(this) {
+			state.setState(SensorState.STATE_UNCHANGED,s,SensorState.STATE_UNCHANGED);
+		}
+	}
+	
+	public void setErrorState(int s) {
+		synchronized(this) {
+			state.setState(SensorState.STATE_UNCHANGED,SensorState.STATE_UNCHANGED,s);
+		}
+	}
+	
+	public int getUseState() {
+		synchronized(this) {
+			return state.getUseState();
+		}
+	}
+		
+	public int getConfigState() {
+		synchronized(this) {
+			return state.getConfigState();
+		}
+	}
+	
+	public int getErrorState() {
+		synchronized(this) {
+			return state.getErrorState();
+		}
+	}
+	
 	@Override
 	protected void parseConfig() {
-		state.setState(SensorState.USESTATE_ENABLED_IDLE,SensorState.CONFIGSTATE_CONFIGURED, SensorState.ERRORSTATE_PRESENT);
+		setAvailable();
 	}
+	
 	@Override
 	public void remove() {
 		this.logger.debug("Removing sensor " + toString());

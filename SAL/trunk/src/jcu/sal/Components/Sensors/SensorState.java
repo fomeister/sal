@@ -7,7 +7,7 @@ package jcu.sal.Components.Sensors;
  * @author gilles
  *
  */
-public class SensorState {
+class SensorState {
 	
 	private int use_state = 0;
 	private int config_state = 0;
@@ -51,4 +51,6 @@ public class SensorState {
 	public void setState(int us, int cs, int es) { synchronized(this) {setUseState(us); setConfigState(cs); setErrorState(es);} }
 	
 	public boolean isAvailable() { synchronized (this) {return use_state==USESTATE_ENABLED_IDLE && config_state==CONFIGSTATE_CONFIGURED && error_state==ERRORSTATE_PRESENT;}}
+	
+	public void setStateAvailable() { synchronized (this) {use_state=USESTATE_ENABLED_IDLE; config_state=CONFIGSTATE_CONFIGURED; error_state=ERRORSTATE_PRESENT;}}
 }

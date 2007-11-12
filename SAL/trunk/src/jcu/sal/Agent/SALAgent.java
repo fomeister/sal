@@ -3,20 +3,20 @@
  */
 package jcu.sal.Agent;
 
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
+import java.util.Iterator;
 
-import jcu.sal.Components.Protocols.Protocol;
+import javax.management.BadAttributeValueExpException;
+import javax.naming.ConfigurationException;
+
+import jcu.sal.Components.Identifiers.ProtocolID;
+import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Config.ConfigService;
 import jcu.sal.Managers.ProtocolManager;
+import jcu.sal.Managers.SensorManager;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /**
  * @author gilles
@@ -29,33 +29,34 @@ public class SALAgent {
 	public SALAgent() {
 		Slog.setupLogger(logger);
 		
-		Document d = null;
-		NodeList nl = null;
-		Node n = null;
+		Sensor s = null;
 		ConfigService conf = ConfigService.getService();
 		ProtocolManager pm = ProtocolManager.getProcotolManager();
+		SensorManager sm = SensorManager.getSensorManager();
 		
 		try {
-			conf.init("/home/gilles/workspace/SALv1/src/platformConfig.xml", "/home/gilles/workspace/SALv1/src/sensors.xml");
-			d = conf.getPlatformConfig();
-			nl = XMLhelper.getNodeList("//" + Protocol.PROTOCOL_TAG, d);
-			for(int i=0; i<nl.getLength(); i++) {
-				n = XMLhelper.duplicateNode(nl.item(i));
-				logger.debug("about to create a protocol: ");
-				logger.debug(XMLhelper.toString(n));
-				pm.createComponent(n);
+			conf.init("/home/gilles/workspace/SALv1/src/platformConfig-osdata.xml", "/home/gilles/workspace/SALv1/src/sensors.xml");
+			Iterator<Node> iter = conf.getProtocolIterator();
+			while(iter.hasNext()) {
+				pm.createComponent(iter.next());
 			}
-			
 		} catch (ConfigurationException e) {
 			logger.error("Could not read the configuration files.");
-		} catch (XPathExpressionException e) {
-			logger.error("Cannot parse the XML document");
-			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} 
 		
+		Iterator<Node> iter = conf.getSensorIterator();
+		while(iter.hasNext()) {
+			s = sm.createComponent(iter.next());
+			try {
+				pm.getComponent(new ProtocolID(s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG))).addSensor(s);
+			} catch (BadAttributeValueExpException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} 
+		
+		pm.dumpTable();
+		pm.destroyAllComponents();
 	}
 	
 	public static void main(String[] args) {
