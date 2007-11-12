@@ -28,6 +28,7 @@ import org.w3c.dom.Node;
 public class OwfsProtocol extends Protocol {
 
 	private static Logger logger = Logger.getLogger(OwfsProtocol.class);
+	public final static String OWFSPROTOCOL_TYPE = "owfs";
 	public final static String OWFSLOCATIONATTRIBUTE_TAG = "Location";
 	public final static String OWFSMOUNTPOINTATTRIBUTE_TAG = "MountPoint";
 
@@ -42,8 +43,8 @@ public class OwfsProtocol extends Protocol {
 	 * Construct the OwfsProtocol object. (parseConfig is called in super())
 	 * @throws ConfigurationException if there is a problem with the component's config
 	 */
-	public OwfsProtocol(ProtocolID i, String t, Hashtable<String,String> c, Node d) throws ConfigurationException {
-		super(i,t,c,d);
+	public OwfsProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
+		super(i,OWFSPROTOCOL_TYPE ,c,d);
 	}
 
 	/* (non-Javadoc)
@@ -128,7 +129,7 @@ public class OwfsProtocol extends Protocol {
 		Hashtable<String, String> c = new Hashtable<String, String>();
 		c.put(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG, "/opt/owfs/bin/owfs");
 		c.put(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG, "/mnt/w1");
-		OwfsProtocol o = new OwfsProtocol(new ProtocolID("owfs"), "owfs", c, d);
+		OwfsProtocol o = new OwfsProtocol(new ProtocolID("owfs", "owfs"), c, d);
 		o.dumpConfig();
 		o.remove();
 	}

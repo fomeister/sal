@@ -16,6 +16,7 @@ import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Protocols.Protocol;
+import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.ProtocolModulesList;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -57,20 +58,18 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		Protocol p = null;
 		this.logger.debug("building Protocol");
 		try {
-			String type = this.getComponentType(config);
-			ProtocolID i = (ProtocolID) this.getComponentID(config);
-			this.logger.debug("Protocol type: " +type);
-			String className = ProtocolModulesList.getClassName(type);
+			ProtocolID i = (ProtocolID) getComponentID(config);
+			this.logger.debug("Protocol type: " + i.getType());
+			String className = ProtocolModulesList.getClassName(i.getType());
 
-			Class<?>[] params = {ProtocolID.class, String.class, Hashtable.class, Node.class};
+			Class<?>[] params = {ProtocolID.class, Hashtable.class, Node.class};
 			Constructor<?> c = Class.forName(className).getConstructor(params);
-			Object[] o = new Object[4];
+			Object[] o = new Object[3];
 			o[0] = i;
-			o[1] = type;
-			o[2] = getComponentConfig(config);
+			o[1] = getComponentConfig(config);
 			logger.debug("Protocol config: " + XMLhelper.toString(config));
-			o[3] = XMLhelper.getNode("/" + Protocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config, true);
-			logger.debug("EndPoint config: " + XMLhelper.toString((Node) o[3])); 
+			o[2] = XMLhelper.getNode("/" + Protocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config, true);
+			logger.debug("EndPoint config: " + XMLhelper.toString((Node) o[2])); 
 			p = (Protocol) c.newInstance(o);
 			
 			this.logger.debug("done building protocol "+p.toString());
@@ -90,31 +89,17 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	}
 	
 	/* (non-Javadoc)
-	 * @see jcu.sal.Managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
-	 */
-	@Override
-	protected String getComponentType(Node n) throws ParseException{
-		String type = null;
-		try {
-			type = XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLTYPE_TAG, n);
-		} catch (Exception e) {
-			this.logger.error("Couldnt find the protocol type");
-			e.printStackTrace();
-			throw new ParseException("Couldnt find the protocol type", 0);
-		}
-		return type;
-	}
-	
-	/* (non-Javadoc)
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
 	protected Identifier getComponentID(Node n) throws ParseException {
 		Identifier id = null;
+		String type = null;
 		try {
-			id = new ProtocolID(XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLNAME_TAG, n));
+			type = XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLTYPE_TAG, n);
+			id = new ProtocolID(XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLNAME_TAG, n), type);
 		} catch (Exception e) {
-			this.logger.error("Couldnt find the Protocol name");
+			this.logger.error("Couldnt create the Protocol identifier");
 			e.printStackTrace();
 			throw new ParseException("Couldnt create the Protocol identifier", 0);
 		}
@@ -139,10 +124,32 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		Iterator<Protocol> iter = cvalues.iterator();
 		while (iter.hasNext()) {
 			Protocol e = iter.next();
-		   logger.debug("Starting protocol" + e.toString());
-		   try { e.start(); }
-		   catch (ConfigurationException ex) { logger.error("Couldnt start protocol " + e.toString()); }
+			logger.debug("Starting protocol" + e.toString());
+			try { e.start(); }
+			catch (ConfigurationException ex) { logger.error("Couldnt start protocol " + e.toString()); }
 		}
+	}
+	
+	/**
+	 * Adds a sensor to the appropriate protocol
+	 * @return the protocol to which the sensor has been added 
+	 * @throws ConfigurationException if the sensor cannot be added (wrong ProtocolName field probably)
+	 */
+	public Protocol addSensor(Sensor sensor) throws ConfigurationException{
+		Collection<Protocol> cvalues = ctable.values();
+		Iterator<Protocol> iter = cvalues.iterator();
+		while (iter.hasNext()) {
+			Protocol p = iter.next();
+			if(sensor.getProtocolName().equals(p.getID().getName())) {			
+				logger.debug("Adding sensor " + sensor.toString() + " to Protocol " + p.getID().toString());
+				p.addSensor(sensor);
+				return p;
+			}
+		}
+		/* if we get here the sensor couldnt be added */
+		logger.error("The sensor " + sensor.getID().toString() + " couldnt be added because ");
+		logger.error("no protocol named " + sensor.getProtocolName() +" could be found");
+		throw new ConfigurationException();
 	}
 
 	

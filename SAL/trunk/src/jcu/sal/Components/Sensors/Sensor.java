@@ -30,12 +30,12 @@ public class Sensor extends AbstractComponent<SensorID> {
 	/**
 	 * 
 	 */
-	public Sensor(SensorID i, String t, Hashtable<String,String> c) {
+	public Sensor(SensorID i, Hashtable<String,String> c) {
 		super();
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor Sensor");
 		id = i;
-		type = t;
+		type = SENSOR_TYPE;
 		config = c;
 		state = new SensorState();
 		parseConfig();
@@ -49,6 +49,10 @@ public class Sensor extends AbstractComponent<SensorID> {
 	
 	public String getNativeAddress() {
 		return config.get(SENSORADDRESSATTRIBUTE_TAG);
+	}
+	
+	public String getProtocolName() {
+		return config.get(PROTOCOLATTRIBUTE_TAG);
 	}
 	
 	public boolean isAvailable() {
@@ -110,7 +114,8 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 	@Override
 	public void start() {
-		this.logger.debug("Starting sensor " + toString());
+		if(isAvailable()) { this.logger.debug("Starting sensor " + toString());}
+		else this.logger.debug("Cant start sensor " + toString() + " , sensor not available");
 	}
 	@Override
 	public void stop() {

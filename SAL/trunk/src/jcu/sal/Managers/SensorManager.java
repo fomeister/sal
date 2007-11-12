@@ -53,10 +53,9 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		Sensor sensor = null;
 		this.logger.debug("building Sensor");
 		try {
-			String type = this.getComponentType(n);
 			SensorID i = (SensorID) this.getComponentID(n);
-			this.logger.debug("Component type: " +type);
-			sensor = new Sensor(i, type, getComponentConfig(n));
+			this.logger.debug("Component type: " + i.getType());
+			sensor = new Sensor(i, getComponentConfig(n));
 			
 		} catch (ParseException e) {
 			this.logger.error("Error while parsing the DOM document. XML doc:");
@@ -68,22 +67,13 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	}
 	
 	/* (non-Javadoc)
-	 * @see jcu.sal.Managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
-	 */
-	@Override
-	protected String getComponentType(Node n) throws ParseException{
-		return new String(Sensor.SENSOR_TYPE);
-	}
-
-	
-	/* (non-Javadoc)
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
 	protected Identifier getComponentID(Node n) throws ParseException {
 		Identifier id = null;
 		try {
-			id = new SensorID(XMLhelper.getAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, n));
+			id = new SensorID(XMLhelper.getAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, n), Sensor.SENSOR_TYPE);
 		} catch (Exception e) {
 			this.logger.error("Couldnt find the Sensor id");
 			e.printStackTrace();
@@ -109,11 +99,11 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		e.createComponent(XMLhelper.createDocument("<Sensor sid='6'><parameters><Param name='LogicalPortID' value='IDU' /><Param name='Address' value='1.3.6.1.4.1.10132.7.1.4.7.0' /><Param name='SamplingInterval' value='10' /></parameters></Sensor>"));
 		Sensor o = e.createComponent(XMLhelper.createDocument("<Sensor sid='7'><parameters><Param name='LogicalPortID' value='PL40' /><Param name='Address' value='1.3.6.1.4.1.10132.7.1.4.7.0' /><Param name='SamplingInterval' value='10' /></parameters></Sensor>"));
 		o.dumpConfig();
-		e.destroyComponent(new SensorID("eth01"));
-		e.destroyComponent(new SensorID("6"));
-		e.destroyComponent(new SensorID("usb2"));
-		e.destroyComponent(new SensorID("7"));
-		e.destroyComponent(new SensorID("eth0"));
-		e.destroyComponent(new SensorID("files"));
+		e.destroyComponent(new SensorID("eth01", Sensor.SENSOR_TYPE));
+		e.destroyComponent(new SensorID("6", Sensor.SENSOR_TYPE));
+		e.destroyComponent(new SensorID("usb2", Sensor.SENSOR_TYPE));
+		e.destroyComponent(new SensorID("7", Sensor.SENSOR_TYPE));
+		e.destroyComponent(new SensorID("eth0", Sensor.SENSOR_TYPE));
+		e.destroyComponent(new SensorID("files", Sensor.SENSOR_TYPE));
 	}
 }

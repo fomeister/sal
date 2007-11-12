@@ -25,11 +25,12 @@ import org.apache.log4j.Logger;
  */
 public class SerialEndPoint extends EndPoint {
 
-	public static final String PORTDEVICEATTRIBUTE_TAG="PortDeviceFile";
-	public static final String PORTSPEEDATTRIBUTE_TAG="PortSpeed";
-	public static final String DATABITSATTRIBUTE_TAG="DataBits";
-	public static final String PARITYATTRIBUTE_TAG="Parity";
-	public static final String STOPBITATTRIBUTE_TAG="StopBit";
+	public static final String PORTDEVICEATTRIBUTE_TAG = "PortDeviceFile";
+	public static final String PORTSPEEDATTRIBUTE_TAG = "PortSpeed";
+	public static final String DATABITSATTRIBUTE_TAG = "DataBits";
+	public static final String PARITYATTRIBUTE_TAG = "Parity";
+	public static final String STOPBITATTRIBUTE_TAG = "StopBit";
+	public static final String SERIALENDPOINT_TYPE = "serial";
 	
 	private Logger logger = Logger.getLogger(SerialEndPoint.class);
 	
@@ -37,8 +38,8 @@ public class SerialEndPoint extends EndPoint {
 	 * @throws ConfigurationException 
 	 * 
 	 */
-	public SerialEndPoint(EndPointID i, String t, Hashtable<String,String> c) throws ConfigurationException {
-		super(i,t,c);
+	public SerialEndPoint(EndPointID i,  Hashtable<String,String> c) throws ConfigurationException {
+		super(i,SERIALENDPOINT_TYPE,c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor SerialEndPoint");
 		parseConfig();

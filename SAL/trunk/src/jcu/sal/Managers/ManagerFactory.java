@@ -51,13 +51,6 @@ public abstract class ManagerFactory<T extends HWComponent> {
 	protected abstract void remove(T component);
 	
 	/**
-	 * returns the type of a component from its DOM document
-	 * @param n the DOM document
-	 * @return the type of the component
-	 */
-	protected abstract String getComponentType(Node n) throws ParseException;
-	
-	/**
 	 * returns the name of a component from its DOM document
 	 * @param n the DOM document
 	 * @return the ID of the component
@@ -97,26 +90,24 @@ public abstract class ManagerFactory<T extends HWComponent> {
 	 */
 	public T createComponent(Node n) {
 		T newc = null;
-		String type = "";
 		Identifier id= null;
 		try {
-			type = getComponentType(n);
 			id = getComponentID(n);
-			this.logger.debug("About to create a component of type " + type + " named " + id.getName());
+			this.logger.debug("About to create a component of type " + id.getType() + " named " + id.getName());
 			if(!ctable.containsKey(id)) {
 				newc = build(n);
 				if(newc!=null) ctable.put(id, newc);
-				else this.logger.error("Couldnt create component "+type);
+				else this.logger.error("Couldnt create component "+ id.getType());
 			}
 			else {
-				this.logger.error("Couldnt create component "+type+", it already exist");
+				this.logger.error("Couldnt create component "+ id.getType()+", it already exist");
 				return null;
 			}
 		} catch (ParseException e) {
-			this.logger.error("Couldnt parse component "+type+"'s XML doc");
+			this.logger.error("Couldnt parse component "+ id.getType()+"'s XML doc");
 			//e.printStackTrace();
 		} catch (InstantiationException e) {
-			this.logger.error("Couldnt instanciate component "+type+" from XML doc");
+			this.logger.error("Couldnt instanciate component "+ id.getType()+" from XML doc");
 			//e.printStackTrace();
 		}
 
