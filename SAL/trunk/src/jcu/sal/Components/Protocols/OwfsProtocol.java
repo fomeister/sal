@@ -12,6 +12,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.Components.Identifiers.ProtocolID;
+import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.ProcessHelper;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -130,6 +131,12 @@ public class OwfsProtocol extends Protocol {
 		OwfsProtocol o = new OwfsProtocol(new ProtocolID("owfs"), "owfs", c, d);
 		o.dumpConfig();
 		o.remove();
+	}
+
+	@Override
+	public void probeSensor(Sensor sensor) throws ConfigurationException {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

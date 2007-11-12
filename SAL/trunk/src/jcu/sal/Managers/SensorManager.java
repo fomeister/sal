@@ -8,7 +8,6 @@ import java.text.ParseException;
 
 import javax.management.BadAttributeValueExpException;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.Components.Identifiers.SensorID;
@@ -56,7 +55,6 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		try {
 			String type = this.getComponentType(n);
 			SensorID i = (SensorID) this.getComponentID(n);
-			i.setNativeAddress(getComponentNativeAddress(n));
 			this.logger.debug("Component type: " +type);
 			sensor = new Sensor(i, type, getComponentConfig(n));
 			
@@ -76,15 +74,7 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	protected String getComponentType(Node n) throws ParseException{
 		return new String(Sensor.SENSOR_TYPE);
 	}
-	
-	protected String getComponentNativeAddress(Node n) throws ParseException{
-		try { return XMLhelper.getTextValue("//" + Sensor.SENSORADDRESSNODE_TAG, n);}
-		catch (XPathExpressionException e) {
-			logger.error("Cannot find the sensor s native address");
-			throw new ParseException("", 0);
-		} 
 
-	}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentID(org.w3c.dom.Document)

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<SAL>
+	<PlatformConfiguration>
+		<general>
+			<logging />
+			<readingDirectory>/home/sensor_user/readings</readingDirectory>
+		</general>
+		<protocols>
+			<Protocol name="osdata" type="PlatformData">
+				<EndPoint name="filesystem" type="fs" />
+				<parameters>
+					<Param name="CPUTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp2_input" />
+					<Param name="NBTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp1_input" />
+					<Param name="SBTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp3_input" />
+				</parameters>
+			</Protocol>
+		</protocols>
+	</PlatformConfiguration>
+</SAL>

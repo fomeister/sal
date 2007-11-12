@@ -213,7 +213,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 		c.dumpCommand();
 		
 		//Check if we have the sensor
-		if (hasSensor(sid)) {
+		if (started && hasSensor(sid)) {
 			if(getSensor(sid).isAvailable()) {
 				try {
 					Class<?>[] params = {Hashtable.class,Sensor.class};
@@ -241,7 +241,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 				//TODO throw an exception here
 			}
 		} else {
-			logger.error("Sensor not present.Cannot execute the command");
+			logger.error("Sensor not present OR protocol not started.Cannot execute the command");
 			//TODO throw an exception here
 		}
 		return s;
@@ -251,7 +251,29 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 * Check whether all the sensors are connected, and change their status accordingly
 	 * @throws ConfigurationException 
 	 */
-	public abstract void probeSensors() throws ConfigurationException;
+	public void probeSensors(){
+		Sensor s = null;
+		logger.debug("probing sensors");
+		Collection<Sensor> c = sensors.values();
+		Iterator<Sensor> iter = c.iterator();
+		while(iter.hasNext()) {
+			s = iter.next();
+			try { 
+				probeSensor(s);
+				s.setAvailable();				
+			}
+			catch (ConfigurationException e) {
+			logger.error("Cannot probe sensor " + s.toString());
+			}
+		}
+	}
+	
+	/**
+	 * Check whether all the sensors are connected, and change their status accordingly
+	 * @param sensor the sensor to be probed
+	 * @throws ConfigurationException 
+	 */
+	public abstract void probeSensor(Sensor sensor) throws ConfigurationException;
 
 	/**
 	 * Get the subclass to get ready to be removed
