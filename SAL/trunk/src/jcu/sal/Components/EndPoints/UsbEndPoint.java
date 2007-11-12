@@ -23,13 +23,15 @@ import org.apache.log4j.Logger;
 public class UsbEndPoint extends EndPoint {
 
 	private Logger logger = Logger.getLogger(EndPoint.class);
+	private static final String USBENDPOINT_TYPE="usb";
+	//private UsbEndPoint uep = new UsbEndPoint(new EndPointID(""), ) 
 	
 	/**
 	 * @throws ConfigurationException 
 	 * 
 	 */
-	public UsbEndPoint(EndPointID i, String t, Hashtable<String,String> c) throws ConfigurationException {
-		super(i,t,c);
+	public UsbEndPoint(EndPointID i, Hashtable<String,String> c) throws ConfigurationException {
+		super(i,USBENDPOINT_TYPE,c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor USBEndPoint");
 		parseConfig();
@@ -90,6 +92,6 @@ public class UsbEndPoint extends EndPoint {
 	
 	public static void main(String[] args) throws ConfigurationException {
 		/* tries to build a USB EndPoint */
-		new UsbEndPoint(new EndPointID("usb"), "usb", new Hashtable<String,String>());
+		new UsbEndPoint(new EndPointID("usb1", "usb"), new Hashtable<String,String>());
 	}
 }

@@ -56,20 +56,17 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		EndPoint endPoint = null;
 		this.logger.debug("building EndPoint");
 		try {
-			String type = this.getComponentType(config);
 			EndPointID i = (EndPointID) this.getComponentID(config);
-			this.logger.debug("EndPoint type: " +type);
-			String className = EndPointModulesList.getClassName(type);
+			this.logger.debug("EndPoint type: " +i.getType());
+			String className = EndPointModulesList.getClassName(i.getType());
 			
-			Class<?>[] p = new Class<?>[3];
+			Class<?>[] p = new Class<?>[2];
 			p[0] = EndPointID.class;
-			p[1] = String.class;
-			p[2] = Hashtable.class;
+			p[1] = Hashtable.class;
 			Constructor<?> c = Class.forName(className).getConstructor(p);
-			Object[] o = new Object[3];
+			Object[] o = new Object[2];
 			o[0] = i;
-			o[1] = type;
-			o[2] = getComponentConfig(config);
+			o[1] = getComponentConfig(config);
 			endPoint = (EndPoint) c.newInstance(o);
 
 			this.logger.debug("Done building EndPoint " + endPoint.toString());
@@ -92,36 +89,21 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		}
 		return endPoint;
 	}
-
-	
-	/* (non-Javadoc)
-	 * @see jcu.sal.Managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
-	 */
-	@Override
-	protected String getComponentType(Node n) throws ParseException{
-		String type = null;
-		try {
-			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, n);
-		} catch (Exception e) {
-			this.logger.error("Couldnt find the EndPoint type");
-			e.printStackTrace();
-			throw new ParseException("Couldnt find the EndPoint type", 0);
-		}
-		return type;
-	}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
 	protected Identifier getComponentID(Node n) throws ParseException {
+		String type = null;
 		Identifier id = null;
 		try {
-			id = new EndPointID(XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTNAME_TAG, n));
+			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, n);
+			id = new EndPointID(XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTNAME_TAG, n), type);
 		} catch (Exception e) {
-			this.logger.error("Couldnt find the EndPoint name");
+			this.logger.error("Couldnt find the EndPoint ID");
 			e.printStackTrace();
-			throw new ParseException("Couldnt create the EndPoint identifier", 0);
+			throw new ParseException("Couldnt find the EndPoint ID", 0);
 		}
 		return id;
 	}
@@ -144,11 +126,11 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='eth0' /><Param name='IPAddress' value='' /></parameters></EndPoint>"));
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='files' type='fs' />"));
-		e.destroyComponent(new EndPointID("eth01"));
-		e.destroyComponent(new EndPointID("usb1"));
-		e.destroyComponent(new EndPointID("usb2"));
-		e.destroyComponent(new EndPointID("serial0"));
-		e.destroyComponent(new EndPointID("eth0"));
-		e.destroyComponent(new EndPointID("files"));
+		e.destroyComponent(new EndPointID("eth01", "ethernet"));
+		e.destroyComponent(new EndPointID("usb1", "usb"));
+		e.destroyComponent(new EndPointID("usb2", "usb"));
+		e.destroyComponent(new EndPointID("serial0", "serial"));
+		e.destroyComponent(new EndPointID("eth0", "ethernet"));
+		e.destroyComponent(new EndPointID("files", "fs"));
 	}
 }

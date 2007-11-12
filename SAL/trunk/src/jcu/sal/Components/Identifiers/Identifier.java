@@ -9,6 +9,12 @@ public interface Identifier {
 	public String getName();
 	
 	/**
+	 * Returns the type of a component from its identifier
+	 * @return a string representation of the identifier
+	 */
+	public String getType();
+	
+	/**
 	 * Sets the name of a component from a string
 	 * @param name the name of the component
 	 */

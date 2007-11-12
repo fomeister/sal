@@ -29,6 +29,8 @@ import org.w3c.dom.Node;
  */
 public class OSDataProtocol extends Protocol {
 
+	public static final String OSDATAPROTOCOL_TYPE = "PlatformData";
+	
 	private static Logger logger = Logger.getLogger(OSDataProtocol.class);
 	private static Hashtable<String,String> supportedSensors = new Hashtable<String,String>(); 
 	static { 
@@ -57,8 +59,8 @@ public class OSDataProtocol extends Protocol {
 	 * @throws ConfigurationException if there is a problem with the component's config
 	 * 
 	 */
-	public OSDataProtocol(ProtocolID i, String t, Hashtable<String,String> c, Node d) throws ConfigurationException {
-		super(i,t,c,d);
+	public OSDataProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
+		super(i,OSDATAPROTOCOL_TYPE,c,d);
 		if(c.get("CPUTempFile")!=null) supportedSensors.put("CPUTempFile","cat " + c.get("CPUTempFile"));
 		if(c.get("NBTempFile")!=null) supportedSensors.put("NBTempFile","cat " +c.get("NBTempFile"));
 		if(c.get("SBTempFile")!=null)  supportedSensors.put("SBTempFile","cat " +c.get("SBTempFile"));
@@ -148,9 +150,9 @@ public class OSDataProtocol extends Protocol {
 		c.put("CPUTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp2_input");
 		c.put("NBTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp1_input");
 		c.put("SBTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp3_input");
-		SensorID sid = new SensorID("fictifSensor");
-		Sensor s = new Sensor(sid, "Sensor",c);
-		OSDataProtocol o = new OSDataProtocol(new ProtocolID("OSData"), "OSData", c, d);
+		SensorID sid = new SensorID("fictifSensor", Sensor.SENSOR_TYPE);
+		Sensor s = new Sensor(sid,c);
+		OSDataProtocol o = new OSDataProtocol(new ProtocolID("OSData", "OSData"), c, d);
 		o.addSensor(s);
 		try {
 			o.execute(new Command("100", "param", "value"), sid);

@@ -26,6 +26,7 @@ public class EthernetEndPoint extends EndPoint {
 
 	public static final String ETHDEVICEATTRIBUTE_TAG="EthernetDevice";
 	public static final String IPADDRESSATTRIBUTE_TAG="IPAddress";
+	public static final String ETHERNETENDPOINT_TYPE="ethernet";
 	
 	private Logger logger = Logger.getLogger(EthernetEndPoint.class);
 	
@@ -33,8 +34,8 @@ public class EthernetEndPoint extends EndPoint {
 	 * @throws ConfigurationException 
 	 * 
 	 */
-	public EthernetEndPoint(EndPointID i, String t, Hashtable<String,String> c) throws ConfigurationException {
-		super(i, t, c);
+	public EthernetEndPoint(EndPointID i, Hashtable<String,String> c) throws ConfigurationException {
+		super(i, ETHERNETENDPOINT_TYPE, c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor EthernetEndPoint");
 		parseConfig();
@@ -143,6 +144,6 @@ public class EthernetEndPoint extends EndPoint {
 		Hashtable<String,String> c = new Hashtable<String,String>();
 		c.put("EthernetDevice","eth0");
 		c.put("IPAddress","");
-		new EthernetEndPoint(new EndPointID("eth0"), "ethernet", c);
+		new EthernetEndPoint(new EndPointID("eth0", "ethernet"), c);
 	}
 }

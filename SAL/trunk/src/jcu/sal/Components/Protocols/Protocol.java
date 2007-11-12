@@ -58,6 +58,9 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 		if(ep==null)
 			throw new ConfigurationException("Couldnt create the EdnPoint");
 		else {
+			/* Sets the PID field of the EndPointID */
+			ep.getID().setPid(i);
+			
 			try {
 				parseConfig();
 			} catch (ConfigurationException e) {
@@ -77,6 +80,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 				this.logger.debug("About to add sensor" + s.toString());
 				s.start();
 				sensors.put(s.getID(), s);
+				s.getID().setPid(this.id);
 		} else
 			logger.error("NOT IMPLEMENTED: ADD A SENSOR WITH PROTOCOL STARTED");
 		

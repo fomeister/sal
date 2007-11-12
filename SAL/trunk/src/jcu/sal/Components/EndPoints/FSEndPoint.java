@@ -19,13 +19,14 @@ import org.apache.log4j.Logger;
 public class FSEndPoint extends EndPoint {
 
 	private Logger logger = Logger.getLogger(FSEndPoint.class);
+	private static final String FSENDPOINT_TYPE = "fs";
 	
 	/**
 	 * @throws ConfigurationException 
 	 * 
 	 */
-	public FSEndPoint(EndPointID i, String t, Hashtable<String,String> c) throws ConfigurationException {
-		super(i,t,c);
+	public FSEndPoint(EndPointID i, Hashtable<String,String> c) throws ConfigurationException {
+		super(i,FSENDPOINT_TYPE ,c);
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor FSEndPoint");
 		parseConfig();
@@ -59,7 +60,7 @@ public class FSEndPoint extends EndPoint {
 	@Override
 	public void start() {
 		if(configured && !started) {
-			this.logger.debug("Starting Ethernet Endpoint.");
+			this.logger.debug("Starting Filesystem Endpoint.");
 			started=true;
 		}
 	}
@@ -77,6 +78,6 @@ public class FSEndPoint extends EndPoint {
 	
 	public static void main(String[] args) throws ConfigurationException {
 		/* tries building a new FSEndPoint */
-		new FSEndPoint(new EndPointID("fs"), "fs", new Hashtable<String,String>());
+		new FSEndPoint(new EndPointID("fs", "fs"), new Hashtable<String,String>());
 	}
 }

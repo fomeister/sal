@@ -5,10 +5,8 @@ package jcu.sal.Agent;
 
 import java.util.Iterator;
 
-import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Config.ConfigService;
 import jcu.sal.Managers.ProtocolManager;
@@ -48,14 +46,14 @@ public class SALAgent {
 		while(iter.hasNext()) {
 			s = sm.createComponent(iter.next());
 			try {
-				pm.getComponent(new ProtocolID(s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG))).addSensor(s);
-			} catch (BadAttributeValueExpException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				pm.addSensor(s);
+			} catch (ConfigurationException e) {
+				logger.error("Could not add the sensor to any protocols");
 			}
 		} 
 		
 		pm.dumpTable();
+		pm.startAll();
 		pm.destroyAllComponents();
 	}
 	
