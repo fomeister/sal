@@ -9,6 +9,7 @@ import java.text.ParseException;
 import java.util.Hashtable;
 
 import javax.management.BadAttributeValueExpException;
+import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.Components.EndPoints.EndPoint;
@@ -118,7 +119,7 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	}
 
 	
-	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException {
+	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException, ConfigurationException {
 		EndPointManager e = getEndPointManager();
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb1' type='usb'><parameters><Param name='portNumber' value='1' /></parameters></EndPoint>"));
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb2' type='usb' />"));

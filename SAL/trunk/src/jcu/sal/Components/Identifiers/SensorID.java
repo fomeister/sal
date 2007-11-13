@@ -3,6 +3,8 @@
  */
 package jcu.sal.Components.Identifiers;
 
+import jcu.sal.Components.Sensors.Sensor;
+
 /**
  * this class represents Endpoint names
  * @author gilles
@@ -23,13 +25,22 @@ public class SensorID extends AbstractIdentifier{
 		super(id, type);
 		this.pid = pid; 
 	}
-
+	
 	/**
 	 * Creates a new SensorID with an initial name and type. THe protocolID member is left empty 
 	 * @param id the name
-	 * @param type the type
 	 */
-	public SensorID(String id, String type) {	this(id, type, null); } 
+	public SensorID(String id, String type) {
+		this(id, Sensor.SENSOR_TYPE, null);
+		if(!type.equals(Sensor.SENSOR_TYPE))
+			System.out.println("TRYING TO CREATE A SENSOR WITH TYPE: " + type);
+	} 
+
+	/**
+	 * Creates a new SensorID with an initial name. THe protocolID member is left empty 
+	 * @param id the name
+	 */
+	public SensorID(String id) {	this(id, Sensor.SENSOR_TYPE, null); } 
 	
 	/**
 	 * Return the name of the ProtocolID associated with this Sensor 

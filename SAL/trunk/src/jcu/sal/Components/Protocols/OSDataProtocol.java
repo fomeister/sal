@@ -3,8 +3,8 @@
  */
 package jcu.sal.Components.Protocols;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.Hashtable;
 
 import javax.management.BadAttributeValueExpException;
@@ -134,9 +134,28 @@ public class OSDataProtocol extends Protocol {
 	}
 	
 	
-	public String getReading(Hashtable<String,String> c, Sensor s) {
+	// TODO create an exception class for this instead of Exception
+	public String getReading(Hashtable<String,String> c, Sensor s) throws Exception{
+		String ret = "", cmd = "";
+		int exitval;
 		logger.debug("getReading method called on sensor " +s.toString());
-		return null;
+		/* Run the command */
+		try {
+			cmd = supportedSensors.get(s.getNativeAddress());
+			logger.debug("running command " + cmd);
+			BufferedReader[] b =  ProcessHelper.captureOutputs(cmd);
+			exitval =Integer.parseInt(b[2].readLine());
+			logger.error("the command returned an exit value of " + String.valueOf(exitval));
+			if( exitval != 0)
+				throw new Exception();
+
+			else
+				while((ret = b[0].readLine()) != null) logger.debug("raw reading: " + ret);
+		} catch (IOException e) {
+			logger.error("couldnt run the command to get readings for sensor "+ s.toString());
+			throw new Exception(); 
+		}
+		return ret;
 	}
 	
 	/**
@@ -150,17 +169,15 @@ public class OSDataProtocol extends Protocol {
 		c.put("CPUTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp2_input");
 		c.put("NBTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp1_input");
 		c.put("SBTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp3_input");
-		SensorID sid = new SensorID("fictifSensor", Sensor.SENSOR_TYPE);
+		SensorID sid = new SensorID("fictifSensor");
 		Sensor s = new Sensor(sid,c);
 		OSDataProtocol o = new OSDataProtocol(new ProtocolID("OSData", "OSData"), c, d);
 		o.addSensor(s);
 		try {
-			o.execute(new Command("100", "param", "value"), sid);
+			o.execute(new Command(new Integer(100), "param", "value"), sid);
 		} catch (BadAttributeValueExpException e) {
 			System.out.println("Incorrect value");
-		} catch (ParseException e) {
-			System.out.println("Malformed command");
-		}
+		} 
 		o.dumpConfig();
 		o.remove();
 	}

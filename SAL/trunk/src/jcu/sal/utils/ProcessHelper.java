@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -28,16 +29,22 @@ public class ProcessHelper {
 	}
 	
 	/**
-	 * captures the standard output and error channel of a command
+	 * captures the exit value, the standard output and error channel of a command
 	 * @param cmdline the command to be run with any arguments it needs
-	 * @return an array of 2 BufferedReaders ([0]: stdout, [1]: stderr)
+	 * @return an array of 3 BufferedReaders ([0]: stdout, [1]: stderr, [2]: exit value)
 	 * @throws IOException if there is a problem creating the new process
 	 */
 	public static BufferedReader[] captureOutputs(String cmdline) throws IOException {
-		BufferedReader[] b = new BufferedReader[2];
+		BufferedReader[] b = new BufferedReader[3];
 		Process p = ProcessHelper.createProcess(cmdline);
 		b[0] = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		b[1] = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+		try {
+			b[2] = new BufferedReader(new StringReader(String.valueOf(p.waitFor())));
+		} catch (InterruptedException e) {
+			System.err.println("The command '" + cmdline + "' has been interrupted" );
+			throw new IOException();
+		}
 		return b;
 	}
 	
@@ -90,5 +97,45 @@ public class ProcessHelper {
 			e.printStackTrace();
 		}
 		return args;
+	}
+	
+	public static void main(String[] args) throws IOException {
+		BufferedReader[] b = captureOutputs("cut -f3 -d' ' /proc/loadavg");
+		String out, err;
+		out = b[0].readLine();
+		err = b[1].readLine();
+		int e = Integer.parseInt(b[2].readLine());
+		System.out.println("gello \n" + out + "\n" +err + "\n" +e);
+	
+		
+		/* String[] a = {"cut", "/proc/loadavg", "-f3", "-d' '"};
+		ProcessBuilder pb = new ProcessBuilder(a);
+		pb.redirectErrorStream(true);
+		Process p = pb.start();
+		BufferedReader bb = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		try {
+			System.out.println("exit value: " +p.waitFor());
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		*/
+		
+		
+		Process p = Runtime.getRuntime().exec("cat /proc/loadavg");
+		BufferedReader[] bb = new BufferedReader[2]  
+		bb[0] = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		bb[1] = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+		
+		try {
+			System.out.println("exit value: " +p.waitFor());
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		System.out.println("out: " + bb[0].readLine());
+		System.out.println("err: " + bb[1].readLine());
+		
 	}
 }

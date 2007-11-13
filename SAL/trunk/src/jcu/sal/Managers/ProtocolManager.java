@@ -136,15 +136,12 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @throws ConfigurationException if the sensor cannot be added (wrong ProtocolName field probably)
 	 */
 	public Protocol addSensor(Sensor sensor) throws ConfigurationException{
-		Collection<Protocol> cvalues = ctable.values();
-		Iterator<Protocol> iter = cvalues.iterator();
-		while (iter.hasNext()) {
-			Protocol p = iter.next();
-			if(sensor.getProtocolName().equals(p.getID().getName())) {			
-				logger.debug("Adding sensor " + sensor.toString() + " to Protocol " + p.getID().toString());
-				p.addSensor(sensor);
-				return p;
-			}
+		Protocol p = ctable.get(new ProtocolID(sensor.getProtocolName(), Identifier.ANY_TYPE));
+		if(p!=null)
+		{
+			logger.debug("Adding sensor " + sensor.toString() + " to Protocol " + p.getID().toString());
+			p.addSensor(sensor);
+			return p;
 		}
 		/* if we get here the sensor couldnt be added */
 		logger.error("The sensor " + sensor.getID().toString() + " couldnt be added because ");
@@ -160,6 +157,9 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			p = e.createComponent(XMLhelper.createDocument("<Protocol name='1wirefs' type='owfs'><EndPoint name='usb' type='usb' /><parameters><Param name='Location' value='/opt/owfs/bin/owfs' /><Param name='MountPoint' value='/mnt/w1' /></parameters></Protocol>"));
 		} catch (ParserConfigurationException ex) {
 			System.out.println("Cannot parse Endpoint / PRotocol configuration");
+		} catch (ConfigurationException ex) {
+			// TODO Auto-generated catch block
+			ex.printStackTrace();
 		}
 		
 		if(p!=null)
