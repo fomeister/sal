@@ -49,13 +49,16 @@ public class Command {
 			value = iter.next();
 			parameters.put(name,value);
 		}
+		
+		logger.debug("Command arguments:");
+		dumpCommand();
 
 	}
 	
-	public Command(String cid, String key, String value) throws ParseException {
+	public Command(Integer cid, String key, String value){
 		Slog.setupLogger(this.logger);
 		parameters = new Hashtable<String, String>();
-		parameters.put(CIDATTRIBUTE_TAG,cid);
+		parameters.put(CIDATTRIBUTE_TAG,String.valueOf(cid));
 		parameters.put(key,value);
 	}
 

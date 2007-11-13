@@ -213,7 +213,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 */
 	public String execute(Command c, SensorID sid) throws BadAttributeValueExpException {
 		String s = null;
-		logger.debug("Received command");
+		logger.debug("Received command :");
 		c.dumpCommand();
 		
 		//Check if we have the sensor

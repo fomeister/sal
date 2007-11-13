@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.text.ParseException;
 
 import javax.management.BadAttributeValueExpException;
+import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.Components.Identifiers.Identifier;
@@ -50,16 +51,21 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	 */
 	@Override
 	protected Sensor build(Node n) throws InstantiationException {
+		SensorID i = null;
 		Sensor sensor = null;
 		this.logger.debug("building Sensor");
 		try {
-			SensorID i = (SensorID) this.getComponentID(n);
+			i = (SensorID) this.getComponentID(n);
 			this.logger.debug("Component type: " + i.getType());
 			sensor = new Sensor(i, getComponentConfig(n));
 			
 		} catch (ParseException e) {
 			this.logger.error("Error while parsing the DOM document. XML doc:");
 			this.logger.error(XMLhelper.toString(n));
+			e.printStackTrace();
+			throw new InstantiationException();
+		} catch (ConfigurationException e) {
+			this.logger.error("Couldnt instanciate the sensor: " + i.toString());
 			e.printStackTrace();
 			throw new InstantiationException();
 		} 
@@ -73,7 +79,7 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	protected Identifier getComponentID(Node n) throws ParseException {
 		Identifier id = null;
 		try {
-			id = new SensorID(XMLhelper.getAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, n), Sensor.SENSOR_TYPE);
+			id = new SensorID(XMLhelper.getAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, n) );
 		} catch (Exception e) {
 			this.logger.error("Couldnt find the Sensor id");
 			e.printStackTrace();
@@ -92,18 +98,18 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	}
 
 	
-	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException {
+	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException, ConfigurationException {
 		SensorManager e = getSensorManager();
 		Sensor n = e.createComponent(XMLhelper.createDocument("<Sensor sid='6'><parameters><Param name='LogicalPortID' value='IDU' /><Param name='Address' value='1.3.6.1.4.1.10132.7.1.4.7.0' /><Param name='SamplingInterval' value='10' /></parameters></Sensor>"));
 		n.dumpConfig();
 		e.createComponent(XMLhelper.createDocument("<Sensor sid='6'><parameters><Param name='LogicalPortID' value='IDU' /><Param name='Address' value='1.3.6.1.4.1.10132.7.1.4.7.0' /><Param name='SamplingInterval' value='10' /></parameters></Sensor>"));
 		Sensor o = e.createComponent(XMLhelper.createDocument("<Sensor sid='7'><parameters><Param name='LogicalPortID' value='PL40' /><Param name='Address' value='1.3.6.1.4.1.10132.7.1.4.7.0' /><Param name='SamplingInterval' value='10' /></parameters></Sensor>"));
 		o.dumpConfig();
-		e.destroyComponent(new SensorID("eth01", Sensor.SENSOR_TYPE));
-		e.destroyComponent(new SensorID("6", Sensor.SENSOR_TYPE));
-		e.destroyComponent(new SensorID("usb2", Sensor.SENSOR_TYPE));
-		e.destroyComponent(new SensorID("7", Sensor.SENSOR_TYPE));
-		e.destroyComponent(new SensorID("eth0", Sensor.SENSOR_TYPE));
-		e.destroyComponent(new SensorID("files", Sensor.SENSOR_TYPE));
+		e.destroyComponent(new SensorID("eth01"));
+		e.destroyComponent(new SensorID("6"));
+		e.destroyComponent(new SensorID("usb2"));
+		e.destroyComponent(new SensorID("7"));
+		e.destroyComponent(new SensorID("eth0"));
+		e.destroyComponent(new SensorID("files"));
 	}
 }

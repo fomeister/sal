@@ -10,6 +10,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 
+import javax.naming.ConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.HWComponent;
@@ -87,8 +88,9 @@ public abstract class ManagerFactory<T extends HWComponent> {
 	 * Create a new instance of a fully configured component from its DOM document
 	 * @param n the XML configuration node
 	 * @return an instance of the component
+	 * @throws ConfigurationException if the component's XML configuration is invalid and the component can not be created
 	 */
-	public T createComponent(Node n) {
+	public T createComponent(Node n) throws ConfigurationException {
 		T newc = null;
 		Identifier id= null;
 		try {
@@ -105,10 +107,10 @@ public abstract class ManagerFactory<T extends HWComponent> {
 			}
 		} catch (ParseException e) {
 			this.logger.error("Couldnt parse component "+ id.getType()+"'s XML doc");
-			//e.printStackTrace();
+			throw new ConfigurationException();
 		} catch (InstantiationException e) {
 			this.logger.error("Couldnt instanciate component "+ id.getType()+" from XML doc");
-			//e.printStackTrace();
+			throw new ConfigurationException();
 		}
 
 		return newc; 
@@ -167,10 +169,20 @@ public abstract class ManagerFactory<T extends HWComponent> {
 	/** 
 	 * Get a component based on its identifer
 	 * @param i the identifier
+	 * @return the component or null if the identifier does not map to anything
 	 *
 	 */
 	public T getComponent(Identifier i) {
 		return ctable.get(i);
+	}
+	
+	/** 
+	 * Get an iterator on all components
+	 * @return the iterator
+	 *
+	 */
+	public Iterator<T> getIterator() {
+		return ctable.values().iterator();
 	}
 	
 	/**

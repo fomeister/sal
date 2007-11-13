@@ -5,8 +5,13 @@ package jcu.sal.Components.Sensors;
 
 import java.util.Hashtable;
 
+import javax.naming.ConfigurationException;
+
 import jcu.sal.Components.AbstractComponent;
+import jcu.sal.Components.Identifiers.Identifier;
+import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Identifiers.SensorID;
+import jcu.sal.Managers.ProtocolManager;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -28,9 +33,10 @@ public class Sensor extends AbstractComponent<SensorID> {
 	private Logger logger = Logger.getLogger(Sensor.class);
 	
 	/**
+	 * @throws ConfigurationException 
 	 * 
 	 */
-	public Sensor(SensorID i, Hashtable<String,String> c) {
+	public Sensor(SensorID i, Hashtable<String,String> c) throws ConfigurationException {
 		super();
 		Slog.setupLogger(this.logger);
 		this.logger.debug("ctor Sensor");
@@ -104,8 +110,15 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 	
 	@Override
-	protected void parseConfig() {
-		setAvailable();
+	protected void parseConfig() throws ConfigurationException {
+		/* check that there is an instance of our protocol*/
+		if(ProtocolManager.getProcotolManager().getComponent(new ProtocolID(getProtocolName(), Identifier.ANY_TYPE)) !=null)
+			setAvailable();
+		else {
+			logger.error("Cannot find an instance of the protocol referred to by this sensor:" + getProtocolName());
+			throw new ConfigurationException();
+		}
+			
 	}
 	
 	@Override
