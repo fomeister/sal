@@ -2,6 +2,18 @@ package jcu.sal.Components.Identifiers;
 
 public interface Identifier {
 	
+	/** 
+	 * a wildcard used to compare two identifiers, based only on their types, not their names.
+	 * They will be equal only if their type matches
+	 */
+	public static final String ANY_TYPE="*type*";
+	
+	 /** 
+	  * a wildcard used to compare two identifiers, based only on their types, not their names.
+	  * They will be equal only if their type matches
+	  */
+	public static final String ANY_NAME="*name*";
+	
 	/**
 	 * Returns the name of a component from its identifier
 	 * @return a string representation of the identifier
@@ -13,12 +25,6 @@ public interface Identifier {
 	 * @return a string representation of the identifier
 	 */
 	public String getType();
-	
-	/**
-	 * Sets the name of a component from a string
-	 * @param name the name of the component
-	 */
-	public void setName(String name);
 
 	/**
 	 * Test whether two identifiers are the same
