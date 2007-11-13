@@ -49,6 +49,7 @@ public class SALAgent {
 				pm.addSensor(s);
 			} catch (ConfigurationException e) {
 				logger.error("Could not add the sensor to any protocols");
+				sm.destroyComponent(s);
 			}
 		} 
 		

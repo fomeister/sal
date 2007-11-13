@@ -30,13 +30,6 @@ public class EndPointID extends AbstractIdentifier{
 	 * @param type the type
 	 */
 	public EndPointID(String id, String type) {	this(id, type, null); } 
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.Identifiers.Identifier#toString(java.lang.String)
-	 */
-	public String toString() {
-		return name + "/" + type;
-	}
 	
 	/**
 	 * Return the name of the ProtocolID associated with this EndPoint 
@@ -78,5 +71,26 @@ public class EndPointID extends AbstractIdentifier{
 		}
 		else
 			this.pid = pid;
+	}
+	
+	public static void main(String[] args) {
+		EndPointID e1 = new EndPointID("usb1", "usb");
+		ProtocolID p1 = new ProtocolID("myname1", Identifier.ANY_TYPE);
+		e1.setPid(p1);
+		
+		EndPointID e2 = new EndPointID("usb2", "usb");
+		
+		EndPointID e3 = new EndPointID(ANY_NAME, "usb");
+		
+		EndPointID e4 = new EndPointID("serial", ANY_TYPE);
+		ProtocolID p2 = new ProtocolID(Identifier.ANY_NAME, "fs");
+		e4.setPid(p2);
+
+		
+		System.out.println("e1==e2:" + (e1.equals(e2)));
+		System.out.println("e2==e3:" + (e2.equals(e3)));
+		System.out.println("e3==e1:" + (e3.equals(e1)));
+		System.out.println("e4==e2:" + (e4.equals(e2)));
+		System.out.println("e1p1==e4p2:" + (e1.getPid().equals(e4.getPid())));
 	}
 }

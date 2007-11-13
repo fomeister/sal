@@ -31,13 +31,6 @@ public class SensorID extends AbstractIdentifier{
 	 */
 	public SensorID(String id, String type) {	this(id, type, null); } 
 	
-	/** (non-Javadoc)
-	 * @see jcu.sal.Components.Identifiers.Identifier#toString(java.lang.String)
-	 */
-	public String toString() {
-		return name + "/" + type;
-	}
-	
 	/**
 	 * Return the name of the ProtocolID associated with this Sensor 
 	 * @return the protocolID
