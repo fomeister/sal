@@ -1,6 +1,7 @@
 package jcu.sal.utils;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -98,6 +99,151 @@ public class ProcessHelper {
 		}
 		return args;
 	}
+
+	/**
+	 * Returns a field from a specific line in a text file
+	 * @param file the file to be searched
+	 * @param pattern the pattern in the line to be searched
+	 * @param field the field number whose contents is to be returned
+	 * @param delim the delimiter (if null, then a space is assumed)
+	 * @param translate whether to translate tabs to spaces
+	 * @return
+	 * @throws IOException if something went wrong opening the file, reading from it or finding the pattern
+	 */
+	public static String getFieldFromFile(String file, String pattern, int field, String delim, boolean translate) throws IOException {
+		return getFieldFromBuffer(new BufferedReader(new FileReader(new File(file))), pattern, field, delim, translate); 
+	}
+	
+	/**
+	 * Returns a field from a specific line in a text file
+	 * @param file the file to be searched
+	 * @param line the line number (starting at 1)
+	 * @param field the field number whose contents is to be returned
+	 * @param delim the delimiter (if null, then a space is assumed)
+	 * @param translate whether to translate tabs to spaces
+	 * @return
+	 * @throws IOException if something went wrong opening the file, reading from it or finding the pattern
+	 */
+	public static String getFieldFromFile(String file, int line , int field, String delim, boolean translate) throws IOException {
+		return getFieldFromBuffer(new BufferedReader(new FileReader(new File(file))), line, field, delim, translate); 
+	}
+	
+	/**
+	 * Returns a field from a specific line in the output of a command
+	 * @param file the file to be searched
+	 * @param line the line number (starting at 1)
+	 * @param field the field number whose contents is to be returned
+	 * @param delim the delimiter (if null, then a space is assumed)
+	 * @param translate whether to translate tabs to spaces
+	 * @return
+	 * @throws IOException
+	 */
+	public static String getFieldFromCommand(String cmd, String pattern, int field, String delim, boolean translate) throws IOException {
+		return getFieldFromBuffer(captureOutputs(cmd)[0], pattern, field, delim, translate);
+	}
+
+	/**
+	 * Returns a field from a specific line in the output of a command
+	 * @param file the file to be searched
+	 * @param pattern the pattern in the line to be searched
+	 * @param field the field number whose contents is to be returned
+	 * @param delim the delimiter (if null, then a space is assumed)
+	 * @param translate whether to translate tabs to spaces
+	 * @return
+	 * @throws IOException
+	 */
+	public static String getFieldFromCommand(String cmd, int line, int field, String delim, boolean translate) throws IOException {
+		return getFieldFromBuffer(captureOutputs(cmd)[0], line, field, delim, translate);
+	}
+	
+	/**
+	 * Returns a field from a specific line in a BufferedReader
+	 * @param b the buffer to be searched
+	 * @param pattern the pattern in the line to be searched
+	 * @param field the field number whose contents is to be returned
+	 * @param delim the delimiter (if null, then a space is assumed)
+	 * @param translate whether to translate tabs to spaces
+	 * @return
+	 * @throws IOException
+	 */
+	public static String getFieldFromBuffer(BufferedReader b, String pattern, int field, String delim, boolean translate) throws IOException {
+		String result = "";
+		
+		/* find matching line */
+		if(pattern != null) {
+			while((result  = b.readLine())!= null) 
+				if(result.contains(pattern)) break;
+		} else
+			result  = b.readLine();
+		
+		if(result!=null) {
+			return getFieldFromLine(result, field, delim, translate);
+		}
+		else {
+			throw new IOException();
+		}
+	}
+	
+	
+	/**
+	 * Returns a field from a specific line in a BufferedReader
+	 * @param b the buffer to be searched
+	 * @param line the line number 
+	 * @param field the field number whose contents is to be returned
+	 * @param delim the delimiter (if null, then a space is assumed)
+	 * @param translate whether to translate tabs to spaces
+	 * @return
+	 * @throws IOException
+	 */
+	public static String getFieldFromBuffer(BufferedReader b, int line, int field, String delim, boolean translate) throws IOException {
+		String result = "";
+		
+		/* find  line */
+		while( (line-- > 0) && ((result  = b.readLine())!= null) ); 
+
+		
+		if(result!=null) {
+			result =  getFieldFromLine(result, field, delim, translate);
+			return result;
+		}
+		else {
+			throw new IOException();
+		}
+	}
+	
+	/**
+	 * Returns a field from a line
+	 * @param line the line to be searched 
+	 * @param field the field number whose contents is to be returned
+	 * @param delim the delimiter (if null, then a space is assumed)
+	 * @param translate whether to translate tabs to spaces
+	 * @return the field
+	 */
+	public static String getFieldFromLine(String line, int field, String delim, boolean translate) throws ArrayIndexOutOfBoundsException{
+		StringBuilder sb = new StringBuilder();
+		
+		/* Translate tabs to space if needed */
+		if(translate)
+			line = line.replace("\t", " ");
+
+		/* remove multiple spaces */
+		char prev = line.charAt(0);
+		sb.append(prev);
+		for(int i = 1; i<line.length(); i++) {
+			if((line.charAt(i) != prev) || (prev != ' ')) {
+				prev = line.charAt(i);
+				sb.append(prev);
+			}
+		}
+		line = sb.toString().trim();
+
+		if(delim == null)
+			delim = " ";
+
+		/* Get the required field */
+		return line.split(delim)[field-1];
+	}
+	
 	
 	public static void main(String[] args) throws IOException {
 		BufferedReader[] b = captureOutputs("cut -f3 -d' ' /proc/loadavg");
@@ -124,7 +270,7 @@ public class ProcessHelper {
 		
 		
 		Process p = Runtime.getRuntime().exec("cat /proc/loadavg");
-		BufferedReader[] bb = new BufferedReader[2]  
+		BufferedReader[] bb = new BufferedReader[2];
 		bb[0] = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		bb[1] = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 		
