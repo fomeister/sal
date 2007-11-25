@@ -38,36 +38,61 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	public static final String PROTOCOLTYPE_TAG = "type";
 	public static final String PROTOCOLNAME_TAG = "name";
 	public static final String PROTOCOL_TAG="Protocol";
-	public final static Vector<String> SUPPORTED_ENDPOINTS = new Vector<String>();
 	
-	protected static Hashtable<Integer, String> commands = new Hashtable<Integer, String>();;
-	protected Hashtable<SensorID, Sensor> sensors;
-	protected EndPoint ep; 
 	/**
+	 * A list of endpoints supported by this protocol
+	 */
+	public static final Vector<String> SUPPORTED_ENDPOINTS = new Vector<String>();
+	
+	/**
+	 * A table mapping command Ids to the name of a method to be exectuted when this command arrives
+	 */
+	protected static Hashtable<Integer, String> commands = new Hashtable<Integer, String>();
+	
+	/**
+	 * A table of sensors managed by this protocol
+	 */
+	protected Hashtable<SensorID, Sensor> sensors;
+	
+	/**
+	 * The endpoint associated with this protocol
+	 */
+	protected EndPoint ep; 
+	
+	/**
+	 * Construct a new protocol gien its ID, type, configuration directives and an XML node
+	 * containing the associated endpoint configuration
+	 * @param i the protocol identifier
+	 * @paran t the type of the protocol
+	 * @param c the configuration directives
+	 * @param d the XML node containing the associated endpoint configuration  
 	 * @throws ConfigurationException 
-	 * 
 	 */
 	public Protocol(ProtocolID i, String t, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super();
-		Slog.setupLogger(logger);		
+		Slog.setupLogger(logger);
+		
+		/* construct the endpoint first */
+		ep = EndPointManager.getEndPointManager().createComponent(d);
+		if(ep==null)
+			throw new ConfigurationException("Couldnt create the EdnPoint");
+
+		/* Sets the PID field of the EndPointID */
+		ep.getID().setPid(i);
+		
+		/* init the rest of the fields */
 		id = i;
 		type = t;
 		config = c;
 		sensors = new Hashtable<SensorID, Sensor>();
-		ep = EndPointManager.getEndPointManager().createComponent(d);
-		if(ep==null)
-			throw new ConfigurationException("Couldnt create the EdnPoint");
-		else {
-			/* Sets the PID field of the EndPointID */
-			ep.getID().setPid(i);
-			
-			try {
-				parseConfig();
-			} catch (ConfigurationException e) {
-				logger.error("Error creating the protocol, destroying the endpoint");
-				EndPointManager.getEndPointManager().destroyComponent(ep.getID());
-				throw e;
-			}
+		
+		/* parse the configuration */
+		try {
+			parseConfig();
+		} catch (ConfigurationException e) {
+			logger.error("Error creating the protocol, destroying the endpoint");
+			EndPointManager.getEndPointManager().destroyComponent(ep.getID());
+			throw e;
 		}
 	}
 	
