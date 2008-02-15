@@ -131,9 +131,9 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	}
 	
 	/**
-	 * Adds a sensor to the appropriate protocol
+	 * Adds a sensor to the appropriate protocol. Checks if this sensor is supported by the procotocl
 	 * @return the protocol to which the sensor has been added 
-	 * @throws ConfigurationException if the sensor cannot be added (wrong ProtocolName field probably)
+	 * @throws ConfigurationException if the sensor cannot be added (wrong ProtocolName field, or unsupported sensor)
 	 */
 	public Protocol addSensor(Sensor sensor) throws ConfigurationException{
 		Protocol p = ctable.get(new ProtocolID(sensor.getProtocolName(), Identifier.ANY_TYPE));

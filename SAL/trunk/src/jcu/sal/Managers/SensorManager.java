@@ -62,11 +62,11 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		} catch (ParseException e) {
 			this.logger.error("Error while parsing the DOM document. XML doc:");
 			this.logger.error(XMLhelper.toString(n));
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw new InstantiationException();
 		} catch (ConfigurationException e) {
 			this.logger.error("Couldnt instanciate the sensor: " + i.toString());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw new InstantiationException();
 		} 
 		return sensor;

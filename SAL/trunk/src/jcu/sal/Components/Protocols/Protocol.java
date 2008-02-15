@@ -97,10 +97,11 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	}
 	
 	/**
-	 * Adds a new sensor managed by this logical port
+	 * Adds a new sensor managed by this Protocol
+	 * Also checks whether this sensor is connected
 	 * @param s the sensor to be added
 	 */
-	public final void addSensor(Sensor s) {
+	public final void addSensor(Sensor s) throws ConfigurationException{
 		if (!started) {
 				this.logger.debug("About to add sensor" + s.toString());
 				s.start();
@@ -298,7 +299,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	}
 	
 	/**
-	 * Check whether all the sensors are connected, and change their status accordingly
+	 * Check whether a single sensor is connected, and change its status accordingly
 	 * @param sensor the sensor to be probed
 	 * @throws ConfigurationException 
 	 */
@@ -307,21 +308,21 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	/**
 	 * Get the subclass to get ready to be removed
 	 */
-	protected void internal_stop() {}
+	protected abstract void internal_stop();
 	
 	/**
 	 * Starts the subclass 
 	 */
-	protected void internal_start() {}
+	protected abstract void internal_start();
 	
 	/**
 	 * Prepare the subclass to be removed 
 	 */
-	protected void internal_remove() {}
+	protected abstract void internal_remove();
 	
 	/**
 	 * Parse the configuration of the protocol itself
 	 */
-	protected void internal_parseConfig() throws ConfigurationException {}
+	protected abstract void internal_parseConfig() throws ConfigurationException;
 
 }

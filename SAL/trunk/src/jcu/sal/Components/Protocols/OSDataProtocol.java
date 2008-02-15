@@ -6,6 +6,7 @@ package jcu.sal.Components.Protocols;
 import java.io.IOException;
 import java.util.Hashtable;
 
+import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -52,7 +53,7 @@ public class OSDataProtocol extends Protocol {
 		//Add to the list of supported commands
 		commands.put(new Integer(100), "getReading");
 		//Add to the list of supported sensors
-		supportedSensors.put("FreeMem",new OSdata("/proc/meminfo", null, 6, null, true));
+		supportedSensors.put("FreeMem",new OSdata("/proc/meminfo", "MemFree", 2, null, true));
 		supportedSensors.put("UserTime",new OSdata("/proc/stat", "cpu0",2, null, false));
 		supportedSensors.put("NiceTime",new OSdata("/proc/stat", "cpu0",3, null, false));
 		supportedSensors.put("SystemTime",new OSdata("/proc/stat", "cpu0", 4, null, false));
@@ -73,10 +74,6 @@ public class OSDataProtocol extends Protocol {
 	 */
 	public OSDataProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super(i,OSDATAPROTOCOL_TYPE,c,d);
-		if(c.get("CPUTempFile")!=null) supportedSensors.put("CPUTempFile",new OSdata(c.get("CPUTempFile"), null, 1, null, false));
-		if(c.get("NBTempFile")!=null) supportedSensors.put("NBTempFile",new OSdata(c.get("NBTempFile"), null, 1, null, false));
-		if(c.get("SBTempFile")!=null)  supportedSensors.put("SBTempFile",new OSdata(c.get("SBTempFile"), null, 1, null, false));
-		
 	}
 
 	
@@ -84,18 +81,16 @@ public class OSDataProtocol extends Protocol {
 	 * @see jcu.sal.Components.Protocol#internal_parseConfig()
 	 */
 	protected void internal_parseConfig() throws ConfigurationException {
-		/*try {
-			if(getConfig("CPUTempFile").length()!=0) supportedSensors.put("CPUTemp","cat " + getConfig("CPUTempFile"));
-		} catch (BadAttributeValueExpException e) {}
-		
 		try {
-		if(getConfig("NBTempFile").length()!=0) supportedSensors.put("NBTemp","cat " +getConfig("NBTempFile"));
+			if(getConfig("CPUTempFile")!=null) supportedSensors.put("CPUTempFile",new OSdata(getConfig("CPUTempFile"), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
-		
 		try {
-		if(getConfig("SBTempFile").length()!=0)  supportedSensors.put("SBTemp","cat " +getConfig("SBTempFile"));
+			if(getConfig("NBTempFile")!=null) supportedSensors.put("NBTempFile",new OSdata(getConfig("NBTempFile"), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
-		*/
+		try {
+			if(getConfig("SBTempFile")!=null)  supportedSensors.put("SBTempFile",new OSdata(getConfig("SBTempFile"), null, 1, null, false));
+		} catch (BadAttributeValueExpException e) {}
+	
 		configured = true;
 		logger.debug("OSData protocol configured");
 	}
@@ -122,7 +117,7 @@ public class OSDataProtocol extends Protocol {
 	 * @see jcu.sal.Components.Protocol#internal_stop()
 	 */
 	protected void internal_remove() {
-		logger.debug("OSData internal removed");
+		logger.debug("OSData internal remove");
 	}
 
 	/**
