@@ -82,13 +82,13 @@ public class OSDataProtocol extends Protocol {
 	 */
 	protected void internal_parseConfig() throws ConfigurationException {
 		try {
-			if(getConfig("CPUTempFile")!=null) supportedSensors.put("CPUTempFile",new OSdata(getConfig("CPUTempFile"), null, 1, null, false));
+			if(getConfig("CPUTempFile")!=null) supportedSensors.put("CPUTemp",new OSdata(getConfig("CPUTempFile"), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
 		try {
-			if(getConfig("NBTempFile")!=null) supportedSensors.put("NBTempFile",new OSdata(getConfig("NBTempFile"), null, 1, null, false));
+			if(getConfig("NBTempFile")!=null) supportedSensors.put("NBTemp",new OSdata(getConfig("NBTempFile"), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
 		try {
-			if(getConfig("SBTempFile")!=null)  supportedSensors.put("SBTempFile",new OSdata(getConfig("SBTempFile"), null, 1, null, false));
+			if(getConfig("SBTempFile")!=null)  supportedSensors.put("SBTemp",new OSdata(getConfig("SBTempFile"), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
 	
 		configured = true;
@@ -96,7 +96,7 @@ public class OSDataProtocol extends Protocol {
 	}
 
 	/* (non-Javadoc)
-	 * @see jcu.sal.Components.Protocol#internal_remove()
+	 * @see jcu.sal.Components.Protocol#internal_stop()
 	 */
 	protected void internal_stop() {
 		logger.debug("OSData internal stop");
@@ -106,7 +106,7 @@ public class OSDataProtocol extends Protocol {
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_start()
 	 */
-	public void internal_start() {
+	protected void internal_start() {
 		logger.debug("OSData internal start");
 		// TODO Check that the sensors table has some sensors
 		// TODO call probeSensors
@@ -114,32 +114,12 @@ public class OSDataProtocol extends Protocol {
 	}
 
 	/* (non-Javadoc)
-	 * @see jcu.sal.Components.Protocol#internal_stop()
+	 * @see jcu.sal.Components.Protocol#internal_remove()
 	 */
 	protected void internal_remove() {
 		logger.debug("OSData internal remove");
 	}
 
-	/**
-	 * Check whether all the sensors are connected, and change their status accordingly
-	 */
-	public void probeSensor(Sensor sensor) throws ConfigurationException{
-		if(supportedSensors.containsKey(sensor.getNativeAddress())) {
-			logger.debug("Sensor " + sensor.toString()+" supported");
-			try {
-				logger.debug(getReading(null, sensor));
-				logger.debug("Sensor probed successfully");
-			} catch (IOException e) {
-				logger.error("Cannot read from the sensor");
-				throw new ConfigurationException();
-			}
-		} else {
-			logger.debug("Sensor not supported");
-			throw new ConfigurationException();
-		}
-	}
-	
-	
 	// TODO create an exception class for this instead of Exception
 	public String getReading(Hashtable<String,String> c, Sensor s) throws IOException{
 		String ret = "";
@@ -153,6 +133,12 @@ public class OSDataProtocol extends Protocol {
 			throw e; 
 		}
 		return ret;
+	}
+
+
+	@Override
+	public boolean isSensorSupported(Sensor sensor){
+		return supportedSensors.containsKey(sensor.getNativeAddress());	
 	}
 
 	
@@ -188,5 +174,4 @@ public class OSDataProtocol extends Protocol {
 		System.out.println("loadavg5: " + ProcessHelper.getFieldFromFile("/proc/loadavg", null, 2, null, false));
 		System.out.println("loadavg15: " + ProcessHelper.getFieldFromFile("/proc/loadavg", null, 3, null, false));
 	}
-
 }

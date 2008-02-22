@@ -144,6 +144,6 @@ public class EthernetEndPoint extends EndPoint {
 		Hashtable<String,String> c = new Hashtable<String,String>();
 		c.put("EthernetDevice","eth0");
 		c.put("IPAddress","");
-		new EthernetEndPoint(new EndPointID("eth0", "ethernet"), c);
+		EthernetEndPoint e = new EthernetEndPoint(new EndPointID("ethernet", "eth"), c);
 	}
 }

@@ -96,7 +96,7 @@ public class OwfsProtocol extends Protocol {
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_start()
 	 */
-	public void internal_start() {
+	protected void internal_start() {
 		logger.debug("OWFS internal start");
 		// TODO Check that the sensors table has some sensors
 		// TODO start owfs with arguments
@@ -112,14 +112,6 @@ public class OwfsProtocol extends Protocol {
 	}
 
 	/**
-	 * Check whether all the sensors are connected, and change their status accordingly
-	 */
-	public void probeSensors() {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	/**
 	 * @param args
 	 * @throws ParserConfigurationException 
 	 * @throws ConfigurationException 
@@ -134,10 +126,11 @@ public class OwfsProtocol extends Protocol {
 		o.remove();
 	}
 
+
 	@Override
-	public void probeSensor(Sensor sensor) throws ConfigurationException {
-		// TODO Auto-generated method stub
-		
+	public boolean isSensorSupported(Sensor sensor) {
+		//TODO check the sensor family
+		return false;
 	}
 
 }
