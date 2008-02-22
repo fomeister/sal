@@ -40,7 +40,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	public static final String PROTOCOL_TAG="Protocol";
 	
 	/**
-	 * A list of endpoints supported by this protocol
+	 * A list of endpoints types supported by this protocol
 	 */
 	public static final Vector<String> SUPPORTED_ENDPOINTS = new Vector<String>();
 	
@@ -103,10 +103,15 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 */
 	public final void addSensor(Sensor s) throws ConfigurationException{
 		if (!started) {
-				this.logger.debug("About to add sensor" + s.toString());
-				s.start();
-				sensors.put(s.getID(), s);
-				s.getID().setPid(this.id);
+				if(isSensorSupported(s)) {
+					this.logger.debug("About to add sensor" + s.toString());
+					s.start();
+					sensors.put(s.getID(), s);
+					s.getID().setPid(this.id);
+				} else {
+					logger.error("Sensor "+s.toString()+" not supported by this protocol");
+					throw new ConfigurationException();
+				}
 		} else
 			logger.error("NOT IMPLEMENTED: ADD A SENSOR WITH PROTOCOL STARTED");
 		
@@ -143,7 +148,6 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	public final void removeSensor(SensorID i) {
 		this.logger.debug("About to remove sensor " + i.toString());
 		if(sensors.containsKey(i)) {
-			dumpSensorsTable();
 			sensors.get(i).remove();
 			if(sensors.remove(i) == null)
 				this.logger.error("Cant remove sensor with key " + i.toString() +  ": No such element");
@@ -211,7 +215,6 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 		if(!ep.isStarted())
 			ep.start();
 		internal_start();
-		probeSensors();
 		started = true;
 		this.logger.debug("protocol started");
 	}
@@ -278,32 +281,10 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	}
 	
 	/**
-	 * Check whether all the sensors are connected, and change their status accordingly
-	 * @throws ConfigurationException 
-	 */
-	public void probeSensors(){
-		Sensor s = null;
-		logger.debug("probing sensors");
-		Collection<Sensor> c = sensors.values();
-		Iterator<Sensor> iter = c.iterator();
-		while(iter.hasNext()) {
-			s = iter.next();
-			try { 
-				probeSensor(s);
-				s.setAvailable();				
-			}
-			catch (ConfigurationException e) {
-			logger.error("Cannot probe sensor " + s.toString());
-			}
-		}
-	}
-	
-	/**
-	 * Check whether a single sensor is connected, and change its status accordingly
+	 * Check whether a sensor is supported by this protocol
 	 * @param sensor the sensor to be probed
-	 * @throws ConfigurationException 
 	 */
-	public abstract void probeSensor(Sensor sensor) throws ConfigurationException;
+	public abstract boolean isSensorSupported(Sensor sensor);
 
 	/**
 	 * Get the subclass to get ready to be removed

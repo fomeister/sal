@@ -9,9 +9,9 @@
 			<Protocol name="osData" type="PlatformData">
 				<EndPoint name="filesystem" type="fs" />
 				<parameters>
-					<Param name="CPUTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp2_input" />
-					<Param name="NBTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp1_input" />
-					<Param name="SBTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp3_input" />
+					<Param name="CPUTempFile" value="/sys/class/i2c-adapter/i2c-3/3-002e/temp1_input" />
+					<Param name="NBTempFile" value="/sys/class/i2c-adapter/i2c-3/3-002e/temp3_input" />
+					<Param name="SBTempFile" value="/sys/class/i2c-adapter/i2c-3/3-002e/temp2_input" />
 				</parameters>
 			</Protocol>
 		</protocols>
