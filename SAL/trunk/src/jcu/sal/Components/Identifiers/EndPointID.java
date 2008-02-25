@@ -19,8 +19,8 @@ public class EndPointID extends AbstractIdentifier{
 	 * @param type the type
 	 * @param pid the protocolID
 	 */
-	public EndPointID(String id, String type, ProtocolID pid) {
-		super(id, type);
+	public EndPointID(String id, ProtocolID pid) {
+		super(id);
 		this.pid = pid; 
 	}
 	
@@ -29,7 +29,7 @@ public class EndPointID extends AbstractIdentifier{
 	 * @param id the name
 	 * @param type the type
 	 */
-	public EndPointID(String id, String type) {	this(id, type, null); } 
+	public EndPointID(String id) {	this(id, null); } 
 	
 	/**
 	 * Return the name of the ProtocolID associated with this EndPoint 
@@ -54,7 +54,7 @@ public class EndPointID extends AbstractIdentifier{
 	public ProtocolID getPid() {
 		if(pid == null) {
 			System.out.println("************ TRYING TO ACCESS AN EMPTY PROTOCOL ID ***********");
-			return new ProtocolID("","");
+			return new ProtocolID("");
 		}
 		else
 			return pid;
@@ -65,7 +65,7 @@ public class EndPointID extends AbstractIdentifier{
 	 * @param pid the protocolID
 	 */
 	public void setPid(ProtocolID pid) {
-		if(pid == null || (pid.getName().length()== 0 && pid.getType().length() == 0)) {
+		if(pid == null || (pid.getName().length()== 0)) {
 			System.out.println("************ TRYING TO SET AN EMPTY PROTOCOL ID ON AN ENDPOINT***********");
 			pid = null;
 		}
@@ -74,7 +74,7 @@ public class EndPointID extends AbstractIdentifier{
 	}
 	
 	public static void main(String[] args) {
-		EndPointID e1 = new EndPointID("usb1", "usb");
+/*		EndPointID e1 = new EndPointID("usb1", "usb");
 		ProtocolID p1 = new ProtocolID("myname1", Identifier.ANY_TYPE);
 		e1.setPid(p1);
 		
@@ -92,5 +92,6 @@ public class EndPointID extends AbstractIdentifier{
 		System.out.println("e3==e1:" + (e3.equals(e1)));
 		System.out.println("e4==e2:" + (e4.equals(e2)));
 		System.out.println("e1p1==e4p2:" + (e1.getPid().equals(e4.getPid())));
+		*/
 	}
 }

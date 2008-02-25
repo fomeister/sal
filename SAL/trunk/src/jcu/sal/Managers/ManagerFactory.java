@@ -37,27 +37,7 @@ public abstract class ManagerFactory<T extends HWComponent> {
 		Slog.setupLogger(this.logger);
 		ctable = new Hashtable<Identifier, T>();
 	}
-	/**
-	 * Creates the component from a DOM document
-	 * @param n the DOM document
-	 * @return the component
-	 * @throws InstantiationException 
-	 */
-	protected abstract T build(Node n) throws InstantiationException;
-	
-	/**
-	 * Deletes the component and give the subclass a chance to turn things off properly
-	 * @param component the component
-	 */
-	protected abstract void remove(T component);
-	
-	/**
-	 * returns the name of a component from its DOM document
-	 * @param n the DOM document
-	 * @return the ID of the component
-	 */
-	protected abstract Identifier getComponentID(Node n) throws ParseException;
-	
+
 	/**
 	 * returns the configuration directives for this component
 	 * @param n the DOM document
@@ -95,21 +75,21 @@ public abstract class ManagerFactory<T extends HWComponent> {
 		Identifier id= null;
 		try {
 			id = getComponentID(n);
-			this.logger.debug("About to create a component of type " + id.getType() + " named " + id.getName());
+			this.logger.debug("About to create a component named " + id.getName());
 			if(!ctable.containsKey(id)) {
 				newc = build(n);
 				if(newc!=null) ctable.put(id, newc);
-				else this.logger.error("Couldnt create component "+ id.getType());
+				else this.logger.error("Couldnt create component");
 			}
 			else {
-				this.logger.error("Couldnt create component "+ id.getType()+", it already exist");
+				this.logger.debug("About to create a component named " + id.getName());
 				return null;
 			}
 		} catch (ParseException e) {
-			this.logger.error("Couldnt parse component "+ id.getType()+"'s XML doc");
+			this.logger.error("Couldnt parse component "+ id.getName()+"'s XML doc");
 			throw new ConfigurationException();
 		} catch (InstantiationException e) {
-			this.logger.error("Couldnt instanciate component "+ id.getType()+" from XML doc");
+			this.logger.error("Couldnt instanciate component "+ id.getName()+" from XML doc");
 			throw new ConfigurationException();
 		}
 
@@ -197,5 +177,33 @@ public abstract class ManagerFactory<T extends HWComponent> {
 		while ( keys.hasMoreElements() &&  iter.hasNext())
 		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
 	}
+	
+	/**
+	 * Creates the component from a DOM document
+	 * @param n the DOM document
+	 * @return the component
+	 * @throws InstantiationException 
+	 */
+	protected abstract T build(Node n) throws InstantiationException;
+	
+	/**
+	 * Deletes the component and give the subclass a chance to turn things off properly
+	 * @param component the component
+	 */
+	protected abstract void remove(T component);
+	
+	/**
+	 * returns the name of a component from its DOM document
+	 * @param n the DOM document
+	 * @return the ID of the component
+	 */
+	protected abstract Identifier getComponentID(Node n) throws ParseException;
+	
+	/**
+	 * returns the type of a component from its DOM document
+	 * @param n the DOM document
+	 * @return the type of the component
+	 */
+	protected abstract String getComponentType(Node n) throws ParseException;
 
 }

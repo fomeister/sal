@@ -34,8 +34,8 @@ public class OwfsProtocol extends Protocol {
 
 	static { 
 		Slog.setupLogger(logger);
-		SUPPORTED_ENDPOINTS.add("usb");
-		SUPPORTED_ENDPOINTS.add("serial");
+		SUPPORTED_ENDPOINT_TYPES.add("usb");
+		SUPPORTED_ENDPOINT_TYPES.add("serial");
 	}
 	
 	
@@ -121,7 +121,7 @@ public class OwfsProtocol extends Protocol {
 		Hashtable<String, String> c = new Hashtable<String, String>();
 		c.put(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG, "/opt/owfs/bin/owfs");
 		c.put(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG, "/mnt/w1");
-		OwfsProtocol o = new OwfsProtocol(new ProtocolID("owfs", "owfs"), c, d);
+		OwfsProtocol o = new OwfsProtocol(new ProtocolID("owfs"), c, d);
 		o.dumpConfig();
 		o.remove();
 	}

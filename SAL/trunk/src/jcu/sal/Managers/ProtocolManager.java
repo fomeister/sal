@@ -56,11 +56,13 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	@Override
 	protected Protocol build(Node config) throws InstantiationException {
 		Protocol p = null;
+		String type=null;
 		this.logger.debug("building Protocol");
 		try {
 			ProtocolID i = (ProtocolID) getComponentID(config);
-			this.logger.debug("Protocol type: " + i.getType());
-			String className = ProtocolModulesList.getClassName(i.getType());
+			type=getComponentType(config);
+			this.logger.debug("Protocol type: " + type);
+			String className = ProtocolModulesList.getClassName(type);
 
 			Class<?>[] params = {ProtocolID.class, Hashtable.class, Node.class};
 			Constructor<?> c = Class.forName(className).getConstructor(params);
@@ -94,16 +96,26 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	@Override
 	protected Identifier getComponentID(Node n) throws ParseException {
 		Identifier id = null;
+		try {
+			id = new ProtocolID(XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLNAME_TAG, n));
+		} catch (Exception e) {
+			throw new ParseException("Couldnt find the Protocol identifier", 0);
+		}
+		return id;
+	}
+	
+	/* (non-Javadoc)
+	 * @see jcu.sal.Managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
+	 */
+	@Override
+	protected String getComponentType(Node n) throws ParseException {
 		String type = null;
 		try {
 			type = XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLTYPE_TAG, n);
-			id = new ProtocolID(XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLNAME_TAG, n), type);
 		} catch (Exception e) {
-			this.logger.error("Couldnt create the Protocol identifier");
-			e.printStackTrace();
-			throw new ParseException("Couldnt create the Protocol identifier", 0);
+			throw new ParseException("Couldnt find the protocol type", 0);
 		}
-		return id;
+		return type;
 	}
 	
 	/* (non-Javadoc)
@@ -136,7 +148,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @throws ConfigurationException if the sensor cannot be added (wrong ProtocolName field, or unsupported sensor)
 	 */
 	public Protocol addSensor(Sensor sensor) throws ConfigurationException{
-		Protocol p = ctable.get(new ProtocolID(sensor.getProtocolName(), Identifier.ANY_TYPE));
+		Protocol p = ctable.get(new ProtocolID(sensor.getProtocolName()));
 		if(p!=null)
 		{
 			logger.debug("Adding sensor " + sensor.toString() + " to Protocol " + p.getID().toString());
