@@ -55,11 +55,13 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	@Override
 	protected EndPoint build(Node config) throws InstantiationException {
 		EndPoint endPoint = null;
+		String type=null;
 		this.logger.debug("building EndPoint");
 		try {
 			EndPointID i = (EndPointID) this.getComponentID(config);
-			this.logger.debug("EndPoint type: " +i.getType());
-			String className = EndPointModulesList.getClassName(i.getType());
+			type=getComponentType(config);
+			this.logger.debug("EndPoint type: " +type);
+			String className = EndPointModulesList.getClassName(type);
 			
 			Class<?>[] p = new Class<?>[2];
 			p[0] = EndPointID.class;
@@ -96,14 +98,10 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	 */
 	@Override
 	protected Identifier getComponentID(Node n) throws ParseException {
-		String type = null;
 		Identifier id = null;
 		try {
-			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, n);
-			id = new EndPointID(XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTNAME_TAG, n), type);
+			id = new EndPointID(XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTNAME_TAG, n));
 		} catch (Exception e) {
-			this.logger.error("Couldnt find the EndPoint ID");
-			e.printStackTrace();
 			throw new ParseException("Couldnt find the EndPoint ID", 0);
 		}
 		return id;
@@ -127,11 +125,22 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='eth0' /><Param name='IPAddress' value='' /></parameters></EndPoint>"));
 		e.createComponent(XMLhelper.createDocument("<EndPoint name='files' type='fs' />"));
-		e.destroyComponent(new EndPointID("eth01", "ethernet"));
-		e.destroyComponent(new EndPointID("usb1", "usb"));
-		e.destroyComponent(new EndPointID("usb2", "usb"));
-		e.destroyComponent(new EndPointID("serial0", "serial"));
-		e.destroyComponent(new EndPointID("eth0", "ethernet"));
-		e.destroyComponent(new EndPointID("files", "fs"));
+		e.destroyComponent(new EndPointID("eth01"));
+		e.destroyComponent(new EndPointID("usb1"));
+		e.destroyComponent(new EndPointID("usb2"));
+		e.destroyComponent(new EndPointID("serial0"));
+		e.destroyComponent(new EndPointID("eth0"));
+		e.destroyComponent(new EndPointID("files"));
+	}
+
+	@Override
+	protected String getComponentType(Node n) throws ParseException {
+		String type = null;
+		try {
+			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, n);
+		} catch (Exception e) {
+			throw new ParseException("Couldnt find the EndPoint type", 0);
+		}
+		return type;
 	}
 }

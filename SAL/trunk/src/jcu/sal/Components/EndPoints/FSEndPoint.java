@@ -78,6 +78,6 @@ public class FSEndPoint extends EndPoint {
 	
 	public static void main(String[] args) throws ConfigurationException {
 		/* tries building a new FSEndPoint */
-		new FSEndPoint(new EndPointID("fs", "fs"), new Hashtable<String,String>());
+		new FSEndPoint(new EndPointID("fs"), new Hashtable<String,String>());
 	}
 }

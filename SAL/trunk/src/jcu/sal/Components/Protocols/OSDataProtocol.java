@@ -49,7 +49,7 @@ public class OSDataProtocol extends Protocol {
 	static { 
 		Slog.setupLogger(logger);
 		//Add to the list of supported EndPoint IDs
-		SUPPORTED_ENDPOINTS.add("fs");
+		SUPPORTED_ENDPOINT_TYPES.add("fs");
 		//Add to the list of supported commands
 		commands.put(new Integer(100), "getReading");
 		//Add to the list of supported sensors
@@ -140,7 +140,6 @@ public class OSDataProtocol extends Protocol {
 	public boolean isSensorSupported(Sensor sensor){
 		return supportedSensors.containsKey(sensor.getNativeAddress());	
 	}
-
 	
 	/**
 	 * @param args

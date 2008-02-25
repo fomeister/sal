@@ -8,10 +8,7 @@ import java.util.Hashtable;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.AbstractComponent;
-import jcu.sal.Components.Identifiers.Identifier;
-import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Identifiers.SensorID;
-import jcu.sal.Managers.ProtocolManager;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -46,13 +43,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 		state = new SensorState();
 		parseConfig();
 	}
-	
-	public SensorState getSensorState() {
-		synchronized(this) {
-			return state;
-		}
-	}
-	
+
 	public String getNativeAddress() {
 		return config.get(SENSORADDRESSATTRIBUTE_TAG);
 	}
@@ -61,64 +52,16 @@ public class Sensor extends AbstractComponent<SensorID> {
 		return config.get(PROTOCOLATTRIBUTE_TAG);
 	}
 	
-	public boolean isAvailable() {
-		synchronized(this) {
-			return state.isAvailable();
-		}
+	public boolean canRunCmd() {
+		return state.runCommand();
 	}
 	
-	public void setAvailable() {
-		synchronized(this) {
-			state.setStateAvailable();
-		}
+	public boolean finishRunCmd() {
+		return state.doneCommand();
 	}
-	
-	public void setUseState(int s) {
-		synchronized(this) {
-			state.setState(s,SensorState.STATE_UNCHANGED,SensorState.STATE_UNCHANGED);
-		}
-	}
-	
-	public void setConfigState(int s) {
-		synchronized(this) {
-			state.setState(SensorState.STATE_UNCHANGED,s,SensorState.STATE_UNCHANGED);
-		}
-	}
-	
-	public void setErrorState(int s) {
-		synchronized(this) {
-			state.setState(SensorState.STATE_UNCHANGED,SensorState.STATE_UNCHANGED,s);
-		}
-	}
-	
-	public int getUseState() {
-		synchronized(this) {
-			return state.getUseState();
-		}
-	}
-		
-	public int getConfigState() {
-		synchronized(this) {
-			return state.getConfigState();
-		}
-	}
-	
-	public int getErrorState() {
-		synchronized(this) {
-			return state.getErrorState();
-		}
-	}
-	
+
 	@Override
 	protected void parseConfig() throws ConfigurationException {
-		/* check that there is an instance of our protocol*/
-		if(ProtocolManager.getProcotolManager().getComponent(new ProtocolID(getProtocolName(), Identifier.ANY_TYPE)) !=null)
-			setAvailable();
-		else {
-			logger.error("Cannot find an instance of the protocol referred to by this sensor:" + getProtocolName());
-			throw new ConfigurationException();
-		}
-			
 	}
 	
 	@Override
@@ -127,12 +70,13 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 	@Override
 	public void start() {
-		if(isAvailable()) { this.logger.debug("Starting sensor " + toString());}
-		else this.logger.debug("Cant start sensor " + toString() + " , sensor not available");
+		if(state.enable()) { this.logger.debug("Starting sensor " + toString());}
+		else this.logger.debug("Cant start sensor " + toString());
 	}
 	@Override
 	public void stop() {
-		this.logger.debug("Stopping sensor " + toString());
+		state.disable();
+		this.logger.debug("Sensor " + toString()+" stopped");
 	}
 
 	@Override

@@ -42,7 +42,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	/**
 	 * A list of endpoints types supported by this protocol
 	 */
-	public static final Vector<String> SUPPORTED_ENDPOINTS = new Vector<String>();
+	public static final Vector<String> SUPPORTED_ENDPOINT_TYPES = new Vector<String>();
 	
 	/**
 	 * A table mapping command Ids to the name of a method to be exectuted when this command arrives
@@ -193,9 +193,9 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	protected final void parseConfig() throws ConfigurationException {
 		logger.debug("Parsing our configuration");
 		logger.debug("1st, Check the EndPoint");
-		if(!ep.isConfigured() || !SUPPORTED_ENDPOINTS.contains(ep.getType())) {
+		if(!ep.isConfigured() || !isEPTypeSupported(ep.getType())) {
 			logger.error("This Protocol has been setup with the wrong enpoint: got endpoint type: " +ep.getType()+", expected: ");
-			Iterator<String> iter = SUPPORTED_ENDPOINTS.iterator();
+			Iterator<String> iter = SUPPORTED_ENDPOINT_TYPES.iterator();
 			while(iter.hasNext())
 				logger.error(iter.next());
 			throw new ConfigurationException("Wrong Endpoint type");
@@ -247,12 +247,13 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 		
 		//Check if we have the sensor
 		if (started && hasSensor(sid)) {
-			if(getSensor(sid).isAvailable()) {
+			if(getSensor(sid).canRunCmd()) {
 				try {
 					Class<?>[] params = {Hashtable.class,Sensor.class};
 					Method m = this.getClass().getDeclaredMethod(commands.get(c.getCID()), params);
 					logger.debug("running method: "+ m.getName() );
 					s = (String) m.invoke(this,c.getParameters(), getSensor(sid));
+					getSensor(sid).finishRunCmd();
 				} catch (SecurityException e) {
 					logger.error("Not allowed to execute the methods matching the command");
 					throw new BadAttributeValueExpException("");
@@ -278,6 +279,14 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 			//TODO throw an exception here
 		}
 		return s;
+	}
+	
+	/**
+	 * Check whether a endPoint type is supported by this protocol
+	 * @param String the EndPoint type
+	 */
+	public final boolean isEPTypeSupported(String type) {
+		return SUPPORTED_ENDPOINT_TYPES.contains(type);
 	}
 	
 	/**

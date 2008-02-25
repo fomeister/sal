@@ -67,7 +67,7 @@ public class SALAgent {
 			e1.printStackTrace();
 		}
 		
-		Protocol p = pm.getComponent(new ProtocolID("osData", Identifier.ANY_TYPE));
+		Protocol p = pm.getComponent(new ProtocolID("osData"));
 		Iterator<Sensor> i = sm.getIterator();
 		while(i.hasNext())
 			try {

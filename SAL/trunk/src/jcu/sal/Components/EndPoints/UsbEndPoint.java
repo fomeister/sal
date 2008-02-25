@@ -92,6 +92,6 @@ public class UsbEndPoint extends EndPoint {
 	
 	public static void main(String[] args) throws ConfigurationException {
 		/* tries to build a USB EndPoint */
-		new UsbEndPoint(new EndPointID("usb1", "usb"), new Hashtable<String,String>());
+		new UsbEndPoint(new EndPointID("usb1"), new Hashtable<String,String>());
 	}
 }

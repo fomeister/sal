@@ -53,10 +53,11 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	protected Sensor build(Node n) throws InstantiationException {
 		SensorID i = null;
 		Sensor sensor = null;
+		
 		this.logger.debug("building Sensor");
 		try {
 			i = (SensorID) this.getComponentID(n);
-			this.logger.debug("Component type: " + i.getType());
+			this.logger.debug("Component type: " + getComponentType(n));
 			sensor = new Sensor(i, getComponentConfig(n));
 			
 		} catch (ParseException e) {
@@ -111,5 +112,10 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		e.destroyComponent(new SensorID("7"));
 		e.destroyComponent(new SensorID("eth0"));
 		e.destroyComponent(new SensorID("files"));
+	}
+
+	@Override
+	protected String getComponentType(Node n) throws ParseException {
+		return Sensor.SENSOR_TYPE;
 	}
 }
