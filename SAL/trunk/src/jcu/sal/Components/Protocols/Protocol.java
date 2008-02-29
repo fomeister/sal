@@ -16,11 +16,13 @@ import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.AbstractComponent;
 import jcu.sal.Components.Command;
+import jcu.sal.Components.componentRemovalListener;
 import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Identifiers.SensorID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Managers.EndPointManager;
+import jcu.sal.Managers.SensorManager;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -57,7 +59,12 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	/**
 	 * The endpoint associated with this protocol
 	 */
-	protected EndPoint ep; 
+	protected EndPoint ep;
+	
+	/**
+	 * Is this protocol started ?
+	 */
+	private boolean started;
 	
 	/**
 	 * Construct a new protocol gien its ID, type, configuration directives and an XML node
@@ -71,6 +78,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	public Protocol(ProtocolID i, String t, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super();
 		Slog.setupLogger(logger);
+		started=false;
 		
 		/* construct the endpoint first */
 		ep = EndPointManager.getEndPointManager().createComponent(d);
@@ -105,7 +113,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 		if (!started) {
 				if(isSensorSupported(s)) {
 					this.logger.debug("About to add sensor" + s.toString());
-					s.start();
+					//s.start();
 					sensors.put(s.getID(), s);
 					s.getID().setPid(this.id);
 				} else {
@@ -114,31 +122,6 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 				}
 		} else
 			logger.error("NOT IMPLEMENTED: ADD A SENSOR WITH PROTOCOL STARTED");
-		
-	}
-	
-	/**
-	 * Check if we have a sensor in the table
-	 * @param s the sensor to be checked
-	 */
-	public final boolean hasSensor(SensorID sid) {
-		return sensors.containsKey(sid);
-	}
-	
-	/**
-	 * Check if we have a sensor in the table
-	 * @param s the sensor to be checked
-	 */
-	public final Sensor getSensor(SensorID sid) {
-		return sensors.get(sid);
-	}
-	
-	/**
-	 * Returns all managed sensors
-	 * @param s the sensor to be checked
-	 */
-	public final Collection<Sensor> getSensors() {
-		return sensors.values();
 	}
 	
 	/**
@@ -148,13 +131,24 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	public final void removeSensor(SensorID i) {
 		this.logger.debug("About to remove sensor " + i.toString());
 		if(sensors.containsKey(i)) {
-			sensors.get(i).remove();
 			if(sensors.remove(i) == null)
 				this.logger.error("Cant remove sensor with key " + i.toString() +  ": No such element");
-			else
+			else {
+				SensorManager.getSensorManager().destroyComponent(i);
 				this.logger.debug("Sensor " + i.toString()+ " Removed");
+			}
 		} else
 			this.logger.error("Sensor " + i.toString()+ " doesnt exist and can NOT be removed");
+	}
+	
+	/**
+	 * Removes all sensors belonging to this protocol
+	 *
+	 */
+	public final void removeAllSensors(){
+		Enumeration<SensorID> i = sensors.keys();
+		while (i.hasMoreElements())
+			removeSensor(i.nextElement());
 	}
 	
 	
@@ -168,8 +162,8 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	}
 	
 	/**
-	 * returns a textual representation of a End Point's instance
-	 * @return the textual representation of the Logical Port's instance
+	 * returns a textual representation of a Protocol's instance
+	 * @return the textual representation of the Protocol's instance
 	 */
 	public final String toString() {
 		return "Protocol "+id.getName()+"("+type+"), EndPoint: " + ep.toString();
@@ -179,12 +173,16 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#remove()
 	 */
-	public final void remove() {
-		if(started)
-			stop();
-		internal_remove();
-		ep.remove();
-		this.logger.debug("protocol removed");
+	public final void remove(componentRemovalListener c) {
+		synchronized (this) {
+			removeAllSensors();
+			if(started)
+				stop();
+			internal_remove();
+			EndPointManager.getEndPointManager().destroyComponent(ep);
+			this.logger.debug("protocol " + type +" removed");
+		}
+		c.componentRemovable(id);
 	}
 	
 	/* (non-Javadoc)
@@ -193,7 +191,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	protected final void parseConfig() throws ConfigurationException {
 		logger.debug("Parsing our configuration");
 		logger.debug("1st, Check the EndPoint");
-		if(!ep.isConfigured() || !isEPTypeSupported(ep.getType())) {
+		if(!isEPTypeSupported(ep.getType())) {
 			logger.error("This Protocol has been setup with the wrong enpoint: got endpoint type: " +ep.getType()+", expected: ");
 			Iterator<String> iter = SUPPORTED_ENDPOINT_TYPES.iterator();
 			while(iter.hasNext())
@@ -209,28 +207,33 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 * @see jcu.sal.Components.HWComponent#start()
 	 */
 	public final void start() throws ConfigurationException{
-		this.logger.debug("starting Procol");
-		if(!configured)
-			parseConfig();
-		if(!ep.isStarted())
-			ep.start();
-		internal_start();
-		started = true;
-		this.logger.debug("protocol started");
+		synchronized (this) {
+			this.logger.debug("starting "+type+" Protocol");
+			if(!ep.isStarted())
+				ep.start();
+			internal_start();
+			Iterator<Sensor> i = sensors.values().iterator();
+			while(i.hasNext())
+				probeSensor(i.next());
+			if(!started)
+				started=true;
+			this.logger.debug("protocol "+type+" started");
+		}
 	}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#stop()
 	 */
 	public final void stop() {
-		this.logger.debug("stopping Procol");
-		if(started) {
-			internal_stop();
-			if(ep.isStarted())
-				ep.stop();
-			started = false;
+		synchronized (this) {
+			this.logger.debug("stopping "+type+" Protocol");
+			if(started) {
+				internal_stop();
+				if(ep.isStarted())
+					ep.stop();
+			}
+			this.logger.debug("protocol "+type+" stopped");
 		}
-		this.logger.debug("protocol stopped");
 	}
 
 	/**
@@ -241,44 +244,51 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 * @throws BadAttributeValueExpException 
 	 */
 	public String execute(Command c, SensorID sid) throws BadAttributeValueExpException {
-		String s = null;
+		String ret_val = null;
 		logger.debug("Received command :");
-		c.dumpCommand();
-		
-		//Check if we have the sensor
-		if (started && hasSensor(sid)) {
-			if(getSensor(sid).canRunCmd()) {
-				try {
-					Class<?>[] params = {Hashtable.class,Sensor.class};
-					Method m = this.getClass().getDeclaredMethod(commands.get(c.getCID()), params);
-					logger.debug("running method: "+ m.getName() );
-					s = (String) m.invoke(this,c.getParameters(), getSensor(sid));
-					getSensor(sid).finishRunCmd();
-				} catch (SecurityException e) {
-					logger.error("Not allowed to execute the methods matching the command");
-					throw new BadAttributeValueExpException("");
-				} catch (NoSuchMethodException e) {
-					logger.error("Could NOT find the method matching the command");
-					throw new BadAttributeValueExpException("");
-				} catch (BadAttributeValueExpException e) {
-					logger.error("Could NOT parse the command");
-					throw e;
-				} catch (InvocationTargetException e) {
-					logger.error("The command returned an exception:" + e.getMessage());
-					e.printStackTrace();
-				} catch (Exception e) {
-					logger.error("Could NOT run the command (error with invoke() )");
-					e.printStackTrace();
-				} 
+		Sensor s = sensors.get(sid);
+		if(started) {
+			//Check if we have the sensor
+			if (s!=null) {
+				//Check if it accepts command
+				if(s.startRunCmd()) {
+					try {
+						Class<?>[] params = {Hashtable.class,Sensor.class};
+						Method m = this.getClass().getDeclaredMethod(commands.get(c.getCID()), params);
+						logger.debug("running method: "+ m.getName() );
+						ret_val = (String) m.invoke(this,c.getParameters(), s);
+					} catch (SecurityException e) {
+						logger.error("Not allowed to execute the methods matching the command");
+						s.finishRunCmd();
+						throw new BadAttributeValueExpException("");
+					} catch (NoSuchMethodException e) {
+						logger.error("Could NOT find the method matching the command");
+						s.finishRunCmd();
+						throw new BadAttributeValueExpException("");
+					} catch (BadAttributeValueExpException e) {
+						logger.error("Could NOT parse the command");
+						s.finishRunCmd();
+						throw e;
+					} catch (InvocationTargetException e) {
+						logger.error("The command returned an exception:" + e.getMessage());
+						e.printStackTrace();
+					} catch (Exception e) {
+						logger.error("Could NOT run the command (error with invoke() )");
+						e.printStackTrace();
+					}
+					s.finishRunCmd();
+				} else {
+					logger.error("Sensor not available to run the command");
+					//TODO throw an exception here
+				}
 			} else {
-				logger.error("Sensor not available to run the command");
+				logger.error("Sensor not present.Cannot execute the command");
 				//TODO throw an exception here
 			}
-		} else {
-			logger.error("Sensor not present OR protocol not started.Cannot execute the command");
+		} else
+			logger.error("protocol not started.Cannot execute the command");
 			//TODO throw an exception here
-		}
-		return s;
+		return ret_val;
 	}
 	
 	/**
@@ -294,14 +304,22 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 * @param sensor the sensor to be probed
 	 */
 	public abstract boolean isSensorSupported(Sensor sensor);
+	
+	/**
+	 * Check whether a sensor is currently plugged-in/reachable/readable, and set its state accordingly.
+	 * @param sensor the sensor to be probed
+	 */
+	public abstract boolean probeSensor(Sensor sensor);
 
 	/**
-	 * Get the subclass to get ready to be removed
+	 * Stops the protocol
 	 */
 	protected abstract void internal_stop();
 	
 	/**
-	 * Starts the subclass 
+	 * Starts the protocol. When this method returns, the protocol must be ready to handle
+	 * requests to access (commands()), probe (probeSensor()) sensors without any further configuration
+	 * internal_start should not call probeSensor
 	 */
 	protected abstract void internal_start();
 	
@@ -314,5 +332,12 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 * Parse the configuration of the protocol itself
 	 */
 	protected abstract void internal_parseConfig() throws ConfigurationException;
+	
+	/**
+	 * Is the protocol started ? 
+	 */
+	public final boolean isStarted() {
+		return started;
+	}
 
 }

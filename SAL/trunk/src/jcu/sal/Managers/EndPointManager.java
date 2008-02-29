@@ -113,7 +113,7 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	@Override
 	protected void remove(EndPoint component) {
 		component.stop();
-		component.remove();
+		component.remove(this);
 	}
 
 	

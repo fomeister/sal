@@ -8,6 +8,7 @@ import java.util.Hashtable;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.AbstractComponent;
+import jcu.sal.Components.componentRemovalListener;
 import jcu.sal.Components.Identifiers.SensorID;
 import jcu.sal.utils.Slog;
 
@@ -52,8 +53,16 @@ public class Sensor extends AbstractComponent<SensorID> {
 		return config.get(PROTOCOLATTRIBUTE_TAG);
 	}
 	
-	public boolean canRunCmd() {
+	public boolean startRunCmd() {
 		return state.runCommand();
+	}
+	
+	public boolean disable() {
+		return state.disable();
+	}
+	
+	public boolean enable() {
+		return state.enable();
 	}
 	
 	public boolean finishRunCmd() {
@@ -65,8 +74,9 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 	
 	@Override
-	public void remove() {
-		this.logger.debug("Removing sensor " + toString());
+	public void remove(componentRemovalListener c) {
+		this.logger.debug("Registering removal of sensor " + toString());
+		state.stop(c, id);
 	}
 	@Override
 	public void start() {
@@ -81,7 +91,12 @@ public class Sensor extends AbstractComponent<SensorID> {
 
 	@Override
 	public String toString() {
-		return "Sensor " + id.getName() + " (" + getNativeAddress() +")";
+		return "Sensor " + id.getName() + " (" + getNativeAddress() +") Protocol: "+id.getPid().toString();
+	}
+
+	@Override
+	public boolean isStarted() {
+		return state.isStarted();
 	}
 }
 

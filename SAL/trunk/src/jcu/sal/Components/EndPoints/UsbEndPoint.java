@@ -33,7 +33,6 @@ public class UsbEndPoint extends EndPoint {
 	public UsbEndPoint(EndPointID i, Hashtable<String,String> c) throws ConfigurationException {
 		super(i,USBENDPOINT_TYPE,c);
 		Slog.setupLogger(this.logger);
-		this.logger.debug("ctor USBEndPoint");
 		parseConfig();
 	}
 
@@ -57,39 +56,6 @@ public class UsbEndPoint extends EndPoint {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#remove()
-	 */
-	@Override
-	public void remove() {
-		//Not much to do here...
-		if(started)
-			stop();
-		this.logger.debug("USB Endpoint removed");
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#start()
-	 */
-	@Override
-	public void start() {
-		if(configured && !started) {
-			this.logger.debug("Starting USB Endpoint.");
-			started=true;
-		}
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#stop()
-	 */
-	@Override
-	public void stop() {
-		if(started) {
-			this.logger.debug("Stopping USB Endpoint.");
-			started=false;
-		}
-	}
-	
 	public static void main(String[] args) throws ConfigurationException {
 		/* tries to build a USB EndPoint */
 		new UsbEndPoint(new EndPointID("usb1"), new Hashtable<String,String>());

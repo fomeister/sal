@@ -23,8 +23,8 @@ public abstract class AbstractComponent<T> implements HWComponent {
 	
 	protected Hashtable<String, String> config;
 	private Logger logger = Logger.getLogger(AbstractComponent.class);
-	protected boolean started = false;
-	protected boolean configured = false;
+//	protected boolean started = false;
+//	protected boolean configured = false;
 	protected String type = null;
 	protected T id = null;
 	
@@ -55,7 +55,7 @@ public abstract class AbstractComponent<T> implements HWComponent {
 	 */
 	public void updateConfig(Hashtable<String, String> config) throws ConfigurationException
 	{
-		if (!started) {
+		if (!isStarted()) {
 			this.config = config;
 			parseConfig();
 		} else {
@@ -67,7 +67,7 @@ public abstract class AbstractComponent<T> implements HWComponent {
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#remove()
 	 */
-	public abstract void remove();
+	public abstract void remove(componentRemovalListener c);
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#start()
@@ -88,23 +88,16 @@ public abstract class AbstractComponent<T> implements HWComponent {
 	protected abstract void parseConfig() throws ConfigurationException;
 	
 	/**
+	 * returns whether a component is started
+	 * @return whether a component is started
+	 */
+	public abstract boolean isStarted();
+	
+	/**
 	 * returns a textual representation of a Logical Port's instance
 	 * @return the textual representation of the Logical Port's instance
 	 */
 	public abstract String toString();
-	
-	/**
-	 * Dumps the contents of the configuration table
-	 */
-	public void dumpConfig() {
-		this.logger.debug("current configuration for " + id.toString() +":" );
-		Enumeration<String> keys = config.keys();
-		Collection<String> cvalues = config.values();
-		Iterator<String> iter = cvalues.iterator();
-		while ( keys.hasMoreElements() &&  iter.hasNext())
-		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
-	}
-	
 
 	/**
 	 * Gets the type of a component
@@ -124,19 +117,16 @@ public abstract class AbstractComponent<T> implements HWComponent {
 		return this.id;
 	}
 
-	public boolean isConfigured() {
-		return configured;
+	/**
+	 * Dumps the contents of the configuration table
+	 */
+	public void dumpConfig() {
+		this.logger.debug("current configuration for " + id.toString() +":" );
+		Enumeration<String> keys = config.keys();
+		Collection<String> cvalues = config.values();
+		Iterator<String> iter = cvalues.iterator();
+		while ( keys.hasMoreElements() &&  iter.hasNext())
+		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
 	}
-
-	public void setConfigured(boolean configured) {
-		this.configured = configured;
-	}
-
-	public boolean isStarted() {
-		return started;
-	}
-
-	public void setStarted(boolean started) {
-		this.started = started;
-	}
+	
 }

@@ -165,5 +165,12 @@
 				<Param name="SamplingInterval" value="30" />
 			</parameters>
 		</Sensor>
+		<Sensor sid="24">
+			<parameters>
+				<Param name="ProtocolName" value="osData" />
+				<Param name="Address" value="TBTemp" />
+				<Param name="SamplingInterval" value="30" />
+			</parameters>
+		</Sensor>
 	</SensorConfiguration>
 </SAL>

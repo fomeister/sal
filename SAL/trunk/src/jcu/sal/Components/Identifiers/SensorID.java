@@ -53,7 +53,7 @@ public class SensorID extends AbstractIdentifier{
 	 */
 	public ProtocolID getPid() {
 		if(pid == null) {
-			System.out.println("************ TRYING TO ACCESS AN EMPTY SENSOR ID ***********");
+			//System.out.println("************ TRYING TO ACCESS AN EMPTY PROTOCOL ID ***********");
 			return new ProtocolID("");
 		}
 		else
@@ -66,7 +66,7 @@ public class SensorID extends AbstractIdentifier{
 	 */
 	public void setPid(ProtocolID pid) {
 		if(pid == null || (pid.getName().length()== 0)) {
-			System.out.println("************ TRYING TO SET AN EMPTY PROTOCOL ID ON AN SENSOR***********");
+			//System.out.println("************ TRYING TO SET AN EMPTY PROTOCOL ID ON AN SENSOR***********");
 			pid = null;
 		}
 		else

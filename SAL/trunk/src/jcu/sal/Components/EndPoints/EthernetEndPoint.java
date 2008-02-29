@@ -37,7 +37,6 @@ public class EthernetEndPoint extends EndPoint {
 	public EthernetEndPoint(EndPointID i, Hashtable<String,String> c) throws ConfigurationException {
 		super(i, ETHERNETENDPOINT_TYPE, c);
 		Slog.setupLogger(this.logger);
-		this.logger.debug("ctor EthernetEndPoint");
 		parseConfig();
 	}
 
@@ -66,16 +65,14 @@ public class EthernetEndPoint extends EndPoint {
 				/* by IP address*/
 				InetAddress i;
 				Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
-				search:
-				while(e.hasMoreElements()) {
+				while(e.hasMoreElements() && !found) {
 					n = e.nextElement();
 					if(n.getDisplayName().equals(intName)) {
 						Enumeration<InetAddress> ee = n.getInetAddresses();
-						while(ee.hasMoreElements()) {
+						while(ee.hasMoreElements() && !found) {
 							i = ee.nextElement();
 							if(i.getHostAddress().equals(ipAddress)) {
 								found = true;
-								break search;
 							}
 						}						
 					}
@@ -104,46 +101,12 @@ public class EthernetEndPoint extends EndPoint {
 			throw new ConfigurationException("Couldnt initialise the ethernet port...");
 		} 
 	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#remove()
-	 */
-	@Override
-	public void remove() {
-		//Not much to do here...
-		this.logger.debug("Removing Ethernet Endpoint.");
-		if(started)
-			stop();
-		this.logger.debug("Ethernet Endpoint removed");
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#start()
-	 */
-	@Override
-	public void start(){
-		if(configured && !started) {
-			this.logger.debug("Starting Ethernet Endpoint.");
-			started=true;
-		}
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#stop()
-	 */
-	@Override
-	public void stop() {
-		if(started) {
-			this.logger.debug("Stopping Ethernet Endpoint.");
-			started=false;
-		}
-	}
 	
 	public static void main(String[] args) throws ConfigurationException {
 		/* Tries building a new ethernet Endpoint*/
 		Hashtable<String,String> c = new Hashtable<String,String>();
 		c.put("EthernetDevice","eth0");
 		c.put("IPAddress","");
-		EthernetEndPoint e = new EthernetEndPoint(new EndPointID("ethernet"), c);
+		new EthernetEndPoint(new EndPointID("ethernet"), c);
 	}
 }

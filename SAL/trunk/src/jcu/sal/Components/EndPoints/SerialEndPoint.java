@@ -41,7 +41,6 @@ public class SerialEndPoint extends EndPoint {
 	public SerialEndPoint(EndPointID i,  Hashtable<String,String> c) throws ConfigurationException {
 		super(i,SERIALENDPOINT_TYPE,c);
 		Slog.setupLogger(this.logger);
-		this.logger.debug("ctor SerialEndPoint");
 		parseConfig();
 	}
 
@@ -87,40 +86,6 @@ public class SerialEndPoint extends EndPoint {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#remove()
-	 */
-	@Override
-	public void remove() {
-		//Not much to do here...
-		this.logger.debug("Removing serial Endpoint.");
-		if(started)
-			stop();
-		this.logger.debug("serial Endpoint removed");
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#start()
-	 */
-	@Override
-	public void start() {
-		if(configured && !started) {
-			this.logger.debug("Starting serial Endpoint.");
-			started=true;
-		}
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#stop()
-	 */
-	@Override
-	public void stop() {
-		if(started) {
-			this.logger.debug("Stopping serial Endpoint.");
-			started=false;
-		}
-	}
-	
 	public static void main(String[] args) {
 		/* Lists javax.comm recognised-serial ports */
 		CommPortIdentifier portId;
@@ -132,7 +97,5 @@ public class SerialEndPoint extends EndPoint {
 				System.out.println("Port: " +portId.getName() + " - Currently used? " + portId.isCurrentlyOwned());
 			} 
 		}
-		
-		/* Tries building a serial EndPoint*/
 	}
 }

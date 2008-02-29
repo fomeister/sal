@@ -3,15 +3,16 @@
  */
 package jcu.sal.Components.Protocols;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Hashtable;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
+import jcu.sal.Managers.SensorManager;
 import jcu.sal.utils.ProcessHelper;
 import jcu.sal.utils.Slog;
 
@@ -90,28 +91,21 @@ public class OSDataProtocol extends Protocol {
 		try {
 			if(getConfig("SBTempFile")!=null)  supportedSensors.put("SBTemp",new OSdata(getConfig("SBTempFile"), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
-	
-		configured = true;
+		try {
+			if(getConfig("TBTempFile")!=null)  supportedSensors.put("TBTemp",new OSdata(getConfig("TBTempFile"), null, 1, null, false));
+		} catch (BadAttributeValueExpException e) {}
 		logger.debug("OSData protocol configured");
 	}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_stop()
 	 */
-	protected void internal_stop() {
-		logger.debug("OSData internal stop");
-
-	}
+	protected void internal_stop() {}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_start()
 	 */
-	protected void internal_start() {
-		logger.debug("OSData internal start");
-		// TODO Check that the sensors table has some sensors
-		// TODO call probeSensors
-
-	}
+	protected void internal_start() {}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_remove()
@@ -130,6 +124,7 @@ public class OSDataProtocol extends Protocol {
 			ret = ProcessHelper.getFieldFromFile(d.file, d.pattern, d.field, d.delim, d.translate);
 		} catch (IOException e) {
 			logger.error("couldnt run the command to get readings for sensor "+ s.toString());
+			s.disable();
 			throw e; 
 		}
 		return ret;
@@ -140,37 +135,22 @@ public class OSDataProtocol extends Protocol {
 	public boolean isSensorSupported(Sensor sensor){
 		return supportedSensors.containsKey(sensor.getNativeAddress());	
 	}
-	
-	/**
-	 * @param args
-	 * @throws ParserConfigurationException 
-	 * @throws ConfigurationException 
-	 * @throws IOException 
-	 */
-	public static void main(String[] args) throws ParserConfigurationException, ConfigurationException, IOException {
-		/*Document d = XMLhelper.createDocument("<EndPoint name='osData' type='fs' />");
-		Hashtable<String, String> c = new Hashtable<String, String>();
-		c.put("CPUTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp2_input");
-		c.put("NBTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp1_input");
-		c.put("SBTempFile", "/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp3_input");
-		SensorID sid = new SensorID("fictifSensor");
-		Sensor s = new Sensor(sid,c);
-		OSDataProtocol o = new OSDataProtocol(new ProtocolID("OSData", "OSData"), c, d);
-		o.addSensor(s);
+
+
+	@Override
+	public boolean probeSensor(Sensor s) {
+		OSdata d = supportedSensors.get(s.getNativeAddress());
 		try {
-			o.execute(new Command(new Integer(100), "param", "value"), sid);
-		} catch (BadAttributeValueExpException e) {
-			System.out.println("Incorrect value");
-		} 
-		o.dumpConfig();
-		o.remove();*/
-		System.out.println("freemem: " + ProcessHelper.getFieldFromFile("/proc/meminfo", "MemFree:", 2, null, true));
-		System.out.println("user: " + ProcessHelper.getFieldFromCommand("vmstat", 3, 13, null, false));
-		System.out.println("system: " + ProcessHelper.getFieldFromCommand("vmstat", 3, 14, null, false));
-		System.out.println("idle: " + ProcessHelper.getFieldFromCommand("vmstat", 3, 15, null, false));
-		System.out.println("IO: " + ProcessHelper.getFieldFromCommand("vmstat", 3, 16, null, false));
-		System.out.println("loadavg1: " + ProcessHelper.getFieldFromFile("/proc/loadavg", null, 1, null, false));
-		System.out.println("loadavg5: " + ProcessHelper.getFieldFromFile("/proc/loadavg", null, 2, null, false));
-		System.out.println("loadavg15: " + ProcessHelper.getFieldFromFile("/proc/loadavg", null, 3, null, false));
+			if((new File(d.file)).canRead()) {
+				s.enable();
+				return true;
+			}
+		} catch (Exception e) {
+			logger.error("couldnt probe sensor "+s.toString()+". Raised exception: "+e.getMessage());
+		}
+		logger.debug("removing sensor "+s.toString()+", couldnt find the matching file: "+d.file);
+		s.remove(SensorManager.getSensorManager());
+		return false;
 	}
+
 }
