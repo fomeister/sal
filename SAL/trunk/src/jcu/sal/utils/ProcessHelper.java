@@ -244,6 +244,15 @@ public class ProcessHelper {
 		return line.split(delim)[field-1];
 	}
 	
+	/**
+	 * Returns whether a file exists and is readable
+	 * @param f the full path to the file
+	 * @return whether the file exists and is readable
+	 */
+	public static boolean isFileReadable(String f){
+		return new File(f).canRead();
+	}
+	
 	
 	public static void main(String[] args) throws IOException {
 		BufferedReader[] b = captureOutputs("cut -f3 -d' ' /proc/loadavg");

@@ -4,7 +4,6 @@
 package jcu.sal.Components.Protocols;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.util.Hashtable;
 
@@ -59,11 +58,11 @@ public class OwfsProtocol extends Protocol {
 			mtpt = getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG);
 			if(mtpt.length()==0) throw new BadAttributeValueExpException("Empty mount point directive...");
 			
-			//concurrent instances of owfs can coexist as long as their mount points are different
-			//Check whether instances of owfs are using the same mount point as ours
-			if(ProcessHelper.getRunningProcessArgs("owfs").containsValue(mtpt)) {
-				logger.error("An instance of owfs seems to be using the same mountpoint as ours: " + mtpt);
-				throw new BadAttributeValueExpException("Wrong OWFS mount point configuration");
+			//concurrent instances of owfs cant coexist 
+			//Check whether instances of owfs are running
+			if(!ProcessHelper.getPid("owfs").isEmpty()){
+				logger.error("An instance of owfs seems to be running");
+				throw new BadAttributeValueExpException("OWFS already running");
 			}
 
 			//Next, we check that OWFS is installed in the given directory
@@ -96,10 +95,28 @@ public class OwfsProtocol extends Protocol {
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_start()
 	 */
-	protected void internal_start() {
+	protected void internal_start() throws ConfigurationException{
 		logger.debug("OWFS internal start");
-		// TODO Check that the sensors table has some sensors
-		// TODO start owfs with arguments
+		
+		try {
+			BufferedReader r[] = ProcessHelper.captureOutputs(config.get(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall "+config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG));
+			//check the stdout and stderr
+			if(r[1].)
+			
+			
+			//Check that it actually started ...
+			if(ProcessHelper.getPid("owfs").isEmpty()){
+				logger.error("Starting OWFS command failed with:");
+				System.out.println(r[0]);
+				System.out.println(r[1]);
+				throw new ConfigurationException();
+			}
+			
+		} catch (IOException e) {
+			logger.error("Coudlnt run the OWFS process");
+			throw new ConfigurationException();
+		}
+		
 		// TODO call probeSensors
 
 	}
@@ -141,7 +158,7 @@ public class OwfsProtocol extends Protocol {
 		// TODO complete this method
 		String f = new String(config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+s.getNativeAddress());
 		try {
-			if((new File(f).canRead())) {
+			if(ProcessHelper.isFileReadable(f)) {
 				s.enable();
 				return true;
 			}
