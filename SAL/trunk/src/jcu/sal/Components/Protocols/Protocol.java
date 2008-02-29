@@ -207,18 +207,21 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 * @see jcu.sal.Components.HWComponent#start()
 	 */
 	public final void start() throws ConfigurationException{
-		synchronized (this) {
-			this.logger.debug("starting "+type+" Protocol");
-			if(!ep.isStarted())
-				ep.start();
-			internal_start();
-			Iterator<Sensor> i = sensors.values().iterator();
-			while(i.hasNext())
-				probeSensor(i.next());
-			if(!started)
-				started=true;
-			this.logger.debug("protocol "+type+" started");
-		}
+		if(!sensors.isEmpty()) {
+			synchronized (this) {
+				this.logger.debug("starting "+type+" Protocol");
+				if(!ep.isStarted())
+					ep.start();
+				internal_start();
+				Iterator<Sensor> i = sensors.values().iterator();
+				while(i.hasNext())
+					probeSensor(i.next());
+				if(!started)
+					started=true;
+				this.logger.debug("protocol "+type+" started");
+			}
+		} else 
+			logger.debug("No sensors added to this protocol. Not starting");
 	}
 	
 	/* (non-Javadoc)
@@ -321,7 +324,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 * requests to access (commands()), probe (probeSensor()) sensors without any further configuration
 	 * internal_start should not call probeSensor
 	 */
-	protected abstract void internal_start();
+	protected abstract void internal_start() throws ConfigurationException;
 	
 	/**
 	 * Prepare the subclass to be removed 

@@ -3,7 +3,6 @@
  */
 package jcu.sal.Components.Protocols;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Hashtable;
 
@@ -141,7 +140,7 @@ public class OSDataProtocol extends Protocol {
 	public boolean probeSensor(Sensor s) {
 		OSdata d = supportedSensors.get(s.getNativeAddress());
 		try {
-			if((new File(d.file)).canRead()) {
+			if(ProcessHelper.isFileReadable(d.file)) {
 				s.enable();
 				return true;
 			}
