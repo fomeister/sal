@@ -4,6 +4,7 @@
 package jcu.sal.Components.Protocols;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.util.Hashtable;
 
@@ -71,7 +72,6 @@ public class OwfsProtocol extends Protocol {
 			while((temp = b[0].readLine()) != null) logger.debug(temp);
 			while((temp = b[1].readLine()) != null) logger.debug(temp);
 			
-			configured = true;
 			logger.debug("OWFS protocol configured");
 			
 		} catch (IOException e) {
@@ -123,13 +123,32 @@ public class OwfsProtocol extends Protocol {
 		c.put(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG, "/mnt/w1");
 		OwfsProtocol o = new OwfsProtocol(new ProtocolID("owfs"), c, d);
 		o.dumpConfig();
-		o.remove();
+		//o.remove();
 	}
 
 
 	@Override
 	public boolean isSensorSupported(Sensor sensor) {
-		//TODO check the sensor family
+		//TODO check the sensor family and make sure it is supported
+		if(sensor.getNativeAddress().substring(0, 3)=="10.")
+			return true;
+		else
+			return false;
+	}
+
+	@Override
+	public boolean probeSensor(Sensor s) {
+		// TODO complete this method
+		String f = new String(config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+s.getNativeAddress());
+		try {
+			if((new File(f).canRead())) {
+				s.enable();
+				return true;
+			}
+		} catch (Exception e) {
+			logger.error("couldnt probe sensor "+s.toString()+". Raised exception: "+e.getMessage());
+		}
+		s.disable();
 		return false;
 	}
 

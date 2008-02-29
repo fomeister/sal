@@ -11,7 +11,9 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.Components.Identifiers.Identifier;
+import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Identifiers.SensorID;
+import jcu.sal.Components.Protocols.Protocol;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -94,10 +96,34 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	 */
 	@Override
 	protected void remove(Sensor component) {
-		component.stop();
-		component.remove();
+		component.remove(this);
 	}
 
+	/**
+	 * Returns the protcol associated with a SensorID
+	 * @throw ConfigurationException if the protocol can not be found 
+	 */
+	public Protocol getProtocol(SensorID sid) throws ConfigurationException{
+			Protocol p=null;
+			ProtocolID pid = null;
+			//TODO fix all the methods that should return an exception instead of a null pointer
+			//TODO so we can get rid of all the if statments and only have try/catch stuff
+			if(ctable.get(sid)==null) {
+				logger.error("Cannot find the any sensor with this sensorID: " + sid.toString());
+				throw new ConfigurationException();
+			}
+			pid = ctable.get(sid).getID().getPid();
+			if(pid==null){
+				logger.error("Cannot find the protocolID associated with this sensorID: " + sid.toString());
+				throw new ConfigurationException();
+			}
+			p=ProtocolManager.getProcotolManager().getComponent(ctable.get(sid).getID().getPid());
+			if(p==null){
+				logger.error("Cannot find the protocol associated with this sensorID: " + sid.toString());
+				throw new ConfigurationException();
+			}
+			return p;
+	}
 	
 	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException, ConfigurationException {
 		SensorManager e = getSensorManager();

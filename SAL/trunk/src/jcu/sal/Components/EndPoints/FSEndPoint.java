@@ -28,7 +28,6 @@ public class FSEndPoint extends EndPoint {
 	public FSEndPoint(EndPointID i, Hashtable<String,String> c) throws ConfigurationException {
 		super(i,FSENDPOINT_TYPE ,c);
 		Slog.setupLogger(this.logger);
-		this.logger.debug("ctor FSEndPoint");
 		parseConfig();
 	}
 
@@ -40,40 +39,6 @@ public class FSEndPoint extends EndPoint {
 		// Not much to do here 
 		this.logger.debug("Found filesystem");
 		this.configured = true;
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#remove()
-	 */
-	@Override
-	public void remove() {
-		//Not much to do here...
-		this.logger.debug("Removing Filesystem Endpoint.");
-		if(started)
-			stop();
-		this.logger.debug("Filesystem Endpoint removed");
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#start()
-	 */
-	@Override
-	public void start() {
-		if(configured && !started) {
-			this.logger.debug("Starting Filesystem Endpoint.");
-			started=true;
-		}
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.AbstractComponent#stop()
-	 */
-	@Override
-	public void stop() {
-		if(started) {
-			this.logger.debug("Stopping Ethernet Endpoint.");
-			started=false;
-		}
 	}
 	
 	public static void main(String[] args) throws ConfigurationException {

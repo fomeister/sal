@@ -41,8 +41,8 @@ public interface HWComponent {
 	public String getConfig(String directive) throws BadAttributeValueExpException;
 	
 	/**
-	 * Starts a component or do nothing for those that cant be started
-	 *
+	 * Starts a component: puts the component in a state where it can be used
+	 * without requiring further configuration
 	 */
 	public void start() throws ConfigurationException;
 
@@ -56,6 +56,6 @@ public interface HWComponent {
 	 * Destroy a component 
 	 *
 	 */
-	public void remove();
+	public void remove(componentRemovalListener c);
 
 }

@@ -14,6 +14,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.HWComponent;
+import jcu.sal.Components.componentRemovalListener;
 import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -26,7 +27,7 @@ import org.w3c.dom.Node;
  * @author gilles
  *
  */
-public abstract class ManagerFactory<T extends HWComponent> {
+public abstract class ManagerFactory<T extends HWComponent> implements componentRemovalListener {
 	
 	public static String COMPONENTPARAM_TAG = "Param";
 	
@@ -105,10 +106,6 @@ public abstract class ManagerFactory<T extends HWComponent> {
 		if(ctable.containsKey(i)) {
 			dumpTable();
 			remove(ctable.get(i));
-			if(ctable.remove(i) == null)
-				this.logger.error("Cant remove element with key " + i.toString() +  ": No such element");
-			else
-				this.logger.debug("Element " + i.toString()+ " Removed");
 		} else
 			this.logger.error("Element " + i.toString()+ " doesnt exist and can NOT be removed");
 	}
@@ -176,6 +173,16 @@ public abstract class ManagerFactory<T extends HWComponent> {
 		Iterator<T> iter = cvalues.iterator();
 		while ( keys.hasMoreElements() &&  iter.hasNext())
 		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
+	}
+	
+	/**
+	 * Removes the specified component
+	 */
+	public void componentRemovable(Identifier i){
+		if(ctable.remove(i) == null)
+			this.logger.error("Cant remove element with key " + i.toString() +  ": No such element");
+		else
+			this.logger.debug("Element " + i.toString()+ " Removed");
 	}
 	
 	/**

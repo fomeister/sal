@@ -123,13 +123,12 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 */
 	@Override
 	protected void remove(Protocol component) {
-		component.remove();
+		component.remove(this);
 	}
 	
 
 	/**
-	 * Starts all the components at once
-	 * @return the config directives in a hastable
+	 * Starts all the protcols  at once
 	 */
 	public void startAll(){
 		Collection<Protocol> cvalues = ctable.values();
@@ -139,6 +138,32 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			logger.debug("Starting protocol" + e.toString());
 			try { e.start(); }
 			catch (ConfigurationException ex) { logger.error("Couldnt start protocol " + e.toString()); }
+		}
+	}
+	
+	/**
+	 * Stops all the protcols  at once
+	 */
+	public void stopAll(){
+		Collection<Protocol> cvalues = ctable.values();
+		Iterator<Protocol> iter = cvalues.iterator();
+		while (iter.hasNext()) {
+			Protocol e = iter.next();
+			logger.debug("Stopping protocol" + e.toString());
+			e.stop();
+		}
+	}
+	
+	/**
+	 * remove all the protcols at once
+	 */
+	public void removeAll(){
+		Collection<Protocol> cvalues = ctable.values();
+		Iterator<Protocol> iter = cvalues.iterator();
+		while (iter.hasNext()) {
+			Protocol e = iter.next();
+			logger.debug("Stopping protocol" + e.toString());
+			e.remove(this);
 		}
 	}
 	
