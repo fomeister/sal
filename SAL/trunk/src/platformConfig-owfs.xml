@@ -6,7 +6,7 @@
 			<readingDirectory>/home/sensor_user/readings</readingDirectory>
 		</general>
 		<protocols>
-			<Protocol name="1wirefs" type="owfs">
+			<Protocol name="1wiretree" type="owfs">
 				<EndPoint name="usb" type="usb" />
 				<parameters>
 					<Param name="Location" value="/opt/owfs/bin/owfs" />

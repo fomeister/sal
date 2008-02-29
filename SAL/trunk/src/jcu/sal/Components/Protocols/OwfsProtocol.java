@@ -96,13 +96,12 @@ public class OwfsProtocol extends Protocol {
 	 * @see jcu.sal.Components.Protocol#internal_start()
 	 */
 	protected void internal_start() throws ConfigurationException{
+		StringBuffer out, err;
 		logger.debug("OWFS internal start");
 		
 		try {
 			BufferedReader r[] = ProcessHelper.captureOutputs(config.get(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall "+config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG));
 			//check the stdout and stderr
-			if(r[1].)
-			
 			
 			//Check that it actually started ...
 			if(ProcessHelper.getPid("owfs").isEmpty()){
