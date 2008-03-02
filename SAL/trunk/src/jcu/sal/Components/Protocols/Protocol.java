@@ -5,6 +5,7 @@ package jcu.sal.Components.Protocols;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -22,6 +23,7 @@ import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Identifiers.SensorID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Managers.EndPointManager;
+import jcu.sal.Managers.ProtocolManager;
 import jcu.sal.Managers.SensorManager;
 import jcu.sal.utils.Slog;
 
@@ -33,13 +35,15 @@ import org.w3c.dom.Node;
  * @author gilles
  *
  */
-public abstract class Protocol extends AbstractComponent<ProtocolID> {
+public abstract class Protocol extends AbstractComponent<ProtocolID> implements Runnable {
 
 	private Logger logger = Logger.getLogger(Protocol.class);
 	
 	public static final String PROTOCOLTYPE_TAG = "type";
 	public static final String PROTOCOLNAME_TAG = "name";
 	public static final String PROTOCOL_TAG="Protocol";
+	
+	public final static String AUTODETECTINTERVALATTRIBUTE_TAG = "AutoDetectInterval";
 	
 	/**
 	 * A list of endpoints types supported by this protocol
@@ -67,6 +71,12 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	private boolean started;
 	
 	/**
+	 * Can the protocol automatically detect sensor addition/removal ?
+	 */
+	protected boolean autodetect;
+	private Thread autodetectThread;
+	
+	/**
 	 * Construct a new protocol gien its ID, type, configuration directives and an XML node
 	 * containing the associated endpoint configuration
 	 * @param i the protocol identifier
@@ -79,6 +89,8 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 		super();
 		Slog.setupLogger(logger);
 		started=false;
+		removed=false;
+		autodetect = false;
 		
 		/* construct the endpoint first */
 		ep = EndPointManager.getEndPointManager().createComponent(d);
@@ -104,17 +116,22 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 		}
 	}
 	
+	
+	
 	/**
-	 * Adds a new sensor managed by this Protocol
-	 * Also checks whether this sensor is connected
+	 * Associate a new sensor managed by this Protocol
+	 * Also checks whether this sensor is supported, requires the access to be
+	 * synchronized with respect to this protocol (synchronized(p))
 	 * @param s the sensor to be added
+	 * @return 
 	 */
-	public final void addSensor(Sensor s) throws ConfigurationException{
-		if (!started) {
+	public synchronized final void associateSensor(Sensor s) throws ConfigurationException{
+		if (!removed) {
 				if(isSensorSupported(s)) {
 					this.logger.debug("About to add sensor" + s.toString());
-					//s.start();
-					sensors.put(s.getID(), s);
+					synchronized(sensors) {
+						sensors.put(s.getID(), s);
+					}
 					s.getID().setPid(this.id);
 				} else {
 					logger.error("Sensor "+s.toString()+" not supported by this protocol");
@@ -125,40 +142,51 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	}
 	
 	/**
+	 * Removes all sensors associated to this logical port
+	 * @param i the sensorID to be removed
+	 */
+	public final ArrayList<Sensor> unassociateSensors() {
+		ArrayList<Sensor> c;
+		synchronized(sensors){
+			Enumeration<SensorID> e = sensors.keys();
+			c = new ArrayList<Sensor>(sensors.values());
+			while(e.hasMoreElements()) {
+				unassociateSensor(e.nextElement());
+			}
+		}
+		return c;
+	}
+
+	
+	/**
 	 * Removes a sensor managed by this logical port
 	 * @param i the sensorID to be removed
 	 */
-	public final void removeSensor(SensorID i) {
+	public final boolean unassociateSensor(SensorID i) {
 		this.logger.debug("About to remove sensor " + i.toString());
 		if(sensors.containsKey(i)) {
-			if(sensors.remove(i) == null)
-				this.logger.error("Cant remove sensor with key " + i.toString() +  ": No such element");
-			else {
-				SensorManager.getSensorManager().destroyComponent(i);
-				this.logger.debug("Sensor " + i.toString()+ " Removed");
+			synchronized(sensors) {
+				if(sensors.remove(i) == null) {
+					logger.error("Cant remove sensor with key " + i.toString() +  ": No such element");
+					return false;
+				}
 			}
-		} else
-			this.logger.error("Sensor " + i.toString()+ " doesnt exist and can NOT be removed");
+		} else {
+			logger.error("Sensor " + i.toString()+ " doesnt exist and can NOT be removed");
+			return false;
+		}
+		return true;
 	}
-	
-	/**
-	 * Removes all sensors belonging to this protocol
-	 *
-	 */
-	public final void removeAllSensors(){
-		Enumeration<SensorID> i = sensors.keys();
-		while (i.hasMoreElements())
-			removeSensor(i.nextElement());
-	}
-	
 	
 	public final void dumpSensorsTable() {
 		this.logger.debug("current sensors table contents:" );
-		Enumeration<SensorID> keys = sensors.keys();
-		Collection<Sensor> cvalues = sensors.values();
-		Iterator<Sensor> iter = cvalues.iterator();
-		while ( keys.hasMoreElements() &&  iter.hasNext())
-		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
+		synchronized (this) {
+			Enumeration<SensorID> keys = sensors.keys();
+			Collection<Sensor> cvalues = sensors.values();
+			Iterator<Sensor> iter = cvalues.iterator();
+			while ( keys.hasMoreElements() &&  iter.hasNext())
+			   logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());			
+		}
 	}
 	
 	/**
@@ -175,7 +203,8 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 */
 	public final void remove(componentRemovalListener c) {
 		synchronized (this) {
-			removeAllSensors();
+			removed=true;
+			ProtocolManager.getProcotolManager().removeSensors(this);
 			if(started)
 				stop();
 			internal_remove();
@@ -207,21 +236,33 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 * @see jcu.sal.Components.HWComponent#start()
 	 */
 	public final void start() throws ConfigurationException{
-		if(!sensors.isEmpty()) {
-			synchronized (this) {
-				this.logger.debug("starting "+type+" Protocol");
-				if(!ep.isStarted())
-					ep.start();
-				internal_start();
+		synchronized (this) {
+			this.logger.debug("starting "+type+" Protocol");
+			if(!ep.isStarted())
+				ep.start();
+			internal_start();
+			this.logger.debug("Probing sensors for Protocol " + toString());
+			synchronized(sensors) {
 				Iterator<Sensor> i = sensors.values().iterator();
 				while(i.hasNext())
 					probeSensor(i.next());
-				if(!started)
-					started=true;
-				this.logger.debug("protocol "+type+" started");
 			}
-		} else 
-			logger.debug("No sensors added to this protocol. Not starting");
+			if(!started)
+				started=true;
+			this.logger.debug("protocol "+type+" started");
+		}
+		//Start the sensor monitoring thread
+		
+		try {
+			if(getConfig(AUTODETECTINTERVALATTRIBUTE_TAG)!=null && autodetect) {
+				this.logger.debug("Starting autodetect thread");
+				autodetectThread = new Thread(this);
+				autodetectThread.start();
+			}
+		} catch (BadAttributeValueExpException e) {
+			logger.error("Cant find the autodetect interval in the protocol config.");
+			logger.error("Disabling sensor autodetection");
+		}
 	}
 	
 	/* (non-Javadoc)
@@ -229,7 +270,16 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 */
 	public final void stop() {
 		synchronized (this) {
-			this.logger.debug("stopping "+type+" Protocol");
+			logger.debug("stopping "+type+" Protocol");
+			if(autodetectThread.isAlive()) {
+				logger.debug("stopping autodetect thread ...");
+				autodetectThread.interrupt();
+				try { autodetectThread.join();}
+				catch (InterruptedException e) {
+					logger.error("interrupted while waiting for autodetect thread to finish");
+				}
+				logger.debug("autodetect thread stopped");
+			}
 			if(started) {
 				internal_stop();
 				if(ep.isStarted())
@@ -303,16 +353,112 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	}
 	
 	/**
+	 * Check whether a sensor is currently plugged-in/reachable/readable 
+	 * and set its state accordingly (protocol specific)
+	 * @param sensor the sensor to be probed
+	 */
+	public final boolean probeSensor(Sensor sensor) {
+		return internal_probeSensor(sensor);
+	}
+	
+	/**
 	 * Check whether a sensor is supported by this protocol
 	 * @param sensor the sensor to be probed
 	 */
-	public abstract boolean isSensorSupported(Sensor sensor);
+	public final boolean isSensorSupported(Sensor s) {
+		if(s.getProtocolName().equals(id.getName())) {
+			return internal_isSensorSupported(s);
+		}
+		else {
+			logger.debug("The protocol associated with this sensor doesnt match this protocol's name. Sensor not supported");
+			return false;
+		}
+	}
 	
 	/**
-	 * Check whether a sensor is currently plugged-in/reachable/readable, and set its state accordingly.
-	 * @param sensor the sensor to be probed
+	 * Implements the autodetection thread
 	 */
-	public abstract boolean probeSensor(Sensor sensor);
+	public void run() {
+		Vector<String> detected;
+		Sensor stmp;
+		ArrayList<Sensor> current;
+		Iterator<Sensor> iter;
+		try {
+			logger.debug("Autodetect thread started");
+			while(!Thread.interrupted() && ((detected = detectConnectedSensors())!=null)) {
+				//for each sensor in current
+				logger.debug("current sensor table: ");
+				dumpSensorsTable();
+				synchronized(sensors) {
+				current = new ArrayList<Sensor>(sensors.values());
+				iter = current.iterator();
+				while(iter.hasNext()) {
+					//if that sensor is in detected also, we remove both
+					stmp = iter.next();
+					if(detected.contains(stmp.getNativeAddress())) {
+						logger.debug("sensor "+stmp.toString()+" found in both current & detected, nothing to do");
+						detected.remove(stmp.getNativeAddress());
+						iter.remove();
+					} else if (stmp.isDisconnected()) {
+						logger.debug("sensor "+stmp.toString()+" FOUND in current and NOT FOUND in detected");
+						stmp.disconnect();
+						detected.remove(stmp.getNativeAddress());
+						iter.remove();
+					} else {
+						logger.debug("detected contains " + stmp.getNativeAddress() + " ? " +detected.contains(stmp.getNativeAddress()));
+						logger.debug("current sensor state: "+stmp.getState());
+						logger.debug("Sensor " + stmp.getNativeAddress()+" only in current");
+					}
+				}
+				}
+				
+				//now we re left with newly-connected sensors in detected and
+				//removed sensors in current
+				Iterator<String> it = detected.iterator();
+				String t;
+				while(it.hasNext()) {
+						try {
+							t = generateSensorConfig(it.next());
+							logger.debug("xml doc: "+t);
+							Sensor s = ProtocolManager.getProcotolManager().createSensorFromPartialSML(t);
+							logger.debug("created sensor: "+s.toString());
+							ProtocolManager.getProcotolManager().associateSensor(s);
+							logger.debug("autodetected sensor added");
+						} catch (ConfigurationException e1) {
+							logger.error("couldnt create the autodetected sensor from its autogenerated XML config:");
+						}
+
+				}					
+				
+				iter = current.iterator();
+				while(iter.hasNext()) {
+						logger.debug("Newly removed sensor: " + iter.next().toString());
+				}
+				logger.debug("New sensor table: ");
+				dumpSensorsTable();
+				Thread.sleep(Long.valueOf(getConfig(AUTODETECTINTERVALATTRIBUTE_TAG)));
+			}
+		} catch (NumberFormatException e) {
+			logger.error("cant run the autodetect thread because the interval is not a number");
+		} catch (InterruptedException e) {}
+		catch (BadAttributeValueExpException e) {
+			logger.error("cant run the autodetect thread because the interval is missing from the protocol config");
+		}
+		logger.debug("Autodetect thread exiting");
+	}
+	
+	/**
+	 * Check whether a sensor is supported by this protocol (protocol specific)
+	 * @param s the sensor to be probed
+	 */
+	protected abstract boolean internal_isSensorSupported(Sensor s);
+	
+	/**
+	 * Check whether a sensor is currently plugged-in/reachable/readable 
+	 * and set its state accordingly (protocol specific)
+	 * @param s the sensor to be probed
+	 */
+	protected abstract boolean internal_probeSensor(Sensor s);
 
 	/**
 	 * Stops the protocol
@@ -335,6 +481,32 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> {
 	 * Parse the configuration of the protocol itself
 	 */
 	protected abstract void internal_parseConfig() throws ConfigurationException;
+	
+	/**
+	 * this method should be overriden by protocols which provide sensor autodetection
+	 * and return a Vector of native address (strings) of currently connected/visible sensors 
+	 */
+	protected Vector<String> detectConnectedSensors() {
+		logger.error("calling the wrong method");
+		return null;
+	}
+	
+	/**
+	 * this method should be overriden by protocols which provide sensor autodetection
+	 * and return an XML document for a newly detected sensor given its native address 
+	 */
+	protected final String generateSensorConfig(String nativeAddress){
+		StringBuffer xml = new StringBuffer();
+
+		xml.append("<Sensor sid=\""+ SensorManager.SENSORID_MARKER + "\">\n");
+		xml.append("\t<parameters>\n");
+		xml.append("\t\t<Param name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" value=\""+this.id.getName()+"\" />\n");
+		xml.append("\t\t<Param name=\""+Sensor.SENSOR_TAG+"\" value=\""+nativeAddress+"\" />\n");
+		xml.append("\t</parameters>\n");
+		xml.append("</Sensor>\n");
+			
+		return xml.toString();
+	}
 	
 	/**
 	 * Is the protocol started ? 

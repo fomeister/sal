@@ -12,13 +12,122 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
-public class ProcessHelper {
+public class PlatformHelper {
 	
-	private static Logger logger = Logger.getLogger(ProcessHelper.class);
+	private static Logger logger = Logger.getLogger(PlatformHelper.class);
 	static {
 		Slog.setupLogger(logger);
 	}
 
+	/**
+	 * Tries unloading a module. Note that this method will work only 
+	 * if the user has right to run "/usr/bin/sudo /sbin/rmmod". This method
+	 * checks that the module is loaded before 
+	 * @param module the name of the module to be removed
+	 * @return whether the operation succeeded
+	 */
+	public static boolean rmModule(String module){
+		boolean ok=true;
+		if(PlatformHelper.isModuleLoaded(module)) {
+			try {
+				Process p = createProcess("/usr/bin/sudo /sbin/rmmod " + module);
+				if(p.waitFor()!=0) {
+					String err = null;
+					BufferedReader b = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+					while ((err=b.readLine())!=null)				
+						logger.error(err);
+					logger.error("Return status of rmmod !=0 ");
+					ok=false;
+				}
+			} catch (InterruptedException e) {
+				logger.error("Interrupted while waiting for rmmod to complete");
+				ok=false;
+			} catch (IOException e) {
+				logger.error("cant run the rmmod command");
+				ok=false;
+			}
+		} else
+			logger.debug("Module " + module + " not loaded, cant remove it...");
+		return ok;
+	}
+	
+	/**
+	 * Check if a single module is loaded 
+	 * @param module the name of the module
+	 */
+	public static boolean isModuleLoaded(String module){
+		try {
+			PlatformHelper.getFieldFromFile("/proc/modules", module, 1, null, false);
+		} catch (IOException e) {
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * Tries loading a single module, assuming the user has enough rights to run
+	 * "/usr/bin/sudo /sbin/modprobe". This function checks if the module 
+	 * is already loaded before.
+	 * @param module the name of the module to be loaded
+	 * @return whether the operation succeeded
+	 */
+	public static boolean loadModule(String module){
+		boolean ok=true;
+		if(!PlatformHelper.isModuleLoaded(module)) {
+			try {
+				Process p = createProcess("/usr/bin/sudo /sbin/modprobe " + module);
+				if(p.waitFor()!=0) {
+					String err = null;
+					BufferedReader b = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+					while ((err=b.readLine())!=null)				
+						logger.error(err);
+					logger.error("Return status of modprobe !=0 ");
+					ok=false;
+				}
+			} catch (InterruptedException e) {
+				logger.error("Interrupted while waiting for moprobed to complete");
+				ok=false;
+			} catch (IOException e) {
+				logger.error("cant run the modprobe command");
+				ok=false;
+			}
+		} else
+			logger.debug("Module " + module + " already loaded");
+		return ok;
+	}
+	
+	/**
+	 * Tries loading a couple of modules, assuming the user has enough rights to run
+	 * "/usr/bin/sudo /sbin/modprobe". This function checks if the modules 
+	 * are already loaded before.
+	 * @param module an array of string containing the names of modules to be loaded
+	 * @return whether something went wrong loading one of the modules
+	 */
+	public static boolean loadModules(String[] modules) {
+		boolean ok=true;
+		for (int i = 0; i < modules.length; i++) {
+			if(!PlatformHelper.loadModule(modules[i]))
+				ok=false;
+		}
+		return ok;
+	}
+	
+	/**
+	 * Tries unloading a couple of modules, assuming the user has enough rights to run
+	 * "/usr/bin/sudo /sbin/rmmod". This function checks if the modules 
+	 * are already loaded before.
+	 * @param module an array of string containing the names of modules to be unloaded
+	 * @return whether something went wrong unloading one of the modules
+	 */
+	public static boolean unloadModules(String[] modules){
+		boolean ok=true;
+		for (int i = 0; i < modules.length; i++) {
+			if(!PlatformHelper.rmModule(modules[i]))
+				ok=false;
+		}
+		return ok;
+	}
+	
 	/**
 	 * Creates a new instance of a process from a command line
 	 * @param cmdline the command to be run with any arguments it needs
@@ -30,21 +139,25 @@ public class ProcessHelper {
 	}
 	
 	/**
-	 * captures the exit value, the standard output and error channel of a command
+	 * captures the standard output and error channel of a command. If the wait argument is true, 
+	 * then this method also waits for the process to exit and will return its exit status 
 	 * @param cmdline the command to be run with any arguments it needs
-	 * @return an array of 3 BufferedReaders ([0]: stdout, [1]: stderr, [2]: exit value)
+	 * @return an array of 2 or 3 BufferedReaders [0]: stdout, [1]: stderr,
+	 * [2]: exit value (only if wait = true)
 	 * @throws IOException if there is a problem creating the new process
 	 */
-	public static BufferedReader[] captureOutputs(String cmdline) throws IOException {
+	public static BufferedReader[] captureOutputs(String cmdline, boolean wait) throws IOException {
 		BufferedReader[] b = new BufferedReader[3];
-		Process p = ProcessHelper.createProcess(cmdline);
+		Process p = PlatformHelper.createProcess(cmdline);
 		b[0] = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		b[1] = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-		try {
-			b[2] = new BufferedReader(new StringReader(String.valueOf(p.waitFor())));
-		} catch (InterruptedException e) {
-			System.err.println("The command '" + cmdline + "' has been interrupted" );
-			throw new IOException();
+		if(wait){
+			try {
+				b[2] = new BufferedReader(new StringReader(String.valueOf(p.waitFor())));
+			} catch (InterruptedException e) {
+				System.err.println("The command '" + cmdline + "' has been interrupted" );
+				throw new IOException();
+			}
 		}
 		return b;
 	}
@@ -60,10 +173,30 @@ public class ProcessHelper {
 		Process p;
 
 		p = createProcess("pgrep " + pattern);
+		try { p.waitFor(); } catch (InterruptedException e) {}
 		BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		while(b.ready()) { pids.add(Integer.parseInt(b.readLine())); }
 		return pids;
 		
+	}
+	
+	/**
+	 * Kill processes whose names match a given pattern
+	 * @param pattern the pattern
+	 * @return the number of processes killed
+	 */
+	public static int killProcesses(String pattern) {
+		int n = 0;
+		try {
+			n = getPid(pattern).size()-1;
+			Process p = createProcess("pkill " + pattern);
+			p.waitFor();
+		} catch (IOException e) {
+			logger.error("cant run the pkill command");
+		} catch (InterruptedException e) {
+			logger.error("interrupted while running the pkill command");
+		}
+		return n;
 	}
 	
 	/**
@@ -104,10 +237,10 @@ public class ProcessHelper {
 	 * Returns a field from a specific line in a text file
 	 * @param file the file to be searched
 	 * @param pattern the pattern in the line to be searched
-	 * @param field the field number whose contents is to be returned
+	 * @param field the field number whose contents is to be returned  (starting at 1)
 	 * @param delim the delimiter (if null, then a space is assumed)
 	 * @param translate whether to translate tabs to spaces
-	 * @return
+	 * @return the field itself
 	 * @throws IOException if something went wrong opening the file, reading from it or finding the pattern
 	 */
 	public static String getFieldFromFile(String file, String pattern, int field, String delim, boolean translate) throws IOException {
@@ -118,10 +251,10 @@ public class ProcessHelper {
 	 * Returns a field from a specific line in a text file
 	 * @param file the file to be searched
 	 * @param line the line number (starting at 1)
-	 * @param field the field number whose contents is to be returned
+	 * @param field the field number whose contents is to be returned  (starting at 1)
 	 * @param delim the delimiter (if null, then a space is assumed)
 	 * @param translate whether to translate tabs to spaces
-	 * @return
+	 * @return the field itself
 	 * @throws IOException if something went wrong opening the file, reading from it or finding the pattern
 	 */
 	public static String getFieldFromFile(String file, int line , int field, String delim, boolean translate) throws IOException {
@@ -132,38 +265,38 @@ public class ProcessHelper {
 	 * Returns a field from a specific line in the output of a command
 	 * @param file the file to be searched
 	 * @param line the line number (starting at 1)
-	 * @param field the field number whose contents is to be returned
+	 * @param field the field number whose contents is to be returned  (starting at 1)
 	 * @param delim the delimiter (if null, then a space is assumed)
 	 * @param translate whether to translate tabs to spaces
-	 * @return
+	 * @return the field itself
 	 * @throws IOException
 	 */
 	public static String getFieldFromCommand(String cmd, String pattern, int field, String delim, boolean translate) throws IOException {
-		return getFieldFromBuffer(captureOutputs(cmd)[0], pattern, field, delim, translate);
+		return getFieldFromBuffer(captureOutputs(cmd, true)[0], pattern, field, delim, translate);
 	}
 
 	/**
 	 * Returns a field from a specific line in the output of a command
 	 * @param file the file to be searched
 	 * @param pattern the pattern in the line to be searched
-	 * @param field the field number whose contents is to be returned
+	 * @param field the field number whose contents is to be returned  (starting at 1)
 	 * @param delim the delimiter (if null, then a space is assumed)
 	 * @param translate whether to translate tabs to spaces
-	 * @return
+	 * @return the field itself
 	 * @throws IOException
 	 */
 	public static String getFieldFromCommand(String cmd, int line, int field, String delim, boolean translate) throws IOException {
-		return getFieldFromBuffer(captureOutputs(cmd)[0], line, field, delim, translate);
+		return getFieldFromBuffer(captureOutputs(cmd, true)[0], line, field, delim, translate);
 	}
 	
 	/**
 	 * Returns a field from a specific line in a BufferedReader
 	 * @param b the buffer to be searched
 	 * @param pattern the pattern in the line to be searched
-	 * @param field the field number whose contents is to be returned
+	 * @param field the field number whose contents is to be returned  (starting at 1)
 	 * @param delim the delimiter (if null, then a space is assumed)
 	 * @param translate whether to translate tabs to spaces
-	 * @return
+	 * @return the field itself
 	 * @throws IOException
 	 */
 	public static String getFieldFromBuffer(BufferedReader b, String pattern, int field, String delim, boolean translate) throws IOException {
@@ -189,10 +322,10 @@ public class ProcessHelper {
 	 * Returns a field from a specific line in a BufferedReader
 	 * @param b the buffer to be searched
 	 * @param line the line number 
-	 * @param field the field number whose contents is to be returned
+	 * @param field the field number whose contents is to be returned (starting at 1)
 	 * @param delim the delimiter (if null, then a space is assumed)
 	 * @param translate whether to translate tabs to spaces
-	 * @return
+	 * @return the field itself
 	 * @throws IOException
 	 */
 	public static String getFieldFromBuffer(BufferedReader b, int line, int field, String delim, boolean translate) throws IOException {
@@ -214,7 +347,7 @@ public class ProcessHelper {
 	/**
 	 * Returns a field from a line
 	 * @param line the line to be searched 
-	 * @param field the field number whose contents is to be returned
+	 * @param field the field number whose contents is to be returned (starting at 1)
 	 * @param delim the delimiter (if null, then a space is assumed)
 	 * @param translate whether to translate tabs to spaces
 	 * @return the field
@@ -253,15 +386,34 @@ public class ProcessHelper {
 		return new File(f).canRead();
 	}
 	
+	/**
+	 * Returns whether a directory exists and is readable
+	 * @param d the full path to the directory
+	 * @return whether the file exists and is readable
+	 */
+	public static boolean isDirReadable(String d){
+		File f = new File(d);
+		return (f.isDirectory() && f.canRead());
+	}
+	
+	/**
+	 * Returns whether a directory exists, is readable and writeable
+	 * @param d the full path to the directory
+	 * @return whether the file exists and is readable
+	 */
+	public static boolean isDirReadWrite(String d){
+		File f = new File(d);
+		return (f.isDirectory() && f.canRead() && f.canWrite());
+	}
 	
 	public static void main(String[] args) throws IOException {
-		BufferedReader[] b = captureOutputs("cut -f3 -d' ' /proc/loadavg");
+		/*BufferedReader[] b = captureOutputs("cut -f3 -d' ' /proc/loadavg");
 		String out, err;
 		out = b[0].readLine();
 		err = b[1].readLine();
 		int e = Integer.parseInt(b[2].readLine());
 		System.out.println("gello \n" + out + "\n" +err + "\n" +e);
-	
+*/	
 		
 		/* String[] a = {"cut", "/proc/loadavg", "-f3", "-d' '"};
 		ProcessBuilder pb = new ProcessBuilder(a);
@@ -278,7 +430,7 @@ public class ProcessHelper {
 		*/
 		
 		
-		Process p = Runtime.getRuntime().exec("cat /proc/loadavg");
+/*		Process p = Runtime.getRuntime().exec("cat /proc/loadavg");
 		BufferedReader[] bb = new BufferedReader[2];
 		bb[0] = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		bb[1] = new BufferedReader(new InputStreamReader(p.getErrorStream()));
@@ -291,6 +443,7 @@ public class ProcessHelper {
 		}
 		System.out.println("out: " + bb[0].readLine());
 		System.out.println("err: " + bb[1].readLine());
-		
+*/
+		System.out.println("killing nc proc: " + killProcesses("nc"));
 	}
 }

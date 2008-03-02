@@ -24,7 +24,7 @@ public abstract class AbstractComponent<T> implements HWComponent {
 	protected Hashtable<String, String> config;
 	private Logger logger = Logger.getLogger(AbstractComponent.class);
 //	protected boolean started = false;
-//	protected boolean configured = false;
+	protected boolean removed = false;
 	protected String type = null;
 	protected T id = null;
 	

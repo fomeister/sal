@@ -3,11 +3,12 @@
  */
 package jcu.sal.Components.Sensors;
 
-import org.apache.log4j.Logger;
-
 import jcu.sal.Components.componentRemovalListener;
-import jcu.sal.Components.Identifiers.Identifier;
+import jcu.sal.Components.Identifiers.SensorID;
+import jcu.sal.Managers.ProtocolManager;
 import jcu.sal.utils.Slog;
+
+import org.apache.log4j.Logger;
 
 /**
  * @author gilles
@@ -17,7 +18,7 @@ class SensorState {
 	
 	private Logger logger = Logger.getLogger(SensorState.class);
 	private componentRemovalListener l;
-	private Identifier i;
+	private SensorID i;
 
 	public static final int UNUSED=0;
 	public static final int IDLE=1;
@@ -27,10 +28,20 @@ class SensorState {
 	public static final int STOPPED=5;
 	public static final int REMOVED=6;
 	
+	public static final int DISCONNECT_TIMEOUT=5;
+	
 	private int state;
+	/*
+	 * timeout represents the number of times the disconnect method has been called.
+	 * When timeout exceeds DISCONNECT_TIMEOUT, a call to destroyCOmpoenent is made to
+	 * remove the sensor.
+	 */
+	private int timeout;
 
-	public SensorState() { 
-		this.state=UNUSED;
+	public SensorState(SensorID i) { 
+		state=UNUSED;
+		timeout=0;
+		this.i = i;
 		Slog.setupLogger(logger);
 	}
 	
@@ -38,9 +49,13 @@ class SensorState {
 		return (state!=UNUSED);
 	}
 	
-	public boolean stop(componentRemovalListener c, Identifier i){
+	public boolean isDisconnected() {
+		return (state==DISCONNECTED);
+	}
+	
+	public boolean stop(componentRemovalListener c){
 		synchronized (this) {
-			if(state==INUSE) { state=STOPPED; l =c; this.i=i;} 
+			if(state==INUSE) { state=STOPPED; l =c;} 
 			else { state=REMOVED; c.componentRemovable(i);}
 			return true;
 		}
@@ -78,44 +93,49 @@ class SensorState {
 	
 	public boolean disconnect(){
 		synchronized (this) {
-			if(state==IDLE || state==DISABLED || state==INUSE || state==DISCONNECTED) { state=DISCONNECTED; return true; }
-			else { logger.error("trying to disconnect a non-IDLE,DISABLED or INUSE sensor"); dumpState(); return false; }
+			if(state==IDLE || state==DISABLED || state==INUSE || state==DISCONNECTED || state==UNUSED) {
+				state=DISCONNECTED;
+				logger.error("Sensor has had "+(timeout+1)+ " disconnections");
+				if(++timeout>DISCONNECT_TIMEOUT) {
+					logger.error("MAX disconnections, removing it.");
+					ProtocolManager.getProcotolManager().removeSensor(i);
+				}
+				return true;
+			} else { logger.error("trying to disconnect a non-IDLE,DISABLED or INUSE sensor"); dumpState(); return false; }
 		}
 	}
 
 	public boolean reconnect(){
 		synchronized (this) {
 			if(state==DISCONNECTED) { state=IDLE; return true; }
-			else { logger.error("trying to resconnect a non-DISCONNECTED sensor"); dumpState(); return false; }
+			else if(state==IDLE || state==DISABLED || state==INUSE) {return true; }//already connected 
+			else { logger.error("trying to reconnect a non-DISCONNECTED sensor"); dumpState(); return false; }
 		}
 	}
 	
-	public void dumpState() {
+	public String toString() {
 		synchronized(this) {
-			logger.debug("Current sensor state: " );
 			switch(state) {
 			case UNUSED:
-				logger.debug("State: UNUSED" );
-				break;
+				return "UNUSED";
 			case IDLE:
-				logger.debug("State: IDLE" );
-				break;
+				return "IDLE";
 			case DISABLED:
-				logger.debug("State: DISABLED" );
-				break;
+				return "DISABLED";
 			case INUSE:
-				logger.debug("State: INUSE" );
-				break;
+				return "INUSE";
 			case DISCONNECTED:
-				logger.debug("State: DISCONNECTED" );
-				break;
+				return "DISCONNECTED";
 			case STOPPED:
-				logger.debug("State: STOPPED" );
-				break;
+				return "STOPPED";
 			case REMOVED:
-				logger.debug("State: REMOVED" );
-				break;
+				return "REMOVED";
 			}
 		}
+		return "State: unknown state...";
+	}
+	
+	public void dumpState() {
+			logger.debug("Current sensor state: "+toString() );
 	}
 }
