@@ -6,11 +6,12 @@
 			<readingDirectory>/home/sensor_user/readings</readingDirectory>
 		</general>
 		<protocols>
-			<Protocol name="1wiretree" type="owfs">
+			<Protocol name="1wtree" type="owfs">
 				<EndPoint name="usb" type="usb" />
 				<parameters>
 					<Param name="Location" value="/opt/owfs/bin/owfs" />
 					<Param name="MountPoint" value="/mnt/w1" />
+					<Param name="AutoDetectInterval" value="5000" />
 				</parameters>
 			</Protocol>
 		</protocols>

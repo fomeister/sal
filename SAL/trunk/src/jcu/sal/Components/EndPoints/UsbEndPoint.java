@@ -10,7 +10,7 @@ import java.util.Hashtable;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.Identifiers.EndPointID;
-import jcu.sal.utils.ProcessHelper;
+import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -44,7 +44,7 @@ public class UsbEndPoint extends EndPoint {
 		// Check if we have any USB ports on this platform
 		this.logger.debug("check if we have USB ports.");
 		try {
-			BufferedReader b[] = ProcessHelper.captureOutputs("lsusb");
+			BufferedReader b[] = PlatformHelper.captureOutputs("lsusb", true);
 			if(!b[0].readLine().contains("Bus"))
 				throw new ConfigurationException("Did not detect USB ports");
 			configured = true;

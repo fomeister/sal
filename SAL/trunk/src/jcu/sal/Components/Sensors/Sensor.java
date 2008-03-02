@@ -41,7 +41,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 		id = i;
 		type = SENSOR_TYPE;
 		config = c;
-		state = new SensorState();
+		state = new SensorState(i);
 		parseConfig();
 	}
 
@@ -54,18 +54,32 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 	
 	public boolean startRunCmd() {
+		logger.debug("Running cmd on sensor " + toString());
 		return state.runCommand();
 	}
 	
 	public boolean disable() {
+		logger.debug("Disabling sensor " + toString());
 		return state.disable();
 	}
 	
+	public boolean disconnect(){
+		logger.debug("Disconnecting sensor " + toString());
+		return state.disconnect();
+	}
+	
+	public boolean reconnect() {
+		logger.debug("Reconnecting sensor " + toString());
+		return state.reconnect();
+	}
+	
 	public boolean enable() {
+		logger.debug("Enabling sensor " + toString());
 		return state.enable();
 	}
 	
 	public boolean finishRunCmd() {
+		logger.debug("Finisehd running cmd on sensor " + toString());
 		return state.doneCommand();
 	}
 
@@ -75,8 +89,8 @@ public class Sensor extends AbstractComponent<SensorID> {
 	
 	@Override
 	public void remove(componentRemovalListener c) {
-		this.logger.debug("Registering removal of sensor " + toString());
-		state.stop(c, id);
+		logger.debug("Registering removal of sensor " + toString());
+		state.stop(c);
 	}
 	@Override
 	public void start() {
@@ -91,12 +105,20 @@ public class Sensor extends AbstractComponent<SensorID> {
 
 	@Override
 	public String toString() {
-		return "Sensor " + id.getName() + " (" + getNativeAddress() +") Protocol: "+id.getPid().toString();
+		return "Sensor " + id.getName() + " (" + getNativeAddress() +") State: "+state.toString()+" Protocol: "+id.getPid().toString();
 	}
 
 	@Override
 	public boolean isStarted() {
 		return state.isStarted();
+	}
+	
+	public boolean isDisconnected() {
+		return state.isDisconnected();
+	}
+	
+	public String getState() {
+		return state.toString();
 	}
 }
 

@@ -11,8 +11,8 @@ import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
-import jcu.sal.Managers.SensorManager;
-import jcu.sal.utils.ProcessHelper;
+import jcu.sal.Managers.ProtocolManager;
+import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -120,7 +120,7 @@ public class OSDataProtocol extends Protocol {
 		logger.debug("getReading method called on sensor " +s.toString());
 		try {
 			d = supportedSensors.get(s.getNativeAddress());
-			ret = ProcessHelper.getFieldFromFile(d.file, d.pattern, d.field, d.delim, d.translate);
+			ret = PlatformHelper.getFieldFromFile(d.file, d.pattern, d.field, d.delim, d.translate);
 		} catch (IOException e) {
 			logger.error("couldnt run the command to get readings for sensor "+ s.toString());
 			s.disable();
@@ -131,16 +131,16 @@ public class OSDataProtocol extends Protocol {
 
 
 	@Override
-	public boolean isSensorSupported(Sensor sensor){
+	protected boolean internal_isSensorSupported(Sensor sensor){
 		return supportedSensors.containsKey(sensor.getNativeAddress());	
 	}
 
 
 	@Override
-	public boolean probeSensor(Sensor s) {
+	protected boolean internal_probeSensor(Sensor s) {
 		OSdata d = supportedSensors.get(s.getNativeAddress());
 		try {
-			if(ProcessHelper.isFileReadable(d.file)) {
+			if(PlatformHelper.isFileReadable(d.file)) {
 				s.enable();
 				return true;
 			}
@@ -148,7 +148,7 @@ public class OSDataProtocol extends Protocol {
 			logger.error("couldnt probe sensor "+s.toString()+". Raised exception: "+e.getMessage());
 		}
 		logger.debug("removing sensor "+s.toString()+", couldnt find the matching file: "+d.file);
-		s.remove(SensorManager.getSensorManager());
+		ProtocolManager.getProcotolManager().removeSensor(s.getID());
 		return false;
 	}
 
