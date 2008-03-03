@@ -11,7 +11,6 @@ import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
-import jcu.sal.Managers.ProtocolManager;
 import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
 
@@ -147,8 +146,8 @@ public class OSDataProtocol extends Protocol {
 		} catch (Exception e) {
 			logger.error("couldnt probe sensor "+s.toString()+". Raised exception: "+e.getMessage());
 		}
-		logger.debug("removing sensor "+s.toString()+", couldnt find the matching file: "+d.file);
-		ProtocolManager.getProcotolManager().removeSensor(s.getID());
+		logger.debug("Disconnecting sensor "+s.toString()+", couldnt find the matching file: "+d.file);
+		s.disconnect();
 		return false;
 	}
 

@@ -11,7 +11,6 @@
 				<parameters>
 					<Param name="Location" value="/opt/owfs/bin/owfs" />
 					<Param name="MountPoint" value="/mnt/w1" />
-					<Param name="AutoDetectInterval" value="5000" />
 				</parameters>
 			</Protocol>
 		</protocols>

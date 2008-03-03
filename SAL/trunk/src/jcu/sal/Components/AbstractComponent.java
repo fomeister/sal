@@ -11,6 +11,7 @@ import java.util.Iterator;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
+import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -19,7 +20,7 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public abstract class AbstractComponent<T> implements HWComponent {
+public abstract class AbstractComponent<T extends Identifier> implements HWComponent {
 	
 	protected Hashtable<String, String> config;
 	private Logger logger = Logger.getLogger(AbstractComponent.class);

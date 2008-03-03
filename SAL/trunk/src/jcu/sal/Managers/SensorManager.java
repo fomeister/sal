@@ -6,7 +6,6 @@ package jcu.sal.Managers;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Hashtable;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -25,7 +24,7 @@ import org.w3c.dom.Node;
  * @author gilles
  * 
  */
-public class SensorManager extends ManagerFactory<Sensor> {
+public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 	
 	/**
 	 * The following string must be used in partially generated SML
@@ -34,6 +33,18 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	 * a sensor object is created.
 	 */
 	public static String SENSORID_MARKER="%AUTOSENSORID%";
+	
+	/**
+	 * specifies (in seconds) how long disconnected sensors should remain before being
+	 * deleted
+	 */
+	public static long DISCONNECT_TIMEOUT = 20;
+	private Thread sensor_removal;
+	
+	/**
+	 * specifies (in seconds) how often the sensor removal thread kick in
+	 */
+	public static int REMOVE_SENSOR_INTERVAL = 0;
 	
 	private static SensorManager s = new SensorManager();
 	private Logger logger = Logger.getLogger(SensorManager.class);
@@ -45,6 +56,7 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	private SensorManager() {
 		super();
 		Slog.setupLogger(this.logger);
+		sensor_removal = new Thread(this);
 	}
 	
 	/**
@@ -110,10 +122,11 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	Sensor createSensorFromPartialSML(String s) {
 		Sensor ss = null;
 		try {
-			String t = s.replace(SENSORID_MARKER, generateNewSensorID());
-			logger.debug("XML doc after replacing SENSORID:" + t);
-			Node n = XMLhelper.createDocument(t);
-			ss = createComponent(n);
+			synchronized(this) {
+				String t = s.replace(SENSORID_MARKER, generateNewSensorID());
+				Node n = XMLhelper.createDocument(t);
+				ss = createComponent(n);
+			}
 		} catch (ConfigurationException e) {
 			logger.error("new sensor creation failed");
 		} catch (ParserConfigurationException e) {
@@ -127,8 +140,8 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	 * @return the first available unused sensor ID
 	 */
 	private String generateNewSensorID() {
-		int[] arr = new int[ctable.size()];
-		Enumeration<Identifier> e = ctable.keys();
+		int[] arr = new int[getSize()];
+		Enumeration<Identifier> e = getKeys();
 		int i=0;
 		while(e.hasMoreElements()){
 			arr[i++] = Integer.parseInt(e.nextElement().getName());
@@ -151,42 +164,43 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		return Sensor.SENSOR_TYPE;
 	}
 	
-	public static void main(String[] a){
-		int i=0;
-		Hashtable<String, String> t = new Hashtable<String, String>();
-		t.put("13", "val1");
-		t.put("2", "val5");
-		t.put("4", "val5");
-		t.put("4", "val5");
-		t.put("5", "val5");
-		t.put("9", "val10");
-		t.put("7", "val7");
-		t.put("10", "val13");
-		t.put("6", "val6");
-		t.put("8", "val8");
-		int[] arr = new int[t.size()];
-		Enumeration<String> e = t.keys();
-		while(e.hasMoreElements()){
-			arr[i++] = Integer.parseInt(e.nextElement());
-		}
-		Arrays.sort(arr);
-		
-		for (int j = 0; j < arr.length; j++) {
-			System.out.println("Element " + j + ": "+arr[j]);
-		}
-		int j;
-		if(arr[0]==1) {
-		for (j = 1; j < arr.length; j++) {
-			if(arr[j]>(arr[j-1]+1)) {
-				break;
-			}
-		}
-		i=arr[j-1]+1;
-		}
-		else i=1;
-		
-		
-		System.out.println("Found: "+ i);
-	
+	public void stop(){
+		sensor_removal.interrupt();
 	}
+	public void start() {
+		if(REMOVE_SENSOR_INTERVAL!=0)
+			sensor_removal.start();
+	}
+	
+	/**
+	 * This method runs as a spearate thread and deletes sensors which
+	 * have been disconnected for too long
+	 *
+	 */
+	public void run() {
+		Sensor s;
+		long diff, disc_ts;
+		logger.debug("Starting sensor removal thread");
+		try { 
+		while(!Thread.interrupted()){
+			Enumeration<Identifier> e  = getKeys();
+			while(e.hasMoreElements() && !Thread.interrupted()) {
+				synchronized(this) {
+					s = getComponent(e.nextElement());
+					disc_ts = s.getDisconnectTimestamp();
+					if(s!=null && disc_ts!=-1) {
+						diff = System.currentTimeMillis() - disc_ts;
+						if(diff > (DISCONNECT_TIMEOUT*1000)) {
+							logger.debug("About to remove sensor " + s.toString()+ " disconnect timeout expired (diff="+diff+")");
+							ProtocolManager.getProcotolManager().removeSensor(s);
+						}
+					}
+				}
+			}
+			Thread.sleep(REMOVE_SENSOR_INTERVAL*1000);
+		}
+		} catch (InterruptedException e1) {}
+		logger.debug("Exiting sensor removal thread");
+	}
+
 }
