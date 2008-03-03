@@ -44,9 +44,9 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 	public static final String PROTOCOL_TAG="Protocol";
 	
 	/**
-	 * how often the autodetection process should kick in (in seconds)
+	 * how often the autodetection process should kick in (in milliseconds)
 	 */
-	protected static int AUTODETECT_INTERVAL = 10;
+	protected static int AUTODETECT_INTERVAL = 2 * 1000;
 	
 	/**
 	 * A list of endpoints types supported by this protocol
@@ -300,7 +300,6 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 	 */
 	public String execute(Command c, SensorID sid) throws BadAttributeValueExpException {
 		String ret_val = null;
-		logger.debug("Received command :");
 		Sensor s = sensors.get(sid);
 		if(started) {
 			//Check if we have the sensor
@@ -326,9 +325,11 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 						throw e;
 					} catch (InvocationTargetException e) {
 						logger.error("The command returned an exception:" + e.getMessage());
-						e.printStackTrace();
+						logger.error("Caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
 					} catch (Exception e) {
 						logger.error("Could NOT run the command (error with invoke() )");
+						logger.error("exception:" + e.getMessage());
+						logger.error("caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
 						e.printStackTrace();
 					}
 					s.finishRunCmd();
@@ -405,12 +406,8 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 	//						logger.debug("sensor "+stmp.toString()+" FOUND in current and NOT FOUND in detected and already DISCONNECTED");
 							detected.remove(stmp.getNativeAddress());
 							iter.remove();
-						} //else {
-/*							logger.debug("detected contains " + stmp.getNativeAddress() + " ? " +detected.contains(stmp.getNativeAddress()));
-							logger.debug("current sensor state: "+stmp.getState());
-							logger.debug("Sensor " + stmp.getNativeAddress()+" only in current");
-						}
-*/					}
+						} 
+					}
 				}
 				
 				//now we re left with newly-connected sensors in detected and
@@ -438,7 +435,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 				}
 				dumpSensorsTable();
 
-				Thread.sleep(Long.valueOf(AUTODETECT_INTERVAL*1000));
+				Thread.sleep(Long.valueOf(AUTODETECT_INTERVAL));
 			}
 		} catch (InterruptedException e) {}
 		logger.debug("Autodetect thread exiting");

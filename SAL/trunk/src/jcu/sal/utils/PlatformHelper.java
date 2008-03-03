@@ -378,6 +378,16 @@ public class PlatformHelper {
 	}
 	
 	/**
+	 * This method read the entire first line from a file and returns it
+	 * @param f the file to be read
+	 * @return the line read
+	 * @throws IOException if an error occurs
+	 */
+	public static String readFromFile (String f) throws IOException{
+		return getFieldFromFile(f, 1, 1, null, false);
+	}
+	
+	/**
 	 * Returns whether a file exists and is readable
 	 * @param f the full path to the file
 	 * @return whether the file exists and is readable

@@ -70,7 +70,7 @@ class SensorState {
 	public boolean doneCommand(){
 		synchronized (this) {
 			if(state==INUSE) { state=IDLE; return true; }
-			else if(state==DISABLED) { return true; }
+			else if(state==DISABLED) { logger.error(i.toString()+" has been removed while we were reading it "); return true; }
 			else if(state==STOPPED) { state=REMOVED; l.componentRemovable(i); return true;}
 			else { logger.error("trying to finish running a command on a non INUSE/DISABLED sensor"); dumpState(); return false; }	
 		}

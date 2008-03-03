@@ -70,26 +70,25 @@ public class SALAgent implements Runnable{
 		new SALAgent(args[0], args[1]);
 	}
 	public void run() {
-/*		logger.debug("NASTY THREAD STARTING");
-		try {
-			while(!Thread.interrupted()) {
-				pm.execute(new Command(100, "", ""), new SensorID("22"));
-				pm.execute(new Command(100, "", ""), new SensorID("23"));
-				pm.execute(new Command(100, "", ""), new SensorID("21"));
-				pm.execute(new Command(100, "", ""), new SensorID("17"));
-				pm.execute(new Command(100, "", ""), new SensorID("16"));
-				pm.execute(new Command(100, "", ""), new SensorID("15"));
-				pm.execute(new Command(100, "", ""), new SensorID("14"));
-				pm.execute(new Command(100, "", ""), new SensorID("13"));
+		logger.debug("NASTY THREAD STARTING");
+
+		while(!Thread.interrupted()) {
+			try {
+			pm.execute(new Command(100, "", ""), new SensorID("1"));
+			pm.execute(new Command(100, "", ""), new SensorID("2"));
+			pm.execute(new Command(100, "", ""), new SensorID("3"));
+			pm.execute(new Command(100, "", ""), new SensorID("4"));
+			pm.execute(new Command(100, "", ""), new SensorID("5"));
+			pm.execute(new Command(100, "", ""), new SensorID("6"));
+			pm.execute(new Command(100, "", ""), new SensorID("1"));
+			pm.execute(new Command(100, "", ""), new SensorID("2"));
+			} catch (ConfigurationException e) {
+				// TODO Auto-generated catch block
+				logger.debug("config excp");
+			} catch (BadAttributeValueExpException e) {
+				// TODO Auto-generated catch block
+				logger.debug("bad att value excp");
 			}
-		} catch (ConfigurationException e) {
-			// TODO Auto-generated catch block
-			logger.debug("config excp");
-		} catch (BadAttributeValueExpException e) {
-			// TODO Auto-generated catch block
-			logger.debug("bad att value excp");
-		}*/
-
+		}
 	}
-
 }

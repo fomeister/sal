@@ -101,7 +101,7 @@ public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 		Identifier id = null;
 		try {
 			id = new SensorID(XMLhelper.getAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, n) );
-			logger.error("Sensor id: " + id.toString());
+			logger.debug("Sensor id: " + id.toString());
 		} catch (Exception e) {
 			logger.error("Couldnt find the Sensor id");
 			e.printStackTrace();
