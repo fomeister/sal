@@ -37,7 +37,6 @@ public class Sensor extends AbstractComponent<SensorID> {
 	public Sensor(SensorID i, Hashtable<String,String> c) throws ConfigurationException {
 		super();
 		Slog.setupLogger(this.logger);
-		this.logger.debug("ctor Sensor");
 		id = i;
 		type = SENSOR_TYPE;
 		config = c;

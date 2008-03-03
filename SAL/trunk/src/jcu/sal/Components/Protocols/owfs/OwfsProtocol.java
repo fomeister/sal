@@ -35,8 +35,22 @@ public class OwfsProtocol extends Protocol {
 	static { 
 		Slog.setupLogger(logger);
 		SUPPORTED_ENDPOINT_TYPES.add("usb");
-		SUPPORTED_ENDPOINT_TYPES.add("serial");
+		//SUPPORTED_ENDPOINT_TYPES.add("serial");
+		
+		//getTemperature		10.X
+		//GetHumidity			26.X
 		commands.put(new Integer(100), "getReading");
+		
+		//10.X, 26.X
+		commands.put(new Integer(101), "getTemperature");
+		
+		//26.X
+		commands.put(new Integer(112), "getHumidity");
+		commands.put(new Integer(113), "getHumidityHIH4000");
+		commands.put(new Integer(114), "getHumidityHTM1735");
+		commands.put(new Integer(115), "getVAD");
+		commands.put(new Integer(116), "getVDD");
+		commands.put(new Integer(117), "getVIS");
 	}
 	
 	
@@ -47,6 +61,7 @@ public class OwfsProtocol extends Protocol {
 	public OwfsProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super(i,OWFSPROTOCOL_TYPE ,c,d);
 		autodetect = true;
+		AUTODETECT_INTERVAL = 100;
 	}
 
 	/* (non-Javadoc)
@@ -124,7 +139,7 @@ public class OwfsProtocol extends Protocol {
 		String s;
 		
 		try {
-			BufferedReader r[] = PlatformHelper.captureOutputs(config.get(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall "+config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
+			BufferedReader r[] = PlatformHelper.captureOutputs(config.get(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
 			Thread.sleep(1000);
 			//check stderr
 			while ((s=r[1].readLine())!=null)
@@ -144,9 +159,6 @@ public class OwfsProtocol extends Protocol {
 			logger.error("Coudlnt run the OWFS process");
 			throw new ConfigurationException();
 		} catch (InterruptedException e) {}
-		
-		// TODO call probeSensors
-
 	}
 
 	/* (non-Javadoc)
@@ -155,42 +167,6 @@ public class OwfsProtocol extends Protocol {
 	protected void internal_remove() {
 		logger.debug("OWFS internal removed");
 		PlatformHelper.killProcesses("owfs");
-	}
-	
-
-	// TODO create an exception class for this instead of Exception
-	public String getReading(Hashtable<String,String> c, Sensor s) throws IOException{
-		String ret = "";
-		try {
-			String f = getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+s.getNativeAddress()+"/";
-			if(getFamily(s).equals("10.")) {
-				//temperature sensor, read from temperature file
-				ret = readFromFile(f + "temperature");
-			} else if(getFamily(s).equals("26.")) {
-				//humidity sensor, read from humidityfile
-				ret = readFromFile(f + "humidity");
-			} else {
-				logger.error("1-wire sensor family not yet supported");
-				s.disconnect();
-				throw new IOException("1-wire Family not supported yet");
-			}
-		} catch (Exception e) {
-			logger.error("Cant read from 1-wire sensor " +s.toString());
-			logger.error("Returned exceoption: "+e.getMessage());
-			s.disconnect();
-			throw new IOException("Cant read from 1-wire sensor " +s.toString());
-		}
-		return ret;
-	}
-	
-	/**
-	 * This method read one line from a file and returns the line
-	 * @param f the file to be read
-	 * @return the line read
-	 * @throws IOException if an error occurs
-	 */
-	private String readFromFile (String f) throws IOException{
-		return PlatformHelper.getFieldFromFile(f, 1, 1, null, false);
 	}
 
 	@Override
@@ -252,4 +228,98 @@ public class OwfsProtocol extends Protocol {
 	private String getFamily(Sensor s){
 		return s.getNativeAddress().substring(0, 3);
 	}
+
+	// TODO create an exception class for this instead of Exception
+	public String getReading(Hashtable<String,String> c, Sensor s) throws IOException{
+		if(getFamily(s).equals("10.")) {
+			//temperature sensor, read from temperature file
+			return getTemperature(c, s);
+		} else if(getFamily(s).equals("26.")) {
+			//humidity sensor, read from humidityfile
+			return getHumidity(c, s);
+		}
+		logger.error("1-wire sensor family not yet supported");
+		throw new IOException("1-wire Family not supported yet");
+	}
+	
+	public String getTemperature(Hashtable<String,String> c, Sensor s) throws IOException{
+		if(getFamily(s).equals("10.") || getFamily(s).equals("26.")) {
+			//temperature sensor, read from temperature file
+			return getRawReading(s.getNativeAddress()+ "/" + "temperature");
+		}
+		logger.error("1-wire sensor family doesnot support this command");
+		throw new IOException("sensor doesnt support this command");
+	}
+	
+	public String getHumidity(Hashtable<String,String> c, Sensor s) throws IOException{
+		if(getFamily(s).equals("26.")) {
+			//Humidity sensor, read from humidityfile
+			return getRawReading(s.getNativeAddress()+ "/" + "humidity");
+		}
+		logger.error("1-wire sensor family doesnot support this command");
+		throw new IOException("sensor doesnt support this command");
+	}
+	
+	public String getHumidityHIH4000(Hashtable<String,String> c, Sensor s) throws IOException{
+		if(getFamily(s).equals("26.")) {
+			//Humidity sensor, read from humidityfile
+			return getRawReading(s.getNativeAddress()+ "/" + "HIH4000/humidity");
+		}
+		logger.error("1-wire sensor family doesnot support this command");
+		throw new IOException("sensor doesnt support this command");
+	}
+	
+	public String getHumidityHTM1735(Hashtable<String,String> c, Sensor s) throws IOException{
+		if(getFamily(s).equals("26.")) {
+			//Humidity sensor, read from humidityfile
+			return getRawReading(s.getNativeAddress()+ "/" + "HTM1735/humidity");
+		}
+		logger.error("1-wire sensor family doesnot support this command");
+		throw new IOException("sensor doesnt support this command");
+	}
+	
+	public String getVAD(Hashtable<String,String> c, Sensor s) throws IOException{
+		if(getFamily(s).equals("26.")) {
+			//Humidity sensor, read from humidityfile
+			return getRawReading(s.getNativeAddress()+ "/" + "VAD");
+		}
+		logger.error("1-wire sensor family doesnot support this command");
+		throw new IOException("sensor doesnt support this command");
+	}
+
+	public String getVDD(Hashtable<String,String> c, Sensor s) throws IOException{
+		if(getFamily(s).equals("26.")) {
+			//Humidity sensor, read from humidityfile
+			return getRawReading(s.getNativeAddress()+ "/" + "VDD");
+		}
+		logger.error("1-wire sensor family doesnot support this command");
+		throw new IOException("sensor doesnt support this command");
+	}
+	
+	public String getVIS(Hashtable<String,String> c, Sensor s) throws IOException{
+		if(getFamily(s).equals("26.")) {
+			//Humidity sensor, read from humidityfile
+			return getRawReading(s.getNativeAddress()+ "/" + "vis");
+		}
+		logger.error("1-wire sensor family doesnot support this command");
+		throw new IOException("sensor doesnt support this command");
+	}
+	
+	/**
+	 * Gets a raw reading from an OWFS file
+	 * @param f the file within OWFSMOUNTPOINTATTRIBUTE which should be read
+	 * @return the reading
+	 * @throws IOException if something goes wrong
+	 */
+	private String getRawReading(String f) throws IOException {
+		try {
+			return PlatformHelper.readFromFile(getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+f);
+		} catch (BadAttributeValueExpException e) {
+			logger.error("Cant read from 1-wire sensor " +f);
+			logger.error("Most likely a wrong OWFS mount point in the OWFS XML config");
+			logger.error("Returned exception: "+e.getClass()+" - "+e.getMessage());
+			throw new IOException("Cant read from 1-wire sensor " +f);
+		} 
+	}
+	
 }

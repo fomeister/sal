@@ -10,7 +10,7 @@
 				<EndPoint name="usb" type="usb" />
 				<parameters>
 					<Param name="Location" value="/opt/owfs/bin/owfs" />
-					<Param name="MountPoint" value="/mnt/w1" />
+					<Param name="MountPoint" value="/mnt/w1/uncached" />
 				</parameters>
 			</Protocol>
 		</protocols>
