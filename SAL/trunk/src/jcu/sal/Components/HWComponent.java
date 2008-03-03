@@ -8,6 +8,8 @@ import java.util.Hashtable;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
+import jcu.sal.Components.Identifiers.Identifier;
+
 
 /**
  * This interface specifies the basic methods required by Components 
@@ -17,6 +19,13 @@ import javax.naming.ConfigurationException;
  */
 public interface HWComponent {
 
+	/**
+	 * Changes the component's configuration and applies these changes 
+	 * @param config the component's configuration
+	 * 
+	 */
+	public Identifier getID();
+	
 	
 	/**
 	 * Changes the component's configuration and applies these changes 

@@ -5,7 +5,6 @@ package jcu.sal.Components.Sensors;
 
 import jcu.sal.Components.componentRemovalListener;
 import jcu.sal.Components.Identifiers.SensorID;
-import jcu.sal.Managers.ProtocolManager;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -28,21 +27,21 @@ class SensorState {
 	public static final int STOPPED=5;
 	public static final int REMOVED=6;
 	
-	public static final int DISCONNECT_TIMEOUT=5;
-	
 	private int state;
 	/*
-	 * timeout represents the number of times the disconnect method has been called.
-	 * When timeout exceeds DISCONNECT_TIMEOUT, a call to destroyCOmpoenent is made to
-	 * remove the sensor.
+	 * disconnect_timestamp is the timestamp at which the disconnect method has been called.
 	 */
-	private int timeout;
+	private long disconnect_timestamp;
 
 	public SensorState(SensorID i) { 
 		state=UNUSED;
-		timeout=0;
+		disconnect_timestamp=-1;
 		this.i = i;
 		Slog.setupLogger(logger);
+	}
+	
+	public long getDisconnectTimestamp() {
+		return disconnect_timestamp;
 	}
 	
 	public boolean isStarted() {
@@ -95,11 +94,12 @@ class SensorState {
 		synchronized (this) {
 			if(state==IDLE || state==DISABLED || state==INUSE || state==DISCONNECTED || state==UNUSED) {
 				state=DISCONNECTED;
-				logger.error("Sensor has had "+(timeout+1)+ " disconnections");
+				disconnect_timestamp = System.currentTimeMillis();
+/*				logger.error("Sensor has had "+(timeout+1)+ " disconnections");
 				if(++timeout>DISCONNECT_TIMEOUT) {
 					logger.error("MAX disconnections, removing it.");
 					ProtocolManager.getProcotolManager().removeSensor(i);
-				}
+				}*/
 				return true;
 			} else { logger.error("trying to disconnect a non-IDLE,DISABLED or INUSE sensor"); dumpState(); return false; }
 		}
@@ -107,7 +107,7 @@ class SensorState {
 
 	public boolean reconnect(){
 		synchronized (this) {
-			if(state==DISCONNECTED) { state=IDLE; return true; }
+			if(state==DISCONNECTED) { disconnect_timestamp = -1; state=IDLE; return true; }
 			else if(state==IDLE || state==DISABLED || state==INUSE) {return true; }//already connected 
 			else { logger.error("trying to reconnect a non-DISCONNECTED sensor"); dumpState(); return false; }
 		}

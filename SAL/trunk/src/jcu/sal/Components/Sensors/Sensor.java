@@ -79,8 +79,12 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 	
 	public boolean finishRunCmd() {
-		logger.debug("Finisehd running cmd on sensor " + toString());
+		logger.debug("Finished running cmd on sensor " + toString());
 		return state.doneCommand();
+	}
+	
+	public long getDisconnectTimestamp(){
+		return state.getDisconnectTimestamp();
 	}
 
 	@Override

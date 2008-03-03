@@ -21,13 +21,15 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public class SALAgent {
+public class SALAgent implements Runnable{
 	
 	private Logger logger = Logger.getLogger(SALAgent.class);
+	private ProtocolManager pm;
 	
 	public SALAgent(String pc, String sc) throws ConfigurationException {
 		Slog.setupLogger(logger);
-		ProtocolManager pm = ProtocolManager.getProcotolManager();
+		Thread t = new Thread(this);
+		pm = ProtocolManager.getProcotolManager();
 		pm.init(sc, pc);
 		pm.dumpTable();
 		pm.dumpSensors();
@@ -35,14 +37,16 @@ public class SALAgent {
 		int i=0;
 		SensorID sid=null;
 		BufferedReader b = new BufferedReader(new InputStreamReader(System.in));
+		t.start();
 		while(i!=-1) {
-			System.out.println("Enter a sensor id (-1 to quit)");
+			System.out.println("Enter a sensor id (-1 to quit or -2 to see a list of sensors)");
 			try {
 				i=Integer.parseInt(b.readLine());
 				if(i>=0) {
 					sid=new SensorID(String.valueOf(i));
 					System.out.println("command returned : "+pm.execute(new Command(100, "", ""), sid));
-				}
+				} else if(i==-2)
+					pm.dumpSensors();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -56,12 +60,36 @@ public class SALAgent {
 				e.printStackTrace();
 			}
 		}
+
 		pm.destroyAllComponents();
+		t.interrupt();
 	}
 	
 	public static void main(String[] args) throws ConfigurationException {
 		//new SALAgent("/home/gilles/workspace/SALv1/src/platformConfig-osdata.xml", "/home/gilles/workspace/SALv1/src/sensors.xml");
 		new SALAgent(args[0], args[1]);
+	}
+	public void run() {
+/*		logger.debug("NASTY THREAD STARTING");
+		try {
+			while(!Thread.interrupted()) {
+				pm.execute(new Command(100, "", ""), new SensorID("22"));
+				pm.execute(new Command(100, "", ""), new SensorID("23"));
+				pm.execute(new Command(100, "", ""), new SensorID("21"));
+				pm.execute(new Command(100, "", ""), new SensorID("17"));
+				pm.execute(new Command(100, "", ""), new SensorID("16"));
+				pm.execute(new Command(100, "", ""), new SensorID("15"));
+				pm.execute(new Command(100, "", ""), new SensorID("14"));
+				pm.execute(new Command(100, "", ""), new SensorID("13"));
+			}
+		} catch (ConfigurationException e) {
+			// TODO Auto-generated catch block
+			logger.debug("config excp");
+		} catch (BadAttributeValueExpException e) {
+			// TODO Auto-generated catch block
+			logger.debug("bad att value excp");
+		}*/
+
 	}
 
 }

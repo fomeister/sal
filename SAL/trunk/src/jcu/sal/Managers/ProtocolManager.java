@@ -6,7 +6,7 @@ package jcu.sal.Managers;
 import java.lang.reflect.Constructor;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 
@@ -77,10 +77,11 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		Iterator<Node> iter = conf.getSensorIterator();
 		while(iter.hasNext()) {
 			try {
-				associateSensor(createSensor(iter.next()));
+				s = createSensor(iter.next());
+				associateSensor(s);
 			} catch (ConfigurationException e) {
 				logger.error("Could not add the sensor to any protocols");
-				if(s!=null) sm.destroyComponent(s);
+				if(s!=null) sm.destroyComponent(s.getID());
 			}
 		} 
 		
@@ -111,6 +112,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			logger.debug("EndPoint config: " + XMLhelper.toString((Node) o[2])); 
 			p = (Protocol) c.newInstance(o);
 			
+			SensorManager.getSensorManager().start();
 			this.logger.debug("done building protocol "+p.toString());
 			
 		} catch (ParseException e) {
@@ -160,7 +162,10 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 */
 	@Override
 	protected void remove(Protocol component) {
+		logger.debug("Removing protocol " + component.toString());
 		component.remove(this);
+		if(getSize()==0)
+			SensorManager.getSensorManager().stop();
 	}
 	
 	/**
@@ -175,7 +180,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * Deletes a sensor
 	 */
 	private void deleteSensor(Sensor s){
-		SensorManager.getSensorManager().destroyComponent(s);
+		SensorManager.getSensorManager().destroyComponent(s.getID());
 	}
 	
 	/**
@@ -190,15 +195,16 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * Starts all the protcols  at once
 	 */
 	public void startAll(){
-		Collection<Protocol> cvalues = ctable.values();
-		Iterator<Protocol> iter = cvalues.iterator();
-		while (iter.hasNext()) {
-			Protocol e = iter.next();
-			logger.debug("Starting protocol" + e.toString());
-			try { e.start(); }
-			catch (ConfigurationException ex) { 
-				logger.error("Couldnt start protocol " + e.toString()+" removing it");
-				destroyComponent(e);
+		synchronized(this){
+			Iterator<Protocol> iter = getIterator();
+			while (iter.hasNext()) {
+				Protocol e = iter.next();
+				logger.debug("Starting protocol" + e.toString());
+				try { e.start(); }
+				catch (ConfigurationException ex) { 
+					logger.error("Couldnt start protocol " + e.toString()+" removing it");
+					destroyComponent(e.getID());
+				}
 			}
 		}
 	}
@@ -207,12 +213,13 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * Stops all the protcols  at once
 	 */
 	public void stopAll(){
-		Collection<Protocol> cvalues = ctable.values();
-		Iterator<Protocol> iter = cvalues.iterator();
-		while (iter.hasNext()) {
-			Protocol e = iter.next();
-			logger.debug("Stopping protocol" + e.toString());
-			e.stop();
+		synchronized(this){
+			Iterator<Protocol> iter = getIterator();
+			while (iter.hasNext()) {
+				Protocol e = iter.next();
+				logger.debug("Stopping protocol" + e.toString());
+				e.stop();
+			}
 		}
 	}
 	
@@ -220,12 +227,11 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * remove all the protcols at once
 	 */
 	public void removeAll(){
-		Collection<Protocol> cvalues = ctable.values();
-		Iterator<Protocol> iter = cvalues.iterator();
-		while (iter.hasNext()) {
-			Protocol e = iter.next();
-			logger.debug("Removing protocol" + e.toString());
-			e.remove(this);
+		Protocol p;
+		synchronized(this){
+			Enumeration<Identifier> e = getKeys();
+			while (e.hasMoreElements())
+				if((p=getComponent(e.nextElement()))!=null) remove(p);
 		}
 	}
 	
@@ -235,12 +241,14 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @throws ConfigurationException if the sensor cannot be added (wrong ProtocolName field, or unsupported sensor)
 	 */
 	public Protocol associateSensor(Sensor sensor) throws ConfigurationException{
-		Protocol p = ctable.get(new ProtocolID(sensor.getProtocolName()));
-		if(p!=null)
-		{
-			logger.debug("Adding sensor " + sensor.toString() + " to Protocol " + p.getID().toString());
-			p.associateSensor(sensor);
-			return p;
+		synchronized(this) {
+			Protocol p = getComponent(new ProtocolID(sensor.getProtocolName()));
+			if(p!=null)
+			{
+				logger.debug("Associate sensor " + sensor.toString() + " to Protocol " + p.getID().toString());
+				p.associateSensor(sensor);
+				return p;
+			}
 		}
 		/* if we get here the sensor couldnt be added */
 		logger.error("The sensor " + sensor.getID().toString() + " couldnt be added because ");
@@ -254,19 +262,21 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @args i the Id of the sensor to be removed   
 	 */
 	public void removeSensor(SensorID i){
-		Protocol p = ctable.get(new ProtocolID(i.getPIDName()));
-		if(p!=null)
-		{
-			logger.debug("Removing sensor " + i.toString() + " from Protocol " + p.getID().toString());
-			if(p.unassociateSensor(i)) {
-				deleteSensor(i);
-				logger.debug("sensor removed");
+		synchronized(this) {
+			Protocol p = getComponent(new ProtocolID(i.getPIDName()));
+			if(p!=null)
+			{
+				logger.debug("Removing sensor " + i.toString() + " from Protocol " + p.getID().toString());
+				if(p.unassociateSensor(i)) {
+					deleteSensor(i);
+					logger.debug("sensor removed");
+					return;
+				}
 			}
-		} else {
-			/* if we get here the sensor couldnt be removed*/
-			logger.error("The sensor " + i.toString() + " couldnt be removed because ");
-			logger.error("no protocol named " + i.getPIDName() +" could be found");
 		}
+		/* if we get here the sensor couldnt be removed*/
+		logger.error("The sensor " + i.toString() + " couldnt be removed because ");
+		logger.error("no protocol named " + i.getPIDName() +" could be found");
 	}
 	
 	/**
@@ -296,12 +306,14 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * Prints sensors associated with all procotols 
 	 */
 	public void dumpSensors(){
-		Iterator<Protocol> i = getIterator();
-		Protocol p;
-		while(i.hasNext()) {
-			p = i.next();
-			logger.debug("Sensors associated with protocol "+p.toString());
-			p.dumpSensorsTable();
+		synchronized(this) {
+			Iterator<Protocol> i = getIterator();
+			Protocol p;
+			while(i.hasNext()) {
+				p = i.next();
+				logger.debug("Sensors associated with protocol "+p.toString());
+				p.dumpSensorsTable();
+			}
 		}
 	}
 	
@@ -324,14 +336,17 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	private Protocol getProtocol(SensorID sid) throws ConfigurationException{
 			Protocol p=null;
 			ProtocolID pid = null;
+			Sensor s;
 
 			//TODO fix all the methods that should return an exception instead of a null pointer
-			//TODO so we can get rid of all the if statments and only have try/catch stuff
-			if(SensorManager.getSensorManager().getComponent(sid)==null) {
+			//TODO so we can get rid of all the if statments and only have try/catch stuff.
+			//TODO fix the Identifier issue: with a sensor ID (a single int), to get the protocol associated
+			//TODO with it, we have to do the following 4 lines ... ugly !
+			if((s=SensorManager.getSensorManager().getComponent(sid))==null) {
 				logger.error("Cannot find the any sensor with this sensorID: " + sid.toString());
 				throw new ConfigurationException();
 			}
-			pid = sid.getPid();
+			pid = s.getID().getPid();
 			if(pid==null){
 				logger.error("Cannot find the protocolID associated with this sensorID: " + sid.toString());
 				throw new ConfigurationException();
@@ -341,6 +356,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 				logger.error("Cannot find the protocol associated with this sensorID: " + sid.toString());
 				throw new ConfigurationException();
 			}
+
 			return p;
 	}
 	

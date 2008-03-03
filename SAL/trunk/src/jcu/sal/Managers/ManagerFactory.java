@@ -32,7 +32,7 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	public static String COMPONENTPARAM_TAG = "Param";
 	
 	private Logger logger = Logger.getLogger(ManagerFactory.class);
-	protected Hashtable<Identifier, T> ctable;
+	private Hashtable<Identifier, T> ctable;
 	
 	public ManagerFactory() {
 		Slog.setupLogger(this.logger);
@@ -60,7 +60,7 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 				config.put(name,value);
 			}
 		} catch (XPathExpressionException e) {
-			this.logger.error("Did not find any parameters for this Sensor");
+			logger.error("Did not find any parameters for this Sensor");
 		}
 		return config;
 	}
@@ -76,21 +76,21 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 		Identifier id= null;
 		try {
 			id = getComponentID(n);
-			this.logger.debug("About to create a component named " + id.getName());
+			logger.debug("About to create a component named " + id.getName());
 			if(!ctable.containsKey(id)) {
 				newc = build(n);
-				if(newc!=null) ctable.put(id, newc);
-				else this.logger.error("Couldnt create component");
+				if(newc!=null) synchronized (this) { ctable.put(id, newc); }
+				else logger.error("Couldnt create component");
 			}
 			else {
-				this.logger.debug("About to create a component named " + id.getName());
+				logger.debug("There is already a component named " + id.toString());
 				return null;
 			}
 		} catch (ParseException e) {
-			this.logger.error("Couldnt parse component "+ id.getName()+"'s XML doc");
+			logger.error("Couldnt parse component "+ id.getName()+"'s XML doc");
 			throw new ConfigurationException();
 		} catch (InstantiationException e) {
-			this.logger.error("Couldnt instanciate component "+ id.getName()+" from XML doc");
+			logger.error("Couldnt instanciate component "+ id.getName()+" from XML doc");
 			throw new ConfigurationException();
 		}
 
@@ -102,33 +102,14 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 * @param type the component type
 	 */
 	public void destroyComponent(Identifier i) {
-		this.logger.debug("About to remove element " + i.toString());
-		if(ctable.containsKey(i)) {
-			dumpTable();
-			remove(ctable.get(i));
-		} else
-			this.logger.error("Element " + i.toString()+ " doesnt exist and can NOT be removed");
-	}
-	
-	/** 
-	 * Removes a previoulsy creatd component
-	 * @param component the component to be removed
-	 */
-	public void destroyComponent(T component) {
-		Identifier i = null;
-		if(ctable.containsValue(component)) {
-			Enumeration<Identifier> keys = ctable.keys();
-			Collection<T> cvalues = ctable.values();
-			Iterator<T> iter = cvalues.iterator();
-			while ( keys.hasMoreElements() &&  iter.hasNext()) {
-				i = keys.nextElement();
-				if(iter.next() == component) {
-					destroyComponent(i);
-					break;
-				}
-			}
-		} else 
-			this.logger.debug("Cant remove element "+ component.toString() + ": No such element");
+		logger.debug("About to remove element " + i.toString());
+		synchronized(this) {
+			if(ctable.containsKey(i)) {
+				dumpTable();
+				remove(ctable.get(i));
+			} else
+				logger.error("Element " + i.toString()+ " doesnt exist and can NOT be removed");
+		}
 	}
 	
 	/** 
@@ -137,10 +118,11 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 */
 	public void destroyAllComponents() {
 		this.logger.debug("removing all components" );
-		Collection<T> cvalues = ctable.values();
-		Iterator<T> iter = cvalues.iterator();
-		while (iter.hasNext())
-			destroyComponent(iter.next());
+		synchronized(this){
+			Enumeration<T> e = ctable.elements();
+			while (e.hasMoreElements())
+				destroyComponent(e.nextElement().getID());
+		}
 	}
 	
 	/** 
@@ -154,12 +136,31 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	}
 	
 	/** 
-	 * Get an iterator on all components
+	 * Get an iterator on all components. MUST BE SYNCHRONIZED & 
+	 * MUST NOT ALTER THE CONTENTS OTHER THAN WITH THE ITERATOR ITSELF!!!
 	 * @return the iterator
 	 *
 	 */
-	public Iterator<T> getIterator() {
+	protected Iterator<T> getIterator() {
 		return ctable.values().iterator();
+	}
+	
+	/** 
+	 * Get an enumeration of all keys. Need not be synchronized.
+	 * @return the enumeration
+	 *
+	 */
+	protected Enumeration<Identifier> getKeys() {
+		return ctable.keys();
+	}
+	
+	/** 
+	 * Returns the number of components managed by this manager.
+	 * @return the number of components
+	 *
+	 */
+	public int getSize() {
+		return ctable.size();
 	}
 	
 	/**
@@ -168,21 +169,25 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 */	
 	public void dumpTable() {
 		this.logger.debug("current table contents:" );
-		Enumeration<Identifier> keys = ctable.keys();
-		Collection<T> cvalues = ctable.values();
-		Iterator<T> iter = cvalues.iterator();
-		while ( keys.hasMoreElements() &&  iter.hasNext())
-		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
+		synchronized(this){
+			Enumeration<Identifier> keys = ctable.keys();
+			Collection<T> cvalues = ctable.values();
+			Iterator<T> iter = cvalues.iterator();
+			while ( keys.hasMoreElements() &&  iter.hasNext())
+			   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
+		}
 	}
 	
 	/**
 	 * Removes the specified component
 	 */
 	public void componentRemovable(Identifier i){
-		if(ctable.remove(i) == null)
-			this.logger.error("Cant remove element with key " + i.toString() +  ": No such element");
-		else
-			this.logger.debug("Element " + i.toString()+ " Removed");
+		synchronized(this){
+			if(ctable.remove(i) == null)
+				this.logger.error("Cant remove element with key " + i.toString() +  ": No such element");
+			else
+				this.logger.debug("Element " + i.toString()+ " Removed");
+		}
 	}
 	
 	/**
