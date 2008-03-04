@@ -21,6 +21,7 @@ import jcu.sal.Components.componentRemovalListener;
 import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Identifiers.SensorID;
+import jcu.sal.Components.Protocols.CMLStore.CMLStore;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Managers.EndPointManager;
 import jcu.sal.Managers.ProtocolManager;
@@ -69,12 +70,17 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 	protected EndPoint ep;
 	
 	/**
+	 * The CML store associated with this protocol. This field must be instanciated by the subclass
+	 */
+	protected CMLStore cmls;
+	
+	/**
 	 * Is this protocol started ?
 	 */
 	private boolean started;
 	
 	/**
-	 * Can the protocol automatically detect sensor addition/removal ?
+	 * Can the protocol automatically detect sensor addition/removal ? 
 	 */
 	protected boolean autodetect;
 	private Thread autodetectThread;
@@ -120,88 +126,6 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 		}
 	}
 	
-	
-	
-	/**
-	 * Associate a new sensor managed by this Protocol
-	 * Also checks whether this sensor is supported, requires the access to be
-	 * synchronized with respect to this protocol (synchronized(p))
-	 * @param s the sensor to be added
-	 * @return 
-	 */
-	public synchronized final void associateSensor(Sensor s) throws ConfigurationException{
-		if (!removed) {
-				if(isSensorSupported(s)) {
-					logger.debug("About to associate sensor" + s.toString());
-					synchronized(sensors) {
-						sensors.put(s.getID(), s);
-					}
-					s.getID().setPid(this.id);
-					logger.debug("Sensor associated (" + s.toString()+")");
-				} else {
-					logger.error("Sensor "+s.toString()+" not supported by this protocol");
-					throw new ConfigurationException();
-				}
-		} else
-			logger.error("cant associate a new sensor, the protocol is about to be removed");
-	}
-	
-	/**
-	 * Removes all sensors associated to this logical port
-	 * @param i the sensorID to be removed
-	 */
-	public final ArrayList<Sensor> unassociateSensors() {
-		ArrayList<Sensor> c;
-		synchronized(sensors){
-			Enumeration<SensorID> e = sensors.keys();
-			c = new ArrayList<Sensor>(sensors.values());
-			while(e.hasMoreElements()) {
-				unassociateSensor(e.nextElement());
-			}
-		}
-		return c;
-	}
-
-	
-	/**
-	 * Removes a sensor managed by this logical port
-	 * @param i the sensorID to be removed
-	 */
-	public final boolean unassociateSensor(SensorID i) {
-		this.logger.debug("About to unassociate sensor " + i.toString());
-		if(sensors.containsKey(i)) {
-			synchronized(sensors) {
-				if(sensors.remove(i) == null) {
-					logger.error("Cant unassociate sensor with key " + i.toString() +  ": No such element");
-					return false;
-				} else logger.debug("unassociated sensor with key " + i.toString() +  " from protocol "+toString());
-			}
-		} else {
-			logger.error("Sensor " + i.toString()+ " doesnt exist and can NOT be unassociated");
-			return false;
-		}
-		return true;
-	}
-	
-	public final void dumpSensorsTable() {
-		this.logger.debug("current sensors table contents:" );
-		synchronized (this) {
-			Enumeration<SensorID> keys = sensors.keys();
-			Collection<Sensor> cvalues = sensors.values();
-			Iterator<Sensor> iter = cvalues.iterator();
-			while ( keys.hasMoreElements() &&  iter.hasNext())
-			   logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());			
-		}
-	}
-	
-	/**
-	 * returns a textual representation of a Protocol's instance
-	 * @return the textual representation of the Protocol's instance
-	 */
-	public final String toString() {
-		return "Protocol "+id.getName()+"("+type+"), EndPoint: " + ep.toString();
-
-	}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#remove()
@@ -291,6 +215,78 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 		}
 	}
 
+	
+	
+	
+	/**
+	 * Associate a new sensor managed by this Protocol
+	 * Also checks whether this sensor is supported, requires the access to be
+	 * synchronized with respect to this protocol (synchronized(p))
+	 * @param s the sensor to be added
+	 * @return 
+	 */
+	public synchronized final void associateSensor(Sensor s) throws ConfigurationException{
+		if (!removed) {
+				if(isSensorSupported(s)) {
+					logger.debug("About to associate sensor" + s.toString());
+					synchronized(sensors) {
+						sensors.put(s.getID(), s);
+					}
+					s.getID().setPid(this.id);
+					logger.debug("Sensor associated (" + s.toString()+")");
+				} else {
+					logger.error("Sensor "+s.toString()+" not supported by this protocol");
+					throw new ConfigurationException();
+				}
+		} else
+			logger.error("cant associate a new sensor, the protocol is about to be removed");
+	}
+	
+	/**
+	 * Unassociates all sensors associated to this logical port
+	 */
+	public final ArrayList<Sensor> unassociateSensors() {
+		ArrayList<Sensor> c;
+		synchronized(sensors){
+			Enumeration<SensorID> e = sensors.keys();
+			c = new ArrayList<Sensor>(sensors.values());
+			while(e.hasMoreElements()) {
+				unassociateSensor(e.nextElement());
+			}
+		}
+		return c;
+	}
+
+	
+	/**
+	 * Unassociates a sensor managed by this logical port
+	 * @param i the sensorID to be removed
+	 */
+	public final boolean unassociateSensor(SensorID i) {
+		this.logger.debug("About to unassociate sensor " + i.toString());
+		if(sensors.containsKey(i)) {
+			synchronized(sensors) {
+				if(sensors.remove(i) == null) {
+					logger.error("Cant unassociate sensor with key " + i.toString() +  ": No such element");
+					return false;
+				} else logger.debug("unassociated sensor with key " + i.toString() +  " from protocol "+toString());
+			}
+		} else {
+			logger.error("Sensor " + i.toString()+ " doesnt exist and can NOT be unassociated");
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * returns a textual representation of a Protocol's instance
+	 * @return the textual representation of the Protocol's instance
+	 */
+	public final String toString() {
+		return "Protocol "+id.getName()+"("+type+"), EndPoint: " + ep.toString();
+
+	}
+
 	/**
 	 * Sends a command to a sensor
 	 * @param c the command
@@ -324,11 +320,12 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 						s.finishRunCmd();
 						throw e;
 					} catch (InvocationTargetException e) {
-						logger.error("The command returned an exception:" + e.getMessage());
+						logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
 						logger.error("Caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
+						e.printStackTrace();
 					} catch (Exception e) {
 						logger.error("Could NOT run the command (error with invoke() )");
-						logger.error("exception:" + e.getMessage());
+						logger.error("exception:" + e.getClass() + " - " +e.getMessage());
 						logger.error("caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
 						e.printStackTrace();
 					}
@@ -386,9 +383,11 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 		Sensor stmp;
 		ArrayList<Sensor> current;
 		Iterator<Sensor> iter;
+		boolean show;
 		try {
 			logger.debug("Autodetect thread started");
 			while(!Thread.interrupted() && ((detected = detectConnectedSensors())!=null)) {
+				show=false;
 				//for each sensor in current
 				synchronized(sensors) {
 					current = new ArrayList<Sensor>(sensors.values());
@@ -418,9 +417,9 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 						try {
 							t = generateSensorConfig(it.next());
 							Sensor s = ProtocolManager.getProcotolManager().createSensorFromPartialSML(t);
-							ProtocolManager.getProcotolManager().associateSensor(s);
 							probeSensor(s);
 							logger.debug("autodetected sensor added");
+							show=true;
 						} catch (ConfigurationException e1) {
 							logger.error("couldnt create the autodetected sensor from its autogenerated XML config:");
 						}
@@ -432,13 +431,29 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 						stmp = iter.next();
 						logger.debug("Newly removed sensor: " + stmp.toString());
 						stmp.disconnect();
+						show=true;
 				}
-				dumpSensorsTable();
+				if(show) dumpSensorsTable();
 
 				Thread.sleep(Long.valueOf(AUTODETECT_INTERVAL));
 			}
 		} catch (InterruptedException e) {}
 		logger.debug("Autodetect thread exiting");
+	}
+	
+	/**
+	 * Prints on the console all the associated sensors
+	 *
+	 */
+	public final void dumpSensorsTable() {
+		this.logger.debug("current sensors table contents:" );
+		synchronized (this) {
+			Enumeration<SensorID> keys = sensors.keys();
+			Collection<Sensor> cvalues = sensors.values();
+			Iterator<Sensor> iter = cvalues.iterator();
+			while ( keys.hasMoreElements() &&  iter.hasNext())
+			   logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());			
+		}
 	}
 	
 	/**
@@ -473,9 +488,18 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 	protected abstract void internal_remove();
 	
 	/**
-	 * Parse the configuration of the protocol itself
+	 * Parse the configuration of the protocol itself.
+	 * !!! this method is called BEFORE the subclass constructor !!!
 	 */
 	protected abstract void internal_parseConfig() throws ConfigurationException;
+	
+	/**
+	 * Returns the CML store key for a sensor if supported. The key is the one used by the CML store:
+	 * one CML doc is associated with one key (sensor native address, sensor family, ...)
+	 * @param s the sensor
+	 * @return the CML store key as a string
+	 */
+	protected abstract String internal_getCMLStoreKey(Sensor s) throws ConfigurationException;
 	
 	/**
 	 * this method should be overriden by protocols which provide sensor autodetection
@@ -487,8 +511,11 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 	}
 	
 	/**
-	 * this method should be overriden by protocols which provide sensor autodetection
-	 * and return an XML document for a newly detected sensor given its native address 
+	 * this method generates a partial SML doc using the newly detected sensor's
+	 * native address. The SML document is partial because it contains the 
+	 * placeholder 'SensorManager.SENSORID_MARKER' where the final sensor id will be.
+	 * @param the newly detected sensor's native addres
+	 * @return a string which is the SML doc for this new sensor  
 	 */
 	protected final String generateSensorConfig(String nativeAddress){
 		StringBuffer xml = new StringBuffer();
@@ -501,6 +528,39 @@ public abstract class Protocol extends AbstractComponent<ProtocolID> implements 
 		xml.append("</Sensor>\n");
 			
 		return xml.toString();
+	}
+	/**
+	 * This method returns the CML docu for a given sensor
+	 * @param i the sensor whose CML we need
+	 * @return the CML
+	 * @throws ConfigurationException if the sensor is not found or isnt supported by this protocol
+	 */
+	//TODO make me throw a better exception
+	public String getCML(SensorID i) throws ConfigurationException {
+		String cml, key;
+		Sensor s =sensors.get(i);
+		if(s!=null) {
+			if(isSensorSupported(s)) {
+				key = internal_getCMLStoreKey(s);
+				if (key!=null) {
+					cml =cmls.getCML(key);  
+					if(cml!=null) {
+						return "<commands xmlns=\"http://jcu.edu.au/sal\">\n"+cml+"<commands>";
+					} else {
+						logger.error("cant find a CML doc for Sensor " +s.toString()+" key:" + key);
+						throw new ConfigurationException("cant find a CML doc for Sensor " +s.toString()+" key:" + key);
+					}
+				} else {
+					logger.error("Error getting the key for sensor " + s.toString());
+					throw new ConfigurationException("Error getting the key for sensor " + s.toString());
+				}
+			}else {
+				logger.error("Sensor " +s.toString()+" not supported by this protocol");
+				throw new ConfigurationException("Sensor " +s.toString()+" not supported by this protocol");
+			}
+		}
+		logger.error("Sensor "+ i.toString()+" is not associated with this protocol" );
+		throw new ConfigurationException("Sensor "+ i.toString()+" is not associated with this protocol");
 	}
 	
 	/**

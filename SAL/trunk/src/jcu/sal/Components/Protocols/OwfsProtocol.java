@@ -1,7 +1,7 @@
 /**
  * 
  */
-package jcu.sal.Components.Protocols.owfs;
+package jcu.sal.Components.Protocols;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,7 +13,7 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.Identifiers.ProtocolID;
-import jcu.sal.Components.Protocols.Protocol;
+import jcu.sal.Components.Protocols.CMLStore.OwfsCML;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
@@ -28,10 +28,11 @@ import org.w3c.dom.Node;
 public class OwfsProtocol extends Protocol {
 
 	private static Logger logger = Logger.getLogger(OwfsProtocol.class);
+
 	public final static String OWFSPROTOCOL_TYPE = "owfs";
 	public final static String OWFSLOCATIONATTRIBUTE_TAG = "Location";
 	public final static String OWFSMOUNTPOINTATTRIBUTE_TAG = "MountPoint";
-
+	
 	static { 
 		Slog.setupLogger(logger);
 		SUPPORTED_ENDPOINT_TYPES.add("usb");
@@ -62,6 +63,7 @@ public class OwfsProtocol extends Protocol {
 		super(i,OWFSPROTOCOL_TYPE ,c,d);
 		autodetect = true;
 		AUTODETECT_INTERVAL = 100;
+		cmls = new OwfsCML();
 	}
 
 	/* (non-Javadoc)
@@ -214,7 +216,7 @@ public class OwfsProtocol extends Protocol {
 		      try { Integer.parseInt(info[i].substring(0,2)); } catch (NumberFormatException e) { continue; } 
 
 		      if(!info[i].substring(0, 2).equals("81")) {
-			      logger.debug("Autodetect thread: detected " + info[i]);
+			      //logger.debug("Autodetect thread: detected " + info[i]);
 			      v.add(info[i]);
 		      }
 		    }
@@ -320,6 +322,11 @@ public class OwfsProtocol extends Protocol {
 			logger.error("Returned exception: "+e.getClass()+" - "+e.getMessage());
 			throw new IOException("Cant read from 1-wire sensor " +f);
 		} 
+	}
+
+	@Override
+	protected String internal_getCMLStoreKey(Sensor s){
+		return getFamily(s);  
 	}
 	
 }
