@@ -6,7 +6,7 @@ package jcu.sal.utils;
 import java.util.Hashtable;
 
 import jcu.sal.Components.Protocols.OSDataProtocol;
-import jcu.sal.Components.Protocols.owfs.OwfsProtocol;
+import jcu.sal.Components.Protocols.OwfsProtocol;
 
 import org.apache.log4j.Logger;
 
@@ -26,7 +26,7 @@ public class ProtocolModulesList {
 	private ProtocolModulesList()
 	{
 		Slog.setupLogger(this.logger);
-		table.put(OwfsProtocol.OWFSPROTOCOL_TYPE , ProtocolModulesList.SALcomponentPackage + "owfs.OwfsProtocol");
+		table.put(OwfsProtocol.OWFSPROTOCOL_TYPE , ProtocolModulesList.SALcomponentPackage + "OwfsProtocol");
 		/*table.put("PL40", ProtocolModulesList.SALcomponentPackage + "PLIProtocol");
 		table.put("EMS_IDU_SNMP", ProtocolModulesList.SALcomponentPackage + "EMSIDUProtocol");*/
 		table.put(OSDataProtocol.OSDATAPROTOCOL_TYPE, ProtocolModulesList.SALcomponentPackage + "OSDataProtocol");

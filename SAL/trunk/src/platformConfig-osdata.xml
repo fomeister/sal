@@ -12,8 +12,6 @@
 					<Param name="CPUTempFile" value="/sys/devices/pci0000:00/0000:00:1f.3/i2c-adapter:i2c-0/0-002e/temp1_input" />
 					<Param name="NBTempFile" value="/sys/devices/pci0000:00/0000:00:1f.3/i2c-adapter:i2c-0/0-002e/temp3_input" />
 					<Param name="SBTempFile" value="/sys/devices/pci0000:00/0000:00:1f.3/i2c-adapter:i2c-0/0-002e/temp2_input" />
-					<Param name="TBTempFile" value="/temp2_input" />
-					<Param name="AutoDetectInterval" value="5000" />
 				</parameters>
 			</Protocol>
 		</protocols>

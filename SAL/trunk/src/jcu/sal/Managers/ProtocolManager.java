@@ -36,6 +36,8 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	
 	private static ProtocolManager p = new ProtocolManager();
 	private Logger logger = Logger.getLogger(ProtocolManager.class);
+	private ConfigService conf;
+	private SensorManager sm;
 	
 	
 	/**
@@ -44,10 +46,12 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	private ProtocolManager() {
 		super();
 		Slog.setupLogger(this.logger);
+		conf = ConfigService.getService();
+		sm = SensorManager.getSensorManager();
 	}
 	
 	/**
-	 * Returns the instance of the EndPointManager 
+	 * Returns the instance of the ProtocolManager 
 	 * @return
 	 */
 	public static ProtocolManager getProcotolManager() {
@@ -60,8 +64,6 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 */
 	public void init(String sml, String pcml) throws ConfigurationException {
 		Sensor s = null;
-		ConfigService conf = ConfigService.getService();
-		SensorManager sm = SensorManager.getSensorManager();
 		
 		try {
 			conf.init(pcml,sml);
@@ -112,7 +114,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			logger.debug("EndPoint config: " + XMLhelper.toString((Node) o[2])); 
 			p = (Protocol) c.newInstance(o);
 			
-			SensorManager.getSensorManager().start();
+			sm.start();
 			this.logger.debug("done building protocol "+p.toString());
 			
 		} catch (ParseException e) {
@@ -121,9 +123,12 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			//e.printStackTrace();
 			throw new InstantiationException();
 		}catch (Exception e) {
-			this.logger.error("Error in new Protocol instanciation. XML doc:");
-			 this.logger.error(XMLhelper.toString(config));
-			//e.printStackTrace();
+			this.logger.error("Error in new Protocol instanciation.");
+			this.logger.error("Exception: "+e.getClass()+" - "+e.getMessage() );
+			this.logger.error("caused by: "+e.getCause().getClass()+" - "+e.getCause().getMessage());
+			this.logger.error("XML doc:\n");
+			this.logger.error(XMLhelper.toString(config));
+			e.printStackTrace();
 			throw new InstantiationException();
 		}
 		return p;
@@ -165,29 +170,29 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		logger.debug("Removing protocol " + component.toString());
 		component.remove(this);
 		if(getSize()==0)
-			SensorManager.getSensorManager().stop();
+			sm.stop();
 	}
 	
 	/**
 	 * Creates a sensor from a XML node
 	 * @throws ConfigurationException if the XML node is incorrect
 	 */
-	public Sensor createSensor(Node n) throws ConfigurationException{
-		return SensorManager.getSensorManager().createComponent(n);
+	private Sensor createSensor(Node n) throws ConfigurationException{
+		return sm.createComponent(n);
 	}
 
 	/**
 	 * Deletes a sensor
 	 */
 	private void deleteSensor(Sensor s){
-		SensorManager.getSensorManager().destroyComponent(s.getID());
+		sm.destroyComponent(s.getID());
 	}
 	
 	/**
 	 * Deletes a sensor
 	 */
 	private void deleteSensor(SensorID i){
-		SensorManager.getSensorManager().destroyComponent(i);
+		sm.destroyComponent(i);
 	}
 	
 
@@ -240,13 +245,13 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @return the protocol to which the sensor has been added 
 	 * @throws ConfigurationException if the sensor cannot be added (wrong ProtocolName field, or unsupported sensor)
 	 */
-	public Protocol associateSensor(Sensor sensor) throws ConfigurationException{
+	private Protocol associateSensor(Sensor sensor) throws ConfigurationException{
 		synchronized(this) {
 			Protocol p = getComponent(new ProtocolID(sensor.getProtocolName()));
 			if(p!=null)
 			{
-				logger.debug("Associate sensor " + sensor.toString() + " to Protocol " + p.getID().toString());
 				p.associateSensor(sensor);
+				logger.debug("Associated sensor " + sensor.toString() + " to Protocol " + p.getID().toString());
 				return p;
 			}
 		}
@@ -264,19 +269,12 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	public void removeSensor(SensorID i){
 		synchronized(this) {
 			Protocol p = getComponent(new ProtocolID(i.getPIDName()));
+			logger.debug("Removing sensor " + i.toString() + " from Protocol " + p.getID().toString());
 			if(p!=null)
-			{
-				logger.debug("Removing sensor " + i.toString() + " from Protocol " + p.getID().toString());
-				if(p.unassociateSensor(i)) {
-					deleteSensor(i);
-					logger.debug("sensor removed");
-					return;
-				}
-			}
+				p.unassociateSensor(i);
+			deleteSensor(i);
+			logger.debug("sensor removed");
 		}
-		/* if we get here the sensor couldnt be removed*/
-		logger.error("The sensor " + i.toString() + " couldnt be removed because ");
-		logger.error("no protocol named " + i.getPIDName() +" could be found");
 	}
 	
 	/**
@@ -312,7 +310,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			while(i.hasNext()) {
 				p = i.next();
 				logger.debug("Sensors associated with protocol "+p.toString());
-				p.dumpSensorsTable();
+				dumpSensor(p);
 			}
 		}
 	}
@@ -324,25 +322,26 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		p.dumpSensorsTable();
 	}
 	
-	public String execute(Command c, SensorID s) throws ConfigurationException, BadAttributeValueExpException {
-		return getProtocol(s).execute(c, s);
+	public String execute(Command c, int id) throws ConfigurationException, BadAttributeValueExpException {
+		return getProtocol(id).execute(c, new SensorID(String.valueOf(id)));
 	}
 	
 
 	/**
 	 * Returns the protcol associated with a SensorID
-	 * @throw ConfigurationException if the protocol can not be found 
+	 * @throws ConfigurationException if the protocol can not be found 
 	 */
-	private Protocol getProtocol(SensorID sid) throws ConfigurationException{
+	public Protocol getProtocol(int  id) throws ConfigurationException{
 			Protocol p=null;
 			ProtocolID pid = null;
 			Sensor s;
+			SensorID sid = new SensorID(String.valueOf(id));
 
 			//TODO fix all the methods that should return an exception instead of a null pointer
 			//TODO so we can get rid of all the if statments and only have try/catch stuff.
 			//TODO fix the Identifier issue: with a sensor ID (a single int), to get the protocol associated
 			//TODO with it, we have to do the following 4 lines ... ugly !
-			if((s=SensorManager.getSensorManager().getComponent(sid))==null) {
+			if((s=sm.getComponent(sid))==null) {
 				logger.error("Cannot find the any sensor with this sensorID: " + sid.toString());
 				throw new ConfigurationException();
 			}
@@ -362,7 +361,18 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	
 	/**
 	 * Creates a sensor from a partial SML (passed as a string)
+	 * @throws ConfigurationException if the sensor couldnt be created or associated with a protocol
 	 */
-	public Sensor createSensorFromPartialSML(String s){
-			return SensorManager.getSensorManager().createSensorFromPartialSML(s);	}
+	public Sensor createSensorFromPartialSML(String s) throws ConfigurationException{
+		Sensor tmp =  sm.createSensorFromPartialSML(s);
+		try {
+			associateSensor(tmp);
+		} catch (ConfigurationException e) {
+			logger.error("the sensor couldnt be associated with a protocol.");
+			logger.error("Destroying it");
+			sm.destroyComponent(tmp.getID());
+			throw e;
+		}
+		return tmp;
+	}
 }
