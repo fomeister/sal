@@ -27,8 +27,8 @@ public class ProtocolModulesList {
 	{
 		Slog.setupLogger(this.logger);
 		table.put(OwfsProtocol.OWFSPROTOCOL_TYPE , ProtocolModulesList.SALcomponentPackage + "OwfsProtocol");
-		/*table.put("PL40", ProtocolModulesList.SALcomponentPackage + "PLIProtocol");
-		table.put("EMS_IDU_SNMP", ProtocolModulesList.SALcomponentPackage + "EMSIDUProtocol");*/
+		/*table.put("PL40", ProtocolModulesList.SALcomponentPackage + "PLIProtocol");*/
+		table.put("SSNMP", ProtocolModulesList.SALcomponentPackage + "SimpleSNMPProtocol");
 		table.put(OSDataProtocol.OSDATAPROTOCOL_TYPE, ProtocolModulesList.SALcomponentPackage + "OSDataProtocol");
 	}
 	

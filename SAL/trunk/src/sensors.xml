@@ -39,42 +39,42 @@
 		<!-- ***************************************** -->
 		<Sensor sid="6">
 			<parameters>
-				<Param name="ProtocolName" value="IDU" />
+				<Param name="ProtocolName" value="EMS_SNMP" />
 				<Param name="Address" value="1.3.6.1.4.1.10132.7.1.4.7.0" />
 				<Param name="SamplingInterval" value="10" />
 			</parameters>
 		</Sensor>
 		<Sensor sid="7">
 			<parameters>
-				<Param name="ProtocolName" value="IDU" />
+				<Param name="ProtocolName" value="EMS_SNMP" />
 				<Param name="Address" value="1.3.6.1.4.1.10132.7.1.4.25.0" />
 				<Param name="SamplingInterval" value="10" />
 			</parameters>
 		</Sensor>
 		<Sensor sid="8">
 			<parameters>
-				<Param name="ProtocolName" value="IDU" />
+				<Param name="ProtocolName" value="EMS_SNMP" />
 				<Param name="Address" value="1.3.6.1.4.1.10132.7.1.2.18.0" />
 				<Param name="SamplingInterval" value="10" />
 			</parameters>
 		</Sensor>
 		<Sensor sid="9">
 			<parameters>
-				<Param name="ProtocolName" value="IDU" />
+				<Param name="ProtocolName" value="EMS_SNMP" />
 				<Param name="Address" value="1.3.6.1.4.1.10132.7.1.2.17.0" />
 				<Param name="SamplingInterval" value="10" />
 			</parameters>
 		</Sensor>
 		<Sensor sid="10">
 			<parameters>
-				<Param name="ProtocolName" value="IDU" />
+				<Param name="ProtocolName" value="EMS_SNMP" />
 				<Param name="Address" value="1.3.6.1.4.1.10132.7.1.2.9.0" />
 				<Param name="SamplingInterval" value="10" />
 			</parameters>
 		</Sensor>
 		<Sensor sid="11">
 			<parameters>
-				<Param name="ProtocolName" value="IDU" />
+				<Param name="ProtocolName" value="EMS_SNMP" />
 				<Param name="Address" value="1.3.6.1.4.1.10132.7.1.2.16.0" />
 				<Param name="SamplingInterval" value="10" />
 			</parameters>

@@ -51,7 +51,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	private static Logger logger = Logger.getLogger(OSDataProtocol.class);
 	private Thread update_counters;
 	private Hashtable<String,String> lastValues;
-	private static Hashtable<String,OSdata> supportedSensors = new Hashtable<String,OSdata>();;
+	private static Hashtable<String,OSdata> supportedSensors = new Hashtable<String,OSdata>();
 	/**
 	 * User, System, Nice and idle tiem counter update interval in millisecond
 	 */

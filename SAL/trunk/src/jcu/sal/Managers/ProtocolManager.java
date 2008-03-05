@@ -57,38 +57,6 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	public static ProtocolManager getProcotolManager() {
 		return p;
 	}
-	
-	/**
-	 * Creates all protocols, associated endpoints and sensors given SML and PCML
-	 * @throws ConfigurationException if there is a problem parsing the XML files
-	 */
-	public void init(String sml, String pcml) throws ConfigurationException {
-		Sensor s = null;
-		
-		try {
-			conf.init(pcml,sml);
-			Iterator<Node> iter = conf.getProtocolIterator();
-			while(iter.hasNext()) {
-				createComponent(iter.next());
-			}
-		} catch (ConfigurationException e) {
-			logger.error("Could not read/parse the configuration files.");
-			throw e;
-		} 
-		
-		Iterator<Node> iter = conf.getSensorIterator();
-		while(iter.hasNext()) {
-			try {
-				s = createSensor(iter.next());
-				associateSensor(s);
-			} catch (ConfigurationException e) {
-				logger.error("Could not add the sensor to any protocols");
-				if(s!=null) sm.destroyComponent(s.getID());
-			}
-		} 
-		
-		startAll();
-	}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Managers.ManagerFactory#build(org.w3c.dom.Document)
@@ -171,6 +139,44 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		component.remove(this);
 		if(getSize()==0)
 			sm.stop();
+	}
+	
+	/*
+	 * 
+	 *  START OF SALAgent API methods
+	 * 
+	 */
+
+	/**
+	 * Creates all protocols, associated endpoints and sensors given SML and PCML
+	 * @throws ConfigurationException if there is a problem parsing the XML files
+	 */
+	public void init(String sml, String pcml) throws ConfigurationException {
+		Sensor s = null;
+		
+		try {
+			conf.init(pcml,sml);
+			Iterator<Node> iter = conf.getProtocolIterator();
+			while(iter.hasNext()) {
+				createComponent(iter.next());
+			}
+		} catch (ConfigurationException e) {
+			logger.error("Could not read/parse the configuration files.");
+			throw e;
+		} 
+		
+		Iterator<Node> iter = conf.getSensorIterator();
+		while(iter.hasNext()) {
+			try {
+				s = createSensor(iter.next());
+				associateSensor(s);
+			} catch (ConfigurationException e) {
+				logger.error("Could not add the sensor to any protocols");
+				if(s!=null) sm.destroyComponent(s.getID());
+			}
+		} 
+		
+		startAll();
 	}
 	
 	/**
