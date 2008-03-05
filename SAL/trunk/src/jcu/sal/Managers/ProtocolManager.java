@@ -256,8 +256,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			}
 		}
 		/* if we get here the sensor couldnt be added */
-		logger.error("The sensor " + sensor.getID().toString() + " couldnt be added because ");
-		logger.error("no protocol named " + sensor.getProtocolName() +" could be found");
+		logger.error("Cant associate sensor " + sensor.getID().toString() + "(Cant find protocol " + sensor.getProtocolName()+")");
 		throw new ConfigurationException();
 	}
 	
@@ -309,7 +308,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			Protocol p;
 			while(i.hasNext()) {
 				p = i.next();
-				logger.debug("Sensors associated with protocol "+p.toString());
+				System.out.println("Sensors associated with protocol "+p.toString());
 				dumpSensor(p);
 			}
 		}

@@ -56,7 +56,7 @@ public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 	private SensorManager() {
 		super();
 		Slog.setupLogger(this.logger);
-		sensor_removal = new Thread(this);
+		sensor_removal = new Thread(this, "sensor_manager_thread");
 	}
 	
 	/**
