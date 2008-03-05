@@ -53,7 +53,7 @@ public class EthernetEndPoint extends EndPoint {
 		this.logger.debug("check if we have the ethernet port.");
 		try {
 			intName = getConfig(ETHDEVICEATTRIBUTE_TAG);
-			ipAddress = getConfig(IPADDRESSATTRIBUTE_TAG);
+			try {ipAddress = getConfig(IPADDRESSATTRIBUTE_TAG);} catch(BadAttributeValueExpException e) {ipAddress="";}
 			this.logger.debug( intName + "(" + ipAddress +")");
 			
 			/* Look for the ethernet if either by name or by IP address*/
