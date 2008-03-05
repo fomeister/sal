@@ -6,14 +6,14 @@
 			<readingDirectory>/home/sensor_user/readings</readingDirectory>
 		</general>
 		<protocols>
-			<Protocol name="1wirefs" type="owfs">
+			<Protocol name="1wtree" type="owfs">
 				<EndPoint name="usb" type="usb" />
 				<parameters>
 					<Param name="Location" value="/opt/owfs/bin/owfs" />
 					<Param name="MountPoint" value="/mnt/w1" />
 				</parameters>
 			</Protocol>
-			<Protocol name="EMS_SNMP" type="EMS_IDU_SNMP">
+<!--			<Protocol name="EMS_SNMP" type="EMS_IDU_SNMP">
 				<EndPoint name="eth0" type="ethernet">
 					<parameters>
 						<Param name="EthernetDevice" value="ath0" />
@@ -36,14 +36,14 @@
 						<Param name="PortDeviceFile" value="/dev/ttyS0" />
 					</parameters>
 				</EndPoint>
-				<parameters>
-					<Param name="CPUTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp2_input" />
-					<Param name="NBTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp1_input" />
-					<Param name="SBTempFile" value="/sys/class/i2c-adapter/i2c-9191/device/9191-0290/temp3_input" />
-				</parameters>
-			</Protocol>
-			<Protocol name="osdata" type="PlatformData">
+			</Protocol> -->
+			<Protocol name="osData" type="PlatformData">
 				<EndPoint name="filesystem" type="fs" />
+				<parameters>
+					<Param name="CPUTempFile" value="/sys/class/hwmon/hwmon0/device/temp2_input" />
+					<Param name="NBTempFile" value="/sys/class/hwmon/hwmon0/device/temp1_input" />
+					<Param name="SBTempFile" value="/sys/class/hwmon/hwmon0/device/temp3_input" />
+				</parameters>
 			</Protocol>
 		</protocols>
 	</PlatformConfiguration>

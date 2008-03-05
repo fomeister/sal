@@ -55,7 +55,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	/**
 	 * User, System, Nice and idle tiem counter update interval in millisecond
 	 */
-	private int UPDATE_INTERVAL = 30 * 1000;
+	private int UPDATE_INTERVAL = 10 * 1000;
 
 	static { 
 		Slog.setupLogger(logger);
@@ -87,7 +87,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 		supportedSensors.put("LoadAvg15",new OSdata("/proc/loadavg", null, 3, null, false));
 		
 		cmls = new OSDataCML();
-		update_counters = new Thread(this);
+		update_counters = new Thread(this, "update_counter_thread");
 		update_counters.start();
 		lastValues = new Hashtable<String,String>();
 	}
@@ -168,7 +168,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 		OSdata d;
 		String ret;
 		logger.debug("getReading method called on sensor " +s.toString());
-		if(s.getNativeAddress()=="UserTime" || s.getNativeAddress()=="NiceTime" || s.getNativeAddress()=="SystemTime" || s.getNativeAddress()=="IdleTime") {
+		if(s.getNativeAddress().equals("UserTime") || s.getNativeAddress().equals("NiceTime") || s.getNativeAddress().equals("SystemTime")|| s.getNativeAddress().equals("IdleTime")) {
 			ret = lastValues.get(s.getNativeAddress());
 			if(ret.equals("-1")) { 
 				logger.error("couldnt run the command to get readings for sensor "+ s.toString());
@@ -201,7 +201,6 @@ public class OSDataProtocol extends Protocol implements Runnable{
 			while(!Thread.interrupted()){
 				//update UserTime, NiceTime, SystemTime and IdleTime
 				if((d = supportedSensors.get("UserTime"))!=null) {
-					logger.debug("in if statement");
 					try {
 						u = Integer.parseInt(PlatformHelper.getFieldFromFile(d.file, d.pattern, d.field, d.delim, d.translate));
 						d = supportedSensors.get("NiceTime");
@@ -211,7 +210,14 @@ public class OSDataProtocol extends Protocol implements Runnable{
 						d = supportedSensors.get("IdleTime");
 						i = Integer.parseInt(PlatformHelper.getFieldFromFile(d.file, d.pattern, d.field, d.delim, d.translate));
 						
-						if(pu==-1) {
+						if(pu!=-1) {
+							sum = (u-pu) + (n-pn) + (s-ps) + (i-pi);
+							lastValues.put("UserTime", nf.format(100*(u-pu)/sum));
+							lastValues.put("NiceTime",  nf.format(100*(n-pn)/sum));
+							lastValues.put("SystemTime", nf.format(100*(s-ps)/sum));
+							lastValues.put("IdleTime", nf.format(100*(i-pi)/sum));
+							pu=u;pn=n;ps=s;pi=i;
+						} else {
 							pu = u;
 							pn = n;
 							ps = s;
@@ -220,36 +226,17 @@ public class OSDataProtocol extends Protocol implements Runnable{
 							lastValues.put("NiceTime", "0");
 							lastValues.put("SystemTime", "0");
 							lastValues.put("IdleTime", "0");
-							logger.debug("continue...");
 							Thread.sleep(1000);
-							continue;
-						} else {
-							
-							sum = (u-pu) + (n-pn) + (s-ps) + (i-pi);
-	
-							lastValues.put("UserTime", nf.format(100*(u-pu)/sum));
-							lastValues.put("NiceTime",  nf.format(100*(n-pn)/sum));
-							lastValues.put("SystemTime", nf.format(100*(s-ps)/sum));
-							lastValues.put("IdleTime", nf.format(100*(i-pi)/sum));
-							
-							pu=u;pn=n;ps=s;pi=i;
+							continue;							
 						}
-						
 					} catch (IOException e) {
-						logger.debug("caught exception");
 						lastValues.put("UserTime", "-1");
 						lastValues.put("NiceTime", "-1");
 						lastValues.put("SystemTime", "-1");
 						lastValues.put("IdleTime", "-1");
-					}
-				}
-				logger.debug("User : " + lastValues.get("UserTime"));
-				logger.debug("Nice : " + lastValues.get("NiceTime"));
-				logger.debug("System : " + lastValues.get("SystemTime"));
-				logger.debug("Idle : " + lastValues.get("IdleTime"));
-				logger.debug("before sleep");
-				Thread.sleep(2000);
-				logger.debug("after sleep");
+					}					
+				} else break;
+				Thread.sleep(UPDATE_INTERVAL);
 	
 			}// end while interrupted
 		} catch (InterruptedException e) {}

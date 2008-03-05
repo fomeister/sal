@@ -32,6 +32,7 @@ public class OwfsProtocol extends Protocol {
 	public final static String OWFSPROTOCOL_TYPE = "owfs";
 	public final static String OWFSLOCATIONATTRIBUTE_TAG = "Location";
 	public final static String OWFSMOUNTPOINTATTRIBUTE_TAG = "MountPoint";
+	public final static int OWFSSTART_MAX_ATTEMPTS = 2;
 	
 	static { 
 		Slog.setupLogger(logger);
@@ -139,28 +140,41 @@ public class OwfsProtocol extends Protocol {
 		logger.debug("OWFS internal start");
 		StringBuffer err = new StringBuffer();
 		String s;
+		int attempt=0;
+		boolean started=false;
 		
 		try {
-			BufferedReader r[] = PlatformHelper.captureOutputs(config.get(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
-			Thread.sleep(1000);
-			//check stderr
-			while ((s=r[1].readLine())!=null)
-				err.append(s);
-			
-			//Check that it actually started ...
-			if(PlatformHelper.getPid("owfs").isEmpty() || err.length() > 0){
+			while(++attempt<=OWFSSTART_MAX_ATTEMPTS && !started) {
+				BufferedReader r[] = PlatformHelper.captureOutputs(config.get(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
+				Thread.sleep(1000);
+				//check stdout & stderr
+				while ((s=r[0].readLine())!=null)
+					err.append("out: "+s);
+				while ((s=r[1].readLine())!=null)
+					err.append("err: "+s);
 				
-				logger.error("Starting OWFS command failed with:");
-				System.out.println(err);
-				logger.error("Killing any instances of owfs");
-				PlatformHelper.killProcesses("owfs");
-				throw new ConfigurationException();
+				//Check that it actually started ...
+				if(PlatformHelper.getPid("owfs").isEmpty() || err.length() > 0){
+					
+					logger.error("Starting OWFS command failed with:");
+					System.out.println(err);
+					err.delete(0, err.length());
+					logger.error("Killing any instances of owfs");
+					PlatformHelper.killProcesses("owfs");
+					started=false;
+					continue;
+				}
+				started=true;
 			}
-			
 		} catch (IOException e) {
 			logger.error("Coudlnt run the OWFS process");
 			throw new ConfigurationException();
 		} catch (InterruptedException e) {}
+		
+		if(!started) {
+			logger.error("Coudlnt start the OWFS process");
+			throw new ConfigurationException();
+		}
 	}
 
 	/* (non-Javadoc)
