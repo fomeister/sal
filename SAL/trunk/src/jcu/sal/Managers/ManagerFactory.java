@@ -83,7 +83,7 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 				else logger.error("Couldnt create component");
 			}
 			else {
-				logger.debug("There is already a component named " + id.toString());
+				logger.error("There is already a component named " + id.toString());
 				return null;
 			}
 		} catch (ParseException e) {
@@ -105,7 +105,6 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 		logger.debug("About to remove element " + i.toString());
 		synchronized(this) {
 			if(ctable.containsKey(i)) {
-				dumpTable();
 				remove(ctable.get(i));
 			} else
 				logger.error("Element " + i.toString()+ " doesnt exist and can NOT be removed");

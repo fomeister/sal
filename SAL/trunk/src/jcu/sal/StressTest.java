@@ -1,5 +1,6 @@
 package jcu.sal;
 
+import java.io.NotActiveException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -55,7 +56,7 @@ public class StressTest {
 	
 	public void interrupt(){
 		for (int i = 0; i < NB_THREADS; i++) {
-			if(threads.get(i).isAlive()) threads.get(i).interrupt();
+			if(threads.get(i).isAlive()) {System.err.println("interrupting stress user "+i);threads.get(i).interrupt();}
 		}
 	}
 	
@@ -63,6 +64,7 @@ public class StressTest {
 		for (int i = 0; i < NB_THREADS; i++) {
 			if(threads.get(i).isAlive())
 				try {
+					System.err.println("Joining stress user "+i);				
 					threads.get(i).join();
 				} catch (InterruptedException e) {}
 		}
@@ -98,12 +100,14 @@ public class StressTest {
 		
 		/**
 		 * Implements the Stress test
+		 * @throws NotActiveException 
 		 */
 		public void run() {
 			Random r = new Random();
 			int ns, count=0, id;
 			int[] failure = new int[sensors.length];
 			int[] success= new int[sensors.length];
+			int[] unavailable= new int[sensors.length];
 			try {
 				while(!Thread.interrupted()) {
 					id = r.nextInt(sensors.length);
@@ -115,27 +119,36 @@ public class StressTest {
 						success[id]++;
 					} catch (ConfigurationException e) {failure[id]++;}
 					catch (BadAttributeValueExpException e) {failure[id]++;}
+					catch (NotActiveException e) { unavailable[id]++; }
 					
 					Thread.sleep(0);
 				}
 			} catch (InterruptedException e) {}
+			int nb_cmds;
 			synchronized(sensors){
 				System.out.println("Thread "+Thread.currentThread().getName()+": "+count+" commands sent");
+				nb_cmds=count;
 				System.out.print("Sensor\t");
 				for(int i = 0; i<failure.length; i++)
 					System.out.print(sensors[i]+"\t");
-				System.out.println("Total");
+				System.out.println("Total\t%");
 				count=0;
 				System.out.print("Failure\t");
 				for(int i = 0; i<failure.length; i++)
 					{ System.out.print(failure[i]+"\t"); count += failure[i]; }
-				System.out.print(count);
+				System.out.print(count+"\t"+((float) 100*count/nb_cmds));
 				System.out.println("");
 				count = 0;
 				System.out.print("Success\t");
 				for(int i = 0; i<failure.length; i++)
 					{ System.out.print(success[i]+"\t"); count +=  success[i]; }
-				System.out.print(count);
+				System.out.print(count+"\t"+((float) 100*count/nb_cmds));
+				System.out.println("");
+				count = 0;
+				System.out.print("Unavail\t");
+				for(int i = 0; i<failure.length; i++)
+					{ System.out.print(unavailable[i]+"\t"); count +=  unavailable[i]; }
+				System.out.print(count+"\t"+((float) 100*count/nb_cmds));
 				System.out.println("");
 			}
 		}

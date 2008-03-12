@@ -3,6 +3,8 @@
  */
 package jcu.sal.Components.Protocols;
 
+import java.io.IOException;
+import java.io.NotActiveException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -83,7 +85,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 	 * Can the protocol automatically detect sensor addition/removal ? 
 	 */
 	protected boolean autodetect;
-	Autodetection autodetectThread;
+	private Autodetection autodetectThread;
 	
 	/**
 	 * Construct a new protocol gien its ID, type, configuration directives and an XML node
@@ -113,7 +115,6 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 		id = i;
 		type = t;
 		config = c;
-		autodetectThread = new Autodetection();
 		sensors = new Hashtable<SensorID, Sensor>();
 		
 		/* parse the configuration */
@@ -124,23 +125,6 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 			EndPointManager.getEndPointManager().destroyComponent(ep.getID());
 			throw e;
 		}
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.HWComponent#remove()
-	 */
-	public final void remove(componentRemovalListener c) {
-		synchronized (this) {
-			removed=true;
-			if(started)
-				stop();
-			ProtocolManager.getProcotolManager().removeSensors(this);
-			internal_remove();
-			EndPointManager.getEndPointManager().destroyComponent(ep.getID());
-			this.logger.debug("protocol " + type +" removed");
-		}
-		c.componentRemovable(id);
 	}
 	
 	/* (non-Javadoc)
@@ -166,11 +150,11 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 	 */
 	public final void start() throws ConfigurationException{
 		synchronized (this) {
-			this.logger.debug("starting "+type+" Protocol");
+			logger.debug("starting "+type+" Protocol");
 			if(!ep.isStarted())
 				ep.start();
 			internal_start();
-			this.logger.debug("Probing sensors for Protocol " + toString());
+			logger.debug("Probing associated sensors for Protocol " + toString());
 			synchronized(sensors) {
 				Iterator<Sensor> i = sensors.values().iterator();
 				while(i.hasNext())
@@ -179,33 +163,19 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 			if(!started)
 				started=true;
 		}
-		this.logger.debug("protocol "+type+" started");
-		//Start the sensor monitoring thread
-	
-		if(AUTODETECT_INTERVAL!=0) {
-			this.logger.debug("Starting autodetect thread");
-			autodetectThread.start();
-		} else {
-			logger.error("Autodetect interval set to 0 in the protocol config.");
-			logger.error("Disabling sensor autodetection");
-		}
+		logger.debug("protocol "+type+" started");
+		
+		startAutodetectThread();
 	}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.HWComponent#stop()
 	 */
 	public final void stop() {
+		logger.debug("stopping "+type+" Protocol");
+		
+		stopAutodetectThread();
 		synchronized (this) {
-			logger.debug("stopping "+type+" Protocol");
-			if(autodetectThread.isAlive()) {
-				logger.debug("stopping autodetect thread ...");
-				autodetectThread.interrupt();
-				try { autodetectThread.join();}
-				catch (InterruptedException e) {
-					logger.error("interrupted while waiting for autodetect thread to finish");
-				}
-				logger.debug("autodetect thread stopped");
-			}
 			if(started) {
 				internal_stop();
 				if(ep.isStarted())
@@ -214,7 +184,23 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 			this.logger.debug("protocol "+type+" stopped");
 		}
 	}
-
+	
+	/* (non-Javadoc)
+	 * @see jcu.sal.Components.HWComponent#remove()
+	 */
+	public final void remove(componentRemovalListener c) {
+		synchronized (this) {
+			removed=true;
+			if(started)
+				stop();
+			ProtocolManager.getProcotolManager().removeSensors(this);
+			internal_remove();
+			EndPointManager.getEndPointManager().destroyComponent(ep.getID());
+			this.logger.debug("protocol " + type +" removed");
+		}
+		c.componentRemovable(id);
+	}
+	
 	
 	
 	
@@ -228,7 +214,6 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 	public synchronized final void associateSensor(Sensor s) throws ConfigurationException{
 		if (!removed) {
 				if(isSensorSupported(s)) {
-					logger.debug("About to associate sensor" + s.toString());
 					synchronized(sensors) {
 						sensors.put(s.getID(), s);
 					}
@@ -293,47 +278,66 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 	 * @param sid the sensorID
 	 * @return the result
 	 * @throws BadAttributeValueExpException 
+	 * @throws NotActiveException 
 	 */
-	public String execute(Command c, SensorID sid) throws BadAttributeValueExpException {
+	public String execute(Command c, SensorID sid) throws BadAttributeValueExpException, NotActiveException {
 		String ret_val = null;
 		Sensor s = sensors.get(sid);
 		if(started) {
 			//Check if we have the sensor
 			if (s!=null) {
-				//Check if it accepts command
-				if(s.startRunCmd()) {
-					try {
-						Class<?>[] params = {Hashtable.class,Sensor.class};
-						Method m = this.getClass().getDeclaredMethod(commands.get(c.getCID()), params);
-						logger.debug("running method: "+ m.getName() );
-						ret_val = (String) m.invoke(this,c.getParameters(), s);
-					} catch (SecurityException e) {
-						logger.error("Not allowed to execute the methods matching the command");
-						s.finishRunCmd();
-						throw new BadAttributeValueExpException("");
-					} catch (NoSuchMethodException e) {
-						logger.error("Could NOT find the method matching the command");
-						s.finishRunCmd();
-						throw new BadAttributeValueExpException("");
-					} catch (BadAttributeValueExpException e) {
-						logger.error("Could NOT parse the command");
-						s.finishRunCmd();
-						throw e;
-					} catch (InvocationTargetException e) {
-						logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
-						logger.error("Caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
-						e.printStackTrace();
-					} catch (Exception e) {
-						logger.error("Could NOT run the command (error with invoke() )");
-						logger.error("exception:" + e.getClass() + " - " +e.getMessage());
-						logger.error("caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
-						e.printStackTrace();
+				//sync with respect to other commands
+				synchronized(s){
+					//Catch the generic commands enable & disable
+					if(c.getCID().intValue()==CMLStore.DISABLE_CID)
+						s.disable();
+					else if(c.getCID().intValue()==CMLStore.ENABLE_CID)
+						s.enable();
+					else {
+						//sensor specific command
+						//Check if it s idle
+						if(s.startRunCmd()) {
+							try {
+								Class<?>[] params = {Hashtable.class,Sensor.class};
+								Method m = this.getClass().getDeclaredMethod(commands.get(c.getCID()), params);
+								logger.debug("running method: "+ m.getName() );
+								ret_val = (String) m.invoke(this,c.getParameters(), s);
+							} catch (SecurityException e) {
+								logger.error("Not allowed to execute the methods matching the command");
+								s.finishRunCmd();
+								throw new BadAttributeValueExpException("");
+							} catch (NoSuchMethodException e) {
+								logger.error("Could NOT find the method matching the command");
+								s.finishRunCmd();
+								throw new BadAttributeValueExpException("");
+							} catch (BadAttributeValueExpException e) {
+								logger.error("Could NOT parse the command");
+								s.finishRunCmd();
+								throw e;
+							} catch (InvocationTargetException e) {
+								logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
+								logger.error("Caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
+								e.printStackTrace();
+								s.finishRunCmd();
+								if(e.getCause().getClass().equals(IOException.class))
+									throw new NotActiveException("");
+								else
+									throw new BadAttributeValueExpException("");
+							} catch (Exception e) {
+								logger.error("Could NOT run the command (error with invoke() )");
+								logger.error("exception:" + e.getClass() + " - " +e.getMessage());
+								logger.error("caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
+								e.printStackTrace();
+								s.finishRunCmd();
+								throw new BadAttributeValueExpException("");
+							}
+							s.finishRunCmd();
+						} else {
+							logger.error("Sensor "+sid.getName()+" not available to run the command");
+							//TODO throw a better exception here
+							throw new NotActiveException("Sensor "+sid.getName()+" not available to run the command");
+						}
 					}
-					s.finishRunCmd();
-				} else {
-					logger.error("Sensor "+sid.getName()+" not available to run the command");
-					//TODO throw an exception here
-					throw new BadAttributeValueExpException("");
 				}
 			} else {
 				logger.error("Sensor not present.Cannot execute the command");
@@ -359,7 +363,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 	 * @param sensor the sensor to be probed
 	 */
 	public final boolean probeSensor(Sensor sensor) {
-		return internal_probeSensor(sensor);
+		synchronized(sensor) {return internal_probeSensor(sensor);}
 	}
 	
 	/**
@@ -497,6 +501,32 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 		throw new ConfigurationException("Sensor "+ i.toString()+" is not associated with this protocol");
 	}
 	
+	protected void startAutodetectThread(){
+		//Start the sensor monitoring thread
+		autodetectThread = new Autodetection();
+		if(autodetect && AUTODETECT_INTERVAL!=0) {
+			logger.debug("Starting autodetect thread");
+			autodetectThread.start();
+		} else if (AUTODETECT_INTERVAL==0){
+			logger.info("Autodetect interval set to 0 in the protocol config.");
+			logger.info("Disabling sensor autodetection");
+		} else {
+			logger.debug("Sensor autodetection not supported");
+		}
+	}
+	
+	protected void stopAutodetectThread() {
+		if(autodetectThread.isAlive()) {
+			logger.debug("stopping autodetect thread ...");
+			autodetectThread.interrupt();
+			try { autodetectThread.join();}
+			catch (InterruptedException e) {
+				logger.error("interrupted while waiting for autodetect thread to finish");
+			}
+			logger.debug("autodetect thread stopped");
+		}
+	}
+	
 	/**
 	 * Is the protocol started ? 
 	 */
@@ -504,11 +534,11 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 		return started;
 	}
 	
-	class Autodetection implements Runnable {
+	private class Autodetection implements Runnable {
 		Thread t;
 		
 		public Autodetection() {
-			t= new Thread(this, "autodetection_thread_"+id.getName());
+			t= new Thread(this, "Protocol autodetection_thread_"+id.getName());
 		}
 		
 		public void start() {
@@ -548,7 +578,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>{
 							//if that sensor is in detected also, we remove both
 							stmp = iter.next();
 							if(detected.contains(stmp.getNativeAddress())) {
-		//						logger.debug("sensor "+stmp.toString()+" found in both current & detected, nothing to do");
+		//						logger.debug("sensor "+stmp.toString()+" found in both current & detected");
 								if(stmp.isDisconnected()) {
 									stmp.reconnect();
 									show=true;

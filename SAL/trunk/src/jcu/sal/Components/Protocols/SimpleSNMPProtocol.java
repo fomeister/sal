@@ -57,6 +57,7 @@ public class SimpleSNMPProtocol extends Protocol{
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_parseConfig()
 	 */
+	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
 		try {
 			agent = getConfig("AgentIP");
@@ -73,19 +74,26 @@ public class SimpleSNMPProtocol extends Protocol{
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_stop()
 	 */
+	@Override
 	protected void internal_stop() {}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_start()
 	 */
+	@Override
 	protected void internal_start() {}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_remove()
 	 */
+	@Override
 	protected void internal_remove() {
 	}
 	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.Protocols.Protocol#internal_isSensorSupported(jcu.sal.Components.Sensors.Sensor)
+	 */
 	@Override
 	protected boolean internal_isSensorSupported(Sensor sensor){
 		//TODO improve me... maybe check that the OID exist and is valid
@@ -94,11 +102,14 @@ public class SimpleSNMPProtocol extends Protocol{
 		return true;	
 	}
 
-
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.Protocols.Protocol#internal_probeSensor(jcu.sal.Components.Sensors.Sensor)
+	 */
 	@Override
 	protected boolean internal_probeSensor(Sensor s) {
 		try {
-			get(s.getNativeAddress());
+			getRawReading(s.getNativeAddress());
 			s.enable();
 			return true;
 		} catch (Exception e) {
@@ -108,23 +119,25 @@ public class SimpleSNMPProtocol extends Protocol{
 		return false;
 	}
 	
-
-	// TODO create an exception class for this instead of Exception
-	public String getReading(Hashtable<String,String> c, Sensor s) throws IOException{
-		String ret=null;
-		logger.debug("getReading method called on sensor " +s.toString());
-		ret = get(s.getNativeAddress());
-		return ret;
-	}
-
-
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.Protocols.Protocol#internal_getCMLStoreKey(jcu.sal.Components.Sensors.Sensor)
+	 */
 	@Override
 	protected String internal_getCMLStoreKey(Sensor s){
 		return "ALL";
 	}
 	
 
-	public String get(String oid) throws IOException{
+	// TODO create an exception class for this instead of Exception
+	public String getReading(Hashtable<String,String> c, Sensor s) throws IOException{
+		String ret=null;
+		logger.debug("getReading method called on sensor " +s.toString());
+		ret = getRawReading(s.getNativeAddress());
+		return ret;
+	}
+	
+	private String getRawReading(String oid) throws IOException{
 		SnmpContext s ;
 		varbind v=null;
 		String ret=null;
@@ -140,9 +153,11 @@ public class SimpleSNMPProtocol extends Protocol{
 				ret = v.getValue().toString();
 		} catch (AgentException e) {
 			logger.error("SNMP response timeout while getting OID "+oid);
+			s.destroy();
 			throw new IOException("SNMP response timeout");
 		} catch (PduException e) {
 			logger.error("PDU exception while getting OID "+oid);
+			s.destroy();
 			throw new IOException("PDU exception");			
 		}
 		s.destroy();

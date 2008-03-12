@@ -1,5 +1,7 @@
 package jcu.sal.Agent;
 
+import java.io.NotActiveException;
+
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
@@ -26,7 +28,7 @@ public interface SALAgentInterface {
 	 * @param sid the sensor
 	 * @return the result
 	 */
-	public String execute(Command c, int sid) throws ConfigurationException, BadAttributeValueExpException;
+	public String execute(Command c, int sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException;
 	
 	/**
 	 * Returns the CML document for a given sensor
@@ -34,7 +36,7 @@ public interface SALAgentInterface {
 	 * @return the CML doc
 	 * @throws ConfigurationException if the CML doc cant be found
 	 */
-	public String getCML(int sid) throws ConfigurationException;
+	public String getCML(int sid) throws ConfigurationException, NotActiveException;
 	
 	/**
 	 * Stops the SAL agent
