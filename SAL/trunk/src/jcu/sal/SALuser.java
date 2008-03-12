@@ -8,10 +8,7 @@ import javax.naming.ConfigurationException;
 import jcu.sal.Agent.SALAgent;
 import jcu.sal.Components.Command;
 
-import org.apache.log4j.Logger;
-
 public class SALuser {
-	private Logger logger = Logger.getLogger(SALuser.class);
 	static SALAgent s;
 	
 	public static void main(String [] args) throws ConfigurationException {
@@ -39,24 +36,5 @@ public class SALuser {
 		}
 	
 		s.stop();
-	}
-	
-	public void run() {
-		logger.debug("NASTY THREAD STARTING");
-
-		while(!Thread.interrupted()) {
-			try {
-			s.execute(new Command(100, "", ""),1);
-			s.execute(new Command(100, "", ""),2);
-			s.execute(new Command(100, "", ""), 3);
-			s.execute(new Command(100, "", ""), 4);
-			s.execute(new Command(100, "", ""), 5);
-			s.execute(new Command(100, "", ""), 6);
-			s.execute(new Command(100, "", ""), 1);
-			s.execute(new Command(100, "", ""), 2);
-			} catch (Exception e) {
-				logger.debug("Excp");
-			}
-		}
 	}
 }

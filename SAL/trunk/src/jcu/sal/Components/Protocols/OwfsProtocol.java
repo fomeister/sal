@@ -6,12 +6,14 @@ package jcu.sal.Components.Protocols;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
+import jcu.sal.Components.EndPoints.DeviceListener;
 import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Protocols.CMLStore.OwfsCML;
 import jcu.sal.Components.Sensors.Sensor;
@@ -25,14 +27,17 @@ import org.w3c.dom.Node;
  * @author gilles
  *
  */
-public class OwfsProtocol extends Protocol {
+public class OwfsProtocol extends Protocol implements DeviceListener {
 
 	private static Logger logger = Logger.getLogger(OwfsProtocol.class);
+	private int adapterNb=0;
+	private int maxAdaptersSeen=0;
 
 	public final static String OWFSPROTOCOL_TYPE = "owfs";
 	public final static String OWFSLOCATIONATTRIBUTE_TAG = "Location";
 	public final static String OWFSMOUNTPOINTATTRIBUTE_TAG = "MountPoint";
 	public final static int OWFSSTART_MAX_ATTEMPTS = 2;
+	public final static String DS2490_USBID= "04fa:2490";
 	
 	static { 
 		Slog.setupLogger(logger);
@@ -65,6 +70,11 @@ public class OwfsProtocol extends Protocol {
 		autodetect = true;
 		AUTODETECT_INTERVAL = 100;
 		cmls = new OwfsCML();
+		/* if supported, registers with the USB endpoint to detect newly connected DS9490 adapters*/
+		try { ep.registerDeviceListener(this, new String [] {DS2490_USBID}); }
+		catch (UnsupportedOperationException e) {
+			logger.debug("Autodetect not supported by the EndPoint");
+		}
 	}
 
 	/* (non-Javadoc)
@@ -130,51 +140,16 @@ public class OwfsProtocol extends Protocol {
 	 */
 	protected void internal_stop() {
 		logger.debug("OWFS internal stop");
+		stopOWFS();
 
 	}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_start()
 	 */
-	protected void internal_start() throws ConfigurationException{
-		logger.debug("OWFS internal start");
-		StringBuffer err = new StringBuffer();
-		String s;
-		int attempt=0;
-		boolean started=false;
-		
-		try {
-			while(++attempt<=OWFSSTART_MAX_ATTEMPTS && !started) {
-				BufferedReader r[] = PlatformHelper.captureOutputs(config.get(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
-				Thread.sleep(1000);
-				//check stdout & stderr
-				while ((s=r[0].readLine())!=null)
-					err.append("out: "+s);
-				while ((s=r[1].readLine())!=null)
-					err.append("err: "+s);
-				
-				//Check that it actually started ...
-				if(PlatformHelper.getPid("owfs").isEmpty() || err.length() > 0){
-					
-					logger.error("Starting OWFS command failed with:");
-					System.out.println(err);
-					err.delete(0, err.length());
-					logger.error("Killing any instances of owfs");
-					PlatformHelper.killProcesses("owfs");
-					started=false;
-					continue;
-				}
-				started=true;
-			}
-		} catch (IOException e) {
-			logger.error("Coudlnt run the OWFS process");
-			throw new ConfigurationException();
-		} catch (InterruptedException e) {}
-		
-		if(!started) {
-			logger.error("Coudlnt start the OWFS process");
-			throw new ConfigurationException();
-		}
+	protected void internal_start() {
+		adapterNb=0;
+		maxAdaptersSeen=0;
 	}
 
 	/* (non-Javadoc)
@@ -182,9 +157,12 @@ public class OwfsProtocol extends Protocol {
 	 */
 	protected void internal_remove() {
 		logger.debug("OWFS internal removed");
-		PlatformHelper.killProcesses("owfs");
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.Protocols.Protocol#internal_isSensorSupported(jcu.sal.Components.Sensors.Sensor)
+	 */
 	@Override
 	protected boolean internal_isSensorSupported(Sensor sensor) {
 		//TODO check the sensor family and make sure it is supported
@@ -195,6 +173,10 @@ public class OwfsProtocol extends Protocol {
 			return false;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.Protocols.Protocol#internal_probeSensor(jcu.sal.Components.Sensors.Sensor)
+	 */
 	@Override
 	protected boolean internal_probeSensor(Sensor s) {
 		// TODO complete this method
@@ -214,6 +196,107 @@ public class OwfsProtocol extends Protocol {
 		return false;
 	}
 	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.Protocols.Protocol#internal_getCMLStoreKey(jcu.sal.Components.Sensors.Sensor)
+	 */
+	@Override
+	protected String internal_getCMLStoreKey(Sensor s){
+		return getFamily(s);  
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.EndPoints.DeviceListener#deviceChange(int)
+	 */
+	public void adapterChange(int n) {
+		if(n>adapterNb) {
+			logger.debug("new OWFS adapters have been plugged in, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
+			if(n>maxAdaptersSeen){
+				logger.debug("Restarting OWFS to detect new adapters");
+				try {
+					Enumeration<Sensor> es = sensors.elements();
+					while(es.hasMoreElements()) {
+						Sensor s = es.nextElement();
+						synchronized(s) {
+							s.disable();
+						}
+					}
+					
+					stopAutodetectThread();
+					stopOWFS();
+					try { Thread.sleep(1000); } catch (InterruptedException e) {}
+					startOWFS();
+					startAutodetectThread();
+					maxAdaptersSeen=n;
+				} catch (ConfigurationException e) {
+					logger.error("Unable to run owfs: "+e.getClass()+" - "+e.getMessage());
+					if(e.getCause()!=null) logger.error("caused by: "+e.getCause().getClass()+" - "+e.getCause().getMessage());
+				} 
+			} else {
+				logger.debug("no need to restart OWFS to detect new adapter, max>adapternb");
+			}
+			adapterNb=n;
+		} else if (n<adapterNb) {
+			logger.debug("a new OWFS adapter has been unplugged, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
+			adapterNb=n;
+		} else {
+			logger.error("Weird condition, recevied a device change event, but the reported device count("+n+") is the same as ours("+adapterNb+")");
+		}
+	}
+	
+	
+	private void stopOWFS() {PlatformHelper.killProcesses("owfs");}
+	
+	
+	private void startOWFS() throws ConfigurationException{
+		logger.debug("OWFS internal start");
+		StringBuffer err = new StringBuffer();
+		String s;
+		int attempt=0;
+		boolean started=false;
+		
+		try {
+			while(++attempt<=OWFSSTART_MAX_ATTEMPTS && !started) {
+				BufferedReader r[] = PlatformHelper.captureOutputs(config.get(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
+				try {Thread.sleep(1000);} catch (InterruptedException e) {} 
+				//check stdout & stderr
+				while ((s=r[0].readLine())!=null)
+					err.append("out: "+s);
+				while ((s=r[1].readLine())!=null)
+					err.append("err: "+s);
+				
+				//Check that it actually started ...
+				if(PlatformHelper.getPid("owfs").isEmpty() || err.length() > 0){
+					
+					logger.error("Starting OWFS command failed with:");
+					System.out.println(err);
+					err.delete(0, err.length());
+					logger.error("Killing any instances of owfs");
+					PlatformHelper.killProcesses("owfs");
+					started=false;
+					continue;
+				}
+				started=true;
+			}
+			
+			if(!started) {
+				logger.error("Coudlnt start the OWFS process");
+				throw new ConfigurationException();
+			}
+		} catch (IOException e) {
+			logger.error("Coudlnt run the OWFS process");
+			throw new ConfigurationException();
+		}
+	}
+
+	
+	
+	
+	
+	
+	
+	
 	/**
 	 * this method should be overriden by protocols which provide sensor autodetection
 	 * and return a Vector of native address (strings) of currently connected/visible sensors 
@@ -223,16 +306,16 @@ public class OwfsProtocol extends Protocol {
 		try {
 			File dir = new File(getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG));
 		    String[] info = dir.list();
-		    for (int i = 0; i < info.length; i++) {
-		      if (info[i].indexOf(".") != 2) { // name doesn't match
-		        continue;
-		      }
-		      try { Integer.parseInt(info[i].substring(0,2)); } catch (NumberFormatException e) { continue; } 
-
-		      if(!info[i].substring(0, 2).equals("81")) {
-			      //logger.debug("Autodetect thread: detected " + info[i]);
-			      v.add(info[i]);
-		      }
+		    if(info!=null) {
+			    for (int i = 0; i < info.length; i++) {
+			      if (info[i].indexOf(".") != 2) { // name doesn't match
+			        continue;
+			      }
+			      try { Integer.parseInt(info[i].substring(0,2)); } catch (NumberFormatException e) { continue; } 
+	
+			      if(!info[i].substring(0, 2).equals("81"))
+				      v.add(info[i]);
+			    }
 		    }
 		} catch (BadAttributeValueExpException e) {
 			logger.error("bad mount point value");
@@ -337,10 +420,4 @@ public class OwfsProtocol extends Protocol {
 			throw new IOException("Cant read from 1-wire sensor " +f);
 		} 
 	}
-
-	@Override
-	protected String internal_getCMLStoreKey(Sensor s){
-		return getFamily(s);  
-	}
-	
 }

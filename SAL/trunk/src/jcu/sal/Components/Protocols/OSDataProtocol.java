@@ -182,6 +182,9 @@ public class OSDataProtocol extends Protocol implements Runnable{
 				logger.error("couldnt get a reading for "+s.toString());
 				throw e;
 			}
+			if(s.getNativeAddress().equals("CPUTemp") || s.getNativeAddress().equals("NBTemp") || s.getNativeAddress().equals("SBTemp")){
+				ret = ret.substring(0, 2)+"."+ret.substring(2,4);
+			}
 		}
 		return ret;
 	}

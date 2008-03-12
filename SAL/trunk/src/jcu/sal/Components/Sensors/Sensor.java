@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
  */
 public class Sensor extends AbstractComponent<SensorID> {
 	
+	private Logger logger = Logger.getLogger(Sensor.class);
 	private SensorState state;
 	public static final String SENSOR_TAG= "Sensor";
 	public static final String SENSORID_TAG= "sid";
@@ -28,11 +29,11 @@ public class Sensor extends AbstractComponent<SensorID> {
 	public static final String PROTOCOLATTRIBUTE_TAG = "ProtocolName";
 	public static final String SENSOR_TYPE = "Sensor";
 	
-	private Logger logger = Logger.getLogger(Sensor.class);
-	
 	/**
-	 * @throws ConfigurationException 
-	 * 
+	 * Sensor constructor
+	 * @param i the sensor ID
+	 * @param c the configuration table
+	 * @throws ConfigurationException if the configuration is wrong
 	 */
 	public Sensor(SensorID i, Hashtable<String,String> c) throws ConfigurationException {
 		super();
@@ -52,6 +53,9 @@ public class Sensor extends AbstractComponent<SensorID> {
 		return config.get(PROTOCOLATTRIBUTE_TAG);
 	}
 	
+	/*
+	 * Start of state management methods
+	 */
 	public boolean startRunCmd() {
 		logger.debug("Running cmd on sensor " + toString());
 		return state.runCommand();
@@ -85,32 +89,59 @@ public class Sensor extends AbstractComponent<SensorID> {
 	public long getDisconnectTimestamp(){
 		return state.getDisconnectTimestamp();
 	}
-
+	/*
+	 * End of state management methods
+	 */
+	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.AbstractComponent#parseConfig()
+	 */
 	@Override
 	protected void parseConfig() throws ConfigurationException {
 	}
 	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.AbstractComponent#remove(jcu.sal.Components.componentRemovalListener)
+	 */
 	@Override
 	public void remove(componentRemovalListener c) {
 		logger.debug("Registering removal of sensor " + toString());
 		state.stop(c);
 	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.AbstractComponent#start()
+	 */
 	@Override
 	public void start() {
-		if(state.enable()) { this.logger.debug("Starting sensor " + toString());}
-		else this.logger.debug("Cant start sensor " + toString());
+		state.enable();
 	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.AbstractComponent#stop()
+	 */
 	@Override
 	public void stop() {
 		state.disable();
-		this.logger.debug("Sensor " + toString()+" stopped");
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.AbstractComponent#toString()
+	 */
 	@Override
 	public String toString() {
 		return "Sensor " + id.getName() + " (" + getNativeAddress() +") State: "+state.toString()+" Protocol: "+id.getPid().toString();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.AbstractComponent#isStarted()
+	 */
 	@Override
 	public boolean isStarted() {
 		return state.isStarted();
@@ -120,7 +151,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 		return state.isDisconnected();
 	}
 	
-	public String getState() {
+	public String getStateToString() {
 		return state.toString();
 	}
 }

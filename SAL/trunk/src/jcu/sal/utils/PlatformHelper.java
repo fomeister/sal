@@ -264,7 +264,7 @@ public class PlatformHelper {
 	/**
 	 * Returns a field from a specific line in the output of a command
 	 * @param file the file to be searched
-	 * @param line the line number (starting at 1)
+	 * @param pattern the pattern to be searched for in each line
 	 * @param field the field number whose contents is to be returned  (starting at 1)
 	 * @param delim the delimiter (if null, then a space is assumed)
 	 * @param translate whether to translate tabs to spaces
@@ -298,23 +298,45 @@ public class PlatformHelper {
 	 * @param translate whether to translate tabs to spaces
 	 * @return the field itself
 	 * @throws IOException
+	 * @throws ArrayIndexOutOfBoundsException
 	 */
-	public static String getFieldFromBuffer(BufferedReader b, String pattern, int field, String delim, boolean translate) throws IOException {
+	public static String getFieldFromBuffer(BufferedReader b, String pattern, int field, String delim, boolean translate) throws IOException, ArrayIndexOutOfBoundsException{
 		String result = "";
 		
 		/* find matching line */
 		if(pattern != null) {
 			while((result  = b.readLine())!= null) 
-				if(result.contains(pattern)) break;
+				if(result.contains(pattern)) break; 
 		} else
 			result  = b.readLine();
 		
 		if(result!=null) {
 			return getFieldFromLine(result, field, delim, translate);
 		}
-		else {
-			throw new IOException();
-		}
+
+		throw new IOException();
+	}
+	
+	/**
+	 * Returns an array of fields from  specific lines in a BufferedReader given a pattern
+	 * @param b the buffer to be searched
+	 * @param pattern the pattern in the line to be searched
+	 * @param field the field number whose contents is to be returned  (starting at 1)
+	 * @param delim the delimiter (if null, then a space is assumed)
+	 * @param translate whether to translate tabs to spaces
+	 * @return the field itself
+	 * @throws IOException
+	 * @throws ArrayIndexOutOfBoundsException
+	 */
+	public static ArrayList<String> getFieldsFromBuffer(BufferedReader b, String pattern, int field, String delim, boolean translate) throws IOException, ArrayIndexOutOfBoundsException{
+		String temp = "";
+		ArrayList<String> result = new ArrayList<String>();
+		
+		/* find matching line */
+		while((temp  = b.readLine())!= null) 
+			if(temp.contains(pattern))
+				result.add(getFieldFromLine(temp, field, delim, translate));
+		return result;
 	}
 	
 	
@@ -414,46 +436,5 @@ public class PlatformHelper {
 	public static boolean isDirReadWrite(String d){
 		File f = new File(d);
 		return (f.isDirectory() && f.canRead() && f.canWrite());
-	}
-	
-	public static void main(String[] args) throws IOException {
-		/*BufferedReader[] b = captureOutputs("cut -f3 -d' ' /proc/loadavg");
-		String out, err;
-		out = b[0].readLine();
-		err = b[1].readLine();
-		int e = Integer.parseInt(b[2].readLine());
-		System.out.println("gello \n" + out + "\n" +err + "\n" +e);
-*/	
-		
-		/* String[] a = {"cut", "/proc/loadavg", "-f3", "-d' '"};
-		ProcessBuilder pb = new ProcessBuilder(a);
-		pb.redirectErrorStream(true);
-		Process p = pb.start();
-		BufferedReader bb = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		try {
-			System.out.println("exit value: " +p.waitFor());
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
-		*/
-		
-		
-/*		Process p = Runtime.getRuntime().exec("cat /proc/loadavg");
-		BufferedReader[] bb = new BufferedReader[2];
-		bb[0] = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		bb[1] = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-		
-		try {
-			System.out.println("exit value: " +p.waitFor());
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		System.out.println("out: " + bb[0].readLine());
-		System.out.println("err: " + bb[1].readLine());
-*/
-		System.out.println("killing nc proc: " + killProcesses("nc"));
 	}
 }

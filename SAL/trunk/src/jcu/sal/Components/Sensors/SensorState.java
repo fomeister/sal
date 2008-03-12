@@ -63,14 +63,14 @@ class SensorState {
 	public boolean runCommand(){
 		synchronized (this) {
 			if(state==IDLE) { state=INUSE; return true; }
-			else { logger.error("trying to run a command on a non IDLE sensor"); dumpState(); return false; }	
+			else return false;	
 		}
 	}
 	
 	public boolean doneCommand(){
 		synchronized (this) {
 			if(state==INUSE) { state=IDLE; return true; }
-			else if(state==DISABLED) { logger.error(i.toString()+" has been removed while we were reading it "); return true; }
+			else if(state==DISABLED) { logger.debug(i.toString()+" has been disabled while we were reading it "); return true; }
 			else if(state==STOPPED) { state=REMOVED; l.componentRemovable(i); return true;}
 			else { logger.error("trying to finish running a command on a non INUSE/DISABLED sensor"); dumpState(); return false; }	
 		}
@@ -78,7 +78,14 @@ class SensorState {
 
 	public boolean disable(){
 		synchronized (this) {
-			if(state==IDLE || state==INUSE || state==DISCONNECTED || state==DISABLED) { state=DISABLED; return true; }
+			if(state==INUSE) {
+				logger.error("###############################################################################################");
+				logger.error("###############################################################################################");
+				logger.error("trying to disable an INUSE sensor"); dumpState();
+				logger.error("###############################################################################################");
+				logger.error("###############################################################################################");
+				return false; 
+			} else if(state==IDLE || state==INUSE || state==DISCONNECTED || state==DISABLED) { state=DISABLED; return true; }
 			else { logger.error("trying to disable a non IDLE/INUSE/DISCONNECTED sensor"); dumpState(); return false; }
 		}
 	}
@@ -92,7 +99,14 @@ class SensorState {
 	
 	public boolean disconnect(){
 		synchronized (this) {
-			if(state==IDLE || state==DISABLED || state==INUSE || state==DISCONNECTED || state==UNUSED) {
+			if(state==INUSE) {
+				logger.error("###############################################################################################");
+				logger.error("###############################################################################################");
+				logger.error("trying to disconnect an INUSE sensor"); dumpState();
+				logger.error("###############################################################################################");
+				logger.error("###############################################################################################");
+				return false; 
+			} else if(state==IDLE || state==DISABLED || state==INUSE || state==DISCONNECTED || state==UNUSED) {
 				state=DISCONNECTED;
 				disconnect_timestamp = System.currentTimeMillis();
 /*				logger.error("Sensor has had "+(timeout+1)+ " disconnections");

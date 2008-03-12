@@ -3,6 +3,8 @@
  */
 package jcu.sal.Agent;
 
+import java.io.NotActiveException;
+
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
@@ -36,11 +38,11 @@ public class SALAgent implements SALAgentInterface{
 		pm.dumpSensors();		
 	}
 
-	public String execute(Command c, int sid) throws ConfigurationException, BadAttributeValueExpException {
+	public String execute(Command c, int sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
 		return pm.execute(c,sid);
 	}
 	
-	public String getCML(int sid) throws ConfigurationException {
+	public String getCML(int sid) throws ConfigurationException, NotActiveException {
 		return pm.getProtocol(sid).getCML(new SensorID(String.valueOf(sid)));
 	}
 	

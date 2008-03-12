@@ -3,6 +3,7 @@
  */
 package jcu.sal.Managers;
 
+import java.io.NotActiveException;
 import java.lang.reflect.Constructor;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -213,8 +214,8 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 				logger.debug("Starting protocol" + e.toString());
 				try { e.start(); }
 				catch (ConfigurationException ex) { 
-					logger.error("Couldnt start protocol " + e.toString()+" removing it");
-					destroyComponent(e.getID());
+					logger.error("Couldnt start protocol " + e.toString()+"...");
+					//destroyComponent(e.getID());
 				}
 			}
 		}
@@ -292,7 +293,6 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		for (int i = 0; i < ss.size(); i++) {
 			logger.debug("Removing sensor " + ss.get(i).toString() );
 			deleteSensor(ss.get(i));
-			logger.debug("sensor removed");
 		}
 	}
 	
@@ -327,7 +327,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		p.dumpSensorsTable();
 	}
 	
-	public String execute(Command c, int id) throws ConfigurationException, BadAttributeValueExpException {
+	public String execute(Command c, int id) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
 		return getProtocol(id).execute(c, new SensorID(String.valueOf(id)));
 	}
 	
@@ -336,7 +336,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * Returns the protcol associated with a SensorID
 	 * @throws ConfigurationException if the protocol can not be found 
 	 */
-	public Protocol getProtocol(int  id) throws ConfigurationException{
+	public Protocol getProtocol(int  id) throws NotActiveException, ConfigurationException{
 			Protocol p=null;
 			ProtocolID pid = null;
 			Sensor s;
@@ -348,7 +348,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			//TODO with it, we have to do the following 4 lines ... ugly !
 			if((s=sm.getComponent(sid))==null) {
 				logger.error("Cannot find the any sensor with this sensorID: " + sid.toString());
-				throw new ConfigurationException();
+				throw new NotActiveException();
 			}
 			pid = s.getID().getPid();
 			if(pid==null){
@@ -365,7 +365,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	}
 	
 	/**
-	 * Creates a sensor from a partial SML (passed as a string)
+	 * Creates a sensor from a partial SML (passed as a string) and associate it with this protocol
 	 * @throws ConfigurationException if the sensor couldnt be created or associated with a protocol
 	 */
 	public Sensor createSensorFromPartialSML(String s) throws ConfigurationException{
