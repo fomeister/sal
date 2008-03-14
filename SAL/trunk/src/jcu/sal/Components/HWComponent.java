@@ -8,7 +8,6 @@ import java.util.Hashtable;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Components.Identifiers.Identifier;
 
 
 /**

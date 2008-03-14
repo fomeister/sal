@@ -9,7 +9,6 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.Command;
-import jcu.sal.Components.Identifiers.SensorID;
 import jcu.sal.Managers.ProtocolManager;
 import jcu.sal.utils.Slog;
 
@@ -33,9 +32,9 @@ public class SALAgent implements SALAgentInterface{
 	public void init(String pc, String sc) throws ConfigurationException {
 		pm.init(sc, pc);		
 	}
-
-	public void dumpSensors() {
-		pm.dumpSensors();		
+	
+	public String listSensors() {
+		return pm.listSensors();		
 	}
 
 	public String execute(Command c, int sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
@@ -43,7 +42,7 @@ public class SALAgent implements SALAgentInterface{
 	}
 	
 	public String getCML(int sid) throws ConfigurationException, NotActiveException {
-		return pm.getProtocol(sid).getCML(new SensorID(String.valueOf(sid)));
+		return pm.getCML(sid);
 	}
 	
 	public void stop(){

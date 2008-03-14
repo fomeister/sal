@@ -1,7 +1,10 @@
 /**
  * 
  */
-package jcu.sal.Components.Identifiers;
+package jcu.sal.Components.Sensors;
+
+import jcu.sal.Components.AbstractIdentifier;
+import jcu.sal.Components.Protocols.ProtocolID;
 
 
 /**
@@ -51,7 +54,7 @@ public class SensorID extends AbstractIdentifier{
 	 * Return the ProtocolID associated with this Sensor 
 	 * @return the protocolID
 	 */
-	public ProtocolID getPid() {
+	private ProtocolID getPid() {
 		if(pid == null) {
 			//System.out.println("************ TRYING TO ACCESS AN EMPTY PROTOCOL ID ***********");
 			return new ProtocolID("");
@@ -64,7 +67,7 @@ public class SensorID extends AbstractIdentifier{
 	 * Sets the ProtocolID associated with this Sensor 
 	 * @param pid the protocolID
 	 */
-	public void setPid(ProtocolID pid) {
+	void setPid(ProtocolID pid) {
 		if(pid == null || (pid.getName().length()== 0)) {
 			//System.out.println("************ TRYING TO SET AN EMPTY PROTOCOL ID ON AN SENSOR***********");
 			pid = null;

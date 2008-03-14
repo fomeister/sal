@@ -14,7 +14,6 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.EndPoints.DeviceListener;
-import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Protocols.CMLStore.OwfsCML;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.PlatformHelper;
@@ -93,27 +92,6 @@ public class OwfsProtocol extends Protocol implements DeviceListener {
 				if (! new File(mtpt).mkdirs()) throw new BadAttributeValueExpException("Cant create mount point");
 				logger.debug("done");
 			}
-			//try loading fuse
-			PlatformHelper.loadModule("fuse");
-			//try unloading ds2490 and wire
-			PlatformHelper.unloadModules(new String [] {"ds2490", "wire"});
-			
-			//concurrent instances of owfs cant coexist 
-			//Check whether instances of owfs are running
-			if(!PlatformHelper.getPid("owfs").isEmpty()){
-				logger.error("An instance of owfs seems to be running");
-				logger.error("Try killing it");
-				PlatformHelper.killProcesses("owfs");
-				
-				//sleep for a while
-				try { Thread.sleep(1000);} catch (InterruptedException e) {}
-				
-				//and check again
-				if(!PlatformHelper.getPid("owfs").isEmpty()){
-					logger.error("CAnt kill it...");
-					throw new BadAttributeValueExpException("OWFS already running");
-				}
-			}
 
 			//Next, we check that OWFS is installed in the given directory
 			//and try to get the OWFS version 
@@ -150,6 +128,12 @@ public class OwfsProtocol extends Protocol implements DeviceListener {
 	protected void internal_start() {
 		adapterNb=0;
 		maxAdaptersSeen=0;
+		
+		/*
+		 * make sure no copies of owfs are currently running !
+		 * owfs is only started when DS2490 are reported by the endpoint !	 
+		 */		
+		stopOWFS();
 	}
 
 	/* (non-Javadoc)
@@ -210,24 +194,28 @@ public class OwfsProtocol extends Protocol implements DeviceListener {
 	 * @see jcu.sal.Components.EndPoints.DeviceListener#deviceChange(int)
 	 */
 	public void adapterChange(int n) {
-		if(n>adapterNb) {
+		if(n>=adapterNb) {
 			logger.debug("new OWFS adapters have been plugged in, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
-			if(n>maxAdaptersSeen){
+			if(n>=maxAdaptersSeen){
 				logger.debug("Restarting OWFS to detect new adapters");
 				try {
-					Enumeration<Sensor> es = sensors.elements();
-					while(es.hasMoreElements()) {
-						Sensor s = es.nextElement();
-						synchronized(s) {
-							s.disable();
+					synchronized(this) {
+						Enumeration<Sensor> es = sensors.elements();
+						while(es.hasMoreElements()) {
+							Sensor s = es.nextElement();
+							synchronized(s) {
+								logger.debug("Disabling "+s.toString());
+								s.disable();
+							}
 						}
+						
+						stopAutodetectThread();
+						stopOWFS();
+						try { Thread.sleep(100); } catch (InterruptedException e) {}
+						startOWFS();
+						startAutodetectThread();
 					}
-					
-					stopAutodetectThread();
-					stopOWFS();
-					try { Thread.sleep(1000); } catch (InterruptedException e) {}
-					startOWFS();
-					startAutodetectThread();
+					logger.error("Done restarting OWFS");
 					maxAdaptersSeen=n;
 				} catch (ConfigurationException e) {
 					logger.error("Unable to run owfs: "+e.getClass()+" - "+e.getMessage());
@@ -239,7 +227,7 @@ public class OwfsProtocol extends Protocol implements DeviceListener {
 			adapterNb=n;
 		} else if (n<adapterNb) {
 			logger.debug("a new OWFS adapter has been unplugged, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
-			adapterNb=n;
+			//adapterNb=n;
 		} else {
 			logger.error("Weird condition, recevied a device change event, but the reported device count("+n+") is the same as ours("+adapterNb+")");
 		}
@@ -250,24 +238,45 @@ public class OwfsProtocol extends Protocol implements DeviceListener {
 	
 	
 	private void startOWFS() throws ConfigurationException{
-		logger.debug("OWFS internal start");
 		StringBuffer err = new StringBuffer();
 		String s;
 		int attempt=0;
 		boolean started=false;
 		
 		try {
+			//try loading fuse
+			PlatformHelper.loadModule("fuse");
+			//try unloading ds2490 and wire
+			PlatformHelper.unloadModules(new String [] {"ds2490", "wire"});
+			
+			//concurrent instances of owfs cant coexist 
+			//Check whether instances of owfs are running
+			if(!PlatformHelper.getPid("owfs").isEmpty()){
+				logger.error("An instance of owfs seems to be running");
+				logger.error("Try killing it");
+				PlatformHelper.killProcesses("owfs");
+				
+				//sleep for a while
+				try { Thread.sleep(1000);} catch (InterruptedException e) {}
+				
+				//and check again
+				if(!PlatformHelper.getPid("owfs").isEmpty()){
+					logger.error("CAnt kill it...");
+					throw new ConfigurationException("OWFS already running");
+				}
+			}
+
 			while(++attempt<=OWFSSTART_MAX_ATTEMPTS && !started) {
 				BufferedReader r[] = PlatformHelper.captureOutputs(config.get(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
-				try {Thread.sleep(1000);} catch (InterruptedException e) {} 
-				//check stdout & stderr
-				while ((s=r[0].readLine())!=null)
-					err.append("out: "+s);
-				while ((s=r[1].readLine())!=null)
-					err.append("err: "+s);
+				try {Thread.sleep(100);} catch (InterruptedException e) {} 
 				
 				//Check that it actually started ...
 				if(PlatformHelper.getPid("owfs").isEmpty() || err.length() > 0){
+					//check stdout & stderr
+					while ((s=r[0].readLine())!=null)
+						err.append("out: "+s);
+					while ((s=r[1].readLine())!=null)
+						err.append("err: "+s);
 					
 					logger.error("Starting OWFS command failed with:");
 					System.out.println(err);
@@ -284,6 +293,7 @@ public class OwfsProtocol extends Protocol implements DeviceListener {
 				logger.error("Coudlnt start the OWFS process");
 				throw new ConfigurationException();
 			}
+			
 		} catch (IOException e) {
 			logger.error("Coudlnt run the OWFS process");
 			throw new ConfigurationException();

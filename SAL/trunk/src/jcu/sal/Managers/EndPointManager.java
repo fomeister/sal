@@ -12,9 +12,9 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jcu.sal.Components.Identifier;
 import jcu.sal.Components.EndPoints.EndPoint;
-import jcu.sal.Components.Identifiers.EndPointID;
-import jcu.sal.Components.Identifiers.Identifier;
+import jcu.sal.Components.EndPoints.EndPointID;
 import jcu.sal.utils.EndPointModulesList;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;

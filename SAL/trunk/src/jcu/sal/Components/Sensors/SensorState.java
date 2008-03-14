@@ -4,7 +4,6 @@
 package jcu.sal.Components.Sensors;
 
 import jcu.sal.Components.componentRemovalListener;
-import jcu.sal.Components.Identifiers.SensorID;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;

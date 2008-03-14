@@ -15,12 +15,12 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.Command;
+import jcu.sal.Components.Identifier;
 import jcu.sal.Components.EndPoints.EndPoint;
-import jcu.sal.Components.Identifiers.Identifier;
-import jcu.sal.Components.Identifiers.ProtocolID;
-import jcu.sal.Components.Identifiers.SensorID;
 import jcu.sal.Components.Protocols.Protocol;
+import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
+import jcu.sal.Components.Sensors.SensorID;
 import jcu.sal.Config.ConfigService;
 import jcu.sal.utils.ProtocolModulesList;
 import jcu.sal.utils.Slog;
@@ -157,19 +157,19 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		
 		try {
 			conf.init(pcml,sml);
-			Iterator<Node> iter = conf.getProtocolIterator();
-			while(iter.hasNext()) {
-				createComponent(iter.next());
+			Enumeration<Node> iter = conf.getProtocolNodes();
+			while(iter.hasMoreElements()) {
+				createComponent(iter.nextElement());
 			}
 		} catch (ConfigurationException e) {
 			logger.error("Could not read/parse the configuration files.");
 			throw e;
 		} 
 		
-		Iterator<Node> iter = conf.getSensorIterator();
-		while(iter.hasNext()) {
+		Enumeration<Node> iter = conf.getSensorNodes();
+		while(iter.hasMoreElements()) {
 			try {
-				s = createSensor(iter.next());
+				s = createSensor(iter.nextElement());
 				associateSensor(s);
 			} catch (ConfigurationException e) {
 				logger.error("Could not add the sensor to any protocols");
@@ -211,7 +211,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			Iterator<Protocol> iter = getIterator();
 			while (iter.hasNext()) {
 				Protocol e = iter.next();
-				logger.debug("Starting protocol" + e.toString());
+				//logger.debug("Starting protocol" + e.toString());
 				try { e.start(); }
 				catch (ConfigurationException ex) { 
 					logger.error("Couldnt start protocol " + e.toString()+"...");
@@ -275,11 +275,9 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	public void removeSensor(SensorID i){
 		synchronized(this) {
 			Protocol p = getComponent(new ProtocolID(i.getPIDName()));
-			logger.debug("Removing sensor " + i.toString() + " from Protocol " + p.getID().toString());
 			if(p!=null)
 				p.unassociateSensor(i);
 			deleteSensor(i);
-			logger.debug("sensor removed");
 		}
 	}
 	
@@ -291,7 +289,6 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	public void removeSensors(Protocol p){
 		ArrayList<Sensor> ss = p.unassociateSensors();
 		for (int i = 0; i < ss.size(); i++) {
-			logger.debug("Removing sensor " + ss.get(i).toString() );
 			deleteSensor(ss.get(i));
 		}
 	}
@@ -306,29 +303,18 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	}
 	
 	/**
-	 * Prints sensors associated with all procotols 
+	 * Returns all existing sensors 
 	 */
-	public void dumpSensors(){
-		synchronized(this) {
-			Iterator<Protocol> i = getIterator();
-			Protocol p;
-			while(i.hasNext()) {
-				p = i.next();
-				System.out.println("Sensors associated with protocol "+p.toString());
-				dumpSensor(p);
-			}
-		}
-	}
-	
-	/**
-	 * Prints sensors associated with a specific procotol 
-	 */
-	public void dumpSensor(Protocol p){
-		p.dumpSensorsTable();
+	public String listSensors(){
+		return sm.listSensors();
 	}
 	
 	public String execute(Command c, int id) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
 		return getProtocol(id).execute(c, new SensorID(String.valueOf(id)));
+	}
+	
+	public String getCML(int sid) throws ConfigurationException, NotActiveException {
+		return getProtocol(sid).getCML(new SensorID(String.valueOf(sid)));
 	}
 	
 
@@ -336,9 +322,9 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * Returns the protcol associated with a SensorID
 	 * @throws ConfigurationException if the protocol can not be found 
 	 */
-	public Protocol getProtocol(int  id) throws NotActiveException, ConfigurationException{
+	protected Protocol getProtocol(int  id) throws NotActiveException, ConfigurationException{
 			Protocol p=null;
-			ProtocolID pid = null;
+			String pName = null;
 			Sensor s;
 			SensorID sid = new SensorID(String.valueOf(id));
 
@@ -350,12 +336,12 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 				logger.error("Cannot find the any sensor with this sensorID: " + sid.toString());
 				throw new NotActiveException();
 			}
-			pid = s.getID().getPid();
-			if(pid==null){
+			pName = s.getID().getPIDName();
+			if(pName==null){
 				logger.error("Cannot find the protocolID associated with this sensorID: " + sid.toString());
 				throw new ConfigurationException();
 			}
-			p=ProtocolManager.getProcotolManager().getComponent(pid);
+			p=ProtocolManager.getProcotolManager().getComponent(new ProtocolID(pName));
 			if(p==null){
 				logger.error("Cannot find the protocol associated with this sensorID: " + sid.toString());
 				throw new ConfigurationException();
