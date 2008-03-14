@@ -112,10 +112,10 @@ public class StressTest {
 				while(!Thread.interrupted()) {
 					id = r.nextInt(sensors.length);
 					ns = sensors[id];
-					logger.debug("Thread "+Thread.currentThread().getName()+": Sending command to "+ns);
+					//logger.debug("Thread "+Thread.currentThread().getName()+": Sending command to "+ns);
 					try {
 						count++;
-						logger.debug("Result: " +s.execute(new Command(100, "", ""), ns));
+						logger.debug("SID:"+ns+" Result: " +s.execute(new Command(100, "", ""), ns));
 						success[id]++;
 					} catch (ConfigurationException e) {failure[id]++;}
 					catch (BadAttributeValueExpException e) {failure[id]++;}

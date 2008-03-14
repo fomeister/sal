@@ -7,7 +7,6 @@ import java.util.Hashtable;
 
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Components.Identifiers.EndPointID;
 import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
 

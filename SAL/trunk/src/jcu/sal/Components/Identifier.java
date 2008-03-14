@@ -1,4 +1,4 @@
-package jcu.sal.Components.Identifiers;
+package jcu.sal.Components;
 
 public interface Identifier {
 	

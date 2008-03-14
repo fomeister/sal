@@ -28,7 +28,7 @@ public class SALuser {
 					j=Integer.parseInt(b.readLine());
 					System.out.println("command "+j+" returned : "+s.execute(new Command(j, "", ""), i));
 				} else if(i==-2)
-					s.dumpSensors();
+					System.out.println(s.listSensors());
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

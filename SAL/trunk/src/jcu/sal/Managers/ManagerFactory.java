@@ -14,8 +14,8 @@ import javax.naming.ConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.HWComponent;
+import jcu.sal.Components.Identifier;
 import jcu.sal.Components.componentRemovalListener;
-import jcu.sal.Components.Identifiers.Identifier;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -60,7 +60,7 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 				config.put(name,value);
 			}
 		} catch (XPathExpressionException e) {
-			logger.error("Did not find any parameters for this Sensor");
+			logger.error("Did not find any parameters for this Component");
 		}
 		return config;
 	}
@@ -76,7 +76,6 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 		Identifier id= null;
 		try {
 			id = getComponentID(n);
-			logger.debug("About to create a component named " + id.getName());
 			if(!ctable.containsKey(id)) {
 				newc = build(n);
 				if(newc!=null) synchronized (this) { ctable.put(id, newc); }
@@ -102,7 +101,6 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 * @param type the component type
 	 */
 	public void destroyComponent(Identifier i) {
-		logger.debug("About to remove element " + i.toString());
 		synchronized(this) {
 			if(ctable.containsKey(i)) {
 				remove(ctable.get(i));
@@ -116,7 +114,6 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 *
 	 */
 	public void destroyAllComponents() {
-		this.logger.debug("removing all components" );
 		synchronized(this){
 			Enumeration<T> e = ctable.elements();
 			while (e.hasMoreElements())

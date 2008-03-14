@@ -155,7 +155,7 @@ public class PlatformHelper {
 			try {
 				b[2] = new BufferedReader(new StringReader(String.valueOf(p.waitFor())));
 			} catch (InterruptedException e) {
-				System.err.println("The command '" + cmdline + "' has been interrupted" );
+				//System.err.println("The command '" + cmdline + "' has been interrupted" );
 				throw new IOException();
 			}
 		}

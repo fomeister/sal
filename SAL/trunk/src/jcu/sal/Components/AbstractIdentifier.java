@@ -1,13 +1,15 @@
 /**
  * 
  */
-package jcu.sal.Components.Identifiers;
+package jcu.sal.Components;
+
+
 
 /**
  * @author gilles
  *
  */
-abstract class AbstractIdentifier implements Identifier {
+public abstract class AbstractIdentifier implements Identifier {
 	
 	/** the name of the component */
 	protected String name;
@@ -33,12 +35,11 @@ abstract class AbstractIdentifier implements Identifier {
 		/* sanity check */
 		if(id == null) return false;
 		else if(id == this) return true;
-		else {
-			if(id.getClass().getSuperclass().getName().equals("jcu.sal.Components.Identifiers.AbstractIdentifier")) {
+		else 
+			if(id.getClass().getSuperclass().getName().equals("jcu.sal.Components.AbstractIdentifier"))
 				return (id.toString().equals(this.toString()));
-			}
-			else return false;
-		}
+		
+		return false;
 	}
 	
 	/* (non-Javadoc)

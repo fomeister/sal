@@ -17,10 +17,10 @@ public interface SALAgentInterface {
 	public void init(String pc, String sc) throws ConfigurationException;
 	
 	/**
-	 * TODO change this into a method that returns the sensor XML docs instead
-	 * This method displays on the console the current state of all sensors.
+	 * This method returns a list of all sensors as an XML doc
+	 * @return the list of all sensors as an XML doc
 	 */
-	public void dumpSensors();
+	public String listSensors();
 	
 	/**
 	 * Execute the command c on sensor sid

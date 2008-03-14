@@ -5,7 +5,7 @@ package jcu.sal.Config;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.Enumeration;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
@@ -31,7 +31,7 @@ public class ConfigService{
 	public static String PLATFORMCONFIG_TAG = "PlatformConfiguration";
 	public static String SENSORCONFIG_TAG = "SensorConfiguration";
 	
-	private Document platformconfig, sensorconfig;
+	private Document platformCC, sensorconfig;
 	private Vector<Node> cprotocol, csensor;
 	
 	private Logger logger = Logger.getLogger(ConfigService.class);
@@ -45,13 +45,13 @@ public class ConfigService{
 		csensor = new Vector<Node>();
 	}
 	
-	public void init(String platformConfigFile, String sensorConfigFile) throws ConfigurationException{
+	public void init(String p, String s) throws ConfigurationException{
 		NodeList nl = null;
 		try {
-			platformconfig = XMLhelper.createDocument(new File(platformConfigFile));
-			sensorconfig = XMLhelper.createDocument(new File(sensorConfigFile));
+			platformCC = XMLhelper.createDocument(new File(p));
+			sensorconfig = XMLhelper.createDocument(new File(s));
 			
-			nl = XMLhelper.getNodeList("//" + Protocol.PROTOCOL_TAG, platformconfig);
+			nl = XMLhelper.getNodeList("//" + Protocol.PROTOCOL_TAG, platformCC);
 			for(int i=0; i<nl.getLength(); i++)
 				cprotocol.add(XMLhelper.duplicateNode(nl.item(i)));
 			
@@ -74,10 +74,10 @@ public class ConfigService{
 		}
 	}
 	
-	public Document getPlatformConfig() {
+	public Document getPlatformCC() {
 		Document d = null;
 		try {
-			d = XMLhelper.getSubDocument("//" + PLATFORMCONFIG_TAG, platformconfig);
+			d = XMLhelper.getSubDocument("//" + PLATFORMCONFIG_TAG, platformCC);
 			
 		} catch (XPathExpressionException e) {
 			logger.error("error parsing the document");
@@ -97,19 +97,28 @@ public class ConfigService{
 		return d;
 	}
 	
-	public Iterator<Node> getProtocolIterator() {
-		return cprotocol.iterator();
+	/**
+	 * This method returns a copy of all protocol configuration nodes as found in the configuration section
+	 * of the PCML document. 
+	 * @return a node enumeration
+	 */
+	public Enumeration<Node> getProtocolNodes() {
+		return cprotocol.elements();
 	}
-	
-	public Iterator<Node> getSensorIterator() {
-		return csensor.iterator();
+
+
+	 /** This method returns a copy of all sensor configuration nodes as found in the sensor configuration document
+	 * @return a node enumeration
+	 */
+	public Enumeration<Node> getSensorNodes() {
+		return csensor.elements();
 	}
 	
 	public static void main(String[] args) throws ConfigurationException {
 		ConfigService e = ConfigService.getService();
 		e.init("/home/gilles/workspace/SALv1/src/sensors.xml", "/home/gilles/workspace/SALv1/src/sensors.xml");
 		System.out.println(XMLhelper.toString(e.getSensorConfig()));
-		System.out.println(XMLhelper.toString(e.getPlatformConfig()));
+		System.out.println(XMLhelper.toString(e.getPlatformCC()));
 	}
 	
 	

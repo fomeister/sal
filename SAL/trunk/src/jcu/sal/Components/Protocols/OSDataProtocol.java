@@ -11,7 +11,6 @@ import java.util.Iterator;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Components.Identifiers.ProtocolID;
 import jcu.sal.Components.Protocols.CMLStore.OSDataCML;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.PlatformHelper;

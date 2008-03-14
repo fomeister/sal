@@ -6,13 +6,14 @@ package jcu.sal.Managers;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.Iterator;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.Components.Identifiers.Identifier;
-import jcu.sal.Components.Identifiers.SensorID;
+import jcu.sal.Components.Identifier;
 import jcu.sal.Components.Sensors.Sensor;
+import jcu.sal.Components.Sensors.SensorID;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -75,18 +76,17 @@ public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 		SensorID i = null;
 		Sensor sensor = null;
 		
-		this.logger.debug("building Sensor");
 		try {
 			i = (SensorID) this.getComponentID(n);
-			this.logger.debug("Component type: " + getComponentType(n));
+			logger.debug("Component type: " + getComponentType(n));
 			sensor = new Sensor(i, getComponentConfig(n));
 		} catch (ParseException e) {
-			this.logger.error("Error while parsing the DOM document. XML doc:");
-			this.logger.error(XMLhelper.toString(n));
+			logger.error("Error while parsing the DOM document. XML doc:");
+			logger.error(XMLhelper.toString(n));
 			//e.printStackTrace();
 			throw new InstantiationException();
 		} catch (ConfigurationException e) {
-			this.logger.error("Couldnt instanciate the sensor: " + i.toString());
+			logger.error("Couldnt instanciate the sensor: " + i.toString());
 			//e.printStackTrace();
 			throw new InstantiationException();
 		} 
@@ -101,7 +101,6 @@ public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 		Identifier id = null;
 		try {
 			id = new SensorID(XMLhelper.getAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, n) );
-			logger.debug("Sensor id: " + id.toString());
 		} catch (Exception e) {
 			logger.error("Couldnt find the Sensor id");
 			e.printStackTrace();
@@ -201,6 +200,27 @@ public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 		}
 		} catch (InterruptedException e1) {}
 		logger.debug("Exiting sensor removal thread");
+	}
+	
+	String listSensors() {
+		StringBuilder b = new StringBuilder();
+		Sensor s;
+		b.append("<?xml version=\"1.0\"?>\n<SAL>\n\t<SensorConfiguration>\n");
+		synchronized (this) {
+			Iterator<Sensor> i = getIterator();
+			while(i.hasNext()) {
+				s = i.next();
+				b.append("\t\t<"+Sensor.SENSOR_TAG+" "+Sensor.SENSORID_TAG+"=\""+s.getID().getName()+"\">\n");
+				/* TODO "parameters" should be a static string somewhere ... */
+				b.append("\t\t\t<parameters>\n");
+				b.append("\t\t\t\t<"+SensorManager.COMPONENTPARAM_TAG+" name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" value=\""+s.getProtocolName()+"\">\n");
+				b.append("\t\t\t\t<"+SensorManager.COMPONENTPARAM_TAG+" name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" value=\""+s.getNativeAddress()+"\">\n");
+				b.append("\t\t\t</parameters>\n");
+				b.append("\t\t</"+Sensor.SENSOR_TAG+">\n");
+			}	
+		}
+		b.append("\t</SensorConfiguration>\n</SAL>\n");
+		return b.toString();
 	}
 
 }

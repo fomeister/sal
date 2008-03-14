@@ -9,7 +9,7 @@ import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.AbstractComponent;
 import jcu.sal.Components.componentRemovalListener;
-import jcu.sal.Components.Identifiers.SensorID;
+import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -45,6 +45,10 @@ public class Sensor extends AbstractComponent<SensorID> {
 		parseConfig();
 	}
 
+	public void setPid(ProtocolID pid) {
+		id.setPid(pid);
+	}
+	
 	public String getNativeAddress() {
 		return config.get(SENSORADDRESSATTRIBUTE_TAG);
 	}
@@ -57,32 +61,32 @@ public class Sensor extends AbstractComponent<SensorID> {
 	 * Start of state management methods
 	 */
 	public boolean startRunCmd() {
-		logger.debug("Running cmd on sensor " + toString());
+/*		logger.debug("Running cmd on sensor " + toString());*/
 		return state.runCommand();
 	}
 	
 	public boolean disable() {
-		logger.debug("Disabling sensor " + toString());
+/*		logger.debug("Disabling sensor " + toString());*/
 		return state.disable();
 	}
 	
 	public boolean disconnect(){
-		logger.debug("Disconnecting sensor " + toString());
+/*		logger.debug("Disconnecting sensor " + toString());*/
 		return state.disconnect();
 	}
 	
 	public boolean reconnect() {
-		logger.debug("Reconnecting sensor " + toString());
+/*		logger.debug("Reconnecting sensor " + toString());*/
 		return state.reconnect();
 	}
 	
 	public boolean enable() {
-		logger.debug("Enabling sensor " + toString());
+/*		logger.debug("Enabling sensor " + toString());*/
 		return state.enable();
 	}
 	
 	public boolean finishRunCmd() {
-		logger.debug("Finished running cmd on sensor " + toString());
+/*		logger.debug("Finished running cmd on sensor " + toString());*/
 		return state.doneCommand();
 	}
 	
@@ -135,7 +139,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 	 */
 	@Override
 	public String toString() {
-		return "Sensor " + id.getName() + " (" + getNativeAddress() +") State: "+state.toString()+" Protocol: "+id.getPid().toString();
+		return "Sensor " + id.getName() + " (" + getNativeAddress() +") State: "+state.toString()+" Protocol: "+id.getPIDName().toString();
 	}
 
 	/*
