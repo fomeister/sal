@@ -25,14 +25,7 @@ public interface HWComponent {
 	 */
 	public Identifier getID();
 	
-	
-	/**
-	 * Changes the component's configuration and applies these changes 
-	 * @param config the component's configuration
-	 * 
-	 */
-	public void updateConfig(Hashtable<String, String> config) throws ConfigurationException;
-	
+		
 	/**
 	 * Retrieves the component'entire configuration
 	 * @param config the component's configuration

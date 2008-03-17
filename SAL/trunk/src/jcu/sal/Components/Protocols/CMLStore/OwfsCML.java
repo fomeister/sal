@@ -4,7 +4,20 @@ import javax.naming.ConfigurationException;
 
 
 public class OwfsCML extends CMLStore {
-	public OwfsCML() throws ConfigurationException{
+	private static OwfsCML c; 
+	static {
+		try {
+			c = new OwfsCML();
+		} catch (ConfigurationException e) {
+			e.printStackTrace();
+		} 
+	}
+	
+	public static OwfsCML getStore() {
+		return c;
+	}
+	
+	private OwfsCML() throws ConfigurationException{
 		StringBuffer b = new StringBuffer();
 		CMLDoc c;
 		

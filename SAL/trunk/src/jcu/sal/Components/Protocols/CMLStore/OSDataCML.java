@@ -4,8 +4,20 @@ import javax.naming.ConfigurationException;
 
 
 public class OSDataCML extends CMLStore{
+	private static OSDataCML c; 
+	static {
+		try {
+			c = new OSDataCML();
+		} catch (ConfigurationException e) {
+			e.printStackTrace();
+		} 
+	}
 	
-	public OSDataCML() throws ConfigurationException{
+	public static OSDataCML getStore() {
+		return c;
+	}
+	
+	private OSDataCML() throws ConfigurationException{
 		super();
 		StringBuffer b = new StringBuffer();
 		CMLDoc c;

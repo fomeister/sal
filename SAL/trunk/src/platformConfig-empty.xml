@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<SAL>
+	<PlatformConfiguration>
+		<general>
+			<logging />
+			<readingDirectory>/home/sensor_user/readings</readingDirectory>
+		</general>
+	</PlatformConfiguration>
+</SAL>

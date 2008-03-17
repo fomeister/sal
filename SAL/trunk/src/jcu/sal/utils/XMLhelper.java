@@ -368,10 +368,17 @@ public class XMLhelper {
      * @param attr_name the name of the attribute whose value is to be returned
      * @param n the node
      * @return the value from the attribute
-     * @throws XPathExpressionException 
+     * @throws XPathExpressionException if there is an error in the XPATH expression, or the attribute cannot be found
      */
     public static String getAttributeFromName(String attr_name, Node n) throws XPathExpressionException {
-        return n.getAttributes().getNamedItem(attr_name).getNodeValue();
+    	NamedNodeMap nm;
+    	Node node;
+    	
+    	if((nm = n.getAttributes()) !=null)
+    		if((node = nm.getNamedItem(attr_name))!=null)
+    			return node.getNodeValue();
+    	
+    	throw new XPathExpressionException("Cannot find attribute "+attr_name);
     }
     
     /**
@@ -380,12 +387,18 @@ public class XMLhelper {
      * @param attr_name the name of the attribute whose value is to be returned
      * @param doc the DOM document
      * @return the value of the attribute
-     * @throws XPathExpressionException 
-     * @throws ParserConfigurationException 
-     * @throws DOMException 
+     * @throws XPathExpressionException if there is an error in the XPATH expression, or the attribute cannot be found
+     * @throws ParserConfigurationException if there is an error in the XPATH expression
+     * @throws DOMException if there is an error in the XPATH expression
      */
     public static String getAttributeFromName(String xpath_expression, String attr_name, Document doc) throws XPathExpressionException, DOMException, ParserConfigurationException {
-        return getNode(xpath_expression, doc, false).getAttributes().getNamedItem(attr_name).getNodeValue();
+    	Node n1,n2;
+    	NamedNodeMap nm;
+    	if((n1=getNode(xpath_expression, doc, false))!=null)
+    		if((nm=n1.getAttributes())!=null)
+    			if((n2=nm.getNamedItem(attr_name))!=null)
+    				return n2.getNodeValue();
+    	throw new XPathExpressionException("Cannot find attribute "+attr_name);
     }
     
     /**
@@ -394,12 +407,18 @@ public class XMLhelper {
      * @param attr_name the name of the attribute whose value is to be returned
      * @param doc the DOM document
      * @return the value of the attribute
-     * @throws XPathExpressionException 
-     * @throws ParserConfigurationException 
-     * @throws DOMException 
+     * @throws XPathExpressionException if there is an error in the XPATH expression, or the attribute cannot be found 
+     * @throws ParserConfigurationException if there is an error in the XPATH expression
+     * @throws DOMException if there is an error in the XPATH expression
      */
     public static String getAttributeFromName(String xpath_expression, String attr_name, Node n) throws XPathExpressionException, DOMException, ParserConfigurationException {
-        return getNode(xpath_expression, n, false).getAttributes().getNamedItem(attr_name).getNodeValue();
+    	Node n1,n2;
+    	NamedNodeMap nm;
+    	if((n1=getNode(xpath_expression, n, false))!=null)
+    		if((nm=n1.getAttributes())!=null)
+    			if((n2=nm.getNamedItem(attr_name))!=null)
+    				return n2.getNodeValue();
+    	throw new XPathExpressionException("Cannot find attribute "+attr_name);
     }
     
     /**

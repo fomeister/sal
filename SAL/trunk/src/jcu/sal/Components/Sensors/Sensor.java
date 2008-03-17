@@ -46,17 +46,14 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 
 	public void setPid(ProtocolID pid) {
+		assert(pid.getName().equals(config.get(PROTOCOLATTRIBUTE_TAG)));
 		id.setPid(pid);
 	}
 	
 	public String getNativeAddress() {
 		return config.get(SENSORADDRESSATTRIBUTE_TAG);
 	}
-	
-	public String getProtocolName() {
-		return config.get(PROTOCOLATTRIBUTE_TAG);
-	}
-	
+		
 	/*
 	 * Start of state management methods
 	 */
@@ -112,7 +109,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 	@Override
 	public void remove(componentRemovalListener c) {
 		logger.debug("Registering removal of sensor " + toString());
-		state.stop(c);
+		state.remove(c);
 	}
 	
 	/*
@@ -152,7 +149,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 	
 	public boolean isDisconnected() {
-		return state.isDisconnected();
+		return state.isDisconnectedDisabled();
 	}
 	
 	public String getStateToString() {

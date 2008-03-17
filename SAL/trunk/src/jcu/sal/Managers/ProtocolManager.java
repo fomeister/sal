@@ -6,7 +6,6 @@ package jcu.sal.Managers;
 import java.io.NotActiveException;
 import java.lang.reflect.Constructor;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -38,7 +37,6 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	private static ProtocolManager p = new ProtocolManager();
 	private Logger logger = Logger.getLogger(ProtocolManager.class);
 	private ConfigService conf;
-	private SensorManager sm;
 	
 	
 	/**
@@ -48,7 +46,6 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		super();
 		Slog.setupLogger(this.logger);
 		conf = ConfigService.getService();
-		sm = SensorManager.getSensorManager();
 	}
 	
 	/**
@@ -66,11 +63,11 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	protected Protocol build(Node config) throws InstantiationException {
 		Protocol p = null;
 		String type=null;
-		this.logger.debug("building Protocol");
+		logger.debug("building Protocol");
 		try {
 			ProtocolID i = (ProtocolID) getComponentID(config);
 			type=getComponentType(config);
-			this.logger.debug("Protocol type: " + type);
+			logger.debug("Protocol type: " + type);
 			String className = ProtocolModulesList.getClassName(type);
 
 			Class<?>[] params = {ProtocolID.class, Hashtable.class, Node.class};
@@ -82,21 +79,20 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			o[2] = XMLhelper.getNode("/" + Protocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config, true);
 			logger.debug("EndPoint config: " + XMLhelper.toString((Node) o[2])); 
 			p = (Protocol) c.newInstance(o);
-			
-			sm.start();
-			this.logger.debug("done building protocol "+p.toString());
+
+			logger.debug("done building protocol "+p.toString());
 			
 		} catch (ParseException e) {
-			this.logger.error("Error while parsing the DOM document. XML doc:");
-			this.logger.error(XMLhelper.toString(config));
+			logger.error("Error while parsing the DOM document. XML doc:");
+			logger.error(XMLhelper.toString(config));
 			//e.printStackTrace();
 			throw new InstantiationException();
 		}catch (Exception e) {
-			this.logger.error("Error in new Protocol instanciation.");
-			this.logger.error("Exception: "+e.getClass()+" - "+e.getMessage() );
-			this.logger.error("caused by: "+e.getCause().getClass()+" - "+e.getCause().getMessage());
-			this.logger.error("XML doc:\n");
-			this.logger.error(XMLhelper.toString(config));
+			logger.error("Error in new Protocol instanciation.");
+			logger.error("Exception: "+e.getClass()+" - "+e.getMessage() );
+			logger.error("caused by: "+e.getCause().getClass()+" - "+e.getCause().getMessage());
+			logger.error("XML doc:\n");
+			logger.error(XMLhelper.toString(config));
 			e.printStackTrace();
 			throw new InstantiationException();
 		}
@@ -136,10 +132,11 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 */
 	@Override
 	protected void remove(Protocol component) {
-		logger.debug("Removing protocol " + component.toString());
+		ProtocolID pid=component.getID();
+		logger.debug("Removing protocol " + pid.toString());
 		component.remove(this);
-		if(getSize()==0)
-			sm.stop();
+		SensorManager.getSensorManager().destroyComponents(component.getSensors());
+		componentRemovable(pid);
 	}
 	
 	/*
@@ -153,8 +150,6 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @throws ConfigurationException if there is a problem parsing the XML files
 	 */
 	public void init(String sml, String pcml) throws ConfigurationException {
-		Sensor s = null;
-		
 		try {
 			conf.init(pcml,sml);
 			Enumeration<Node> iter = conf.getProtocolNodes();
@@ -169,39 +164,14 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		Enumeration<Node> iter = conf.getSensorNodes();
 		while(iter.hasMoreElements()) {
 			try {
-				s = createSensor(iter.nextElement());
-				associateSensor(s);
+				SensorManager.getSensorManager().createComponent(iter.nextElement());
 			} catch (ConfigurationException e) {
-				logger.error("Could not add the sensor to any protocols");
-				if(s!=null) sm.destroyComponent(s.getID());
+				logger.error("Could not create the sensor");
 			}
 		} 
 		
 		startAll();
 	}
-	
-	/**
-	 * Creates a sensor from a XML node
-	 * @throws ConfigurationException if the XML node is incorrect
-	 */
-	private Sensor createSensor(Node n) throws ConfigurationException{
-		return sm.createComponent(n);
-	}
-
-	/**
-	 * Deletes a sensor
-	 */
-	private void deleteSensor(Sensor s){
-		sm.destroyComponent(s.getID());
-	}
-	
-	/**
-	 * Deletes a sensor
-	 */
-	private void deleteSensor(SensorID i){
-		sm.destroyComponent(i);
-	}
-	
 
 	/**
 	 * Starts all the protcols  at once
@@ -248,122 +218,106 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	}
 	
 	/**
-	 * Adds a sensor to the appropriate protocol. Checks if this sensor is supported by the procotocl
+	 * Sends a command to a sensor
+	 * @param c the command
+	 * @param sid the sensor
+	 * @return the result
+	 * @throws ConfigurationException if the sensor isnt associated with any protocol
+	 * @throws BadAttributeValueExpException if the command cannot be parsed/is incorrect
+	 * @throws NotActiveException if the sensor is not available to run commands
+	 */
+	public String execute(Command c, SensorID sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
+		return getProtocol(sid).execute(c, sid);
+	}
+	
+	/**
+	 * Retrieves the CML doc for a given sensor
+	 * @param sid the sensorID
+	 * @return the CML document
+	 * @throws ConfigurationException if the sensor isnt associated with a protocol
+	 * @throws NotActiveException
+	 */
+	public String getCML(SensorID sid) throws ConfigurationException, NotActiveException {
+		return getProtocol(sid).getCML(sid);
+	}
+		
+	/**
+	 * Adds a sensor to the appropriate protocol. Checks if this sensor is supported by the protocol
 	 * @return the protocol to which the sensor has been added 
 	 * @throws ConfigurationException if the sensor cannot be added (wrong ProtocolName field, or unsupported sensor)
 	 */
-	private Protocol associateSensor(Sensor sensor) throws ConfigurationException{
-		synchronized(this) {
-			Protocol p = getComponent(new ProtocolID(sensor.getProtocolName()));
-			if(p!=null)
-			{
-				p.associateSensor(sensor);
-				logger.debug("Associated sensor " + sensor.toString() + " to Protocol " + p.getID().toString());
-				return p;
-			}
+	Protocol associateSensor(Sensor sensor) throws ConfigurationException{
+		Protocol p = null;
+		String pname = null;
+		try {
+			pname = sensor.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG);
+			if((p = getComponent(new ProtocolID(pname)))!=null) {
+					p.associateSensor(sensor);
+			} else
+				throw new ConfigurationException("Cant find "+pname);
+		} catch (BadAttributeValueExpException e) {
+			logger.error("Can not find the protocol name to associate the sensor with");
+			logger.error("Cant associate sensor " + sensor.getID().toString() + "(Cant find protocol " + pname+")");
+			throw new ConfigurationException("cant find protocol from sensor config");
+		} catch (ConfigurationException e) {
+			throw e;
 		}
-		/* if we get here the sensor couldnt be added */
-		logger.error("Cant associate sensor " + sensor.getID().toString() + "(Cant find protocol " + sensor.getProtocolName()+")");
-		throw new ConfigurationException();
-	}
-	
-	/**
-	 * Unassociates a sensor from the appropriate protocol
-	 * The sensor is then destroyed
-	 * @args i the Id of the sensor to be removed   
-	 */
-	public void removeSensor(SensorID i){
-		synchronized(this) {
-			Protocol p = getComponent(new ProtocolID(i.getPIDName()));
-			if(p!=null)
-				p.unassociateSensor(i);
-			deleteSensor(i);
-		}
-	}
-	
-	/**
-	 * Unassociates all sensor from the appropriate protocol.
-	 * The sensors are then destroyed
-	 * @args p the protocol whose sensors are to be removed   
-	 */
-	public void removeSensors(Protocol p){
-		ArrayList<Sensor> ss = p.unassociateSensors();
-		for (int i = 0; i < ss.size(); i++) {
-			deleteSensor(ss.get(i));
-		}
-	}
-	
-	/**
-	 * Unassociates a sensor from the appropriate protocol.
-	 * The sensor is then destroyed
-	 * @args s the sensor to be removed 
-	 */
-	public void removeSensor(Sensor s){
-		removeSensor(s.getID());
-	}
-	
-	/**
-	 * Returns all existing sensors 
-	 */
-	public String listSensors(){
-		return sm.listSensors();
-	}
-	
-	public String execute(Command c, int id) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
-		return getProtocol(id).execute(c, new SensorID(String.valueOf(id)));
-	}
-	
-	public String getCML(int sid) throws ConfigurationException, NotActiveException {
-		return getProtocol(sid).getCML(new SensorID(String.valueOf(sid)));
-	}
-	
 
+		return p;
+	}
+	
 	/**
-	 * Returns the protcol associated with a SensorID
-	 * @throws ConfigurationException if the protocol can not be found 
+	 * Unassociate a sensor from the protocol.
+	 * @throws ConfigurationException if the sensor cannot be unassociated (wrong ProtocolName field, or unsupported sensor)
 	 */
-	protected Protocol getProtocol(int  id) throws NotActiveException, ConfigurationException{
+	void unassociateSensor(Sensor s) throws ConfigurationException{
+		Protocol p = null;
+		String pname = null;
+		try {
+			pname = s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG);
+			if((p = getComponent(new ProtocolID(pname)))!=null)
+				p.unassociateSensor(s.getID());
+			else
+				throw new ConfigurationException("Cant find "+pname);
+		} catch (BadAttributeValueExpException e) {
+			logger.error("Can not find the protocol name to unassociate the sensor from");
+			logger.error("Cant unassociate sensor " + s.getID().toString() + "(Cant find protocol " + pname+")");
+			throw new ConfigurationException("cant find protocol from sensor config");
+		} catch (ConfigurationException e) {
+			logger.error("Can not find the protocol name to unassociate the sensor from");
+			logger.error("Cant unassociate sensor " + s.getID().toString() + "(Cant find protocol " + pname+")");
+			throw e;
+		}
+	}	
+	
+	/**
+	 * Returns the protcol associated with a SensorID (assuming it is already associated with one)
+	 * @throws ConfigurationException if the protocol can not be found
+	 * @throws NotActiveException if the sensor can not be foundx 
+	 */
+	Protocol getProtocol(SensorID sid) throws NotActiveException, ConfigurationException{
 			Protocol p=null;
 			String pName = null;
 			Sensor s;
-			SensorID sid = new SensorID(String.valueOf(id));
 
 			//TODO fix all the methods that should return an exception instead of a null pointer
 			//TODO so we can get rid of all the if statments and only have try/catch stuff.
 			//TODO fix the Identifier issue: with a sensor ID (a single int), to get the protocol associated
 			//TODO with it, we have to do the following 4 lines ... ugly !
-			if((s=sm.getComponent(sid))==null) {
-				logger.error("Cannot find the any sensor with this sensorID: " + sid.toString());
+			if((s=SensorManager.getSensorManager().getComponent(sid))==null) {
+				//logger.error("Cannot find the any sensor with this sensorID: " + sid.toString());
 				throw new NotActiveException();
 			}
-			pName = s.getID().getPIDName();
-			if(pName==null){
+			if((pName = s.getID().getPIDName())==null){
 				logger.error("Cannot find the protocolID associated with this sensorID: " + sid.toString());
 				throw new ConfigurationException();
 			}
-			p=ProtocolManager.getProcotolManager().getComponent(new ProtocolID(pName));
-			if(p==null){
+			if((p=getComponent(new ProtocolID(pName)))==null){
 				logger.error("Cannot find the protocol associated with this sensorID: " + sid.toString());
 				throw new ConfigurationException();
 			}
 
 			return p;
 	}
-	
-	/**
-	 * Creates a sensor from a partial SML (passed as a string) and associate it with this protocol
-	 * @throws ConfigurationException if the sensor couldnt be created or associated with a protocol
-	 */
-	public Sensor createSensorFromPartialSML(String s) throws ConfigurationException{
-		Sensor tmp =  sm.createSensorFromPartialSML(s);
-		try {
-			associateSensor(tmp);
-		} catch (ConfigurationException e) {
-			logger.error("the sensor couldnt be associated with a protocol.");
-			logger.error("Destroying it");
-			sm.destroyComponent(tmp.getID());
-			throw e;
-		}
-		return tmp;
-	}
+
 }

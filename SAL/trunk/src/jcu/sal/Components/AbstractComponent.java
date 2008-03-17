@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
@@ -24,7 +25,7 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	protected Hashtable<String, String> config;
 	private Logger logger = Logger.getLogger(AbstractComponent.class);
 //	protected boolean started = false;
-	protected boolean removed = false;
+	protected AtomicBoolean removed;
 	protected String type = null;
 	protected T id = null;
 	
@@ -48,20 +49,6 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 			throw new BadAttributeValueExpException("Unable to get a config directive with this name "+ directive);
 		}			
 		return s; 
-	}
-
-	/* (non-Javadoc)
-	 * @see jcu.sal.Components.HWComponent#updateConfig(java.util.Hashtable)
-	 */
-	public void updateConfig(Hashtable<String, String> config) throws ConfigurationException
-	{
-		if (!isStarted()) {
-			this.config = config;
-			parseConfig();
-		} else {
-			// TODO
-			logger.debug("NOT IMPLEMENTED: attempting to change the configuration while running");
-		}
 	}
 	
 	/* (non-Javadoc)
@@ -94,8 +81,8 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	public abstract boolean isStarted();
 	
 	/**
-	 * returns a textual representation of a Logical Port's instance
-	 * @return the textual representation of the Logical Port's instance
+	 * returns a textual representation of a component
+	 * @return the textual representation of the component
 	 */
 	public abstract String toString();
 

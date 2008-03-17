@@ -4,8 +4,21 @@ import javax.naming.ConfigurationException;
 
 
 public class SimpleSNMPCML extends CMLStore{
+	private static SimpleSNMPCML c; 
+	static {
+		try {
+			c = new SimpleSNMPCML();
+		} catch (ConfigurationException e) {
+			e.printStackTrace();
+		} 
+	}
+	
+	public static SimpleSNMPCML getStore() {
+		return c;
+	}
+	
 
-	public SimpleSNMPCML() throws ConfigurationException{
+	private SimpleSNMPCML() throws ConfigurationException{
 		StringBuffer b = new StringBuffer();
 		CMLDoc c;
 

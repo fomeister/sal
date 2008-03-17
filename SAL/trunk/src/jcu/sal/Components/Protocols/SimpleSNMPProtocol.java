@@ -49,7 +49,7 @@ public class SimpleSNMPProtocol extends Protocol{
 	public SimpleSNMPProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super(i,SIMPLESNMPPROTOCOL_TYPE,c,d);
 		
-		cmls = new SimpleSNMPCML();
+		cmls = SimpleSNMPCML.getStore();
 	}
 
 	
@@ -109,6 +109,7 @@ public class SimpleSNMPProtocol extends Protocol{
 	protected boolean internal_probeSensor(Sensor s) {
 		try {
 			getRawReading(s.getNativeAddress());
+			logger.error(s.toString()+" present");
 			s.enable();
 			return true;
 		} catch (Exception e) {
@@ -131,7 +132,6 @@ public class SimpleSNMPProtocol extends Protocol{
 	// TODO create an exception class for this instead of Exception
 	public String getReading(Hashtable<String,String> c, Sensor s) throws IOException{
 		String ret=null;
-		logger.debug("getReading method called on sensor " +s.toString());
 		ret = getRawReading(s.getNativeAddress());
 		return ret;
 	}

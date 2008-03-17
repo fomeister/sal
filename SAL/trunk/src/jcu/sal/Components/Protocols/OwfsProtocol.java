@@ -13,7 +13,6 @@ import java.util.Vector;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Components.EndPoints.DeviceListener;
 import jcu.sal.Components.Protocols.CMLStore.OwfsCML;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.PlatformHelper;
@@ -26,7 +25,7 @@ import org.w3c.dom.Node;
  * @author gilles
  *
  */
-public class OwfsProtocol extends Protocol implements DeviceListener {
+public class OwfsProtocol extends Protocol{
 
 	private static Logger logger = Logger.getLogger(OwfsProtocol.class);
 	private int adapterNb=0;
@@ -57,6 +56,8 @@ public class OwfsProtocol extends Protocol implements DeviceListener {
 		commands.put(new Integer(115), "getVAD");
 		commands.put(new Integer(116), "getVDD");
 		commands.put(new Integer(117), "getVIS");
+		
+		//override epIds, set epIds to watch for DS2490
 	}
 	
 	
@@ -66,14 +67,10 @@ public class OwfsProtocol extends Protocol implements DeviceListener {
 	 */
 	public OwfsProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super(i,OWFSPROTOCOL_TYPE ,c,d);
+		epIds = new String[]{DS2490_USBID};
 		autodetect = true;
 		AUTODETECT_INTERVAL = 100;
-		cmls = new OwfsCML();
-		/* if supported, registers with the USB endpoint to detect newly connected DS9490 adapters*/
-		try { ep.registerDeviceListener(this, new String [] {DS2490_USBID}); }
-		catch (UnsupportedOperationException e) {
-			logger.debug("Autodetect not supported by the EndPoint");
-		}
+		cmls = OwfsCML.getStore();
 	}
 
 	/* (non-Javadoc)
@@ -128,6 +125,7 @@ public class OwfsProtocol extends Protocol implements DeviceListener {
 	protected void internal_start() {
 		adapterNb=0;
 		maxAdaptersSeen=0;
+
 		
 		/*
 		 * make sure no copies of owfs are currently running !
@@ -194,42 +192,45 @@ public class OwfsProtocol extends Protocol implements DeviceListener {
 	 * @see jcu.sal.Components.EndPoints.DeviceListener#deviceChange(int)
 	 */
 	public void adapterChange(int n) {
-		if(n>=adapterNb) {
-			logger.debug("new OWFS adapters have been plugged in, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
-			if(n>=maxAdaptersSeen){
-				logger.debug("Restarting OWFS to detect new adapters");
-				try {
-					synchronized(this) {
-						Enumeration<Sensor> es = sensors.elements();
-						while(es.hasMoreElements()) {
-							Sensor s = es.nextElement();
-							synchronized(s) {
-								logger.debug("Disabling "+s.toString());
-								s.disable();
+		synchronized(removed){
+			if(!removed.get()){
+				if(n>=adapterNb) {
+					logger.debug("new OWFS adapters have been plugged in, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
+					if(n>=maxAdaptersSeen){
+						logger.debug("Restarting OWFS to detect new adapters");
+						try {
+							stopAutodetectThread();
+							synchronized(sensors) {
+								Enumeration<Sensor> es = sensors.elements();
+								while(es.hasMoreElements()) {
+									Sensor s = es.nextElement();
+									synchronized(s) {
+										logger.debug("Disconnecting "+s.toString());
+										s.disconnect();
+									}
+								}
 							}
-						}
-						
-						stopAutodetectThread();
-						stopOWFS();
-						try { Thread.sleep(100); } catch (InterruptedException e) {}
-						startOWFS();
-						startAutodetectThread();
+							stopOWFS();
+							try { Thread.sleep(100); } catch (InterruptedException e) {}
+							startOWFS();
+							startAutodetectThread();
+							logger.error("Done restarting OWFS");
+							maxAdaptersSeen=n;
+						} catch (ConfigurationException e) {
+							logger.error("Unable to run owfs: "+e.getClass()+" - "+e.getMessage());
+							if(e.getCause()!=null) logger.error("caused by: "+e.getCause().getClass()+" - "+e.getCause().getMessage());
+						} 
+					} else {
+						logger.debug("no need to restart OWFS to detect new adapter, max>adapternb");
 					}
-					logger.error("Done restarting OWFS");
-					maxAdaptersSeen=n;
-				} catch (ConfigurationException e) {
-					logger.error("Unable to run owfs: "+e.getClass()+" - "+e.getMessage());
-					if(e.getCause()!=null) logger.error("caused by: "+e.getCause().getClass()+" - "+e.getCause().getMessage());
-				} 
-			} else {
-				logger.debug("no need to restart OWFS to detect new adapter, max>adapternb");
+					adapterNb=n;
+				} else if (n<adapterNb) {
+					logger.debug("a new OWFS adapter has been unplugged, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
+					//adapterNb=n;
+				} else {
+					logger.error("Weird condition, recevied a device change event, but the reported device count("+n+") is the same as ours("+adapterNb+")");
+				}
 			}
-			adapterNb=n;
-		} else if (n<adapterNb) {
-			logger.debug("a new OWFS adapter has been unplugged, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
-			//adapterNb=n;
-		} else {
-			logger.error("Weird condition, recevied a device change event, but the reported device count("+n+") is the same as ours("+adapterNb+")");
 		}
 	}
 	

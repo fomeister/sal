@@ -152,9 +152,11 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 			throw new UnsupportedOperationException("Autodetection of sensor native controllers not supported by this Endpoint");
 		
 		for (int i = 0; i < ids.length; i++) {
-			if(!listeners.containsKey(ids[i])) 
-				listeners.put(ids[i], new ArrayList<DeviceListener>());
-			synchronized (listeners) {listeners.get(ids[i]).add(d);}
+			synchronized (listeners) {
+				if(!listeners.containsKey(ids[i])) 
+					listeners.put(ids[i], new ArrayList<DeviceListener>());
+				listeners.get(ids[i]).add(d);
+			}
 			logger.debug("Added device listener for ID: '"+ids[i]+"', "+listeners.containsKey(ids[i])+" - "+listeners.get(ids[i]));
 		}
 	}

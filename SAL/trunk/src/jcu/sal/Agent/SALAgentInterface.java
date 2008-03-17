@@ -4,6 +4,7 @@ import java.io.NotActiveException;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
+import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.Components.Command;
 
@@ -28,7 +29,7 @@ public interface SALAgentInterface {
 	 * @param sid the sensor
 	 * @return the result
 	 */
-	public String execute(Command c, int sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException;
+	public String execute(Command c, String sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException;
 	
 	/**
 	 * Returns the CML document for a given sensor
@@ -36,12 +37,43 @@ public interface SALAgentInterface {
 	 * @return the CML doc
 	 * @throws ConfigurationException if the CML doc cant be found
 	 */
-	public String getCML(int sid) throws ConfigurationException, NotActiveException;
+	public String getCML(String sid) throws ConfigurationException, NotActiveException;
 	
 	/**
 	 * Stops the SAL agent
 	 *
 	 */
 	public void stop();
+	
+	/**
+	 * Instanciate a new protocol given its XML document
+	 * @throws ParserConfigurationException if the XML document cannot be parsed
+	 * @throws ConfigurationException if the XML document is incorrect
+	 */
+	public void addProtocol(String xml) throws ConfigurationException, ParserConfigurationException;
+	
+	/**
+	 * Remove a protocol given its ID
+	 * @throws ConfigurationException if the ID cannot be found
+	 */
+	public void removeProtocol(String pid) throws ConfigurationException;
+	
+	/**
+	 * Remove all protocols
+	 */
+	public void removeProtocols() throws ConfigurationException;
+	
+	/**
+	 * Instanciate a new sensor given its XML document
+	 * @throws ParserConfigurationException if the XML document cannot be parsed
+	 * @throws ConfigurationException if the XML document is incorrect
+	 */
+	public void addSensor(String xml) throws ConfigurationException, ParserConfigurationException;
+	
+	/**
+	 * Remove a sensor given its ID
+	 * @throws ConfigurationException if the ID cannot be found
+	 */
+	public void removeSensor(String pid) throws ConfigurationException;
 }
 
