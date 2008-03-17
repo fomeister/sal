@@ -9,7 +9,7 @@
 			<Protocol name="EMS_SNMP" type="SSNMP">
 				<EndPoint name="eth0" type="ethernet">
 					<parameters>
-						<Param name="EthernetDevice" value="eth1" />
+						<Param name="EthernetDevice" value="eth0" />
 					</parameters>
 				</EndPoint>
 				<parameters>

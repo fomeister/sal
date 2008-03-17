@@ -73,23 +73,23 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 */
 	public T createComponent(Node n) throws ConfigurationException {
 		T newc = null;
-		Identifier id= null;
 		try {
-			id = getComponentID(n);
-			if(!ctable.containsKey(id)) {
+			synchronized(ctable) {
 				newc = build(n);
-				if(newc!=null) synchronized (this) { ctable.put(id, newc); }
-				else logger.error("Couldnt create component");
+				if(newc!=null) {
+					if(!ctable.containsKey(newc.getID())) {
+						ctable.put(newc.getID(), newc);
+					} else {
+						logger.error("There is already a component named " + newc.getID().toString());
+						throw new ConfigurationException();
+					}
+				}else {
+						logger.error("Couldnt create component");
+						throw new ConfigurationException();
+				}
 			}
-			else {
-				logger.error("There is already a component named " + id.toString());
-				return null;
-			}
-		} catch (ParseException e) {
-			logger.error("Couldnt parse component "+ id.getName()+"'s XML doc");
-			throw new ConfigurationException();
 		} catch (InstantiationException e) {
-			logger.error("Couldnt instanciate component "+ id.getName()+" from XML doc");
+			logger.error("Couldnt instanciate component from XML doc");
 			throw new ConfigurationException();
 		}
 
@@ -100,12 +100,29 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 * Removes a previoulsy creatd component
 	 * @param type the component type
 	 */
-	public void destroyComponent(Identifier i) {
-		synchronized(this) {
+	public void destroyComponent(Identifier i) throws ConfigurationException {
+		synchronized(ctable) {
 			if(ctable.containsKey(i)) {
 				remove(ctable.get(i));
-			} else
+			} else {
 				logger.error("Element " + i.toString()+ " doesnt exist and can NOT be removed");
+				throw new ConfigurationException();
+			}
+		}
+	}
+	
+	/** 
+	 * Removes previoulsy created components
+	 * @param l the list of compoenents to be deleted
+	 */
+	public void destroyComponents(ArrayList<T> l){
+		synchronized(ctable) {
+			for (int i = 0; i < l.size(); i++) {
+				try{destroyComponent(l.get(i).getID());}
+				catch (ConfigurationException e) {
+					logger.error("Cant destroy "+l.get(i).toString());
+				}
+			}
 		}
 	}
 	
@@ -114,10 +131,11 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 *
 	 */
 	public void destroyAllComponents() {
-		synchronized(this){
+		synchronized(ctable){
 			Enumeration<T> e = ctable.elements();
 			while (e.hasMoreElements())
-				destroyComponent(e.nextElement().getID());
+				try { destroyComponent(e.nextElement().getID());}
+				catch (ConfigurationException e1) {}
 		}
 	}
 	
@@ -165,7 +183,7 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 */	
 	public void dumpTable() {
 		this.logger.debug("current table contents:" );
-		synchronized(this){
+		synchronized(ctable){
 			Enumeration<Identifier> keys = ctable.keys();
 			Collection<T> cvalues = ctable.values();
 			Iterator<T> iter = cvalues.iterator();
@@ -178,7 +196,7 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 * Removes the specified component
 	 */
 	public void componentRemovable(Identifier i){
-		synchronized(this){
+		synchronized(ctable){
 			if(ctable.remove(i) == null)
 				this.logger.error("Cant remove element with key " + i.toString() +  ": No such element");
 			else

@@ -48,7 +48,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	}
 	
 	private static Logger logger = Logger.getLogger(OSDataProtocol.class);
-	private Thread update_counters;
+	private Thread update_counters = null;
 	private Hashtable<String,String> lastValues;
 	private static Hashtable<String,OSdata> supportedSensors = new Hashtable<String,OSdata>();
 	/**
@@ -85,9 +85,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 		supportedSensors.put("LoadAvg5",new OSdata("/proc/loadavg", null, 2, null, false));
 		supportedSensors.put("LoadAvg15",new OSdata("/proc/loadavg", null, 3, null, false));
 		
-		cmls = new OSDataCML();
-		update_counters = new Thread(this, "update_counter_thread");
-		update_counters.start();
+		cmls = OSDataCML.getStore();
 		lastValues = new Hashtable<String,String>();
 	}
 
@@ -123,12 +121,12 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_stop()
 	 */
-	protected void internal_stop() {update_counters.interrupt();}
+	protected void internal_stop() {stopCounterThread();}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_start()
 	 */
-	protected void internal_start() {}
+	protected void internal_start() {startCounterThread();}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.Components.Protocol#internal_remove()
@@ -136,18 +134,26 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	protected void internal_remove() {
 	}
 	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.Protocols.Protocol#internal_isSensorSupported(jcu.sal.Components.Sensors.Sensor)
+	 */
 	@Override
 	protected boolean internal_isSensorSupported(Sensor sensor){
 		return supportedSensors.containsKey(sensor.getNativeAddress());	
 	}
 
-
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Components.Protocols.Protocol#internal_probeSensor(jcu.sal.Components.Sensors.Sensor)
+	 */
 	@Override
 	protected boolean internal_probeSensor(Sensor s) {
 		OSdata d = supportedSensors.get(s.getNativeAddress());
 		if(d!=null) {
 			try {
 				if(PlatformHelper.isFileReadable(d.file)) {
+					logger.error(s.toString()+" present");
 					s.enable();
 					return true;
 				}
@@ -161,12 +167,28 @@ public class OSDataProtocol extends Protocol implements Runnable{
 		return false;
 	}
 	
+	private synchronized void startCounterThread() {
+		if(update_counters == null || !update_counters.isAlive()) {
+			update_counters = new Thread(this, "update_counter_thread");
+			update_counters.start();
+		}
+	}
+	
+	private synchronized void stopCounterThread() {
+		if(update_counters!=null && update_counters.isAlive()){
+			update_counters.interrupt();
+			try { update_counters.join();}
+			catch (InterruptedException e) {}
+			update_counters=null;
+			logger.debug("autodetect thread stopped");
+		}
+	}
+	
 
 	// TODO create an exception class for this instead of Exception
 	public String getReading(Hashtable<String,String> c, Sensor s) throws IOException{
 		OSdata d;
 		String ret;
-		logger.debug("getReading method called on sensor " +s.toString());
 		if(s.getNativeAddress().equals("UserTime") || s.getNativeAddress().equals("NiceTime") || s.getNativeAddress().equals("SystemTime")|| s.getNativeAddress().equals("IdleTime")) {
 			ret = lastValues.get(s.getNativeAddress());
 			if(ret.equals("-1")) { 

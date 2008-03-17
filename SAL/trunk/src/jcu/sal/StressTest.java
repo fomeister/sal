@@ -115,7 +115,7 @@ public class StressTest {
 					//logger.debug("Thread "+Thread.currentThread().getName()+": Sending command to "+ns);
 					try {
 						count++;
-						logger.debug("SID:"+ns+" Result: " +s.execute(new Command(100, "", ""), ns));
+						logger.debug("SID:"+ns+" Result: " +s.execute(new Command(100, "", ""), String.valueOf(ns)));
 						success[id]++;
 					} catch (ConfigurationException e) {failure[id]++;}
 					catch (BadAttributeValueExpException e) {failure[id]++;}

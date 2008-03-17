@@ -42,7 +42,7 @@ public class UsbEndPoint extends EndPoint{
 	/**
 	 * The thread watching for adapter devices plug/unplug events
 	 */
-	private static Autodetection deviceWatcher= new Autodetection("USB");
+	private static Autodetection deviceWatcher= null;
 	
 	/**
 	 * How many UsbEndPoint are there ? (used as ref count to know when to stop the thread)
@@ -124,35 +124,31 @@ public class UsbEndPoint extends EndPoint{
 	}
 	
 	
-	private static void startAutoDectectThread() {
-		synchronized(deviceWatcher){
-			if(ep_nb==0 && !deviceWatcher.isAlive()) {
-				deviceWatcher = new Autodetection("USB");
-				if(deviceWatchInterval!=0) {
-					logger.debug("Starting autodetect thread");
-					deviceWatcher.start();
-				} else if (deviceWatchInterval==0){
-					logger.info("Autodetect interval set to 0 in the endpoint config.");
-					logger.info("Disabling sensor autodetection");
-				} else {
-					logger.debug("Sensor autodetection not supported");
-				}
-			}// else logger.debug("USB device watcher already started - ep_nb:"+ep_nb+" isalive?"+deviceWatcher.isAlive());
-			ep_nb++;
-		}
+	private static synchronized void startAutoDectectThread() {
+		if(ep_nb==0) {
+			deviceWatcher = new Autodetection("USB");
+			if(deviceWatchInterval!=0) {
+				logger.debug("Starting autodetect thread");
+				deviceWatcher.start();
+			} else if (deviceWatchInterval==0){
+				logger.info("Autodetect interval set to 0 in the endpoint config.");
+				logger.info("Disabling sensor autodetection");
+			} else {
+				logger.debug("Sensor autodetection not supported");
+			}
+		}// else logger.debug("USB device watcher already started - ep_nb:"+ep_nb+" isalive?"+deviceWatcher.isAlive());
+		ep_nb++;
 	}
 	
-	private void stopAutoDectectThread() {
-		synchronized(deviceWatcher){
-			if(deviceWatcher.isAlive() && ep_nb==1) {
-				deviceWatcher.interrupt();
-				try { deviceWatcher.join();}
-				catch (InterruptedException e) {}
-				deviceWatcher=null;
-				logger.debug("autodetect thread stopped");
-			}// else logger.debug("USB device watcher not stopped- ep_nb:"+ep_nb+" isalive?"+deviceWatcher.isAlive());
-			ep_nb--;
-		}
+	private static synchronized void stopAutoDectectThread() {
+		if(deviceWatcher.isAlive() && ep_nb==1) {
+			deviceWatcher.interrupt();
+			try { deviceWatcher.join();}
+			catch (InterruptedException e) {}
+			deviceWatcher=null;
+			logger.debug("autodetect thread stopped");
+		}// else logger.debug("USB device watcher not stopped- ep_nb:"+ep_nb+" isalive?"+deviceWatcher.isAlive());
+		ep_nb--;
 	}
 	
 	/**
@@ -185,18 +181,26 @@ public class UsbEndPoint extends EndPoint{
 		
 		private void notifyListeners(HashSet<String> ids) {
 			Iterator<DeviceListener> idl;
+			ArrayList<DeviceListener> d = null;
 			String temp;
 			Iterator<String> i = ids.iterator();
 			while(i.hasNext()){
 				temp = i.next();
-				/* finds initially connected devices*/
-				synchronized (listeners) {
-					if(listeners.containsKey(temp)) {
-						idl = listeners.get(temp).iterator();
-						while(idl.hasNext()) {
-							logger.debug("Notifying change on device(s) with ID: "+temp+", nb: "+devices.get(temp));
-							idl.next().adapterChange(devices.get(temp));
-						}
+				/* finds connected devices*/
+				synchronized(listeners) {
+					if(listeners.containsKey(temp))
+						/* make a copy of the array of device listeners
+						 * so we can call each of them without holding the listeners
+						 * lock to avoid race conditions
+						 */
+						d = new ArrayList<DeviceListener>(listeners.get(temp));
+				}
+				
+				if(d!=null) {
+					idl = d.iterator();
+					while(idl.hasNext()) {
+						logger.debug("Notifying change on device(s) with ID: "+temp+", nb: "+devices.get(temp));
+						idl.next().adapterChange(devices.get(temp));
 					}
 				}
 			}
@@ -252,7 +256,7 @@ public class UsbEndPoint extends EndPoint{
 						/* finds unplugged devices*/
 						logger.debug("Found newly disconnected device with ID: "+temp);
 						devices.put(temp, (devices.get(temp)==null) ? 0 : devices.get(temp)-1);
-						if(!changedList.contains(temp)) changedList.add(temp);
+						changedList.add(temp);
 					}
 					
 					notifyListeners(changedList);
