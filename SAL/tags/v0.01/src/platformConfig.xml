@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<SAL>
+	<PlatformConfiguration>
+		<general>
+			<logging />
+			<readingDirectory>/home/sensor_user/readings</readingDirectory>
+		</general>
+		<protocols>
+			<Protocol name="1wtree" type="owfs">
+				<EndPoint name="usb" type="usb" />
+				<parameters>
+					<Param name="Location" value="/opt/owfs/bin/owfs" />
+					<Param name="MountPoint" value="/mnt/w1" />
+				</parameters>
+			</Protocol>
+			<Protocol name="EMS_SNMP" type="SSNMP">
+				<EndPoint name="eth0" type="ethernet">
+					<parameters>
+						<Param name="EthernetDevice" value="eth0" />
+					</parameters>
+				</EndPoint>
+				<parameters>
+					<Param name="AgentIP" value="192.168.0.2" />
+					<Param name="CommunityString" value="EMSOLUTIONS" />
+					<Param name="SNMPVersion" value="1" />
+					<Param name="Timeout" value="1500" />
+				</parameters>
+			</Protocol>
+<!--			<Protocol name="PL40" type="PL40">
+				<EndPoint name="serial0" type="serial">
+					<parameters>
+						<Param name="PortSpeed" value="9600" />
+						<Param name="DataBits" value="8" />
+						<Param name="Parity" value="0" />
+						<Param name="StopBit" value="1" />
+						<Param name="PortDeviceFile" value="/dev/ttyS0" />
+					</parameters>
+				</EndPoint>
+			</Protocol> -->
+			<Protocol name="osData" type="PlatformData">
+				<EndPoint name="filesystem" type="fs" />
+				<parameters>
+					<Param name="CPUTempFile" value="/sys/class/hwmon/hwmon0/device/temp2_input" />
+					<Param name="NBTempFile" value="/sys/class/hwmon/hwmon0/device/temp1_input" />
+					<Param name="SBTempFile" value="/sys/class/hwmon/hwmon0/device/temp3_input" />
+				</parameters>
+			</Protocol>
+		</protocols>
+	</PlatformConfiguration>
+</SAL>
