@@ -24,9 +24,9 @@ public class StressTest3 {
 	private ArrayList<StressUser> threads;
 	static {
 	}
-	//nt[] sensors;
-	//int[] sensors = {1,2,3,4,5,13,14,15,16,17,18,19,20,21,22,23};
-	int[] sensors = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21};
+	//int[] sensors;
+	int[] sensors = {1,2,3,4,5,6};
+	//int[] sensors = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21};
 	
 	public StressTest3(int n){
 		NB_THREADS=n;
@@ -104,7 +104,7 @@ public class StressTest3 {
 					while(!Thread.interrupted()) {
 						try {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Adding 1-wire protocol");
-							s.addProtocol("<Protocol name=\"1wtree\" type=\"owfs\"><EndPoint name=\"usb\" type=\"usb\" /><parameters><Param name=\"Location\" value=\"/opt/owfs/bin/owfs\" /><Param name=\"MountPoint\" value=\"/mnt/w1\" /></parameters>	</Protocol>");
+							s.addProtocol("<Protocol name=\"1wtree\" type=\"owfs\"><EndPoint name=\"usb\" type=\"usb\" /><parameters><Param name=\"Location\" value=\"/opt/owfs/bin/owfs\" /><Param name=\"MountPoint\" value=\"/mnt/w1\" /></parameters>	</Protocol>", true);
 							System.out.println("Thread "+Thread.currentThread().getName()+": 1-wire protocol added");
 						} catch (ConfigurationException e) {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Error creating 1-wire");
@@ -122,7 +122,7 @@ public class StressTest3 {
 						Thread.sleep(9000);
 						try {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Removing 1-wire protocol");
-							s.removeProtocol("1wtree");
+							s.removeProtocol("1wtree", true);
 							System.out.println("Thread "+Thread.currentThread().getName()+": 1-wire protocol removed");
 						} catch (ConfigurationException e) {
 							// TODO Auto-generated catch block
@@ -160,7 +160,7 @@ public class StressTest3 {
 		logger.setAdditivity(false);
 		logger.setLevel(Level.ALL);
 		logger.addAppender(new ConsoleAppender(new PatternLayout("%c{1}.%M(%F:%L) %r - %m%n")));
-		//s.init("src/platformConfig-empty.xml", "src/sensors.xml");
+		s.start("src/platformConfig-empty.xml", "src/sensors-empty.xml");
 		
 		System.out.println("Starting !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
 		StressTest3 st = new StressTest3();

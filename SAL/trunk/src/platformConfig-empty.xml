@@ -1,9 +1,25 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <SAL>
-	<PlatformConfiguration>
-		<general>
-			<logging />
-			<readingDirectory>/home/sensor_user/readings</readingDirectory>
-		</general>
-	</PlatformConfiguration>
+    <PlatformConfiguration>
+        <general>
+            <logging/>
+            <readingDirectory>/home/sensor/readings</readingDirectory>
+        </general>
+        <protocols>
+            <Protocol name="osData" type="PlatformData">
+                <EndPoint name="filesystem" type="fs"/>
+                <parameters>
+                    <Param name="CPUTempFile" value="/sys/class/hwmon/hwmon0/device/temp1_input"/>
+                    <Param name="NBTempFile" value="/sys/class/hwmon/hwmon0/device/temp2_input"/>
+                </parameters>
+            </Protocol>
+            <Protocol name="1wtree" type="owfs">
+                <EndPoint name="usb" type="usb"/>
+                <parameters>
+                    <Param name="Location" value="/opt/owfs/bin/owfs"/>
+                    <Param name="MountPoint" value="/mnt/w1"/>
+                </parameters>
+            </Protocol>
+        </protocols>
+    </PlatformConfiguration>
 </SAL>

@@ -18,14 +18,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-
-import jcu.sal.Components.EndPoints.EndPoint;
-import jcu.sal.Components.Protocols.Protocol;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
@@ -36,6 +32,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import com.sun.org.apache.xml.internal.serialize.OutputFormat;
+import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
 
 	/**
 	 * Set of methods to manipulate XML documents
@@ -106,6 +105,7 @@ public class XMLhelper {
      */   
     public static Document createDocument(String xmlstr) 
     	throws ParserConfigurationException {
+        
     	Document document = null;
     	try {
 	        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -128,6 +128,18 @@ public class XMLhelper {
     	try { XMLhelper.transform(new DOMSource(node), new DOMResult(d)); }
     	catch (Exception e) { throw new ParserConfigurationException(); }
         return d;
+    }
+    
+    /**
+     * Duplicates a document and put it in its own document
+     * @param d the XML document to be duplicated
+     * @return the document in its new document
+     * @throws ParserConfigurationException 
+     */   
+    public static Document duplicateDocument(Document d) 
+    	throws ParserConfigurationException {
+    	Document tmp = createDocument(toString(d));
+    	return tmp;
     }
     
     /**
@@ -177,15 +189,40 @@ public class XMLhelper {
     }
     
     /**
+     * Adds a child node to a parent node. The child node is given as a string, imported in the parent's document as a node,
+     * and appended to the parent node 
+     * @param parent the parent node
+     * @param xml the child node
+     * @return the new appended node
+     * @throws ParserConfigurationException if the child node (the xml string) can not be parsed
+     */
+    public static Node addChild(Node parent, String xml) throws ParserConfigurationException {
+		Document d = XMLhelper.createDocument(xml);
+		return addChild(parent, d.getFirstChild());
+    }
+    
+    /**
+     * Adds a child containing text to the parent node inside the DOM document
+     * @param parent the node under which to add the child
+     * @param child the node to be added
+     * @return the new appended node
+     */
+    public static Node addChild(Node parent, Node child) {
+    	Document d = parent.getOwnerDocument();
+    	if(child.getNodeType()==Node.DOCUMENT_NODE) child=child.getFirstChild();
+    	Node n = d.importNode(child, true);
+        return parent.appendChild(n);
+    }
+    
+    /**
      * Adds an attribute to a node
      * @param parent the node to which the attribue will be attached
      * @param name the name of the attribute
      * @param value the value of the attribute
-     * @param doc the DOM document
      * @return the new added element
      */
-    public static void addAttribute(Node parent, String name, String value, Document doc) {
-    	Attr attrib = doc.createAttribute(name);
+    public static void addAttribute(Node parent, String name, String value) {
+    	Attr attrib = parent.getOwnerDocument().createAttribute(name);
     	attrib.setValue(value);
     	parent.getAttributes().setNamedItem(attrib);
     }
@@ -199,6 +236,14 @@ public class XMLhelper {
     public static void addTextChild(Node parent, String value, Document doc) {
         Node textNode = doc.createTextNode(value);
         parent.appendChild(textNode);
+    }
+    
+    /**
+     * Removes a node from its document
+     * @param n the node to be removed
+     */
+    public static void deleteNode(Node n) {
+    	n.getParentNode().removeChild(n);
     }
 
     /**
@@ -228,7 +273,7 @@ public class XMLhelper {
 
         XPath xpath = XPathFactory.newInstance().newXPath();
         node = (Node) xpath.evaluate(xpath_expression, doc, XPathConstants.NODE);
-        if(newdoc)
+        if(newdoc && node!=null)
         	node = duplicateNode(node);
 
         return node;
@@ -251,7 +296,7 @@ public class XMLhelper {
 
         XPath xpath = XPathFactory.newInstance().newXPath();
         node = (Node) xpath.evaluate(xpath_expression, n, XPathConstants.NODE);
-        if(newdoc)
+        if(newdoc && node!=null)
         	node = duplicateNode(node);
         return node;
     }
@@ -269,9 +314,10 @@ public class XMLhelper {
         Node node = null;
         XPath xpath = XPathFactory.newInstance().newXPath();
         node = (Node) xpath.evaluate(xpath_expression, doc, XPathConstants.NODE);
-        Document d;
+        Document d = null;
 		try {
-			d = createDocument(node);
+			if(node!=null)
+				d = createDocument(node);
 		} catch (ParserConfigurationException e) {
 			throw new XPathExpressionException("");
 		}
@@ -289,13 +335,15 @@ public class XMLhelper {
     	ArrayList<String> table = new ArrayList<String>();
     	
     	NodeList list = getNodeList(xpath_expression, doc);
-		for(int i = 0; i < list.getLength(); i++) {
-			NamedNodeMap nnp = list.item(i).getAttributes();
-			for (int j = 0; j < nnp.getLength(); j++) { 
-				table.add(nnp.item(j).getNodeName());
-				table.add(nnp.item(j).getNodeValue());
+    	if(list!=null) {
+			for(int i = 0; i < list.getLength(); i++) {
+				NamedNodeMap nnp = list.item(i).getAttributes();
+				for (int j = 0; j < nnp.getLength(); j++) { 
+					table.add(nnp.item(j).getNodeName());
+					table.add(nnp.item(j).getNodeValue());
+				}
 			}
-		}
+    	}
 		return table;	
     }
     
@@ -310,13 +358,15 @@ public class XMLhelper {
     	ArrayList<String> table = new ArrayList<String>();
     	
     	NodeList list = getNodeList(xpath_expression, n);
-		for(int i = 0; i < list.getLength(); i++) {
-			NamedNodeMap nnp = list.item(i).getAttributes();
-			for (int j = 0; j < nnp.getLength(); j++) { 
-				table.add(nnp.item(j).getNodeName());
-				table.add(nnp.item(j).getNodeValue());
+    	if(list!=null) {
+			for(int i = 0; i < list.getLength(); i++) {
+				NamedNodeMap nnp = list.item(i).getAttributes();
+				for (int j = 0; j < nnp.getLength(); j++) { 
+					table.add(nnp.item(j).getNodeName());
+					table.add(nnp.item(j).getNodeValue());
+				}
 			}
-		}
+    	}
 		return table;	
     }    
     
@@ -329,16 +379,17 @@ public class XMLhelper {
      * @throws ParserConfigurationException 
      * @throws DOMException 
      */
-    public static ArrayList getAttributeListFromElement(String xpath_expression, Document doc) throws XPathExpressionException, DOMException, ParserConfigurationException {
+    public static ArrayList<String> getAttributeListFromElement(String xpath_expression, Document doc) throws XPathExpressionException, DOMException, ParserConfigurationException {
     	ArrayList<String> table = new ArrayList<String>();
     	
 		Node node = getNode(xpath_expression, doc, false);
-		NamedNodeMap nnp = node.getAttributes();
-		for (int i = 0; i < nnp.getLength(); i++) {
-			table.add(nnp.item(i).getNodeName());
-			table.add(nnp.item(i).getNodeValue());
-		}
-		
+    	if(node!=null) {
+			NamedNodeMap nnp = node.getAttributes();
+			for (int i = 0; i < nnp.getLength(); i++) {
+				table.add(nnp.item(i).getNodeName());
+				table.add(nnp.item(i).getNodeValue());
+			}
+    	}
 		return table;	
     }
     
@@ -350,16 +401,17 @@ public class XMLhelper {
      * @throws XPathExpressionException 
      * @throws ParserConfigurationException 
      */
-    public static ArrayList getAttributeListFromElement(String xpath_expression, Node n) throws XPathExpressionException, ParserConfigurationException {
+    public static ArrayList<String> getAttributeListFromElement(String xpath_expression, Node n) throws XPathExpressionException, ParserConfigurationException {
     	ArrayList<String> table = new ArrayList<String>();
     	
 		Node node = getNode(xpath_expression, n, false);
-		NamedNodeMap nnp = node.getAttributes();
-		for (int i = 0; i < nnp.getLength(); i++) {
-			table.add(nnp.item(i).getNodeName());
-			table.add(nnp.item(i).getNodeValue());
-		}
-		
+    	if(node!=null) {
+			NamedNodeMap nnp = node.getAttributes();
+			for (int i = 0; i < nnp.getLength(); i++) {
+				table.add(nnp.item(i).getNodeName());
+				table.add(nnp.item(i).getNodeValue());
+			}
+    	}
 		return table;	
     }
     
@@ -405,7 +457,7 @@ public class XMLhelper {
      * Returns an element's attribute using an XPATH query and the attribute's name 
      * @param xpath_expression the XPATH expression
      * @param attr_name the name of the attribute whose value is to be returned
-     * @param doc the DOM document
+     * @param n the node
      * @return the value of the attribute
      * @throws XPathExpressionException if there is an error in the XPATH expression, or the attribute cannot be found 
      * @throws ParserConfigurationException if there is an error in the XPATH expression
@@ -418,6 +470,29 @@ public class XMLhelper {
     		if((nm=n1.getAttributes())!=null)
     			if((n2=nm.getNamedItem(attr_name))!=null)
     				return n2.getNodeValue();
+    	throw new XPathExpressionException("Cannot find attribute "+attr_name);
+    }
+    
+    /**
+     * Set an element's existing attribute using an XPATH query and the attribute's name 
+     * @param xpath_expression the XPATH expression
+     * @param attr_name the name of the attribute whose value is to be set
+     * @param val the value to be set for this attribute
+     * @param n the node
+     * @return the value of the attribute
+     * @throws XPathExpressionException if there is an error in the XPATH expression, or the attribute cannot be found 
+     * @throws ParserConfigurationException if there is an error in the XPATH expression
+     * @throws DOMException if there is an error in the XPATH expression
+     */
+    public static void setAttributeFromName(String xpath_expression, String attr_name, String val, Node n) throws XPathExpressionException, DOMException, ParserConfigurationException {
+    	Node n1,n2;
+    	NamedNodeMap nm;
+    	if((n1=getNode(xpath_expression, n, false))!=null)
+    		if((nm=n1.getAttributes())!=null)
+    			if((n2=nm.getNamedItem(attr_name))!=null) {
+    				n2.setNodeValue(val);
+    				return;
+    			}
     	throw new XPathExpressionException("Cannot find attribute "+attr_name);
     }
     
@@ -526,21 +601,21 @@ public class XMLhelper {
      * @Returns a String representation of the DOM
      */
     public static String toString(Document doc) {
-        Source source = new DOMSource(doc);
-        StringWriter writer = new StringWriter();
-        Result result = new StreamResult(writer);
-
-        Transformer xformer;
-		try {
-			xformer = TransformerFactory.newInstance().newTransformer();
-			xformer.transform(source, result);
-		} catch (TransformerException e) {
-			System.out.println("Cant toString() this DOM doc !");
+    	if(doc==null) return "";
+    	
+    	StringWriter writer = new StringWriter();
+    	OutputFormat format = new OutputFormat(doc);
+        format.setLineWidth(65);
+        format.setIndenting(true);
+        format.setIndent(4);
+        XMLSerializer serializer = new XMLSerializer(writer, format);
+        try {
+			serializer.serialize(doc);
+		} catch (IOException e) {
+			System.out.println("Cant toString() this DOM doc !");;
+			e.printStackTrace();
 		}
-        
-        StringBuffer buffer = writer.getBuffer();
-
-        return buffer.toString();
+        return writer.getBuffer().toString();
     }
     
     /**
@@ -550,21 +625,14 @@ public class XMLhelper {
      * @Returns a String representation of the DOM
      */
     public static String toString(Node n) {
-        Source source = new DOMSource(n);
-        StringWriter writer = new StringWriter();
-        Result result = new StreamResult(writer);
-
-        Transformer xformer;
-		try {
-			xformer = TransformerFactory.newInstance().newTransformer();
-			xformer.transform(source, result);
-		} catch (TransformerException e) {
-			System.out.println("Cant toString() this DOM doc !");
+    	if(n==null) return "";
+    	try {
+			return toString(createDocument(n));
+		} catch (ParserConfigurationException e) {
+			System.out.println("Cant toString() this DOM doc !");;
+			e.printStackTrace();		
+			return "";
 		}
-        
-        StringBuffer buffer = writer.getBuffer();
-
-        return buffer.toString();
     }
 
     /**
@@ -582,22 +650,36 @@ public class XMLhelper {
     
     public static void main(String[] args) 
 	throws ParserConfigurationException {
-		Document d;
-		try {
-			d = XMLhelper.createDocument(new File("/home/gilles/workspace/SALv1/src/sensors1.xml"));
-			Node n = XMLhelper.getNode("//Protocol", d, true);
-			System.out.println("Found node : " + toString(n));
-			n = XMLhelper.getNode("/" + Protocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, n, true);
-			System.out.println("Found node : " + toString(n));
-			/*NodeList nl = XMLhelper.getNodeList("//Protocol", d);
-			d = XMLhelper.createDocument(nl);
-			System.out.println(toString(d));*/
-		} catch (Exception e) {
-			System.out.println(e.toString());
-			e.printStackTrace();
-			throw new ParserConfigurationException();
-		}
+//		Document d;
+//		String xpath = "//parameters[Param[@name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" and @value=\"10.1C5AC9000800\"] and "
+//		+"Param[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" and @value=\"1wtree\"]]/parent::*";
+//		//String xpath = "//Param[@name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" and @value=\"10.1C5AC9000800\"]/parent::*/parent::* and //Param[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" and @value=\"1wtree\"]/parent::*/parent::*";
+//		//String xpath = "//Param[@name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" and @value=\"10.1C5AC9000800\"]/parent::*/parent::* and //Param[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" and @value=\"1wtree\"]/parent::*/parent::*";
+//		try {
+//			d = XMLhelper.createDocument(new File("/home/gilles/workspace/SAL/src/sensors.xml"));
+//			System.out.println("Xpath: "+xpath);
+//			System.out.println("Result:");
+//			
+//			NodeList nl = XMLhelper.getNodeList(xpath, d);
+//			for (int i = 0; i < nl.getLength(); i++) {
+//				System.out.println(XMLhelper.toString(nl.item(i)));
+//			}
+//			Node n = XMLhelper.getNode("//Sensor[@sid=\"1\"]", d, false);
+//			XMLhelper.setAttributeFromName("//Sensor[@sid=\"1\"]", "sid", "ABCDEF", d);
+//			System.out.println(XMLhelper.toString(n));
+//			
+//		} catch (Exception e) {
+//			System.out.println(e.toString());
+//			e.printStackTrace();
+//			throw new ParserConfigurationException();
+//		}
+//		
+		String s = "<Sensor sid=\"15\">\t\t<parameters>      <Param name=\"ProtocolName\" value=\"osData\" />\t"
+				+"<Param name=\"Address\" value=\"NiceTime\" />\n"
+				+"<Param name=\"SamplingInterval\" value=\"30\" />"
+				+"</parameters></Sensor>";
 		
-		
+		System.out.println(XMLhelper.toString(XMLhelper.createDocument(s)));
+    	
 	}
 }

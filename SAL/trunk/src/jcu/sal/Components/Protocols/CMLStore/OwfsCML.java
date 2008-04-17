@@ -144,7 +144,7 @@ public class OwfsCML extends CMLStore {
 		addCML("26.", c);
 		b.delete(0, b.length());
 //		116 GetVDD command
-		b.append("<Command name=\"getVdD\">\n");
+		b.append("<Command name=\"getVdd\">\n");
 		b.append("\t<CID>116</CID>\n");
 		b.append("\t<ShortDescription>Reads the Vdd voltage</ShortDescription>\n");
 		b.append("\t<arguments count=\"0\" />\n");
@@ -158,7 +158,7 @@ public class OwfsCML extends CMLStore {
 		addCML("26.", c);
 		b.delete(0, b.length());
 //		117 GetVDD command
-		b.append("<Command name=\"getVdD\">\n");
+		b.append("<Command name=\"getVis\">\n");
 		b.append("\t<CID>117</CID>\n");
 		b.append("\t<ShortDescription>Reads the Vis voltage</ShortDescription>\n");
 		b.append("\t<arguments count=\"0\" />\n");

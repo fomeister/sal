@@ -4,20 +4,25 @@
 package jcu.sal.Managers;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.Components.Identifier;
+import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Components.Sensors.SensorID;
+import jcu.sal.Config.ConfigService;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 
@@ -25,14 +30,14 @@ import org.w3c.dom.Node;
  * @author gilles
  * 
  */
-public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
+public class SensorManager extends ManagerFactory<Sensor> {
 	
 	/**
 	 * specifies (in seconds) how long disconnected sensors should remain before being
 	 * deleted
 	 */
 	public static long DISCONNECT_TIMEOUT = 20;
-	private Thread sensor_removal;
+	private ConfigService conf;
 	
 	/**
 	 * specifies (in seconds) how often the sensor removal thread kick in
@@ -51,7 +56,7 @@ public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 		super();
 		Slog.setupLogger(this.logger);
 		pm = ProtocolManager.getProcotolManager();
-		sensor_removal = new Thread(this, "sensor_manager_thread");
+		conf = ConfigService.getService();
 	}
 	
 	/**
@@ -66,19 +71,33 @@ public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 	 * @see jcu.sal.Managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Sensor build(Node n) throws InstantiationException {
-		SensorID i = null;
+	protected Sensor build(Node n, Identifier id) throws InstantiationException {
+		SensorID i = (SensorID) id;
 		Sensor sensor = null;
-		logger.debug("building sensor");
-		try {
-			i = (SensorID) this.getComponentID(n);
-			sensor = new Sensor(i, getComponentConfig(n));
-			pm.associateSensor(sensor);
-		} catch (ConfigurationException e) {
-			logger.error("Couldnt instanciate/associate the sensor: " + i.toString());
+		logger.debug("building sensor: "+id.getName());
+		
+		//build the sensor
+		try { sensor = new Sensor(i, getComponentConfig(n)); }
+		catch (ConfigurationException e) {
+			logger.error("Couldnt instanciate the sensor: " + i.toString());
 			//e.printStackTrace();
 			throw new InstantiationException();
-		} 
+		}
+		
+		//saves its config
+		try { conf.addSensor(n); }
+		catch (ConfigurationException e) {
+			logger.error("Couldnt saves the sensor's configuration ("+i.toString()+")");
+			throw new InstantiationException();
+		}
+
+		//associate it with its protocol
+		try { pm.associateSensor(sensor); }
+		catch (ConfigurationException e) {
+			logger.error("Couldnt associate the sensor with its protocol");
+			throw new InstantiationException();
+		}
+		
 		return sensor;
 	}
 	
@@ -87,15 +106,32 @@ public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 	 */
 	@Override
 	protected Identifier getComponentID(Node n){
+		/*
+		 * The order in which a sensor id is looked up:
+		 * first, the sensor config file is checked. if it isnt in the config file, a new one is generated
+		 */
 		Identifier id = null;
 		try {
-			id = new SensorID(XMLhelper.getAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, n) );
+			//we first check to see if it exists in the sensor configuration file
+			id =conf.findSID(n);
+			logger.debug("Found the sid "+id.getName()+" in sensor config file");
 		} catch (Exception e) {
-//			logger.error("Couldnt find the Sensor id - creating a new one");
-//			e.printStackTrace();
+			//we havent found a matching sensor in the sensor config file, so we are going to generate a new ID
 			id = new SensorID(generateNewSensorID());
-			//throw new ParseException("Couldnt create the Sensor identifier", 0);
+			logger.debug("created a new sensor id "+id.getName());
 		}
+		
+		//Now we insert/update the newly created/found ID into the XML node n
+		try {
+			//try to set the value for the sid attribute...
+			XMLhelper.setAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, id.getName(), n);
+		} catch (Exception e) {
+			//if we re here, there was no existing sid attribute so we have to create one
+			try {XMLhelper.addAttribute(XMLhelper.getNode("//"+Sensor.SENSOR_TAG, n, false), Sensor.SENSORID_TAG , id.getName());}
+			catch (Exception e1) {logger.error("Error setting the SID in the sensor XML node");e1.printStackTrace();}
+		}
+
+		
 		return id;
 	}
 	
@@ -122,31 +158,105 @@ public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 		return Sensor.SENSOR_TYPE;
 	}
 	
-	public String listSensors(){
-		StringBuilder b = new StringBuilder();
+	/**
+	 * Returns a sensor configuration document with all currently active
+	 * @return
+	 */
+	public String listActiveSensors(){
 		Sensor s;
-		b.append("<?xml version=\"1.0\"?>\n<SAL>\n\t<SensorConfiguration>\n");
-		synchronized (this) {
-			Iterator<Sensor> i = getIterator();
-			while(i.hasNext()) {
-				s = i.next();
-				b.append("\t\t<"+Sensor.SENSOR_TAG+" "+Sensor.SENSORID_TAG+"=\""+s.getID().getName()+"\">\n");
-				/* TODO "parameters" should be a static string somewhere ... */
-				b.append("\t\t\t<parameters>\n");
-				try {
-					b.append("\t\t\t\t<"+SensorManager.COMPONENTPARAM_TAG+" name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" value=\""+s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG)+"\">\n");
-				} catch (BadAttributeValueExpException e) {
-					logger.error("Cant find protocol's name from sensor config");
-				}
-				b.append("\t\t\t\t<"+SensorManager.COMPONENTPARAM_TAG+" name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" value=\""+s.getNativeAddress()+"\">\n");
-				b.append("\t\t\t</parameters>\n");
-				b.append("\t\t</"+Sensor.SENSOR_TAG+">\n");
-			}	
+		Node parent;
+		Document empty = null, tmp;
+		try {
+			empty = conf.createEmptySensorConfig();
+			parent = XMLhelper.getNode("//" + Sensor.SENSORSECTION_TAG, empty, false);
+			synchronized (this) {
+				Iterator<Sensor> i = getIterator();
+				while(i.hasNext()) {
+					s = i.next();
+					tmp = generateSensorConfig(s.getID().getName(),s.getNativeAddress(), new ProtocolID(s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG)));
+					XMLhelper.addChild(parent, tmp);
+				}	
+			}
+	    } catch (XPathExpressionException e) {
+	    	logger.error("Error looking up the parent node in empty document");
+			e.printStackTrace();
+		} catch (ParserConfigurationException e) {
+			logger.error("Looks like the sensor config document is malformed");
+			e.printStackTrace();
+		} catch (BadAttributeValueExpException e) {
+			logger.error("Cant find the protocol name from sensor configuration");
+			e.printStackTrace();
 		}
-		b.append("\t</SensorConfiguration>\n</SAL>\n");
-		return b.toString();
+		return XMLhelper.toString(empty);
 	}
+	
+	/**
+	 * Returns a sensor configuration document with all known sensors
+	 * @return
+	 */
+	public String listSensors(){
+		Document d = null;
+		try {
+			d = conf.getSensorConfigFile();
+		} catch (ParserConfigurationException e) {
+			//FIXME
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return XMLhelper.toString(d); 
+	}
+	
+	/**
+	 * This method removes a sensor's XML config information from the sensor config file
+	 * @param sid the sensor ID for which the configuration information must be removed
+	 * @throws ConfigurationException if the sensor is still active or the config info cant be deleted
+	 */
+	public void removeSensorConfig(SensorID sid) throws ConfigurationException {
+		//Check if the sensor is still active
+		if(getComponent(sid)!=null) {
+			logger.error("Cant remove an active sensor configuration");
+			throw new ConfigurationException();
+		}
 
+		try { conf.removeSensor(sid);}
+		catch (ConfigurationException e) { logger.error("error deleting the sensor config");}
+	}
+	
+	/**
+	 * This method creates sensors for the specified protocol using information found 
+	 * in the sensor configuration file.
+	 * @param pid the protocol ID for which sensors must be created
+	 * @throws ConfigurationException if the sensor is still active or the config info cant be deleted
+	 */
+	public void loadSensorsFromConfig(ProtocolID pid) throws ConfigurationException {
+		logger.debug("Loading sensors from config file associated with protocol "+pid.getName());
+		Node n;
+		Iterator<Node> iter = conf.listSensors(pid).iterator();
+		while(iter.hasNext()) { n = iter.next(); logger.debug("Creating sensor "+XMLhelper.toString(n));createComponent(n);};
+	}
+	
+	/**
+	 * this method generates a partial SML doc using the newly detected sensor's
+	 * native address. The SML document is partial because it contains the 
+	 * placeholder 'SensorManager.SENSORID_MARKER' where the final sensor id will be.
+	 * @param the newly detected sensor's native addres
+	 * @return a string which is the SML doc for this new sensor  
+	 * @throws ParserConfigurationException If the document can not be created
+	 */
+	public Document generateSensorConfig(String sid, String nativeAddress, ProtocolID pid) throws ParserConfigurationException{
+		StringBuffer xml = new StringBuffer();
+		if (sid==null)
+			xml.append("<Sensor>\n");
+		else
+			xml.append("<Sensor "+Sensor.SENSORID_TAG+"=\""+sid+"\">\n");
+		xml.append("\t<parameters>\n");
+		xml.append("\t\t<Param name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" value=\""+pid.getName()+"\" />\n");
+		xml.append("\t\t<Param name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" value=\""+nativeAddress+"\" />\n");
+		xml.append("\t</parameters>\n");
+		xml.append("</Sensor>\n");
+			
+		return XMLhelper.createDocument(xml.toString());
+	}
 	
 	/**
 	 * Returns the first available unused sensor ID
@@ -154,65 +264,28 @@ public class SensorManager extends ManagerFactory<Sensor> implements Runnable{
 	 * @return the first available unused sensor ID
 	 */
 	private String generateNewSensorID() {
-		if(getSize()==0)
+		//Get the SIDs existing in sensor config file
+		ArrayList<String> sids = conf.listSensorID();
+		
+		if(sids.size()==0)
 			return "1";
 		
-		int[] arr = new int[getSize()];
-		Enumeration<Identifier> e = getKeys();
+		int[] arr = new int[sids.size()];
+		Iterator<String> iter = sids.iterator();
 		int i=0;
-		while(e.hasMoreElements()){
-			arr[i++] = Integer.parseInt(e.nextElement().getName());
+		while(iter.hasNext()){
+			arr[i++] = Integer.parseInt(iter.next());
 		}
 		Arrays.sort(arr);
 		if(arr[0]==1) {
-			for (i = 1; i < arr.length; i++) {
-				if(arr[i]>(arr[i-1]+1)) {
+			for (i = 1; i < arr.length; i++)
+				if(arr[i]>(arr[i-1]+1))
 					break;
-				}
-			}
 			i=arr[i-1]+1;
 		} else i=1;
 		
+		logger.debug("Created new sensor id:"+i);
+		
 		return String.valueOf(i);
 	}
-	
-	public void stop(){
-		sensor_removal.interrupt();
-	}
-	public void start() {
-		if(REMOVE_SENSOR_INTERVAL!=0)
-			sensor_removal.start();
-	}
-	
-	/**
-	 * This method runs as a spearate thread and deletes sensors which
-	 * have been disconnected for too long
-	 *
-	 */
-	public void run() {
-		Sensor s;
-		long diff, disc_ts;
-		logger.debug("Starting sensor removal thread");
-		try { 
-		while(!Thread.interrupted()){
-			Enumeration<Identifier> e  = getKeys();
-			while(e.hasMoreElements() && !Thread.interrupted()) {
-				synchronized(this) {
-					s = getComponent(e.nextElement());
-					disc_ts = s.getDisconnectTimestamp();
-					if(s!=null && disc_ts!=-1) {
-						diff = System.currentTimeMillis() - disc_ts;
-						if(diff > (DISCONNECT_TIMEOUT*1000)) {
-							logger.debug("About to remove sensor " + s.toString()+ " disconnect timeout expired (diff="+diff+")");
-							//try { ProtocolManager.getProcotolManager().removeSensor(s.getID());	} catch (ConfigurationException e1) {}
-						}
-					}
-				}
-			}
-			Thread.sleep(REMOVE_SENSOR_INTERVAL*1000);
-		}
-		} catch (InterruptedException e1) {}
-		logger.debug("Exiting sensor removal thread");
-	}
-
 }

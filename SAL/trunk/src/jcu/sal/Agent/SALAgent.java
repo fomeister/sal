@@ -10,6 +10,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.Components.Command;
+import jcu.sal.Components.Protocols.Protocol;
 import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.SensorID;
 import jcu.sal.Managers.ProtocolManager;
@@ -39,8 +40,48 @@ public class SALAgent implements SALAgentInterface{
 	 * (non-Javadoc)
 	 * @see jcu.sal.Agent.SALAgentInterface#init(java.lang.String, java.lang.String)
 	 */
-	public void init(String pc, String sc) throws ConfigurationException {
+	public void start(String pc, String sc) throws ConfigurationException {
 		pm.init(sc, pc);		
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Agent.SALAgentInterface#stop()
+	 */
+	public void stop(){
+		pm.destroyAllComponents();
+	}
+	
+	/*
+	 * Sensor-related-methods
+	 */
+	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Agent.SALAgentInterface#addSensor(java.lang.String)
+	 */
+	public synchronized String  addSensor(String xml) throws ConfigurationException, ParserConfigurationException {
+		return sm.createComponent(XMLhelper.createDocument(xml)).getID().getName();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Agent.SALAgentInterface#removeSensor(java.lang.String)
+	 */
+	public synchronized void removeSensor(String sid) throws ConfigurationException {
+		SensorID s = new SensorID(sid);
+		try {sm.destroyComponent(s);}
+		catch (ConfigurationException e) {logger.debug("Looks like this sensor was not active");}
+		sm.removeSensorConfig(s);
+	}		
+	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.Agent.SALAgentInterface#listActiveSensors()
+	 */
+	public String listActiveSensors() {
+		return sm.listActiveSensors();		
 	}
 	
 	/*
@@ -48,7 +89,7 @@ public class SALAgent implements SALAgentInterface{
 	 * @see jcu.sal.Agent.SALAgentInterface#listSensors()
 	 */
 	public String listSensors() {
-		return sm.listSensors();		
+		return sm.listSensors();
 	}
 
 	/*
@@ -66,52 +107,33 @@ public class SALAgent implements SALAgentInterface{
 	public String getCML(String sid) throws ConfigurationException, NotActiveException {
 		return pm.getCML(new SensorID(sid));
 	}
-	
+
+	/*
+	 * Protocols-related mthods 
+	 */
+
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.Agent.SALAgentInterface#stop()
+	 * @see jcu.sal.Agent.SALAgentInterface#addProtocol(java.lang.String, boolean)
 	 */
-	public void stop(){
-		pm.destroyAllComponents();
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserConfigurationException {
+		synchronized (this) {
+			Protocol p = pm.createComponent(XMLhelper.createDocument(xml));
+			if(loadSensors) sm.loadSensorsFromConfig(p.getID());
+			p.start();
+		}
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.Agent.SALAgentInterface#addProtocol(java.lang.String)
+	 * @see jcu.sal.Agent.SALAgentInterface#removeProtocol(java.lang.String, boolean)
 	 */
-	public void addProtocol(String xml) throws ConfigurationException, ParserConfigurationException {
-		pm.createComponent(XMLhelper.createDocument(xml)).start();
+	public void removeProtocol(String pid, boolean removeSensors) throws ConfigurationException {
+		ProtocolID p = new ProtocolID(pid);
+		synchronized (this) {
+			pm.destroyComponent(p);
+			pm.removeProtocolConfig(p, removeSensors);
+		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see jcu.sal.Agent.SALAgentInterface#removeProtocol(java.lang.String)
-	 */
-	public void removeProtocol(String pid) throws ConfigurationException {
-		pm.destroyComponent(new ProtocolID(pid));
-	}
-	
-	/*
-	 * (non-Javadoc)
-	 * @see jcu.sal.Agent.SALAgentInterface#removeProtocols()
-	 */
-	public void removeProtocols(){
-		pm.removeAll();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see jcu.sal.Agent.SALAgentInterface#addSensor(java.lang.String)
-	 */
-	public void addSensor(String xml) throws ConfigurationException, ParserConfigurationException {
-		sm.createComponent(XMLhelper.createDocument(xml));
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see jcu.sal.Agent.SALAgentInterface#removeSensor(java.lang.String)
-	 */
-	public void removeSensor(String sid) throws ConfigurationException {
-		sm.destroyComponent(new SensorID(sid));
-	}		
 }

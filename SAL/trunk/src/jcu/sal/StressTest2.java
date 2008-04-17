@@ -152,7 +152,7 @@ public class StressTest2 {
 					while(!Thread.interrupted()) {
 						try {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Adding 1-wire protocol");
-							s.addProtocol("<Protocol name=\"1wtree\" type=\"owfs\"><EndPoint name=\"usb\" type=\"usb\" /><parameters><Param name=\"Location\" value=\"/opt/owfs/bin/owfs\" /><Param name=\"MountPoint\" value=\"/mnt/w1\" /></parameters>	</Protocol>");
+							s.addProtocol("<Protocol name=\"1wtree\" type=\"owfs\"><EndPoint name=\"usb\" type=\"usb\" /><parameters><Param name=\"Location\" value=\"/opt/owfs/bin/owfs\" /><Param name=\"MountPoint\" value=\"/mnt/w1\" /></parameters>	</Protocol>", true);
 							System.out.println("Thread "+Thread.currentThread().getName()+": 1-wire protocol added");
 						} catch (ConfigurationException e) {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Error creating 1-wire");
@@ -164,7 +164,7 @@ public class StressTest2 {
 						
 						try {
 							System.out.println("Thread "+Thread.currentThread().getName()+":Adding osData protocol");
-							s.addProtocol("<Protocol name=\"osData\" type=\"PlatformData\"><EndPoint name=\"filesystem\" type=\"fs\" /><parameters><Param name=\"CPUTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp2_input\" /><Param name=\"NBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp1_input\" /><Param name=\"SBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp3_input\" /></parameters>	</Protocol>");
+							s.addProtocol("<Protocol name=\"osData\" type=\"PlatformData\"><EndPoint name=\"filesystem\" type=\"fs\" /><parameters><Param name=\"CPUTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp2_input\" /><Param name=\"NBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp1_input\" /><Param name=\"SBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp3_input\" /></parameters>	</Protocol>", true);
 							System.out.println("Thread "+Thread.currentThread().getName()+":osData protocol added");
 						} catch (ConfigurationException e) {
 							System.out.println("Thread "+Thread.currentThread().getName()+":Error creating endpoint");
@@ -195,7 +195,7 @@ public class StressTest2 {
 						
 						try {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Removing 1-wire protocol");
-							s.removeProtocol("1wtree");
+							s.removeProtocol("1wtree", true);
 							System.out.println("Thread "+Thread.currentThread().getName()+": 1-wire protocol removed");
 						} catch (ConfigurationException e) {
 							// TODO Auto-generated catch block
@@ -206,7 +206,7 @@ public class StressTest2 {
 						
 						try {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Removing osdata protocol");
-							s.removeProtocol("osData");
+							s.removeProtocol("osData", true);
 							System.out.println("Thread "+Thread.currentThread().getName()+": osData protocol removed");
 						} catch (ConfigurationException e) {
 							// TODO Auto-generated catch block
@@ -225,7 +225,7 @@ public class StressTest2 {
 		logger.setAdditivity(false);
 		logger.setLevel(Level.ALL);
 		logger.addAppender(new ConsoleAppender(new PatternLayout("%c{1}.%M(%F:%L) %r - %m%n")));
-		s.init(args[0], args[1]);
+		s.start(args[0], args[1]);
 		
 		System.out.println("Starting !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
 		StressTest2 st = new StressTest2();
