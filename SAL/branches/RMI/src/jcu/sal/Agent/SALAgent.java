@@ -4,6 +4,10 @@
 package jcu.sal.Agent;
 
 import java.io.NotActiveException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
@@ -41,6 +45,7 @@ public class SALAgent implements SALAgentInterface{
 	 * @see jcu.sal.Agent.SALAgentInterface#init(java.lang.String, java.lang.String)
 	 */
 	public void start(String pc, String sc) throws ConfigurationException {
+		stop();
 		pm.init(sc, pc);		
 	}
 	
@@ -136,4 +141,17 @@ public class SALAgent implements SALAgentInterface{
 		}
 	}
 
+	public static void main(String[] args) {
+		SALAgent s = new SALAgent();
+		try {
+			SALAgentInterface stub = (SALAgentInterface) UnicastRemoteObject.exportObject(s, 0);
+			Registry registry = LocateRegistry.getRegistry("137.219.45.43");
+            registry.rebind("SALAgent", stub);
+            System.out.println("RMI SALAgentInterface ready");
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
 }
