@@ -180,7 +180,6 @@ public class OSDataProtocol extends Protocol implements Runnable{
 			try { update_counters.join();}
 			catch (InterruptedException e) {}
 			update_counters=null;
-			logger.debug("autodetect thread stopped");
 		}
 	}
 	
@@ -264,7 +263,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	
 			}// end while interrupted
 		} catch (InterruptedException e) {}
-		logger.debug("update counter thread stopped");
+		logger.debug("update counter thread exiting");
 	}
 
 }

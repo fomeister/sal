@@ -53,14 +53,14 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 	 * @see jcu.sal.Managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected EndPoint build(Node config) throws InstantiationException {
+	protected EndPoint build(Node config, Identifier id) throws InstantiationException {
 		EndPoint endPoint = null;
 		String type=null;
-		this.logger.debug("building EndPoint");
+		EndPointID i = (EndPointID) id;
+		logger.debug("building EndPoint "+id.getName());
 		try {
-			EndPointID i = (EndPointID) this.getComponentID(config);
 			type=getComponentType(config);
-			this.logger.debug("EndPoint type: " +type);
+			logger.debug("EndPoint type: " +type);
 			String className = EndPointModulesList.getClassName(type);
 			
 			Class<?>[] p = new Class<?>[2];
@@ -72,21 +72,21 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 			o[1] = getComponentConfig(config);
 			endPoint = (EndPoint) c.newInstance(o);
 
-			this.logger.debug("Done building EndPoint " + endPoint.toString());
+			logger.debug("Done building EndPoint " + endPoint.toString());
 			
 		} catch (RuntimeException e) {
-			this.logger.error("Error in new Endpoint configuration. XML doc:");
-			this.logger.error(XMLhelper.toString(config));
+			logger.error("Error in new Endpoint configuration. XML doc:");
+			logger.error(XMLhelper.toString(config));
 			e.printStackTrace();
 			throw new InstantiationException();
 		} catch (ParseException e) {
-			this.logger.error("Error while parsing the DOM document. XML doc:");
-			this.logger.error(XMLhelper.toString(config));
+			logger.error("Error while parsing the DOM document. XML doc:");
+			logger.error(XMLhelper.toString(config));
 			e.printStackTrace();
 			throw new InstantiationException();
 		}catch (Exception e) {
-			this.logger.error("Error in new Endpoint instanciation. XML doc:");
-			 this.logger.error(XMLhelper.toString(config));
+			logger.error("Error in new Endpoint instanciation. XML doc:");
+			logger.error(XMLhelper.toString(config));
 			e.printStackTrace();
 			throw new InstantiationException();
 		}
@@ -116,6 +116,16 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		component.remove(this);
 	}
 
+	@Override
+	protected String getComponentType(Node n) throws ParseException {
+		String type = null;
+		try {
+			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, n);
+		} catch (Exception e) {
+			throw new ParseException("Couldnt find the EndPoint type", 0);
+		}
+		return type;
+	}
 	
 	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException, ConfigurationException {
 		EndPointManager e = getEndPointManager();
@@ -131,16 +141,5 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		e.destroyComponent(new EndPointID("serial0"));
 		e.destroyComponent(new EndPointID("eth0"));
 		e.destroyComponent(new EndPointID("files"));
-	}
-
-	@Override
-	protected String getComponentType(Node n) throws ParseException {
-		String type = null;
-		try {
-			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, n);
-		} catch (Exception e) {
-			throw new ParseException("Couldnt find the EndPoint type", 0);
-		}
-		return type;
 	}
 }

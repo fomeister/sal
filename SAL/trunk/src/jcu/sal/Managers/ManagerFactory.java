@@ -74,26 +74,30 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	public T createComponent(Node n) throws ConfigurationException {
 		T newc = null;
 		try {
+			Identifier id;
 			synchronized(ctable) {
-				newc = build(n);
-				if(newc!=null) {
-					if(!ctable.containsKey(newc.getID())) {
-						ctable.put(newc.getID(), newc);
+				 id = getComponentID(n);
+				if(!ctable.containsKey(id)) {
+					newc = build(n, id);
+					if(newc!=null) {
+							ctable.put(newc.getID(), newc);
+							return newc;						
 					} else {
-						logger.error("There is already a component named " + newc.getID().toString());
-						throw new ConfigurationException();
+							logger.error("Couldnt create component");
+							throw new ConfigurationException();
 					}
-				}else {
-						logger.error("Couldnt create component");
-						throw new ConfigurationException();
 				}
 			}
+			//if we re here the table already has a component with this name 
+			logger.error("There is already a component named " + id.toString());
+			throw new ConfigurationException();
 		} catch (InstantiationException e) {
 			logger.error("Couldnt instanciate component from XML doc");
 			throw new ConfigurationException();
+		} catch (ParseException e) {
+			logger.error("Couldnt retrieve the component ID from XML doc");
+			throw new ConfigurationException();
 		}
-
-		return newc; 
 	}
 	
 	/** 
@@ -207,10 +211,11 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	/**
 	 * Creates the component from a DOM document
 	 * @param n the DOM document
+	 * @param id the identifier for the new component
 	 * @return the component
 	 * @throws InstantiationException 
 	 */
-	protected abstract T build(Node n) throws InstantiationException;
+	protected abstract T build(Node n, Identifier id) throws InstantiationException;
 	
 	/**
 	 * Deletes the component and give the subclass a chance to turn things off properly

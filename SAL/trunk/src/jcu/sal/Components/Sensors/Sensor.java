@@ -24,6 +24,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 	private Logger logger = Logger.getLogger(Sensor.class);
 	private SensorState state;
 	public static final String SENSOR_TAG= "Sensor";
+	public static final String SENSORSECTION_TAG= "SensorConfiguration";
 	public static final String SENSORID_TAG= "sid";
 	public static final String SENSORADDRESSATTRIBUTE_TAG= "Address";
 	public static final String PROTOCOLATTRIBUTE_TAG = "ProtocolName";

@@ -194,6 +194,7 @@ public class UsbEndPoint extends EndPoint{
 						 * lock to avoid race conditions
 						 */
 						d = new ArrayList<DeviceListener>(listeners.get(temp));
+					else d = null;
 				}
 				
 				if(d!=null) {

@@ -160,7 +160,7 @@ public class StressTest {
 		logger.setAdditivity(false);
 		logger.setLevel(Level.ERROR);
 		logger.addAppender(new ConsoleAppender(new PatternLayout()));
-		s.init(args[0], args[1]);
+		s.start(args[0], args[1]);
 		
 		System.out.println("Starting !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
 		StressTest st = new StressTest();
