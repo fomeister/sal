@@ -2,23 +2,41 @@ package jcu.sal;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Agent.SALAgent;
+import jcu.sal.Agent.SALAgentInterface;
 import jcu.sal.Components.Command;
 
 public class SALuser {
-	static SALAgent s;
+	static SALAgentInterface s;
 	
 	public static void main(String [] args) throws ConfigurationException {
 		int i=0,j=0;
 		String str, str2;
 		StringBuilder sb = new StringBuilder();
 		BufferedReader b = new BufferedReader(new InputStreamReader(System.in));
-		s = new SALAgent();
-		s.start(args[0], args[1]);
-		
+		Registry registry;
+		try {
+			System.out.println("Looking for registry at "+args[2]);
+			registry = LocateRegistry.getRegistry(args[2]);
+			System.out.println("Found registry. Asking for stub");
+			s = (SALAgentInterface) registry.lookup("SALAgent");
+			System.out.println("Got the stub, starting...");
+			s.start(args[0], args[1]);
+		} catch (RemoteException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			return;
+		} catch (NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
 		while(i!=-1) {
 			System.out.println("Enter either :\n\ta sensor id to send a command\n\t-1 to quit\n\t-2 to see a list of active sensors");
 			System.out.println("\t-3 to add a new protocol\n\t-4 to remove a protocol\n\t-5 to add a new sensor\n\t-6 to remove a sensor");
@@ -67,6 +85,11 @@ public class SALuser {
 			}
 		}
 	
-		s.stop();
+		try {
+			s.stop();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }
