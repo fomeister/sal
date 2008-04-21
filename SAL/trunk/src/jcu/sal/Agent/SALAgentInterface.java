@@ -7,6 +7,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.Components.Command;
+import jcu.sal.events.EventHandler;
 
 public interface SALAgentInterface {
 	/**
@@ -101,6 +102,27 @@ public interface SALAgentInterface {
 	 */
 	public void removeProtocol(String pid, boolean removeSensors) throws ConfigurationException;
 	
-
+	/*
+	 * Event-related methods 
+	 */
+	
+	/**
+	 * This method registers an event handler. Whenever the producer <code>producerID</code> generates an event, the method
+	 * <code>handle</code> will be called on the EventHandler <code>ev</code> with a matching Event object as the sole argument.
+	 * A Producers ID is a protocol name. Two special producers also exist: "SensorManager" which generates events when sensors
+	 * are created and deleted, "ProtocolManager" which generates events when protocols are created and deleted.
+	 * @param eh an instance of a class implementing the EventHandler interface which will receive events.
+	 * @param producerID the identifier of a protocol or the special identifiers "SensorManager" or "ProtocolManager"
+	 * @throws ConfigurationException if the given producerID doesnt exist
+	 */
+	public void registerEventHandler(EventHandler eh, String producerID) throws ConfigurationException;
+	
+	/**
+	 * This method unregisters an EventHandler previously registered with <code>registerEventHandler()</code>
+	 * @param eh the EventHandler to re be removed
+	 * @param producerID the producer to which it is associated
+	 * @throws ConfigurationException if the handler can not be found/removed
+	 */
+	public void unregisterEventHandler(EventHandler eh, String producerID) throws ConfigurationException;
 }
 
