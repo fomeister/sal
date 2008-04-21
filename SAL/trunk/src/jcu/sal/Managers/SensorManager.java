@@ -18,6 +18,8 @@ import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Components.Sensors.SensorID;
 import jcu.sal.Config.ConfigService;
+import jcu.sal.events.EventDispatcher;
+import jcu.sal.events.SensorNodeEvent;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -44,9 +46,12 @@ public class SensorManager extends ManagerFactory<Sensor> {
 	 */
 	public static int REMOVE_SENSOR_INTERVAL = 0;
 	
+	public static String PRODUCER_ID = "SensorManager";
+	
 	private static SensorManager s = new SensorManager();
 	private Logger logger = Logger.getLogger(SensorManager.class);
 	private ProtocolManager pm;
+	private EventDispatcher ev;
 	
 	
 	/**
@@ -57,8 +62,10 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		Slog.setupLogger(this.logger);
 		pm = ProtocolManager.getProcotolManager();
 		conf = ConfigService.getService();
+		ev = EventDispatcher.getInstance();
+		ev.addProducer(PRODUCER_ID);
 	}
-	
+
 	/**
 	 * Returns the instance of the SensorManager 
 	 * @return
@@ -97,6 +104,10 @@ public class SensorManager extends ManagerFactory<Sensor> {
 			logger.error("Couldnt associate the sensor with its protocol");
 			throw new InstantiationException();
 		}
+		
+		try {
+			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_ADDED, i.getName(), PRODUCER_ID));
+		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 		
 		return sensor;
 	}
@@ -147,6 +158,9 @@ public class SensorManager extends ManagerFactory<Sensor> {
 			e.printStackTrace();
 		}
 		component.remove(this);
+		try {
+			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_REMOVED,component.getID().getName(),PRODUCER_ID));
+		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 	}
 	
 	/*

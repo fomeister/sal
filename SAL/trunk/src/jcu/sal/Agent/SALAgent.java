@@ -55,6 +55,7 @@ public class SALAgent implements SALAgentInterface{
 	 */
 	public void stop(){
 		pm.destroyAllComponents();
+		ev.stop();
 	}
 	
 	/*

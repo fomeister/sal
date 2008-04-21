@@ -142,4 +142,5 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		e.destroyComponent(new EndPointID("eth0"));
 		e.destroyComponent(new EndPointID("files"));
 	}
+
 }

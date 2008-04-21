@@ -1,19 +1,20 @@
 package jcu.sal.events;
 
+import javax.naming.ConfigurationException;
+
 public abstract class Event {
 	final protected int type;
 	final protected String sourceID;
 	final protected String sourceDocument;
 	final protected String producer;
+	protected static int MAX_TYPE_VALUE = 0;
 	
-	public Event(int t, String sid, String p) {
-		type = t;
-		sourceID = sid;
-		producer = p;
-		sourceDocument = null;
+	protected Event(int t, String sid, String p) throws ConfigurationException{
+		this(t, sid, p, null);
 	}
 	
-	public Event(int t, String sid, String doc, String p) {
+	protected Event(int t, String sid, String doc, String p) throws ConfigurationException{
+		if(t>MAX_TYPE_VALUE) throw new ConfigurationException();
 		type = t;
 		sourceID = sid;
 		producer = p;

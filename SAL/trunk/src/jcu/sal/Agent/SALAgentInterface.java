@@ -109,10 +109,11 @@ public interface SALAgentInterface {
 	/**
 	 * This method registers an event handler. Whenever the producer <code>producerID</code> generates an event, the method
 	 * <code>handle</code> will be called on the EventHandler <code>ev</code> with a matching Event object as the sole argument.
-	 * A Producers ID is a protocol name. Two special producers also exist: "SensorManager" which generates events when sensors
-	 * are created and deleted, "ProtocolManager" which generates events when protocols are created and deleted.
+	 * A Producers ID is a protocol name. Three special producers also exist: "SensorManager" which generates events when sensors
+	 * are created and deleted, "ProtocolManager" which generates events when protocols are created and deleted, "SensorState" 
+	 * which generates events when a sensor is connected or disconnected.  
 	 * @param eh an instance of a class implementing the EventHandler interface which will receive events.
-	 * @param producerID the identifier of a protocol or the special identifiers "SensorManager" or "ProtocolManager"
+	 * @param producerID the identifier of a protocol or the special identifiers "SensorManager", "ProtocolManager" or "SensorState"
 	 * @throws ConfigurationException if the given producerID doesnt exist
 	 */
 	public void registerEventHandler(EventHandler eh, String producerID) throws ConfigurationException;
