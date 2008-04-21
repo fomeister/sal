@@ -5,6 +5,15 @@
             <logging/>
             <readingDirectory>/home/sensor/readings</readingDirectory>
         </general>
-        <protocols />
+        <protocols>
+            <Protocol name="osData" type="PlatformData">
+                <EndPoint name="filesystem" type="fs"/>
+                <parameters>
+                    <Param name="CPUTempFile" value="/sys/class/hwmon/hwmon0/device/temp1_input"/>
+                    <Param name="NBTempFile" value="/sys/class/hwmon/hwmon0/device/temp3_input"/>
+                    <Param name="SBTempFile" value="/sys/class/hwmon/hwmon0/device/temp2_input"/>
+                </parameters>
+            </Protocol>
+        </protocols>
     </PlatformConfiguration>
 </SAL>

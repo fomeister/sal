@@ -12,11 +12,11 @@ public class TestEventDispatcher extends TestCase implements EventHandler {
 	
 	private class TestEvent extends Event {
 
-		public TestEvent(int t, String sid, String p) {
+		public TestEvent(int t, String sid, String p) throws ConfigurationException {
 			super(t, sid, p);
 		}
 
-		public TestEvent(int t, String sid, String doc, String p) {
+		public TestEvent(int t, String sid, String doc, String p) throws ConfigurationException {
 			super(t, sid, doc, p);
 		}
 

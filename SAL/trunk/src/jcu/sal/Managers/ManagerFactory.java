@@ -162,37 +162,19 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	protected Iterator<T> getIterator() {
 		return ctable.values().iterator();
 	}
-	
-	/** 
-	 * Get an enumeration of all keys. Need not be synchronized.
-	 * @return the enumeration
-	 *
-	 */
-	protected Enumeration<Identifier> getKeys() {
-		return ctable.keys();
-	}
-	
-	/** 
-	 * Returns the number of components managed by this manager.
-	 * @return the number of components
-	 *
-	 */
-	public int getSize() {
-		return ctable.size();
-	}
-	
+
 	/**
 	 * Prints the content of this manager's component table
 	 *
 	 */	
 	public void dumpTable() {
-		this.logger.debug("current table contents:" );
+		logger.debug("current table contents:" );
 		synchronized(ctable){
 			Enumeration<Identifier> keys = ctable.keys();
 			Collection<T> cvalues = ctable.values();
 			Iterator<T> iter = cvalues.iterator();
 			while ( keys.hasMoreElements() &&  iter.hasNext())
-			   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
+			   logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
 		}
 	}
 	
@@ -202,9 +184,9 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	public void componentRemovable(Identifier i){
 		synchronized(ctable){
 			if(ctable.remove(i) == null)
-				this.logger.error("Cant remove element with key " + i.toString() +  ": No such element");
+				logger.error("Cant remove element with key " + i.toString() +  ": No such element");
 			else
-				this.logger.debug("Element " + i.toString()+ " Removed");
+				logger.debug("Element " + i.toString()+ " Removed");
 		}
 	}
 	

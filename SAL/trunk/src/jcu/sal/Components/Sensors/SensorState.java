@@ -3,7 +3,11 @@
  */
 package jcu.sal.Components.Sensors;
 
+import javax.naming.ConfigurationException;
+
 import jcu.sal.Components.componentRemovalListener;
+import jcu.sal.events.EventDispatcher;
+import jcu.sal.events.SensorNodeEvent;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -25,6 +29,13 @@ class SensorState {
 	public static final int DISCONNECTED=4;
 	public static final int STOPPED=5;
 	public static final int REMOVED=6;
+	private static final EventDispatcher ev;
+	public static final String PRODUCER_ID = "SensorState";
+	static {
+		ev = EventDispatcher.getInstance();
+		ev.addProducer(PRODUCER_ID);
+	}
+ 
 	
 	private int state;
 	/*
@@ -106,6 +117,9 @@ class SensorState {
 					logger.error("MAX disconnections, removing it.");
 					ProtocolManager.getProcotolManager().removeSensor(i);
 				}*/
+				try {
+					ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_STATE_DISCONNECTED,i.getName(),PRODUCER_ID));
+				} catch (ConfigurationException e) {logger.error("Cant queue event");}
 				return true;
 			} else { logger.error("trying to disconnect a non-IDLE,DISABLED or INUSE sensor"); dumpState(); return false; }
 		}
@@ -113,7 +127,14 @@ class SensorState {
 
 	public boolean reconnect(){
 		synchronized (this) {
-			if(state==DISCONNECTED) { disconnect_timestamp = -1; state=IDLE; return true; }
+			if(state==DISCONNECTED) { 
+				disconnect_timestamp = -1;
+				state=IDLE;
+				try {
+					ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_STATE_CONNECTED,i.getName(),PRODUCER_ID));
+				} catch (ConfigurationException e) {logger.error("Cant queue event");}
+				return true; 
+			}
 			else if(state==IDLE || state==DISABLED || state==INUSE) {return true; }//already connected 
 			else { logger.error("trying to reconnect a non-DISCONNECTED sensor"); dumpState(); return false; }
 		}
