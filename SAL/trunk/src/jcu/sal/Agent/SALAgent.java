@@ -15,6 +15,8 @@ import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.SensorID;
 import jcu.sal.Managers.ProtocolManager;
 import jcu.sal.Managers.SensorManager;
+import jcu.sal.events.EventDispatcher;
+import jcu.sal.events.EventHandler;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -29,9 +31,11 @@ public class SALAgent implements SALAgentInterface{
 	private Logger logger = Logger.getLogger(SALAgent.class);
 	private ProtocolManager pm;
 	private SensorManager sm;
+	private EventDispatcher ev;
 	
 	public SALAgent(){
 		Slog.setupLogger(logger);
+		ev = EventDispatcher.getInstance();
 		pm = ProtocolManager.getProcotolManager();
 		sm = SensorManager.getSensorManager();
 
@@ -61,7 +65,7 @@ public class SALAgent implements SALAgentInterface{
 	 * (non-Javadoc)
 	 * @see jcu.sal.Agent.SALAgentInterface#addSensor(java.lang.String)
 	 */
-	public synchronized String  addSensor(String xml) throws ConfigurationException, ParserConfigurationException {
+	public synchronized String addSensor(String xml) throws ConfigurationException, ParserConfigurationException {
 		return sm.createComponent(XMLhelper.createDocument(xml)).getID().getName();
 	}
 
@@ -135,5 +139,19 @@ public class SALAgent implements SALAgentInterface{
 			pm.removeProtocolConfig(p, removeSensors);
 		}
 	}
+	
+	/*
+	 * Event-related methods
+	 */
+	
+	public void registerEventHandler(EventHandler eh, String producerID) throws ConfigurationException {
+		ev.registerEventHandler(eh, producerID);
+	}
+
+	public void unregisterEventHandler(EventHandler eh, String producerID) throws ConfigurationException {
+		ev.unregisterEventHandler(eh, producerID);
+	}
+	
+
 
 }

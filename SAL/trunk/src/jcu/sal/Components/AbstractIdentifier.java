@@ -47,7 +47,7 @@ public abstract class AbstractIdentifier implements Identifier {
 	 */
 	public int hashCode(){
 		// TODO improve this !
-		return 1;
+		return name.hashCode();
 	}
 	
 	/* (non-Javadoc)

@@ -26,6 +26,7 @@ import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Components.Sensors.SensorID;
 import jcu.sal.Managers.EndPointManager;
 import jcu.sal.Managers.SensorManager;
+import jcu.sal.events.EventDispatcher;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -125,6 +126,9 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 		type = t;
 		config = c;
 		sensors = new Hashtable<SensorID, Sensor>();
+		
+		/* Registers with the EventHandler */
+		EventDispatcher.getInstance().addProducer(id.getName());
 		
 		/* parse the configuration */
 		try {
@@ -233,6 +237,9 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 				internal_remove();
 				try { EndPointManager.getEndPointManager().destroyComponent(ep.getID());}
 				catch (ConfigurationException e) { logger.error("Cant remove EndPoint...");	}
+				
+				/* Unregisters with the EventHandler */
+				EventDispatcher.getInstance().removeProducer(id.getName());
 				this.logger.debug("protocol " + type +" removed");
 			}
 		}
