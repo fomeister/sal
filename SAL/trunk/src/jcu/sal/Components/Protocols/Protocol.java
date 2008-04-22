@@ -17,15 +17,14 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.Components.AbstractComponent;
-import jcu.sal.Components.Command;
 import jcu.sal.Components.componentRemovalListener;
 import jcu.sal.Components.EndPoints.DeviceListener;
 import jcu.sal.Components.EndPoints.EndPoint;
-import jcu.sal.Components.Protocols.CMLStore.CMLStore;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Components.Sensors.SensorID;
 import jcu.sal.Managers.EndPointManager;
 import jcu.sal.Managers.SensorManager;
+import jcu.sal.common.Command;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.utils.Slog;
 
@@ -368,7 +367,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 								throw e;
 							} catch (InvocationTargetException e) {
 								logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
-								logger.error("Caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
+								if(e.getCause()!=null) logger.error("Caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
 								e.printStackTrace();
 								//s.finishRunCmd();
 								s.disconnect();

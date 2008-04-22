@@ -5,6 +5,12 @@ package jcu.sal.utils;
 
 import java.util.Hashtable;
 
+import jcu.sal.Components.EndPoints.EthernetEndPoint;
+import jcu.sal.Components.EndPoints.FSEndPoint;
+import jcu.sal.Components.EndPoints.PCIEndPoint;
+import jcu.sal.Components.EndPoints.SerialEndPoint;
+import jcu.sal.Components.EndPoints.UsbEndPoint;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -23,10 +29,11 @@ public class EndPointModulesList {
 	private EndPointModulesList()
 	{
 		Slog.setupLogger(this.logger);
-		table.put("usb", EndPointModulesList.SALcomponentPackage + "UsbEndPoint");
-		table.put("serial", EndPointModulesList.SALcomponentPackage + "SerialEndPoint");
-		table.put("ethernet", EndPointModulesList.SALcomponentPackage + "EthernetEndPoint");
-		table.put("fs", EndPointModulesList.SALcomponentPackage + "FSEndPoint");
+		table.put(UsbEndPoint.USBENDPOINT_TYPE, SALcomponentPackage + "UsbEndPoint");
+		table.put(SerialEndPoint.SERIALENDPOINT_TYPE, SALcomponentPackage + "SerialEndPoint");
+		table.put(EthernetEndPoint.ETHERNETENDPOINT_TYPE , SALcomponentPackage + "EthernetEndPoint");
+		table.put(FSEndPoint.FSENDPOINT_TYPE, SALcomponentPackage + "FSEndPoint");
+		table.put(PCIEndPoint.PCIENDPOINT_TYPE, SALcomponentPackage + "PCIEndPoint");
 	}
 	
 	public static String getClassName(String type) throws ClassNotFoundException

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package jcu.sal.Components.Protocols;
+package jcu.sal.Components.Protocols.osData;
 
 import java.io.IOException;
 import java.text.NumberFormat;
@@ -11,7 +11,9 @@ import java.util.Iterator;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Components.Protocols.CMLStore.OSDataCML;
+import jcu.sal.Components.EndPoints.FSEndPoint;
+import jcu.sal.Components.Protocols.Protocol;
+import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
@@ -59,7 +61,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	static { 
 		Slog.setupLogger(logger);
 		//Add to the list of supported EndPoint IDs
-		SUPPORTED_ENDPOINT_TYPES.add("fs");
+		SUPPORTED_ENDPOINT_TYPES.add(FSEndPoint.FSENDPOINT_TYPE);
 		//Add to the list of supported commands
 		commands.put(new Integer(100), "getReading");
 

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>SALv1</name>
+	<name>SAL</name>
 	<comment></comment>
 	<projects>
+		<project>V4L4J</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

@@ -9,12 +9,12 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.Components.Command;
 import jcu.sal.Components.Protocols.Protocol;
 import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.SensorID;
 import jcu.sal.Managers.ProtocolManager;
 import jcu.sal.Managers.SensorManager;
+import jcu.sal.common.Command;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.EventHandler;
 import jcu.sal.utils.Slog;

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package jcu.sal.Components.Protocols;
+package jcu.sal.Components.Protocols.owfs;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,7 +13,9 @@ import java.util.Vector;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Components.Protocols.CMLStore.OwfsCML;
+import jcu.sal.Components.EndPoints.UsbEndPoint;
+import jcu.sal.Components.Protocols.Protocol;
+import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
@@ -39,7 +41,7 @@ public class OwfsProtocol extends Protocol{
 	
 	static { 
 		Slog.setupLogger(logger);
-		SUPPORTED_ENDPOINT_TYPES.add("usb");
+		SUPPORTED_ENDPOINT_TYPES.add(UsbEndPoint.USBENDPOINT_TYPE);
 		//SUPPORTED_ENDPOINT_TYPES.add("serial");
 		
 		//getTemperature		10.X
@@ -56,8 +58,6 @@ public class OwfsProtocol extends Protocol{
 		commands.put(new Integer(115), "getVAD");
 		commands.put(new Integer(116), "getVDD");
 		commands.put(new Integer(117), "getVIS");
-		
-		//override epIds, set epIds to watch for DS2490
 	}
 	
 	

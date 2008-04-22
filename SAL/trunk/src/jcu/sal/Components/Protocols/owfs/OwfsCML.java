@@ -1,6 +1,8 @@
-package jcu.sal.Components.Protocols.CMLStore;
+package jcu.sal.Components.Protocols.owfs;
 
 import javax.naming.ConfigurationException;
+
+import jcu.sal.Components.Protocols.CMLStore;
 
 
 public class OwfsCML extends CMLStore {
