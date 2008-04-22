@@ -6,7 +6,7 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.Components.Command;
+import jcu.sal.common.Command;
 import jcu.sal.events.EventHandler;
 
 public interface SALAgentInterface {

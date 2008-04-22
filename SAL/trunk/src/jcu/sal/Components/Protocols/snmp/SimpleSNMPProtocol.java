@@ -1,4 +1,4 @@
-package jcu.sal.Components.Protocols;
+package jcu.sal.Components.Protocols.snmp;
 
 import java.io.IOException;
 import java.util.Hashtable;
@@ -6,7 +6,9 @@ import java.util.Hashtable;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Components.Protocols.CMLStore.SimpleSNMPCML;
+import jcu.sal.Components.EndPoints.EthernetEndPoint;
+import jcu.sal.Components.Protocols.Protocol;
+import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.utils.Slog;
 
@@ -33,7 +35,7 @@ public class SimpleSNMPProtocol extends Protocol{
 	static { 
 		Slog.setupLogger(logger);
 		//Add to the list of supported EndPoint IDs
-		SUPPORTED_ENDPOINT_TYPES.add("ethernet");
+		SUPPORTED_ENDPOINT_TYPES.add(EthernetEndPoint.ETHERNETENDPOINT_TYPE);
 		//Add to the list of supported commands
 		commands.put(new Integer(100), "getReading");
 

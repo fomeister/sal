@@ -1,4 +1,4 @@
-package jcu.sal.Components.Protocols.CMLStore;
+package jcu.sal.Components.Protocols;
 
 import java.util.Enumeration;
 import java.util.Hashtable;

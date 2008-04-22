@@ -1,4 +1,4 @@
-package jcu.sal.Components;
+package jcu.sal.common;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -22,10 +22,20 @@ public class Command {
 	
 	private Logger logger = Logger.getLogger(Protocol.class);
 	private Hashtable<String,String> parameters;
+	private StreamCallback streamc;
 
 	public static final String COMMAND_TAG = "Command";
 	public static final String PARAMETER_TAG = "Param";
 	public static final String CIDATTRIBUTE_TAG = "CID";
+	
+	public Command(Document d, StreamCallback s) throws ParseException {
+		this(d);
+		if(s==null) {
+			logger.error("Callback object null");
+			throw new ParseException("Callback object null", 0);
+		}
+		streamc = s;
+	}
 	
 	public Command(Document d) throws ParseException {
 		Slog.setupLogger(this.logger);
@@ -60,6 +70,19 @@ public class Command {
 		parameters = new Hashtable<String, String>();
 		parameters.put(CIDATTRIBUTE_TAG,String.valueOf(cid));
 		parameters.put(key,value);
+	}
+	
+	public Command(Integer cid, String key, String value, StreamCallback s){
+		this(cid, key, value);
+		if(s==null) {
+			logger.error("Callback object null");
+			//throw new ParseException("Callback object null", 0);
+		}
+		streamc = s;
+	}
+	
+	public StreamCallback getStreamCallBack(){
+		return streamc;
 	}
 
 	

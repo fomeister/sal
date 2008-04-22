@@ -12,7 +12,6 @@ import java.util.Iterator;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Components.Command;
 import jcu.sal.Components.Identifier;
 import jcu.sal.Components.EndPoints.EndPoint;
 import jcu.sal.Components.Protocols.Protocol;
@@ -20,6 +19,7 @@ import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Components.Sensors.SensorID;
 import jcu.sal.Config.ConfigService;
+import jcu.sal.common.Command;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.ProtocolListEvent;
 import jcu.sal.utils.ProtocolModulesList;

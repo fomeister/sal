@@ -5,8 +5,8 @@ package jcu.sal.utils;
 
 import java.util.Hashtable;
 
-import jcu.sal.Components.Protocols.OSDataProtocol;
-import jcu.sal.Components.Protocols.OwfsProtocol;
+import jcu.sal.Components.Protocols.osData.OSDataProtocol;
+import jcu.sal.Components.Protocols.owfs.OwfsProtocol;
 
 import org.apache.log4j.Logger;
 

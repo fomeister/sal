@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 public class UsbEndPoint extends EndPoint{
 
 	private static Logger logger = Logger.getLogger(EndPoint.class);
-	private static String USBENDPOINT_TYPE="usb";
+	public static String USBENDPOINT_TYPE="usb";
 	private static String LSUSBOUTPUT_KEY = "Bus";
 	
 	/**

@@ -18,7 +18,7 @@ import org.apache.log4j.Logger;
 public class FSEndPoint extends EndPoint {
 
 	private Logger logger = Logger.getLogger(FSEndPoint.class);
-	private static final String FSENDPOINT_TYPE = "fs";
+	public static final String FSENDPOINT_TYPE = "fs";
 	
 	/**
 	 * @throws ConfigurationException 
