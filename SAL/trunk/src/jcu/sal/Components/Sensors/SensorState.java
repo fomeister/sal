@@ -7,7 +7,7 @@ import javax.naming.ConfigurationException;
 
 import jcu.sal.Components.componentRemovalListener;
 import jcu.sal.events.EventDispatcher;
-import jcu.sal.events.SensorNodeEvent;
+import jcu.sal.events.SensorStateEvent;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -118,7 +118,7 @@ class SensorState {
 					ProtocolManager.getProcotolManager().removeSensor(i);
 				}*/
 				try {
-					ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_STATE_DISCONNECTED,i.getName(),PRODUCER_ID));
+					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),PRODUCER_ID));
 				} catch (ConfigurationException e) {logger.error("Cant queue event");}
 				return true;
 			} else { logger.error("trying to disconnect a non-IDLE,DISABLED or INUSE sensor"); dumpState(); return false; }
@@ -131,7 +131,7 @@ class SensorState {
 				disconnect_timestamp = -1;
 				state=IDLE;
 				try {
-					ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_STATE_CONNECTED,i.getName(),PRODUCER_ID));
+					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),PRODUCER_ID));
 				} catch (ConfigurationException e) {logger.error("Cant queue event");}
 				return true; 
 			}

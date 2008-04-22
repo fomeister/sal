@@ -44,10 +44,12 @@ public class EventDispatcher implements Runnable{
 	}
 	
 	public boolean addProducer(String p) {
+		logger.debug("Adding producer "+p);
 		synchronized(producers) { return producers.add(p); }
 	}
 	
 	public boolean removeProducer(String p) {
+		logger.debug("Removing producer "+p);
 		synchronized(producers) { 
 			synchronized(table) { table.remove(p); }
 			return producers.remove(p);
@@ -94,7 +96,7 @@ public class EventDispatcher implements Runnable{
 				logger.error("Cant queue event, queue full");
 				throw new ConfigurationException();
 			}
-			logger.debug("Queued event "+e.type);
+			logger.debug("Queued event "+e);
 //		}
 	}
 	

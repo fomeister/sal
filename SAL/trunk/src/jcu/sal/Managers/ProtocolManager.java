@@ -20,6 +20,8 @@ import jcu.sal.Components.Protocols.ProtocolID;
 import jcu.sal.Components.Sensors.Sensor;
 import jcu.sal.Components.Sensors.SensorID;
 import jcu.sal.Config.ConfigService;
+import jcu.sal.events.EventDispatcher;
+import jcu.sal.events.ProtocolListEvent;
 import jcu.sal.utils.ProtocolModulesList;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -32,10 +34,12 @@ import org.w3c.dom.Node;
  * 
  */
 public class ProtocolManager extends ManagerFactory<Protocol> {
-	
+
+	public static String PRODUCER_ID = "ProtocolManager";
 	private static ProtocolManager p = new ProtocolManager();
 	private Logger logger = Logger.getLogger(ProtocolManager.class);
 	private ConfigService conf;
+	private EventDispatcher ev;
 	
 	
 	/**
@@ -45,6 +49,8 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		super();
 		Slog.setupLogger(this.logger);
 		conf = ConfigService.getService();
+		ev = EventDispatcher.getInstance();
+		ev.addProducer(PRODUCER_ID);
 	}
 	
 	/**
@@ -99,6 +105,9 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			e.printStackTrace();
 			throw new InstantiationException();
 		}
+		try {
+			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), PRODUCER_ID));
+		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 		return p;
 	}
 	
@@ -140,6 +149,9 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		component.remove(this);
 		SensorManager.getSensorManager().destroyComponents(component.getSensors());
 		componentRemovable(pid);
+		try {
+			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_REMOVED,component.getID().getName(),PRODUCER_ID));
+		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 	}
 	
 	/*
