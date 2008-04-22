@@ -1,12 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <SAL>
-    <SensorConfiguration>
-        <Sensor sid="1">
-            <parameters>
-                <Param name="ProtocolName" value="osData"/>
-                <Param name="Address" value="CPUTemp"/>
-                <Param name="SamplingInterval" value="30"/>
-            </parameters>
-        </Sensor>
-    </SensorConfiguration>
+    <SensorConfiguration/>
 </SAL>

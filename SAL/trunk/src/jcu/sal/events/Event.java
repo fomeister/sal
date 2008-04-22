@@ -10,7 +10,7 @@ public abstract class Event {
 	protected static int MAX_TYPE_VALUE = 0;
 	
 	protected Event(int t, String sid, String p) throws ConfigurationException{
-		this(t, sid, p, null);
+		this(t, sid,  null, p);
 	}
 	
 	protected Event(int t, String sid, String doc, String p) throws ConfigurationException{
