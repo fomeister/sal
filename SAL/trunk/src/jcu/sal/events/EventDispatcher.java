@@ -96,7 +96,7 @@ public class EventDispatcher implements Runnable{
 				logger.error("Cant queue event, queue full");
 				throw new ConfigurationException();
 			}
-			logger.debug("Queued event "+e);
+			logger.debug("Queued "+e);
 //		}
 	}
 	

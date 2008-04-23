@@ -5,7 +5,7 @@ import java.io.InputStreamReader;
 
 import javax.naming.ConfigurationException;
 
-import jcu.sal.Agent.SALAgent;
+import jcu.sal.agent.SALAgent;
 import jcu.sal.common.Command;
 
 public class SALuser {

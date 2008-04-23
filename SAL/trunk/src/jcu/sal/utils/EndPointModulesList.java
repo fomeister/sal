@@ -5,11 +5,11 @@ package jcu.sal.utils;
 
 import java.util.Hashtable;
 
-import jcu.sal.Components.EndPoints.EthernetEndPoint;
-import jcu.sal.Components.EndPoints.FSEndPoint;
-import jcu.sal.Components.EndPoints.PCIEndPoint;
-import jcu.sal.Components.EndPoints.SerialEndPoint;
-import jcu.sal.Components.EndPoints.UsbEndPoint;
+import jcu.sal.components.EndPoints.EthernetEndPoint;
+import jcu.sal.components.EndPoints.FSEndPoint;
+import jcu.sal.components.EndPoints.PCIEndPoint;
+import jcu.sal.components.EndPoints.SerialEndPoint;
+import jcu.sal.components.EndPoints.UsbEndPoint;
 
 import org.apache.log4j.Logger;
 
@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 public class EndPointModulesList {
 	private static EndPointModulesList e = new EndPointModulesList();
 	
-	public final static String SALcomponentPackage = "jcu.sal.Components.EndPoints.";
+	public final static String SALcomponentPackage = "jcu.sal.components.EndPoints.";
 	
 	private Hashtable<String,String> table = new Hashtable<String,String>();
 	private Logger logger = Logger.getLogger(EndPointModulesList.class);
