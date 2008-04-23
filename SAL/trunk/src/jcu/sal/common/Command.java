@@ -10,7 +10,7 @@ import java.util.Iterator;
 import javax.management.BadAttributeValueExpException;
 import javax.xml.xpath.XPathExpressionException;
 
-import jcu.sal.Components.Protocols.Protocol;
+import jcu.sal.components.protocols.Protocol;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 

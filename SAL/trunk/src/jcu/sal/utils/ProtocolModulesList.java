@@ -5,8 +5,9 @@ package jcu.sal.utils;
 
 import java.util.Hashtable;
 
-import jcu.sal.Components.Protocols.osData.OSDataProtocol;
-import jcu.sal.Components.Protocols.owfs.OwfsProtocol;
+import jcu.sal.components.protocols.osData.OSDataConstants;
+import jcu.sal.components.protocols.owfs.OwfsProtocol;
+import jcu.sal.components.protocols.v4l2.V4L2Protocol;
 
 import org.apache.log4j.Logger;
 
@@ -17,7 +18,7 @@ import org.apache.log4j.Logger;
 public class ProtocolModulesList {
 	private static ProtocolModulesList e = new ProtocolModulesList();
 	
-	public final static String SALcomponentPackage = "jcu.sal.Components.Protocols.";
+	public final static String SALcomponentPackage = "jcu.sal.components.protocols.";
 	
 	private Hashtable<String,String> table = new Hashtable<String,String>();
 	private Logger logger = Logger.getLogger(ProtocolModulesList.class);
@@ -26,10 +27,11 @@ public class ProtocolModulesList {
 	private ProtocolModulesList()
 	{
 		Slog.setupLogger(this.logger);
-		table.put(OwfsProtocol.OWFSPROTOCOL_TYPE , ProtocolModulesList.SALcomponentPackage + "OwfsProtocol");
+		table.put(OwfsProtocol.OWFSPROTOCOL_TYPE , ProtocolModulesList.SALcomponentPackage + "owfs.OwfsProtocol");
 		/*table.put("PL40", ProtocolModulesList.SALcomponentPackage + "PLIProtocol");*/
-		table.put("SSNMP", ProtocolModulesList.SALcomponentPackage + "SimpleSNMPProtocol");
-		table.put(OSDataProtocol.OSDATAPROTOCOL_TYPE, ProtocolModulesList.SALcomponentPackage + "OSDataProtocol");
+		table.put("SSNMP", ProtocolModulesList.SALcomponentPackage + "snmp.SimpleSNMPProtocol");
+		table.put(OSDataConstants.OSDATAPROTOCOL_TYPE, ProtocolModulesList.SALcomponentPackage + "osData.OSDataProtocol");
+		table.put(V4L2Protocol.V4L2PROTOCOL_TYPE, ProtocolModulesList.SALcomponentPackage + "v4l2.V4L2Protocol");
 	}
 	
 	public static String getClassName(String type) throws ClassNotFoundException
