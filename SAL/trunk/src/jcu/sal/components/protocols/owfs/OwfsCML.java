@@ -106,7 +106,7 @@ public class OwfsCML extends CMLStore {
 		b.delete(0, b.length());
 //		1001 GetHumidityHIH4000 command
 		b.append("<Command name=\"GetHumidityHIH4000\">\n");
-		b.append("\t<CID>"+(id++)+"</CID>\n");
+		b.append("\t<CID>"+(++id)+"</CID>\n");
 		b.append("\t<ShortDescription>Reads the humidity from a HIH4000 sensor</ShortDescription>\n");
 		b.append("\t<arguments count=\"0\" />\n");
 		b.append("\t<returnValues count=\"1\">\n");
@@ -120,7 +120,7 @@ public class OwfsCML extends CMLStore {
 		b.delete(0, b.length());
 //		1002 GetHumidityHTM1735 command
 		b.append("<Command name=\"getHumidityHTM1735\">\n");
-		b.append("\t<CID>"+(id++)+"</CID>\n");
+		b.append("\t<CID>"+(++id)+"</CID>\n");
 		b.append("\t<ShortDescription>Reads the humidity from a HTM1735 sensor</ShortDescription>\n");
 		b.append("\t<arguments count=\"0\" />\n");
 		b.append("\t<returnValues count=\"1\">\n");
@@ -134,7 +134,7 @@ public class OwfsCML extends CMLStore {
 		b.delete(0, b.length());
 //		1003 GetVAD command
 		b.append("<Command name=\"getVAD\">\n");
-		b.append("\t<CID>"+(id++)+"</CID>\n");
+		b.append("\t<CID>"+(++id)+"</CID>\n");
 		b.append("\t<ShortDescription>Reads the Vad voltage</ShortDescription>\n");
 		b.append("\t<arguments count=\"0\" />\n");
 		b.append("\t<returnValues count=\"1\">\n");
@@ -148,7 +148,7 @@ public class OwfsCML extends CMLStore {
 		b.delete(0, b.length());
 //		1004 GetVDD command
 		b.append("<Command name=\"getVdd\">\n");
-		b.append("\t<CID>"+(id++)+"</CID>\n");
+		b.append("\t<CID>"+(++id)+"</CID>\n");
 		b.append("\t<ShortDescription>Reads the Vdd voltage</ShortDescription>\n");
 		b.append("\t<arguments count=\"0\" />\n");
 		b.append("\t<returnValues count=\"1\">\n");
@@ -162,7 +162,7 @@ public class OwfsCML extends CMLStore {
 		b.delete(0, b.length());
 //		1005 GetVDD command
 		b.append("<Command name=\"getVis\">\n");
-		b.append("\t<CID>"+(id++)+"</CID>\n");
+		b.append("\t<CID>"+(++id)+"</CID>\n");
 		b.append("\t<ShortDescription>Reads the Vis voltage</ShortDescription>\n");
 		b.append("\t<arguments count=\"0\" />\n");
 		b.append("\t<returnValues count=\"1\">\n");

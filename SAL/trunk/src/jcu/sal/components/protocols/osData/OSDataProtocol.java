@@ -40,9 +40,6 @@ public class OSDataProtocol extends Protocol implements Runnable{
 			this.delim = delim;
 			this.translate = translate;
 		}
-		public String toString(){
-			return "file: " + file + " - pattern: " + pattern + " - field: " + field + " - delim: '" + delim + "' - tr: "+ translate;
-		}
 	}
 	
 	private static Logger logger = Logger.getLogger(OSDataProtocol.class);
@@ -56,8 +53,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 
 	static { 
 		Slog.setupLogger(logger);
-		//Add to the list of supported EndPoint IDs
-		SUPPORTED_ENDPOINT_TYPES.add(FSEndPoint.FSENDPOINT_TYPE);
+		
 		//Add to the list of supported commands
 		commands.put(new Integer(100), "getReading");
 
@@ -85,6 +81,8 @@ public class OSDataProtocol extends Protocol implements Runnable{
 		
 		cmls = OSDataCML.getStore();
 		lastValues = new Hashtable<String,String>();
+//		Add to the list of supported EndPoint IDs
+		supportedEndPointTypes.add(FSEndPoint.FSENDPOINT_TYPE);
 	}
 
 	

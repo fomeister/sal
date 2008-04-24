@@ -47,7 +47,7 @@ public class SerialEndPoint extends EndPoint {
 	 * @see jcu.sal.components.AbstractComponent#parseConfig()
 	 */
 	@Override
-	protected void parseConfig() throws ConfigurationException {
+	public void parseConfig() throws ConfigurationException {
 		// Check if we have this serial port on this platform
 		CommPortIdentifier id;
 		this.logger.debug("check if we can setup the serial port");

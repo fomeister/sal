@@ -43,7 +43,7 @@ public class EthernetEndPoint extends EndPoint {
 	 * @see jcu.sal.components.AbstractComponent#updateConfig()
 	 */
 	@Override
-	protected void parseConfig() throws ConfigurationException {
+	public void parseConfig() throws ConfigurationException {
 		// Check if we have this ethernet device on this platform
 		NetworkInterface n = null;
 		String intName = null, ipAddress = null;

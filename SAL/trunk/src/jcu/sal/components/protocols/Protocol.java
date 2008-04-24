@@ -55,7 +55,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	/**
 	 * A list of endpoints types supported by this protocol
 	 */
-	public static final Vector<String> SUPPORTED_ENDPOINT_TYPES = new Vector<String>();
+	public final Vector<String> supportedEndPointTypes;
 	
 	/**
 	 * A table mapping command Ids to the name of a method to be exectuted when this command arrives
@@ -71,6 +71,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	 * The endpoint associated with this protocol
 	 */
 	protected EndPoint ep;
+	private Node epConfig;
 	
 	/**
 	 * The CML store associated with this protocol. This field must be instanciated by the subclass
@@ -80,7 +81,6 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	/**
 	 * Is this protocol started ?
 	 */
-	//private boolean started;
 	private AtomicBoolean started;
 	
 	/**
@@ -113,30 +113,17 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 		started= new AtomicBoolean(false);
 		removed=new AtomicBoolean(false);
 		autodetect = false;
-		
-		/* construct the endpoint first */
-		ep = EndPointManager.getEndPointManager().createComponent(d);
-		if(ep==null)
-			throw new ConfigurationException("Couldnt create the EdnPoint");
 
-		/* Sets the PID field of the EndPointID */
-		ep.setPid(i);
 		
 		/* init the rest of the fields */
 		id = i;
 		type = t;
 		config = c;
+		epConfig = d;
+		supportedEndPointTypes = new Vector<String>();
 		sensors = new Hashtable<SensorID, Sensor>();
 		
-		/* parse the configuration */
-		try {
-			parseConfig();
-		} catch (ConfigurationException e) {
-			logger.error("Error creating the protocol, destroying the endpoint");
-			EndPointManager.getEndPointManager().destroyComponent(ep.getID());
-			throw e;
-		}
-		
+	
 		/* Registers with the EventHandler */
 		EventDispatcher.getInstance().addProducer(id.getName());
 	}
@@ -144,19 +131,35 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.AbstractComponent#parseConfig()
 	 */
-	protected final void parseConfig() throws ConfigurationException {
+	public final void parseConfig() throws ConfigurationException {
 		logger.debug("Parsing our configuration");
-		logger.debug("1st, Check the EndPoint");
+		logger.debug("Build the EndPoint");
+		
+		/* construct the endpoint  */
+		ep = EndPointManager.getEndPointManager().createComponent(epConfig);
+		if(ep==null)
+			throw new ConfigurationException("Couldnt create the EndPoint");
+
+		/* Sets the PID field of the EndPointID */
+		ep.setPid(id);
+		
 		if(!isEPTypeSupported(ep.getType())) {
 			logger.error("This Protocol has been setup with the wrong enpoint: got endpoint type: " +ep.getType()+", expected: ");
-			Iterator<String> iter = SUPPORTED_ENDPOINT_TYPES.iterator();
+			Iterator<String> iter = supportedEndPointTypes.iterator();
 			while(iter.hasNext())
 				logger.error(iter.next());
+			EndPointManager.getEndPointManager().destroyComponent(ep.getID());
 			throw new ConfigurationException("Wrong Endpoint type");
 		}
-		logger.debug("EndPoint OK");	
-		logger.debug("2nd Check " + type +" software");
-		internal_parseConfig();
+		
+		logger.debug("EndPoint OK");
+		logger.debug("Check " + type +" software");
+		try { internal_parseConfig(); }
+		catch (ConfigurationException e) {
+			logger.error("Error configuring the protocol, destroying the endpoint");
+			EndPointManager.getEndPointManager().destroyComponent(ep.getID());
+			throw e;
+		} 
 	}
 	
 	/* (non-Javadoc)
@@ -320,7 +323,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	 * @return the textual representation of the Protocol's instance
 	 */
 	public final String toString() {
-		return "Protocol "+id.getName()+"("+type+"), EndPoint: " + ep.toString();
+		return "Protocol "+id.getName()+"("+type+")";
 
 	}
 
@@ -351,12 +354,13 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 						if(s.startRunCmd()) {
 							try {
 								Class<?>[] params = {Hashtable.class,Sensor.class};
+								logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+commands.get(c.getCID()));
 								Method m = this.getClass().getDeclaredMethod(commands.get(c.getCID()), params);
-//								logger.debug("running method: "+ m.getName()+" SID:"+sid.getName() );
+								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
 								ret_val = (String) m.invoke(this,c.getParameters(), s);
 								logger.debug("running method: "+ m.getName()+" SID:"+sid.getName()+" returned "+ret_val );
 							} catch (SecurityException e) {
-								logger.error("Not allowed to execute the methods matching the command");
+								logger.error("Not allowed to execute the method matching this command");
 								s.finishRunCmd();
 								throw new BadAttributeValueExpException("");
 							} catch (NoSuchMethodException e) {
@@ -377,7 +381,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 							} catch (Exception e) {
 								logger.error("Could NOT run the command (error with invoke() )");
 								logger.error("exception:" + e.getClass() + " - " +e.getMessage());
-								logger.error("caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
+								if(e.getCause()!=null) logger.error("caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
 								e.printStackTrace();
 								s.finishRunCmd();
 								throw new BadAttributeValueExpException("");
@@ -405,7 +409,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	 * @param String the EndPoint type
 	 */
 	public final boolean isEPTypeSupported(String type) {
-		return SUPPORTED_ENDPOINT_TYPES.contains(type);
+		return supportedEndPointTypes.contains(type);
 	}
 	
 	/**

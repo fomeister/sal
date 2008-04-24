@@ -54,7 +54,7 @@ public class V4L2CML extends CMLStore {
 		b.delete(0, b.length());
 //		102 startStream
 		b.append("<Command name=\"stopStream\">\n");
-		b.append("\t<CID>101</CID>\n");
+		b.append("\t<CID>102</CID>\n");
 		b.append("\t<ShortDescription>Stops streaming frames from the device</ShortDescription>\n");
 		b.append("\t<arguments count=\"0\" />\n");
 		b.append("\t<returnValues count=\"0\" />\n");

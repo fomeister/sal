@@ -34,8 +34,7 @@ public class SimpleSNMPProtocol extends Protocol{
 
 	static { 
 		Slog.setupLogger(logger);
-		//Add to the list of supported EndPoint IDs
-		SUPPORTED_ENDPOINT_TYPES.add(EthernetEndPoint.ETHERNETENDPOINT_TYPE);
+		
 		//Add to the list of supported commands
 		commands.put(new Integer(100), "getReading");
 
@@ -52,6 +51,8 @@ public class SimpleSNMPProtocol extends Protocol{
 		super(i,SIMPLESNMPPROTOCOL_TYPE,c,d);
 		
 		cmls = SimpleSNMPCML.getStore();
+//		Add to the list of supported EndPoint IDs
+		supportedEndPointTypes.add(EthernetEndPoint.ETHERNETENDPOINT_TYPE);
 	}
 
 	

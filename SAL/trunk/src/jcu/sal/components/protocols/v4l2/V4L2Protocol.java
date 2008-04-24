@@ -1,12 +1,15 @@
 package jcu.sal.components.protocols.v4l2;
 
+import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Command;
 import jcu.sal.components.EndPoints.PCIEndPoint;
+import jcu.sal.components.protocols.CMLStore;
 import jcu.sal.components.protocols.Protocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
@@ -28,10 +31,12 @@ public class V4L2Protocol extends Protocol {
 	public final static String HEIGHT_ATTRIBUTE_TAG= "height";
 	public final static String CHANNEL_ATTRIBUTE_TAG= "channel";
 	public final static String STANDARD_ATTRIBUTE_TAG= "standard";
+	
+	public final static String CONTROL_VALUE_ATTRIBUTE_TAG = "ControlValue";
 		
 	static { 
 		Slog.setupLogger(logger);
-		SUPPORTED_ENDPOINT_TYPES.add(PCIEndPoint.PCIENDPOINT_TYPE);
+		
 		
 		commands.put(new Integer(100), "getFrame");
 		
@@ -50,7 +55,23 @@ public class V4L2Protocol extends Protocol {
 		autodetect = true;
 		AUTODETECT_INTERVAL = -1; //run only once
 		cmls = V4L2CML.getStore();
-		
+		supportedEndPointTypes.add(PCIEndPoint.PCIENDPOINT_TYPE);
+	}
+
+	@Override
+	protected String internal_getCMLStoreKey(Sensor s)
+			throws ConfigurationException {
+		return s.getNativeAddress();
+	}
+
+	@Override
+	protected boolean internal_isSensorSupported(Sensor s) {
+		if(s.getNativeAddress().equals(CCD_ADDRESS)) return true;
+		return false;
+	}
+
+	@Override
+	protected void internal_parseConfig() throws ConfigurationException {
 		//we must have several config directives:
 		String dev;
 		int w,h,std,ch;
@@ -81,54 +102,40 @@ public class V4L2Protocol extends Protocol {
 		ctrls = new Hashtable<String, V4L2Control>();
 		StringBuffer b = new StringBuffer();
 		String name;
+		int cid = CMLStore.PRIVATE_CID_START;
 		for (int id = 0; id < v4l2c.length; id++) {
-			//put each in the vector ctrls
 			name = v4l2c[id].getName();
-			ctrls.put(name, v4l2c[id]);
-			//and create a CML doc for it
 
-			cmls.addSensor(name);
-//			generic 103 getValue command
-			b.append("<Command name=\"getValue\">\n");
-			b.append("\t<CID>103</CID>\n");
-			b.append("\t<ShortDescription>Fetches the value of this control</ShortDescription>\n");
+			//add two commands to the CCD sensor for this control
+			//(one to set its value, the other to get its value)
+
+//			getValue command		
+			b.append("<Command name=\"get"+name.replace(" ", "")+"\">\n");
+			b.append("\t<CID>"+(++cid)+"</CID>\n");
+			b.append("\t<ShortDescription>Fetches the value of "+name+"</ShortDescription>\n");
 			b.append("\t<arguments count=\"0\" />\n");
 			b.append("\t<returnValues count=\"1\">\n");
 			b.append("\t\t<ReturnValue type=\"string\" quantity=\"none\" />\n");
 			b.append("\t</returnValues>\n");
 			b.append("</Command>\n");
-			cmls.addCML(name, b.toString(), 103);
+			cmls.addCML(CCD_ADDRESS, b.toString(), new Integer(cid));
+			ctrls.put(String.valueOf(cid), v4l2c[id]);
+			commands.put(cid, "getControl");
 			b.delete(0, b.length());
 			
-//			generic 104 setValue command
-			b.append("<Command name=\"setValue\">\n");
-			b.append("\t<CID>104</CID>\n");
-			b.append("\t<ShortDescription>Set the value of this control</ShortDescription>\n");
-			b.append("\t<arguments count=\"0\" />\n");
-			b.append("\t<returnValues count=\"1\">\n");
-			b.append("\t\t<ReturnValue type=\"string\" quantity=\"none\" />\n");
-			b.append("\t</returnValues>\n");
+//			setValue command
+			b.append("<Command name=\"set"+name.replace(" ", "")+"\">\n");
+			b.append("\t<CID>"+(++cid)+"</CID>\n");
+			b.append("\t<ShortDescription>Set the value of "+name+"</ShortDescription>\n");
+			b.append("\t<arguments count=\"1\" />\n");
+			b.append("\t<returnValues count=\"0\" />\n");
 			b.append("</Command>\n");
-			cmls.addCML(name, b.toString(), 103);
+			cmls.addCML(CCD_ADDRESS, b.toString(), new Integer(cid));
+			ctrls.put(String.valueOf(cid), v4l2c[id]);
+			commands.put(cid, "setControl");
 			b.delete(0, b.length());
 		}
 	}
-
-	@Override
-	protected String internal_getCMLStoreKey(Sensor s)
-			throws ConfigurationException {
-		return s.getNativeAddress();
-	}
-
-	@Override
-	protected boolean internal_isSensorSupported(Sensor s) {
-		if(s.getNativeAddress().equals(CCD_ADDRESS)) return true;
-		if(ctrls.containsKey(s.getNativeAddress())) return true;
-		return false;
-	}
-
-	@Override
-	protected void internal_parseConfig() throws ConfigurationException {}
 
 	@Override
 	protected boolean internal_probeSensor(Sensor s) {
@@ -158,9 +165,41 @@ public class V4L2Protocol extends Protocol {
 	
 	@Override
 	protected Vector<String> detectConnectedSensors() {
-		Vector<String> s = new Vector<String>(ctrls.keySet());
-		s.add(CCD_ADDRESS);
-		return s;
+		Vector <String> v = new Vector<String>();
+		v.add(CCD_ADDRESS);
+		return v; 
+	}
+	
+	public String getControl(Hashtable<String,String> c, Sensor s) throws IOException{
+		V4L2Control ctrl = ctrls.get(c.get(Command.CIDATTRIBUTE_TAG));
+		if(ctrl!=null) {
+			try {
+				return String.valueOf(ctrl.getValue());
+			} catch (V4L4JException e) {
+				logger.error("Could NOT read the value for control "+ctrl.getName());
+				e.printStackTrace();
+				throw new IOException();
+			}			
+		} else {
+			logger.error("Could NOT find the control matching command ID "+c.get(Command.CIDATTRIBUTE_TAG));
+			throw new IOException();
+		}
 	}
 
+	public String setControl(Hashtable<String,String> c, Sensor s) throws IOException{
+		V4L2Control ctrl = ctrls.get(c.get(Command.CIDATTRIBUTE_TAG));
+		if(ctrl!=null) {
+			try {
+				ctrl.setValue(Integer.parseInt(c.get(CONTROL_VALUE_ATTRIBUTE_TAG)));
+				return "";
+			} catch (V4L4JException e) {
+				logger.error("Could NOT set the value for control "+ctrl.getName());
+				e.printStackTrace();
+				throw new IOException();
+			}			
+		} else {
+			logger.error("Could NOT find the control matching command ID "+c.get(Command.CIDATTRIBUTE_TAG));
+			throw new IOException();
+		}
+	}
 }
