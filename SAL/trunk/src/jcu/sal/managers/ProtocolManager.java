@@ -84,17 +84,12 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			o[2] = XMLhelper.getNode("/" + Protocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config, true);
 			//logger.debug("EndPoint config: " + XMLhelper.toString((Node) o[2])); 
 			p = (Protocol) c.newInstance(o);
-
-			logger.debug("done building protocol "+p.toString()+" - saving its config");
-			conf.addProtocol(config);
+			logger.debug("done building protocol "+p.toString());
 			
 		} catch (ParseException e) {
 			logger.error("Error while parsing the DOM document. XML doc:");
 			logger.error(XMLhelper.toString(config));
 			//e.printStackTrace();
-			throw new InstantiationException();
-		} catch (ConfigurationException e) {
-			logger.error("Cant save the new protocol config");
 			throw new InstantiationException();
 		} catch (Exception e) {
 			logger.error("Error in new Protocol instanciation.");
@@ -105,6 +100,23 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			e.printStackTrace();
 			throw new InstantiationException();
 		}
+		
+		try {
+			p.parseConfig();
+		} catch (ConfigurationException e1) {
+			logger.error("Error in the protocol configuration");
+			throw new InstantiationException();
+		}
+
+		try {
+			logger.debug("saving its config");
+			conf.addProtocol(config);
+		} catch (ConfigurationException e) {
+			logger.error("Cant save the new protocol config");
+			throw new InstantiationException();
+		} 
+
+		
 		try {
 			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}

@@ -57,7 +57,7 @@ public class CMLStore {
 	 * Native address, sensor families do the job, as long as they re unique !
 	 * The table must be filled by the subclass constructor.
 	 */
-	private static Hashtable<String, Hashtable<Integer, CMLDoc>> cmls = new Hashtable<String, Hashtable<Integer, CMLDoc>>();
+	private Hashtable<String, Hashtable<Integer, CMLDoc>> cmls;
 	
 	/**
 	 * Adds the following generic commands to the CML store
@@ -66,6 +66,7 @@ public class CMLStore {
 	 */
 	protected CMLStore() {
 		Slog.setupLogger(logger);
+		cmls = new Hashtable<String, Hashtable<Integer, CMLDoc>>();
 	}
 
 	/**

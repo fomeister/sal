@@ -34,7 +34,7 @@ public class PCIEndPoint extends EndPoint {
 	 * @see jcu.sal.components.AbstractComponent#parseConfig()
 	 */
 	@Override
-	protected void parseConfig() throws ConfigurationException {
+	public void parseConfig() throws ConfigurationException {
 		// Not much to do here 
 		logger.debug("Found PCI bus");
 		configured = true;

@@ -41,8 +41,6 @@ public class OwfsProtocol extends Protocol{
 	
 	static { 
 		Slog.setupLogger(logger);
-		SUPPORTED_ENDPOINT_TYPES.add(UsbEndPoint.USBENDPOINT_TYPE);
-		//SUPPORTED_ENDPOINT_TYPES.add("serial");
 		
 		//getTemperature		10.X
 		//GetHumidity			26.X
@@ -71,6 +69,7 @@ public class OwfsProtocol extends Protocol{
 		autodetect = true;
 		AUTODETECT_INTERVAL = 100;
 		cmls = OwfsCML.getStore();
+		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
 	}
 
 	/* (non-Javadoc)

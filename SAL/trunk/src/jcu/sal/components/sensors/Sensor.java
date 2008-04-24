@@ -100,8 +100,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 	 * @see jcu.sal.components.AbstractComponent#parseConfig()
 	 */
 	@Override
-	protected void parseConfig() throws ConfigurationException {
-	}
+	public void parseConfig() throws ConfigurationException {}
 	
 	/*
 	 * (non-Javadoc)

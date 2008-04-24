@@ -72,7 +72,7 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	 * @throws ConfigurationException Indicates a error parsing/setting configuration. 
 	 * Most likely there is a problem with the component's configuration
 	 */
-	protected abstract void parseConfig() throws ConfigurationException;
+	public abstract void parseConfig() throws ConfigurationException;
 	
 	/**
 	 * returns whether a component is started

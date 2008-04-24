@@ -73,7 +73,7 @@ public class UsbEndPoint extends EndPoint{
 	 * @see jcu.sal.components.AbstractComponent#parseConfig()
 	 */
 	@Override
-	protected void parseConfig() throws ConfigurationException {
+	public void parseConfig() throws ConfigurationException {
 		// Check if we have any USB ports on this platform
 		logger.debug("check if we have USB ports.");
 		try {

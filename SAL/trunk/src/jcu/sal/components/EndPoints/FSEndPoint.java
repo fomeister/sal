@@ -34,7 +34,7 @@ public class FSEndPoint extends EndPoint {
 	 * @see jcu.sal.components.AbstractComponent#parseConfig()
 	 */
 	@Override
-	protected void parseConfig() throws ConfigurationException {
+	public void parseConfig() throws ConfigurationException {
 		// Not much to do here 
 		this.logger.debug("Found filesystem");
 		this.configured = true;
