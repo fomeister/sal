@@ -18,5 +18,10 @@ public class ProtocolListEvent extends Event {
 	public ProtocolListEvent(int t, String sid, String doc, String p) throws ConfigurationException {
 		super(t, sid, doc, p);
 	}
+	
+	public String toString(){
+		if(type==PROTOCOL_ADDED) return super.toString() + " New protocol added";
+		else return super.toString() + " Existing protocol removed";
+	}
 
 }

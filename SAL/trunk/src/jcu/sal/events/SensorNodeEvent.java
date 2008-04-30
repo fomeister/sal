@@ -18,5 +18,10 @@ public class SensorNodeEvent extends Event {
 	public SensorNodeEvent(int t, String sid, String doc, String p) throws ConfigurationException {
 		super(t, sid, doc, p);
 	}
+	
+	public String toString(){
+		if(type==SENSOR_NODE_ADDED) return super.toString() + " New sensor added";
+		else return super.toString() + " Existing sensor removed";
+	}
 
 }

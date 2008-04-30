@@ -1,6 +1,7 @@
 package jcu.sal;
 
 import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.io.InputStreamReader;
 
 import javax.naming.ConfigurationException;
@@ -13,15 +14,15 @@ import jcu.sal.events.EventHandler;
 import jcu.sal.managers.ProtocolManager;
 import jcu.sal.managers.SensorManager;
 
-public class SALuser implements EventHandler{
+public class SALuserFile implements EventHandler{
 	static SALAgent s;
 	
 	public static void main(String [] args) throws ConfigurationException, InterruptedException {
-		int i=0,j=0;
-		String str, str2;
+		int i=0,j=0, fn=0;
+		String str, str2, res;
 		StringBuilder sb = new StringBuilder();
 		BufferedReader b = new BufferedReader(new InputStreamReader(System.in));
-		SALuser user = new SALuser(); 
+		SALuserFile user = new SALuserFile(); 
 		s = new SALAgent();
 		s.registerEventHandler(user, SensorManager.PRODUCER_ID);
 		s.registerEventHandler(user, ProtocolManager.PRODUCER_ID);
@@ -40,7 +41,9 @@ public class SALuser implements EventHandler{
 					System.out.println(s.getCML(String.valueOf(i)));
 					System.out.println("Enter a command id:");
 					j=Integer.parseInt(b.readLine());
-					System.out.println("command "+j+" returned : "+s.execute(new Command(j, "", ""), String.valueOf(i)));
+					res = s.execute(new Command(j, "", ""), String.valueOf(i));
+					System.out.println("command "+j+" returned : "+res);
+					new FileWriter("file"+(fn++),false).write(res);
 				} else if(i==-2)
 					System.out.println(s.listActiveSensors());
 				else if(i==-3) {
