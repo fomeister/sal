@@ -38,6 +38,6 @@ public abstract class Event {
 	}
 	
 	public String toString(){
-		return "Event regarding source '"+sourceID+"' from producer '"+producer+"'";
+		return "Event from producer '"+producer+"' about source '"+sourceID+"':";
 	}
 }

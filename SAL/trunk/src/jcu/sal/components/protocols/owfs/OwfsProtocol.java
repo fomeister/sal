@@ -47,15 +47,15 @@ public class OwfsProtocol extends Protocol{
 		commands.put(new Integer(100), "getReading");
 		
 		//10.X, 26.X
-		commands.put(new Integer(101), "getTemperature");
+		commands.put(new Integer(110), "getTemperature");
 		
 		//26.X
-		commands.put(new Integer(112), "getHumidity");
-		commands.put(new Integer(113), "getHumidityHIH4000");
-		commands.put(new Integer(114), "getHumidityHTM1735");
-		commands.put(new Integer(115), "getVAD");
-		commands.put(new Integer(116), "getVDD");
-		commands.put(new Integer(117), "getVIS");
+		commands.put(new Integer(111), "getHumidity");
+		commands.put(new Integer(1001), "getHumidityHIH4000");
+		commands.put(new Integer(1002), "getHumidityHTM1735");
+		commands.put(new Integer(1003), "getVAD");
+		commands.put(new Integer(1004), "getVDD");
+		commands.put(new Integer(1005), "getVIS");
 	}
 	
 	

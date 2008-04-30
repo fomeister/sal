@@ -19,5 +19,10 @@ public class SensorStateEvent extends Event {
 	public SensorStateEvent(int t, String sid, String doc, String p) throws ConfigurationException {
 		super(t, sid, doc, p);
 	}
+	
+	public String toString(){
+		if(type==SENSOR_STATE_CONNECTED) return super.toString() + " Sensor connected";
+		else return super.toString() + "  Sensor disconnected";
+	}
 
 }

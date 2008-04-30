@@ -202,4 +202,28 @@ public class V4L2Protocol extends Protocol {
 			throw new IOException();
 		}
 	}
+	
+	public String getFrame(Hashtable<String,String> c, Sensor s) throws IOException{
+		try {
+			fg.startCapture();
+		} catch (V4L4JException e) {
+			logger.error("Cant start capture");
+			throw new IOException();
+		}
+		String f ;
+		try {
+			f = fg.getFrame().asCharBuffer().toString();
+		} catch (V4L4JException e1) {
+			logger.error("Cant capture single frame");
+			throw new IOException();
+		}
+		
+		try {
+			fg.stopCapture();
+		} catch (V4L4JException e) {
+			logger.error("Cant stop capture");
+			throw new IOException();
+		}
+		return f;
+	}
 }

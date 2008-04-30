@@ -19,6 +19,7 @@ import jcu.sal.components.protocols.Protocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
+import jcu.sal.components.sensors.SensorState;
 import jcu.sal.config.ConfigService;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.ProtocolListEvent;
@@ -51,6 +52,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 		conf = ConfigService.getService();
 		ev = EventDispatcher.getInstance();
 		ev.addProducer(PRODUCER_ID);
+		ev.addProducer(SensorState.PRODUCER_ID);
 	}
 	
 	/**

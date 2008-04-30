@@ -149,7 +149,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 		if(d!=null) {
 			try {
 				if(PlatformHelper.isFileReadable(d.file)) {
-					logger.error(s.toString()+" present");
+					logger.debug(s.toString()+" present");
 					s.enable();
 					return true;
 				}
