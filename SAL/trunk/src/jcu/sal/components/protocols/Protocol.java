@@ -57,11 +57,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	 */
 	public final Vector<String> supportedEndPointTypes;
 	
-	/**
-	 * A table mapping command Ids to the name of a method to be exectuted when this command arrives
-	 */
-	protected static final Hashtable<Integer, String> commands = new Hashtable<Integer, String>();
-	
+
 	/**
 	 * A table of sensors managed by this protocol
 	 */
@@ -344,9 +340,9 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 				//sync with respect to other commands
 				synchronized(s){
 					//Catch the generic commands enable & disable
-					if(c.getCID().intValue()==CMLStore.DISABLE_CID)
+					if(c.getCID().intValue()==CMLStore.GENERIC_DISABLE_CID)
 						s.disable();
-					else if(c.getCID().intValue()==CMLStore.ENABLE_CID)
+					else if(c.getCID().intValue()==CMLStore.GENERIC_ENABLE_CID)
 						s.enable();
 					else {
 						//sensor specific command
@@ -354,11 +350,15 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 						if(s.startRunCmd()) {
 							try {
 								Class<?>[] params = {Hashtable.class,Sensor.class};
-								logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+commands.get(c.getCID()));
-								Method m = this.getClass().getDeclaredMethod(commands.get(c.getCID()), params);
+								logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(getCML(sid), c.getCID()));
+								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(getCML(sid), c.getCID()), params);
 								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
 								ret_val = (byte[]) m.invoke(this,c.getParameters(), s);
 								logger.debug("running method: "+ m.getName()+" SID:"+sid.getName()+" returned "+ret_val );
+							} catch (ConfigurationException e) {
+								logger.error("Cant find the method matching this command");
+								s.finishRunCmd();
+								throw new BadAttributeValueExpException("");
 							} catch (SecurityException e) {
 								logger.error("Not allowed to execute the method matching this command");
 								s.finishRunCmd();

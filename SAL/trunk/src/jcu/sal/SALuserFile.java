@@ -1,10 +1,8 @@
 package jcu.sal;
 
-import java.awt.Image;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-import javax.imageio.ImageIO;
 import javax.naming.ConfigurationException;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;

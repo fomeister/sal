@@ -18,10 +18,25 @@ import org.apache.log4j.Logger;
  *
  */
 public class CMLStore {
+	
 	private Logger logger = Logger.getLogger(CMLStore.class);
-	public static int ENABLE_CID=10;
-	public static int DISABLE_CID=11;
-	public static int PRIVATE_CID_START = 1000;
+	public static String GENERIC_ENABLE="Enable";			//10
+	public static String GENERIC_DISABLE="Disable";		//11
+	public static String GENERIC_GETREADING="getReading";	//100
+	public static String GENERIC_STARTSTREAM="startStream";	//102
+	public static String GENERIC_STOPSTREAM="stopStream";	//103
+	public static String GENERIC_GETTEMP="getTemperature";	//110
+	public static String GENERIC_GETHUM="getHumidity";		//111
+	
+	public static int GENERIC_ENABLE_CID=10;
+	public static int GENERIC_DISABLE_CID=11;
+	public static int GENERIC_GETREADING_CID=100;
+	public static int GENERIC_STARTSTREAM_CID=102;
+	public static int GENERIC_STOPSTREAM_CID=103;
+	public static int GENERIC_GETTEMP_CID=110;
+	public static int GENERIC_GETHUM_CID=111;
+	
+	private static int PRIVATE_CID_START = 1000;
 	/*
 	 * Other generic commands:
 	 * 100: getReading (owfs, osdata, ssnmp, v4l2)
@@ -31,24 +46,68 @@ public class CMLStore {
 	 * 111: getHumidity (owfs)
 	 */
 	
-	protected class CMLDoc {
+	public static class CMLDoc {
+		private Logger logger = Logger.getLogger(CMLDoc.class);
 		private Integer cid;
 		private String cml;
+		private String methodName;
 		
-		public CMLDoc(Integer id, String c){
-			cid=id; cml=c;
+		public static String STRING_ARG_TYPE="string";
+		public static String INT_ARG_TYPE="int";
+		public static String FLOAT_ARG_TYPE="float";
+		public static String CALLBACK_ARG_TYPE="callback";
+		
+		public CMLDoc(String mName, Integer id, String name, String desc, String[] argTypes,  String[] names) throws ConfigurationException{
+			Slog.setupLogger(logger);
+			cid=id;
+			if(argTypes.length!=names.length) {
+				logger.error("Error creating the CML doc: arguments number unequals somewhere");
+				throw new ConfigurationException();
+			}
+
+			cml = "<CommandDescription name=\""+name+"\">\n"
+					+"\t<CID>"+id.toString()+"</CID>\n"
+					+"\t<ShortDescription>"+desc+"</ShortDescription>\n"
+					+"\t<arguments count=\""+argTypes.length+"\">\n";
+			for (int i = 0; i < argTypes.length; i++) {
+				if(!argTypes[i].equals(STRING_ARG_TYPE) && !argTypes[i].equals(INT_ARG_TYPE) && !argTypes[i].equals(FLOAT_ARG_TYPE) && !argTypes[i].equals(CALLBACK_ARG_TYPE)){
+					logger.error("Error creating the CML doc: wrong argument type");
+					throw new ConfigurationException();
+				}
+					
+				cml += "\t\t<Argument type=\""+argTypes[i]+"\">"+names[i]+"</Argument>\n";
+			}
+
+			cml +=	"\t</arguments>\n"
+					+"</CommandDescription>\n";
+			
+			methodName = mName;
 		}
 		
-		public CMLDoc(int id, String c){
-			this(new Integer(id),c);
+		public CMLDoc(Integer id, String name, CMLDoc existing) throws ConfigurationException{
+			Slog.setupLogger(logger);
+			cid=id;
+			cml = existing.getCML();
+			cml = cml.replaceFirst("<CommandDescription.*\n.*/CID>", "");
+
+			cml = "<CommandDescription name=\""+name+"\">\n"
+					+"\t<CID>"+id.toString()+"</CID>\n"
+					+cml;
+			
+			methodName = existing.getMethodName();
 		}
-		
+
+	
 		public Integer getCID(){
 			return cid;
 		}
 		
 		public String getCML(){
 			return cml;
+		}
+		
+		public String getMethodName(){
+			return methodName;
 		}
 	}
 	
@@ -58,109 +117,180 @@ public class CMLStore {
 	 * The table must be filled by the subclass constructor.
 	 */
 	private Hashtable<String, Hashtable<Integer, CMLDoc>> cmls;
+	/**
+	 * This table contains the next available private cid
+	 */
+	private Hashtable<String,Integer> priv_cid;
 	
 	/**
-	 * Adds the following generic commands to the CML store
-	 * Enable - Disable commands
-	 *
+	 * No arg constructor
 	 */
 	protected CMLStore() {
 		Slog.setupLogger(logger);
 		cmls = new Hashtable<String, Hashtable<Integer, CMLDoc>>();
+		priv_cid = new Hashtable<String, Integer>();
 	}
 
 	/**
 	 * Retrieves the CML document for the given key f (native address, sensor family, ...)
-	 * @param f the key
-	 * @return the CML doc or null if the key can not be found
+	 * @param k the key
+	 * @return the CML doc 
+	 * @throws ConfigurationException if the key can not be found 
 	 */
-	public String getCML(String f){
-		if(cmls.containsKey(f)) {
-			StringBuffer b = new StringBuffer();
-			Enumeration<CMLDoc> i = cmls.get(f).elements();
-			while(i.hasMoreElements())
-				b.append(i.nextElement().getCML());
-			return b.toString();
+	public String getCML(String k) throws ConfigurationException{
+		if(!cmls.containsKey(k)) {
+			logger.error("Cant find key "+k);
+			throw new ConfigurationException();
 		}
-		return null;
+		StringBuffer b = new StringBuffer();
+		Enumeration<CMLDoc> i = cmls.get(k).elements();
+		while(i.hasMoreElements())
+			b.append(i.nextElement().getCML());
+		return b.toString();
+
+	}
+	
+	/**
+	 * Retrieves the method name associated with a given command
+	 * @param k the key 
+	 * @param cid the command id
+	 * @return the method name
+	 * @throws ConfigurationException if the method can not be found 
+	 */
+	public String getMethodName(String k, Integer cid) throws ConfigurationException{
+		Hashtable<Integer, CMLDoc> t = cmls.get(k);
+		if(t==null) {
+			logger.error("Cant find key "+k);
+			throw new ConfigurationException();
+		}
+		CMLDoc d = t.get(cid);
+		if(d==null){
+			logger.error("Cant find the cid "+cid);
+			throw new ConfigurationException();
+		}
+		return d.getMethodName();
+	}
+	
+	/**
+	 * This method adds a new private Command Description document fragment to the CML doc for a given key.
+	 * @param k the key with which the fragment is to be associated
+	 * @param mName the name of the method to be called when this command is received
+	 * @param name the name of the command
+	 * @param desc the description of the command
+	 * @param argTypes an array containing the types (CMLDoc.*_TYPE) of the arguments
+	 * @param names an array containing the names of the arguments
+	 * @return the cid associated with this command
+	 * @throws ConfigurationException if the command cant be created
+	 */
+	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, String[] argTypes, String[] names) throws ConfigurationException{
+		//computes the CID
+		Integer cid = priv_cid.get(k);
+		if(k==null)
+			cid = new Integer(PRIVATE_CID_START);
+		//builds the CML desc doc
+		addCML(k, new CMLDoc(mName,cid++, name, desc, argTypes, names));
+				
+		return cid.intValue()-1;
+	}
+	
+	/**
+	 * This method adds an alias to a previously created Command Description document fragment identifier by its cid
+	 * @param k the key with which the alias is to be associated
+	 * @param name the name of the alias (CMLStore.GENERIC_*)
+	 * @param cid the previously created command
+	 * @return the cid associated with this command
+	 * @throws ConfigurationException if the command cant be created
+	 */
+	public final int addGenericCMLDesc(String k, String aliasName, Integer cid) throws ConfigurationException{
+		//computes the CID
+		Integer c;
+		CMLDoc cml;
+		if(aliasName.equals(GENERIC_ENABLE)){
+			c = new Integer(GENERIC_ENABLE_CID);
+			String[] s = new String[0];
+			addCML(k, new CMLDoc(null, c, GENERIC_ENABLE, "Enables the sensor", s, s));
+			return c.intValue();
+		} else if(aliasName.equals(GENERIC_DISABLE)){
+			c = new Integer(GENERIC_DISABLE_CID);
+			String[] s = new String[0];
+			addCML(k, new CMLDoc(null, c, GENERIC_DISABLE, "Disables the sensor", s, s));
+			return c.intValue();
+		} else if(aliasName.equals(GENERIC_GETREADING)){
+			c = new Integer(GENERIC_GETREADING_CID);
+		} else if(aliasName.equals(GENERIC_STARTSTREAM)){
+			c = new Integer(GENERIC_STARTSTREAM_CID);
+		} else if(aliasName.equals(GENERIC_STOPSTREAM)){
+			c = new Integer(GENERIC_STOPSTREAM_CID);
+		} else if(aliasName.equals(GENERIC_GETTEMP)){
+			c = new Integer(GENERIC_GETTEMP_CID);
+		} else if(aliasName.equals(GENERIC_GETHUM)){
+			c = new Integer(GENERIC_GETHUM_CID);
+		} else {
+			logger.error("Cant create an alias, no such name");
+			throw new ConfigurationException();
+		}
+		
+		Hashtable<Integer, CMLDoc> t = cmls.get(k);
+		if(t != null) {
+			cml = t.get(cid);
+			if(cml==null){
+				logger.error("Cant find any pre-existing command "+cid+" to create the alias");
+				throw new ConfigurationException();				
+			}
+		} else {
+			logger.error("Cant find key "+k);
+			throw new ConfigurationException();
+		}
+
+		//builds the CML desc doc based on the existing one
+		addCML(k, new CMLDoc(c, aliasName, cml));
+				
+		return cid.intValue()-1;
 	}
 
+	/**
+	 * Creates a new CML list for a new sensor identified by its key k
+	 * @param k the sensor key
+	 */
+	private Hashtable<Integer, CMLDoc> addSensor(String k) throws ConfigurationException {
+		Hashtable<Integer, CMLDoc> t;
+		if(!cmls.containsKey(k)){
+			logger.error("trying to add a CML table for sensor " + k + " which already has a CML table.");
+			throw new ConfigurationException();
+		}
+
+		t = new Hashtable<Integer, CMLDoc>();
+
+		/* Add generic CML docs to this sensor */
+		//generic 10 enable command
+		addGenericCMLDesc(k, GENERIC_ENABLE, null);
+		
+		//generic 11 disable command
+		addGenericCMLDesc(k, GENERIC_DISABLE, null);
+		
+		/* create the final table */ 
+		cmls.put(k, t);
+
+		return t;
+
+	}
+	
 	/**
 	 * Adds a CML document to the CML table for a given sensor
 	 * @param k the sensor
 	 * @param v the CML doc
 	 * @throws ConfigurationException 
 	 */
-	public void addCML(String k, CMLDoc v) throws ConfigurationException{
+	private void addCML(String k, CMLDoc v) throws ConfigurationException{
 		Hashtable<Integer, CMLDoc> t = cmls.get(k);
+		if(t==null)
+			t = addSensor(k);
 		if(!t.containsKey(v.getCID()))
 			t.put(v.getCID(), v);
 		else {
-			logger.error("trying to add a CML doc (cid:"+v.getCID()+") to sensor " + k + " which already holds a CML for that id.");
+			logger.error("trying to add a CML doc (cid:"+v.getCID()+") to sensor " + k + " which already holds a CML with this id.");
 			throw new ConfigurationException();
 		}
-	}
-	
-	/**
-	 * Adds a CML document to the CML table for a given sensor
-	 * @param k the sensor
-	 * @param s the CML doc
-	 * @param cid the command ID associated with this CMl doc
-	 * @throws ConfigurationException 
-	 */
-	public void addCML(String k, String s, Integer cid) throws ConfigurationException{
-		Hashtable<Integer, CMLDoc> t = cmls.get(k);
-		CMLDoc v = new CMLDoc(cid, s);
-		if(!t.containsKey(v.getCID()))
-			t.put(v.getCID(), v);
-		else {
-			logger.error("trying to add a CML doc (cid:"+v.getCID()+") to sensor " + k + " which already holds a CML for that id.");
-			throw new ConfigurationException();
-		}
-	}
-	
-	/**
-	 * Creates a new CML table for a enw sensor
-	 * @param k the sensor
-	 */
-	public void addSensor(String k) throws ConfigurationException {
-		if(!cmls.containsKey(k)){
-			Hashtable<Integer, CMLDoc> t = new Hashtable<Integer, CMLDoc>();
-			StringBuffer b = new StringBuffer();
-			CMLDoc c;
-			
-			/* Add generic CML docs to this sensor */
-			//generic 10 enable command
-			b.append("<Command name=\"Enable\">\n");
-			b.append("\t<CID>"+ENABLE_CID+"</CID>\n");
-			b.append("\t<ShortDescription>Enables the sensor</ShortDescription>\n");
-			b.append("\t<arguments count=\"0\" />\n");
-			b.append("\t<returnValues count=\"0\" />\n");
-			b.append("\t</returnValues>\n");
-			b.append("</Command>\n");
-			c = new CMLDoc(ENABLE_CID, b.toString());
-			t.put(c.getCID(),c);
-			b.delete(0, b.length());
-			
-			//generic 11 disable command
-			b.append("<Command name=\"Disable\">\n");
-			b.append("\t<CID>"+DISABLE_CID+"</CID>\n");
-			b.append("\t<ShortDescription>Disables the sensor</ShortDescription>\n");
-			b.append("\t<arguments count=\"0\" />\n");
-			b.append("\t<returnValues count=\"0\" />\n");
-			b.append("\t</returnValues>\n");
-			b.append("</Command>\n");
-			c = new CMLDoc(DISABLE_CID, b.toString());
-			t.put(c.getCID(),c);
-			
-			/* create the final table */ 
-			cmls.put(k, t);
-		}
-		else {
-			logger.error("trying to add a CML table for sensor " + k + " which already has a CML table.");
-			throw new ConfigurationException();
-		}
-
 	}
 
 }

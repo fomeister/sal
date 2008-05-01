@@ -10,7 +10,6 @@ import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Command;
 import jcu.sal.components.EndPoints.PCIEndPoint;
-import jcu.sal.components.protocols.CMLStore;
 import jcu.sal.components.protocols.Protocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
@@ -34,25 +33,16 @@ public class V4L2Protocol extends Protocol {
 	public final static String STANDARD_ATTRIBUTE_TAG= "standard";
 	
 	public final static String CONTROL_VALUE_ATTRIBUTE_TAG = "ControlValue";
-		
-	static { 
-		Slog.setupLogger(logger);
-		
-		
-		commands.put(new Integer(100), "getFrame");
-		
-		commands.put(new Integer(101), "startStream");
-		commands.put(new Integer(102), "stopStream");
-	}
+
 	
 	private FrameGrabber fg = null;
 	private Hashtable<String,V4L2Control> ctrls = null;
-	private String CCD_ADDRESS="CCD";
 	
 
 	public V4L2Protocol(ProtocolID i, Hashtable<String, String> c,
 			Node d) throws ConfigurationException {
 		super(i, V4L2PROTOCOL_TYPE , c, d);
+		Slog.setupLogger(logger);
 		autodetect = true;
 		AUTODETECT_INTERVAL = -1; //run only once
 		cmls = V4L2CML.getStore();
@@ -67,7 +57,7 @@ public class V4L2Protocol extends Protocol {
 
 	@Override
 	protected boolean internal_isSensorSupported(Sensor s) {
-		if(s.getNativeAddress().equals(CCD_ADDRESS)) return true;
+		if(s.getNativeAddress().equals(V4L2CML.CCD_KEY)) return true;
 		return false;
 	}
 
@@ -101,40 +91,16 @@ public class V4L2Protocol extends Protocol {
 		//get the V4L2 controls
 		V4L2Control[] v4l2c = fg.getControls();
 		ctrls = new Hashtable<String, V4L2Control>();
-		StringBuffer b = new StringBuffer();
 		String name;
-		int cid = CMLStore.PRIVATE_CID_START;
 		for (int id = 0; id < v4l2c.length; id++) {
 			name = v4l2c[id].getName();
-
 			//add two commands to the CCD sensor for this control
 			//(one to set its value, the other to get its value)
-
-//			getValue command		
-			b.append("<Command name=\"get"+name.replace(" ", "")+"\">\n");
-			b.append("\t<CID>"+(++cid)+"</CID>\n");
-			b.append("\t<ShortDescription>Fetches the value of "+name+"</ShortDescription>\n");
-			b.append("\t<arguments count=\"0\" />\n");
-			b.append("\t<returnValues count=\"1\">\n");
-			b.append("\t\t<ReturnValue type=\"string\" quantity=\"none\" />\n");
-			b.append("\t</returnValues>\n");
-			b.append("</Command>\n");
-			cmls.addCML(CCD_ADDRESS, b.toString(), new Integer(cid));
-			ctrls.put(String.valueOf(cid), v4l2c[id]);
-			commands.put(cid, "getControl");
-			b.delete(0, b.length());
+			//getValue command
+			cmls.addPrivateCMLDesc(V4L2CML.CCD_KEY, GET_CONTROL_METHOD, "get"+name.replace(" ", ""), "Fetches the value of "+name, new String[0], new String[0]);
 			
-//			setValue command
-			b.append("<Command name=\"set"+name.replace(" ", "")+"\">\n");
-			b.append("\t<CID>"+(++cid)+"</CID>\n");
-			b.append("\t<ShortDescription>Set the value of "+name+"</ShortDescription>\n");
-			b.append("\t<arguments count=\"1\" />\n");
-			b.append("\t<returnValues count=\"0\" />\n");
-			b.append("</Command>\n");
-			cmls.addCML(CCD_ADDRESS, b.toString(), new Integer(cid));
-			ctrls.put(String.valueOf(cid), v4l2c[id]);
-			commands.put(cid, "setControl");
-			b.delete(0, b.length());
+			//setValue command
+			cmls.addPrivateCMLDesc(V4L2CML.CCD_KEY, SET_CONTROL_METHOD, "set"+name.replace(" ", ""), "Sets the value of "+name, new String[0], new String[0]);
 		}
 	}
 
@@ -167,10 +133,14 @@ public class V4L2Protocol extends Protocol {
 	@Override
 	protected Vector<String> detectConnectedSensors() {
 		Vector <String> v = new Vector<String>();
-		v.add(CCD_ADDRESS);
+		v.add(V4L2CML.CCD_KEY);
 		return v; 
 	}
 	
+	/*
+	 * command handling methods
+	 */
+	public static String GET_CONTROL_METHOD = "getControl";
 	public byte[] getControl(Hashtable<String,String> c, Sensor s) throws IOException{
 		V4L2Control ctrl = ctrls.get(c.get(Command.CIDATTRIBUTE_TAG));
 		if(ctrl!=null) {
@@ -187,6 +157,7 @@ public class V4L2Protocol extends Protocol {
 		}
 	}
 
+	public static String SET_CONTROL_METHOD = "setControl";
 	public byte[] setControl(Hashtable<String,String> c, Sensor s) throws IOException{
 		V4L2Control ctrl = ctrls.get(c.get(Command.CIDATTRIBUTE_TAG));
 		if(ctrl!=null) {
@@ -204,6 +175,7 @@ public class V4L2Protocol extends Protocol {
 		}
 	}
 	
+	public static String GET_FRAME_METHOD = "getFrame";
 	public byte[] getFrame(Hashtable<String,String> c, Sensor s) throws IOException{
 		byte[] b;
 		ByteBuffer bb;

@@ -21,210 +21,83 @@ public class OSDataCML extends CMLStore{
 	
 	private OSDataCML() throws ConfigurationException{
 		super();
-		StringBuffer b = new StringBuffer();
-		CMLDoc c;
+		int i;
 
 		/* 
 		 * FreeMem
 		 * */
-//		generic 100 GetReading command
-		addSensor("FreeMem");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the amount of free memory</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"memory\">\n");
-		b.append("\t\t\t<uom unit=\"kilobytes\">kB</uom>\n");
-		b.append("\t\t</ReturnValue>\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("FreeMem", c);
-		b.delete(0, b.length());
+		i = addPrivateCMLDesc(OSDataConstants.FreeMem, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.FreeMem, "Reads the amount of free memory", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.FreeMem, GENERIC_GETREADING, new Integer(i));
 		
 		/* 
 		 * UserTime
 		 * */
-//		generic 100 GetReading command
-		addSensor("UserTime");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the amount of time spent in user mode</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"time\">\n");
-		b.append("\t\t\t<uom unit=\"milliseconds\">ms</uom>\n");
-		b.append("\t\t</ReturnValue>\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("UserTime", c);
-		b.delete(0, b.length());
+		i = addPrivateCMLDesc(OSDataConstants.UserTime, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.UserTime, "Reads the amount of time spent on user mode processes", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.UserTime, GENERIC_GETREADING, new Integer(i));
 
 		/* 
 		 * NiceTime
 		 * */
-//		generic 100 GetReading command
-		addSensor("NiceTime");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the amount of time spent in nice mode</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"time\">\n");
-		b.append("\t\t\t<uom unit=\"milliseconds\">ms</uom>\n");
-		b.append("\t\t</ReturnValue>\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("NiceTime", c);		
-		b.delete(0, b.length());
-		
+		i = addPrivateCMLDesc(OSDataConstants.NiceTime, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.NiceTime, "Reads the amount of time spent on nice'd processes", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.NiceTime, GENERIC_GETREADING, new Integer(i));
+
 		/* 
 		 * SystemTime
 		 * */
-//		generic 100 GetReading command
-		addSensor("SystemTime");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the amount of time spent in system mode</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"time\">\n");
-		b.append("\t\t\t<uom unit=\"milliseconds\">ms</uom>\n");
-		b.append("\t\t</ReturnValue>\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("SystemTime", c);		
-		b.delete(0, b.length());
-		
+		i = addPrivateCMLDesc(OSDataConstants.SystemTime, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.SystemTime, "Reads the amount of time spent in system mode", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.SystemTime, GENERIC_GETREADING, new Integer(i));
+
 		/* 
 		 * IdleTime
 		 * */
-//		generic 100 GetReading command
-		addSensor("IdleTime");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the amount of time spent in idle mode</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"time\">\n");
-		b.append("\t\t\t<uom unit=\"milliseconds\">ms</uom>\n");
-		b.append("\t\t</ReturnValue>\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("IdleTime", c);
-		b.delete(0, b.length());
+		i = addPrivateCMLDesc(OSDataConstants.IdleTime, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.SystemTime, "Reads the amount of time spent in idle mode", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.IdleTime, GENERIC_GETREADING, new Integer(i));
 		
 		/* 
 		 * LoadAvg1
 		 * */
-//		generic 100 GetReading command
-		addSensor("LoadAvg1");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the 1-minute load average</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"none\" />\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("LoadAvg1", c);
-		b.delete(0, b.length());
-		
+		i = addPrivateCMLDesc(OSDataConstants.LoadAvg1, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.LoadAvg1, "Reads the 1-minute load average", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.LoadAvg1, GENERIC_GETREADING, new Integer(i));
+
 		/* 
 		 * LoadAvg5
 		 * */
-//		generic 100 GetReading command
-		addSensor("LoadAvg5");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the 5-minute load average</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"none\" />\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("LoadAvg5", c);
-		b.delete(0, b.length());
+		i = addPrivateCMLDesc(OSDataConstants.LoadAvg5, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.LoadAvg5, "Reads the 5-minute load average", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.LoadAvg5, GENERIC_GETREADING, new Integer(i));
 		
 		/* 
 		 * LoadAvg15
 		 * */
-//		generic 100 GetReading command
-		addSensor("LoadAvg15");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the 15-minute load average</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"none\" />\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("LoadAvg15", c);
-		b.delete(0, b.length());
-		
+		i = addPrivateCMLDesc(OSDataConstants.LoadAvg15, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.LoadAvg15, "Reads the 15-minute load average", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.LoadAvg15, GENERIC_GETREADING, new Integer(i));
+
 		/* 
 		 * CPUTemp
 		 * */
-//		generic 100 GetReading command
-		addSensor("CPUTemp");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the CPU temperature</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"temperature\">\n");
-		b.append("\t\t\t<uom unit=\"degreeC\">degree C</uom>\n");
-		b.append("\t\t</ReturnValue>\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("CPUTemp", c);
-		b.delete(0, b.length());
+		i = addPrivateCMLDesc(OSDataConstants.CPUTemp, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.CPUTemp, "Reads the CPU temperature", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.CPUTemp, GENERIC_GETREADING, new Integer(i));
 		
 		/* 
 		 * NBTemp
 		 * */
-//		generic 100 GetReading command
-		addSensor("NBTemp");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the North Bridge temperature</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"temperature\">\n");
-		b.append("\t\t\t<uom unit=\"degreeC\">degree C</uom>\n");
-		b.append("\t\t</ReturnValue>\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("NBTemp", c);
-		b.delete(0, b.length());
-		
+		i = addPrivateCMLDesc(OSDataConstants.NBTemp, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.NBTemp, "Reads the north bridge temperature", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.NBTemp, GENERIC_GETREADING, new Integer(i));
+	
 		/* 
 		 * SBTemp
 		 * */
-//		generic 100 GetReading command
-		addSensor("SBTemp");
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads the South Bridge temperature</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"float\" quantity=\"temperature\">\n");
-		b.append("\t\t\t<uom unit=\"degreeC\">degree C</uom>\n");
-		b.append("\t\t</ReturnValue>\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML("SBTemp", c);
-		b.delete(0, b.length());
+		i = addPrivateCMLDesc(OSDataConstants.SBTemp, OSDataProtocol.GET_READING_METHOD, "Get"+OSDataConstants.SBTemp, "Reads the south bridge temperature", new String[0], new String[0]);
+		//generic 100 GetReading command
+		addGenericCMLDesc(OSDataConstants.SBTemp, GENERIC_GETREADING, new Integer(i));
 	}
 }

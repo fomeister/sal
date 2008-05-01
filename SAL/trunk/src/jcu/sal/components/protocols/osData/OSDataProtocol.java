@@ -50,14 +50,6 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	 * User, System, Nice and idle tiem counter update interval in millisecond
 	 */
 	private int UPDATE_INTERVAL = 10 * 1000;
-
-	static { 
-		Slog.setupLogger(logger);
-		
-		//Add to the list of supported commands
-		commands.put(new Integer(100), "getReading");
-
-	}
 	
 	
 	/**
@@ -68,6 +60,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	 */
 	public OSDataProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super(i,OSDataConstants.OSDATAPROTOCOL_TYPE,c,d);
+		Slog.setupLogger(logger);
 		
 		//Add to the list of supported sensors
 		supportedSensors.put(OSDataConstants.FreeMem,new OSdata("/proc/meminfo", "MemFree", 2, null, true));
@@ -178,32 +171,6 @@ public class OSDataProtocol extends Protocol implements Runnable{
 			update_counters=null;
 		}
 	}
-	
-
-	// TODO create an exception class for this instead of Exception
-	public byte[] getReading(Hashtable<String,String> c, Sensor s) throws IOException{
-		OSdata d;
-		String ret;
-		if(s.getNativeAddress().equals(OSDataConstants.UserTime) || s.getNativeAddress().equals(OSDataConstants.NiceTime) || s.getNativeAddress().equals(OSDataConstants.SystemTime)|| s.getNativeAddress().equals(OSDataConstants.IdleTime)) {
-			ret = lastValues.get(s.getNativeAddress());
-			if(ret.equals("-1")) { 
-				logger.error("couldnt run the command to get readings for sensor "+ s.toString());
-				s.disable();
-				throw new IOException("can read " +s.getNativeAddress()); 
-			}
-		} else {
-			d = supportedSensors.get(s.getNativeAddress());
-			try { ret = PlatformHelper.getFieldFromFile(d.file, d.pattern, d.field, d.delim, d.translate); }
-			catch (IOException e) {
-				logger.error("couldnt get a reading for "+s.toString());
-				throw e;
-			}
-			if(s.getNativeAddress().equals(OSDataConstants.CPUTemp) || s.getNativeAddress().equals(OSDataConstants.NBTemp) || s.getNativeAddress().equals(OSDataConstants.SBTemp)){
-				ret = ret.substring(0, 2)+"."+ret.substring(2,4);
-			}
-		}
-		return ret.getBytes();
-	}
 
 
 	@Override
@@ -260,6 +227,36 @@ public class OSDataProtocol extends Protocol implements Runnable{
 			}// end while interrupted
 		} catch (InterruptedException e) {}
 		logger.debug("update counter thread exiting");
+	}
+	
+	/*
+	 * command handling methods
+	 */
+
+	// TODO create an exception class for this instead of Exception
+	public static String GET_READING_METHOD = "getReading";
+	public byte[] getReading(Hashtable<String,String> c, Sensor s) throws IOException{
+		OSdata d;
+		String ret;
+		if(s.getNativeAddress().equals(OSDataConstants.UserTime) || s.getNativeAddress().equals(OSDataConstants.NiceTime) || s.getNativeAddress().equals(OSDataConstants.SystemTime)|| s.getNativeAddress().equals(OSDataConstants.IdleTime)) {
+			ret = lastValues.get(s.getNativeAddress());
+			if(ret.equals("-1")) { 
+				logger.error("couldnt run the command to get readings for sensor "+ s.toString());
+				s.disable();
+				throw new IOException("can read " +s.getNativeAddress()); 
+			}
+		} else {
+			d = supportedSensors.get(s.getNativeAddress());
+			try { ret = PlatformHelper.getFieldFromFile(d.file, d.pattern, d.field, d.delim, d.translate); }
+			catch (IOException e) {
+				logger.error("couldnt get a reading for "+s.toString());
+				throw e;
+			}
+			if(s.getNativeAddress().equals(OSDataConstants.CPUTemp) || s.getNativeAddress().equals(OSDataConstants.NBTemp) || s.getNativeAddress().equals(OSDataConstants.SBTemp)){
+				ret = ret.substring(0, 2)+"."+ret.substring(2,4);
+			}
+		}
+		return ret.getBytes();
 	}
 
 }

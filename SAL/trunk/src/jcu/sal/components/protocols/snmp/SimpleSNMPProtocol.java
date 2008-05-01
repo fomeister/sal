@@ -32,15 +32,6 @@ public class SimpleSNMPProtocol extends Protocol{
 	private String comm_string;
 	private int timeout;
 
-	static { 
-		Slog.setupLogger(logger);
-		
-		//Add to the list of supported commands
-		commands.put(new Integer(100), "getReading");
-
-	}
-	
-	
 	/**
 	 * Construct the SimpleSNMPProtocol object. The Endpoint is instanciated in super(), 
 	 * and parseConfig is called in super()
@@ -49,6 +40,7 @@ public class SimpleSNMPProtocol extends Protocol{
 	 */
 	public SimpleSNMPProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super(i,SIMPLESNMPPROTOCOL_TYPE,c,d);
+		Slog.setupLogger(logger);
 		
 		cmls = SimpleSNMPCML.getStore();
 //		Add to the list of supported EndPoint IDs
@@ -136,6 +128,7 @@ public class SimpleSNMPProtocol extends Protocol{
 	 * Command handling methods
 	 */
 	// TODO create an exception class for this instead of Exception
+	public static String GET_READING_METHOD = "getReading";
 	public  byte[] getReading(Hashtable<String,String> c, Sensor s) throws IOException{
 		return getRawReading(s.getNativeAddress());
 	}

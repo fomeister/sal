@@ -39,25 +39,8 @@ public class OwfsProtocol extends Protocol{
 	public final static int OWFSSTART_MAX_ATTEMPTS = 2;
 	public final static String DS2490_USBID= "04fa:2490";
 	
-	static { 
-		Slog.setupLogger(logger);
-		
-		//getTemperature		10.X
-		//GetHumidity			26.X
-		commands.put(new Integer(100), "getReading");
-		
-		//10.X, 26.X
-		commands.put(new Integer(110), "getTemperature");
-		
-		//26.X
-		commands.put(new Integer(111), "getHumidity");
-		commands.put(new Integer(1001), "getHumidityHIH4000");
-		commands.put(new Integer(1002), "getHumidityHTM1735");
-		commands.put(new Integer(1003), "getVAD");
-		commands.put(new Integer(1004), "getVDD");
-		commands.put(new Integer(1005), "getVIS");
-	}
-	
+	public static String DS_10_FAMILY = "10.";
+	public static String DS_26_FAMILY = "26.";
 	
 	/**
 	 * Construct the OwfsProtocol object. (parseConfig is called in super())
@@ -65,6 +48,7 @@ public class OwfsProtocol extends Protocol{
 	 */
 	public OwfsProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super(i,OWFSPROTOCOL_TYPE ,c,d);
+		Slog.setupLogger(logger);
 		epIds = new String[]{DS2490_USBID};
 		autodetect = true;
 		AUTODETECT_INTERVAL = 100;
@@ -338,11 +322,13 @@ public class OwfsProtocol extends Protocol{
 		return s.getNativeAddress().substring(0, 3);
 	}
 	
+	
 	/*
 	 * Command handling methods
 	 */
 
 	// TODO create an exception class for this instead of Exception
+	public static String GET_READING_METHOD = "getReading";
 	public byte[] getReading(Hashtable<String,String> c, Sensor s) throws IOException{
 		if(getFamily(s).equals("10.")) {
 			//temperature sensor, read from temperature file
@@ -355,6 +341,7 @@ public class OwfsProtocol extends Protocol{
 		throw new IOException("1-wire Family not supported yet");
 	}
 	
+	public static String GET_TEMPERATURE_METHOD = "getTemperature";
 	public byte[] getTemperature(Hashtable<String,String> c, Sensor s) throws IOException{
 		if(getFamily(s).equals("10.") || getFamily(s).equals("26.")) {
 			//temperature sensor, read from temperature file
@@ -364,6 +351,7 @@ public class OwfsProtocol extends Protocol{
 		throw new IOException("sensor doesnt support this command");
 	}
 	
+	public static String GET_HUMIDITY_METHOD = "getHumidity";
 	public byte[] getHumidity(Hashtable<String,String> c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
@@ -373,6 +361,7 @@ public class OwfsProtocol extends Protocol{
 		throw new IOException("sensor doesnt support this command");
 	}
 	
+	public static String GET_HIH400_METHOD = "getHumidityHIH4000";
 	public byte[] getHumidityHIH4000(Hashtable<String,String> c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
@@ -382,6 +371,7 @@ public class OwfsProtocol extends Protocol{
 		throw new IOException("sensor doesnt support this command");
 	}
 	
+	public static String GET_HTM1735_METHOD = "getHumidityHTM1735";
 	public byte[] getHumidityHTM1735(Hashtable<String,String> c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
@@ -391,6 +381,7 @@ public class OwfsProtocol extends Protocol{
 		throw new IOException("sensor doesnt support this command");
 	}
 	
+	public static String GET_VAD_METHOD = "getVAD";
 	public byte[] getVAD(Hashtable<String,String> c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
@@ -399,7 +390,8 @@ public class OwfsProtocol extends Protocol{
 		logger.error("1-wire sensor family doesnot support this command");
 		throw new IOException("sensor doesnt support this command");
 	}
-
+	
+	public static String GET_VDD_METHOD = "getVDD";
 	public byte[] getVDD(Hashtable<String,String> c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
@@ -409,6 +401,7 @@ public class OwfsProtocol extends Protocol{
 		throw new IOException("sensor doesnt support this command");
 	}
 	
+	public static String GET_VIS_METHOD = "getVIS";
 	public byte[] getVIS(Hashtable<String,String> c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
