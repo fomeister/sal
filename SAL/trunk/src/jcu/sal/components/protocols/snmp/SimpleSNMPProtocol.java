@@ -132,14 +132,15 @@ public class SimpleSNMPProtocol extends Protocol{
 	}
 	
 
+	/*
+	 * Command handling methods
+	 */
 	// TODO create an exception class for this instead of Exception
-	public String getReading(Hashtable<String,String> c, Sensor s) throws IOException{
-		String ret=null;
-		ret = getRawReading(s.getNativeAddress());
-		return ret;
+	public  byte[] getReading(Hashtable<String,String> c, Sensor s) throws IOException{
+		return getRawReading(s.getNativeAddress());
 	}
 	
-	private String getRawReading(String oid) throws IOException{
+	private byte[] getRawReading(String oid) throws IOException{
 		SnmpContext s ;
 		varbind v=null;
 		String ret=null;
@@ -163,7 +164,7 @@ public class SimpleSNMPProtocol extends Protocol{
 			throw new IOException("PDU exception");			
 		}
 		s.destroy();
-		return ret;
+		return ret.getBytes();
 
 	}
 }

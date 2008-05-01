@@ -1,13 +1,18 @@
 package jcu.sal;
 
+import java.awt.Image;
 import java.io.BufferedReader;
-import java.io.FileWriter;
 import java.io.InputStreamReader;
 
+import javax.imageio.ImageIO;
 import javax.naming.ConfigurationException;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 import jcu.sal.agent.SALAgent;
 import jcu.sal.common.Command;
+import jcu.sal.common.Response;
 import jcu.sal.components.sensors.SensorState;
 import jcu.sal.events.Event;
 import jcu.sal.events.EventHandler;
@@ -15,20 +20,37 @@ import jcu.sal.managers.ProtocolManager;
 import jcu.sal.managers.SensorManager;
 
 public class SALuserFile implements EventHandler{
-	static SALAgent s;
+	public static class JpgMini {
+		JLabel l;
+		JFrame f;
+	    public JpgMini(){
+	        f = new JFrame();
+	        l = new JLabel();
+	        f.getContentPane().add(l);
+	        f.setSize(200,200);
+	        //f.setVisible(true);
+	    }
+	    
+	    public void setImage(byte[] b) {
+	    	l.setIcon(new ImageIcon(b));
+	    	f.setVisible(true);
+	    }
+	}
+	
 	
 	public static void main(String [] args) throws ConfigurationException, InterruptedException {
 		int i=0,j=0, fn=0;
-		String str, str2, res;
+		String str, str2;
+		Response res;
 		StringBuilder sb = new StringBuilder();
 		BufferedReader b = new BufferedReader(new InputStreamReader(System.in));
 		SALuserFile user = new SALuserFile(); 
-		s = new SALAgent();
+		SALAgent s = new SALAgent();
 		s.registerEventHandler(user, SensorManager.PRODUCER_ID);
 		s.registerEventHandler(user, ProtocolManager.PRODUCER_ID);
 		s.registerEventHandler(user, SensorState.PRODUCER_ID);
 		s.start(args[0], args[1]);
-
+		JpgMini jpg = new JpgMini();
 		
 		while(i!=-1) {
 			System.out.println("Enter either :\n\ta sensor id to send a command\n\t-1 to quit\n\t-2 to see a list of active sensors");
@@ -42,8 +64,8 @@ public class SALuserFile implements EventHandler{
 					System.out.println("Enter a command id:");
 					j=Integer.parseInt(b.readLine());
 					res = s.execute(new Command(j, "", ""), String.valueOf(i));
-					System.out.println("command "+j+" returned : "+res);
-					new FileWriter("file"+(fn++),false).write(res);
+					//new FileOutputStream("file"+(fn++),false).write(ResponseParser.toByteArray(res));
+					
 				} else if(i==-2)
 					System.out.println(s.listActiveSensors());
 				else if(i==-3) {
