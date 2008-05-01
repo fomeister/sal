@@ -10,6 +10,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Command;
+import jcu.sal.common.Response;
 import jcu.sal.components.protocols.Protocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.SensorID;
@@ -101,7 +102,7 @@ public class SALAgent implements SALAgentInterface{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#execute(jcu.sal.components.Command, java.lang.String)
 	 */
-	public String execute(Command c, String sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
+	public Response execute(Command c, String sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
 		return pm.execute(c,new SensorID(sid));
 	}
 	

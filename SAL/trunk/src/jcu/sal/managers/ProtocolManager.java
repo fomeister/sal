@@ -13,6 +13,7 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Command;
+import jcu.sal.common.Response;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
 import jcu.sal.components.protocols.Protocol;
@@ -242,8 +243,8 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @throws BadAttributeValueExpException if the command cannot be parsed/is incorrect
 	 * @throws NotActiveException if the sensor is not available to run commands
 	 */
-	public String execute(Command c, SensorID sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
-		return getProtocol(sid).execute(c, sid);
+	public Response execute(Command c, SensorID sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
+		return new Response(getProtocol(sid).execute(c, sid));
 	}
 	
 	/**

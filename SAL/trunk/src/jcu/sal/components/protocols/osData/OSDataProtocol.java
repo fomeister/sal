@@ -181,7 +181,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	
 
 	// TODO create an exception class for this instead of Exception
-	public String getReading(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getReading(Hashtable<String,String> c, Sensor s) throws IOException{
 		OSdata d;
 		String ret;
 		if(s.getNativeAddress().equals(OSDataConstants.UserTime) || s.getNativeAddress().equals(OSDataConstants.NiceTime) || s.getNativeAddress().equals(OSDataConstants.SystemTime)|| s.getNativeAddress().equals(OSDataConstants.IdleTime)) {
@@ -202,7 +202,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 				ret = ret.substring(0, 2)+"."+ret.substring(2,4);
 			}
 		}
-		return ret;
+		return ret.getBytes();
 	}
 
 

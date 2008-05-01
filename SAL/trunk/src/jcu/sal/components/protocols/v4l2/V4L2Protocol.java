@@ -1,6 +1,7 @@
 package jcu.sal.components.protocols.v4l2;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -170,11 +171,11 @@ public class V4L2Protocol extends Protocol {
 		return v; 
 	}
 	
-	public String getControl(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getControl(Hashtable<String,String> c, Sensor s) throws IOException{
 		V4L2Control ctrl = ctrls.get(c.get(Command.CIDATTRIBUTE_TAG));
 		if(ctrl!=null) {
 			try {
-				return String.valueOf(ctrl.getValue());
+				return String.valueOf(ctrl.getValue()).getBytes();
 			} catch (V4L4JException e) {
 				logger.error("Could NOT read the value for control "+ctrl.getName());
 				e.printStackTrace();
@@ -186,12 +187,12 @@ public class V4L2Protocol extends Protocol {
 		}
 	}
 
-	public String setControl(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] setControl(Hashtable<String,String> c, Sensor s) throws IOException{
 		V4L2Control ctrl = ctrls.get(c.get(Command.CIDATTRIBUTE_TAG));
 		if(ctrl!=null) {
 			try {
 				ctrl.setValue(Integer.parseInt(c.get(CONTROL_VALUE_ATTRIBUTE_TAG)));
-				return "";
+				return null;
 			} catch (V4L4JException e) {
 				logger.error("Could NOT set the value for control "+ctrl.getName());
 				e.printStackTrace();
@@ -203,27 +204,30 @@ public class V4L2Protocol extends Protocol {
 		}
 	}
 	
-	public String getFrame(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getFrame(Hashtable<String,String> c, Sensor s) throws IOException{
+		byte[] b;
+		ByteBuffer bb;
 		try {
 			fg.startCapture();
 		} catch (V4L4JException e) {
 			logger.error("Cant start capture");
 			throw new IOException();
 		}
-		String f ;
 		try {
-			f = fg.getFrame().asCharBuffer().toString();
+			bb = fg.getFrame();
+			b = new byte[bb.limit()];
+			bb.get(b);
 		} catch (V4L4JException e1) {
 			logger.error("Cant capture single frame");
 			throw new IOException();
+		} finally {
+			try {
+				fg.stopCapture();
+			} catch (V4L4JException e) {
+				logger.error("Cant stop capture");
+				throw new IOException();
+			}
 		}
-		
-		try {
-			fg.stopCapture();
-		} catch (V4L4JException e) {
-			logger.error("Cant stop capture");
-			throw new IOException();
-		}
-		return f;
+		return b;
 	}
 }

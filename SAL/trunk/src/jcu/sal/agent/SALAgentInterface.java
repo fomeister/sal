@@ -7,6 +7,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Command;
+import jcu.sal.common.Response;
 import jcu.sal.events.EventHandler;
 
 public interface SALAgentInterface {
@@ -70,7 +71,7 @@ public interface SALAgentInterface {
 	 * @param sid the target sensor identifier
 	 * @return the result
 	 */
-	public String execute(Command c, String sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException;
+	public Response execute(Command c, String sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException;
 	
 	/**
 	 * This method returns the CML document for a given sensor

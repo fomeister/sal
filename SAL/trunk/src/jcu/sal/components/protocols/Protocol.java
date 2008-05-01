@@ -335,8 +335,8 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	 * @throws BadAttributeValueExpException 
 	 * @throws NotActiveException 
 	 */
-	public String execute(Command c, SensorID sid) throws BadAttributeValueExpException, NotActiveException {
-		String ret_val = null;
+	public byte[] execute(Command c, SensorID sid) throws BadAttributeValueExpException, NotActiveException {
+		byte[] ret_val = {};
 		Sensor s = sensors.get(sid);
 		if(started.get()) {
 			//Check if we have the sensor
@@ -357,7 +357,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 								logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+commands.get(c.getCID()));
 								Method m = this.getClass().getDeclaredMethod(commands.get(c.getCID()), params);
 								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
-								ret_val = (String) m.invoke(this,c.getParameters(), s);
+								ret_val = (byte[]) m.invoke(this,c.getParameters(), s);
 								logger.debug("running method: "+ m.getName()+" SID:"+sid.getName()+" returned "+ret_val );
 							} catch (SecurityException e) {
 								logger.error("Not allowed to execute the method matching this command");
