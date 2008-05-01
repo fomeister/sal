@@ -21,46 +21,21 @@ public class V4L2CML extends CMLStore {
 	}
 	
 	private V4L2CML() throws ConfigurationException{
-		StringBuffer b = new StringBuffer();
-		CMLDoc c;
+		int i;
 		
 		/* 
 		 * CCD sensor
 		 * */
-		addSensor(CCD_KEY);
-//		generic 100 GetReading command
-		b.append("<Command name=\"GetReading\">\n");
-		b.append("\t<CID>100</CID>\n");
-		b.append("\t<ShortDescription>Reads a single frame</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"1\">\n");
-		b.append("\t\t<ReturnValue type=\"string\" quantity=\"none\" />\n");
-		b.append("\t</returnValues>\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(100, b.toString());
-		addCML(CCD_KEY, c);
-		b.delete(0, b.length());
-//		101 startStream
-		b.append("<Command name=\"startStream\">\n");
-		b.append("\t<CID>101</CID>\n");
-		b.append("\t<ShortDescription>Starts streaming frames from the device</ShortDescription>\n");
-		b.append("\t<arguments count=\"1\">\n");
-		b.append("\t\t<Argument type=\"StreamCallback\" />\n");
-		b.append("\t</arguments>\n");
-		b.append("\t<returnValues count=\"0\" />\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(101, b.toString());
-		addCML(CCD_KEY, c);
-		b.delete(0, b.length());
-//		102 startStream
-		b.append("<Command name=\"stopStream\">\n");
-		b.append("\t<CID>102</CID>\n");
-		b.append("\t<ShortDescription>Stops streaming frames from the device</ShortDescription>\n");
-		b.append("\t<arguments count=\"0\" />\n");
-		b.append("\t<returnValues count=\"0\" />\n");
-		b.append("</Command>\n");
-		c = new CMLDoc(102, b.toString());
-		addCML(CCD_KEY, c);
-		b.delete(0, b.length());
+		i = addPrivateCMLDesc(CCD_KEY, "getFrame", "GetFrame", "Reads a single frame", new String[0], new String[0]);
+		//generic GetReading
+		addGenericCMLDesc(CCD_KEY, GENERIC_GETREADING, new Integer(i));
+
+		i = addPrivateCMLDesc(CCD_KEY, "NA", "StartJPEGStream", "Starts a new JPEG stream", new String[] {CMLDoc.CALLBACK_ARG_TYPE}, new String[] {"Callback"});
+		//generic startStream
+		addGenericCMLDesc(CCD_KEY, GENERIC_STARTSTREAM, new Integer(i));
+
+		i = addPrivateCMLDesc(CCD_KEY, "NA", "StopJPEGStream", "Stops a JPEG stream", new String[0], new String[0]);
+		//generic stopStream
+		addGenericCMLDesc(CCD_KEY, GENERIC_STOPSTREAM, new Integer(i));
 	}
 }
