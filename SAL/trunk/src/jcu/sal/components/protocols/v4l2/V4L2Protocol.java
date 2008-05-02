@@ -136,10 +136,12 @@ public class V4L2Protocol extends Protocol {
 		v.add(V4L2CML.CCD_KEY);
 		return v; 
 	}
+
 	
 	/*
-	 * command handling methods
+	 * COMMAND HANDLING METHODS
 	 */
+	
 	public static String GET_CONTROL_METHOD = "getControl";
 	public byte[] getControl(Hashtable<String,String> c, Sensor s) throws IOException{
 		V4L2Control ctrl = ctrls.get(c.get(Command.CIDATTRIBUTE_TAG));
