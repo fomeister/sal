@@ -47,7 +47,7 @@ public class CMLStore {
 	 */
 	
 	public static class CMLDoc {
-		private Logger logger = Logger.getLogger(CMLDoc.class);
+		private static Logger logger = Logger.getLogger(CMLDoc.class);
 		private Integer cid;
 		private String cml;
 		private String methodName;
@@ -185,12 +185,14 @@ public class CMLStore {
 	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, String[] argTypes, String[] names) throws ConfigurationException{
 		//computes the CID
 		Integer cid = priv_cid.get(k);
-		if(k==null)
+		if(cid==null)
 			cid = new Integer(PRIVATE_CID_START);
 		//builds the CML desc doc
-		addCML(k, new CMLDoc(mName,cid++, name, desc, argTypes, names));
+		logger.debug("Adding private CML for key "+k+", method: "+mName+", CID: "+cid.intValue());
+		addCML(k, new CMLDoc(mName,cid, name, desc, argTypes, names));
+		priv_cid.put(k, new Integer(cid.intValue()+1));
 				
-		return cid.intValue()-1;
+		return cid.intValue();
 	}
 	
 	/**
@@ -205,6 +207,7 @@ public class CMLStore {
 		//computes the CID
 		Integer c;
 		CMLDoc cml;
+		logger.debug("Adding generic CML for key "+k+", alias: "+aliasName);
 		if(aliasName.equals(GENERIC_ENABLE)){
 			c = new Integer(GENERIC_ENABLE_CID);
 			String[] s = new String[0];
@@ -254,23 +257,23 @@ public class CMLStore {
 	 */
 	private Hashtable<Integer, CMLDoc> addSensor(String k) throws ConfigurationException {
 		Hashtable<Integer, CMLDoc> t;
-		if(!cmls.containsKey(k)){
+		if(cmls.containsKey(k)){
 			logger.error("trying to add a CML table for sensor " + k + " which already has a CML table.");
 			throw new ConfigurationException();
 		}
 
 		t = new Hashtable<Integer, CMLDoc>();
-
-		/* Add generic CML docs to this sensor */
-		//generic 10 enable command
-		addGenericCMLDesc(k, GENERIC_ENABLE, null);
 		
-		//generic 11 disable command
-		addGenericCMLDesc(k, GENERIC_DISABLE, null);
-		
-		/* create the final table */ 
+		/* create the table */ 
 		cmls.put(k, t);
 
+		/* Add generic CML docs to this sensor */
+		/* generic enable command */
+		addGenericCMLDesc(k, GENERIC_ENABLE, null);
+		
+		/* generic disable command */
+		addGenericCMLDesc(k, GENERIC_DISABLE, null);
+		
 		return t;
 
 	}
@@ -290,6 +293,23 @@ public class CMLStore {
 		else {
 			logger.error("trying to add a CML doc (cid:"+v.getCID()+") to sensor " + k + " which already holds a CML with this id.");
 			throw new ConfigurationException();
+		}
+		dumpCML(k);
+	}
+	
+	private void dumpCML(String k){
+		Hashtable<Integer, CMLDoc> t = cmls.get(k);
+		Integer i;
+		if(t!=null){
+			Enumeration<Integer> e = t.keys();
+			logger.debug("CML store dump:");
+			while(e.hasMoreElements()){
+				i=e.nextElement();
+				logger.debug("CML Doc CID: "+i.intValue());
+				logger.debug("\tMethod name: "+t.get(i).getMethodName());
+			}
+		} else {
+			logger.debug("No such key in cmlstore");
 		}
 	}
 

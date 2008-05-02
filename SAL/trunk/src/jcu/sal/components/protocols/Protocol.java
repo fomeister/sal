@@ -350,8 +350,8 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 						if(s.startRunCmd()) {
 							try {
 								Class<?>[] params = {Hashtable.class,Sensor.class};
-								logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(getCML(sid), c.getCID()));
-								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(getCML(sid), c.getCID()), params);
+								logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()));
+								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params);
 								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
 								ret_val = (byte[]) m.invoke(this,c.getParameters(), s);
 								logger.debug("running method: "+ m.getName()+" SID:"+sid.getName()+" returned "+ret_val );
