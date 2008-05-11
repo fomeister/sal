@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SAL>
+    <PlatformConfiguration>
+        <protocols>
+            <Protocol name="webcam" type="v4l2">
+                <EndPoint name="pci" type="pci"/>
+                <parameters>
+                    <Param name="deviceFile" value="/dev/video0"/>
+                    <Param name="width" value="640"/>
+                    <Param name="height" value="480"/>
+                    <Param name="standard" value="0"/>
+                    <Param name="channel" value="0"/>
+                </parameters>
+            </Protocol>
+            <Protocol name="webcam1" type="v4l2">
+                <EndPoint name="pci1" type="pci"/>
+                <parameters>
+                    <Param name="deviceFile" value="/dev/video1"/>
+                    <Param name="width" value="640"/>
+                    <Param name="height" value="480"/>
+                    <Param name="standard" value="0"/>
+                    <Param name="channel" value="0"/>
+                </parameters>
+            </Protocol>
+        </protocols>
+    </PlatformConfiguration>
+</SAL>
