@@ -7,5 +7,11 @@
                 <Param name="Address" value="CCD"/>
             </parameters>
         </Sensor>
+        <Sensor sid="2">
+            <parameters>
+                <Param name="ProtocolName" value="webcam2"/>
+                <Param name="Address" value="CCD"/>
+            </parameters>
+        </Sensor>
     </SensorConfiguration>
 </SAL>

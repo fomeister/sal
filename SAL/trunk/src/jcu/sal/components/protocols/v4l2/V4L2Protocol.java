@@ -18,9 +18,9 @@ import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Node;
 
-import v4l4j.FrameGrabber;
-import v4l4j.V4L2Control;
-import v4l4j.V4L4JException;
+import au.edu.jcu.v4l4j.FrameGrabber;
+import au.edu.jcu.v4l4j.V4L2Control;
+import au.edu.jcu.v4l4j.V4L4JException;
 
 public class V4L2Protocol extends Protocol {
 	

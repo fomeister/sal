@@ -101,7 +101,8 @@ public class SALuserFile implements EventHandler{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-			}
+			} 
+				
 		}
 		finally {
 			s.unregisterEventHandler(user, SensorManager.PRODUCER_ID);
