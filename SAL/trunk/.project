@@ -3,7 +3,6 @@
 	<name>SAL</name>
 	<comment></comment>
 	<projects>
-		<project>V4L4J</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

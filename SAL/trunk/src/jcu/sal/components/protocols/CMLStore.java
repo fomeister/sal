@@ -294,7 +294,7 @@ public class CMLStore {
 			logger.error("trying to add a CML doc (cid:"+v.getCID()+") to sensor " + k + " which already holds a CML with this id.");
 			throw new ConfigurationException();
 		}
-		dumpCML(k);
+		if(false) dumpCML(k);
 	}
 	
 	private void dumpCML(String k){
