@@ -16,7 +16,7 @@ import jcu.sal.common.Command;
 import jcu.sal.common.Response;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
-import jcu.sal.components.protocols.Protocol;
+import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
@@ -29,13 +29,14 @@ import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 /**
  * @author gilles
  * 
  */
-public class ProtocolManager extends ManagerFactory<Protocol> {
+public class ProtocolManager extends ManagerFactory<AbstractProtocol> {
 
 	public static String PRODUCER_ID = "ProtocolManager";
 	private static ProtocolManager p = new ProtocolManager();
@@ -68,14 +69,14 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @see jcu.sal.managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Protocol build(Node config, Identifier id) throws InstantiationException {
-		Protocol p = null;
+	protected AbstractProtocol build(Node config, Identifier id) throws InstantiationException {
+		AbstractProtocol p = null;
 		String type=null;
 		ProtocolID i = (ProtocolID) id;
-		logger.debug("building Protocol "+id.getName());
+		logger.debug("building protocol "+id.getName());
 		try {
 			type=getComponentType(config);
-			logger.debug("Protocol type: " + type);
+			logger.debug("AbstractProtocol type: " + type);
 			String className = ProtocolModulesList.getClassName(type);
 
 			Class<?>[] params = {ProtocolID.class, Hashtable.class, Node.class};
@@ -83,10 +84,10 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			Object[] o = new Object[3];
 			o[0] = i;
 			o[1] = getComponentConfig(config);
-			//logger.debug("Protocol config: " + XMLhelper.toString(config));
-			o[2] = XMLhelper.getNode("/" + Protocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config, true);
+			//logger.debug("AbstractProtocol config: " + XMLhelper.toString(config));
+			o[2] = XMLhelper.getNode("/" + AbstractProtocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config, true);
 			//logger.debug("EndPoint config: " + XMLhelper.toString((Node) o[2])); 
-			p = (Protocol) c.newInstance(o);
+			p = (AbstractProtocol) c.newInstance(o);
 			logger.debug("done building protocol "+p.toString());
 			
 		} catch (ParseException e) {
@@ -95,7 +96,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 			//e.printStackTrace();
 			throw new InstantiationException();
 		} catch (Exception e) {
-			logger.error("Error in new Protocol instanciation.");
+			logger.error("Error in new protocol instanciation.");
 			logger.error("Exception: "+e.getClass()+" - "+e.getMessage() );
 			if (e.getCause()!=null) logger.error("caused by: "+e.getCause().getClass()+" - "+e.getCause().getMessage());
 			logger.error("XML doc:\n");
@@ -133,9 +134,10 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	protected Identifier getComponentID(Node n) throws ParseException {
 		Identifier id = null;
 		try {
-			id = new ProtocolID(XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLNAME_TAG, n));
+			id = new ProtocolID(XMLhelper.getAttributeFromName("//" + AbstractProtocol.PROTOCOL_TAG, AbstractProtocol.PROTOCOLNAME_TAG, n));
 		} catch (Exception e) {
-			throw new ParseException("Couldnt find the Protocol identifier", 0);
+			e.printStackTrace();
+			throw new ParseException("Couldnt find the protocol identifier", 0);
 		}
 		return id;
 	}
@@ -147,7 +149,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	protected String getComponentType(Node n) throws ParseException {
 		String type = null;
 		try {
-			type = XMLhelper.getAttributeFromName("//" + Protocol.PROTOCOL_TAG, Protocol.PROTOCOLTYPE_TAG, n);
+			type = XMLhelper.getAttributeFromName("//" + AbstractProtocol.PROTOCOL_TAG, AbstractProtocol.PROTOCOLTYPE_TAG, n);
 		} catch (Exception e) {
 			throw new ParseException("Couldnt find the protocol type", 0);
 		}
@@ -158,7 +160,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @see jcu.sal.managers.ManagerFactory#remove(java.lang.Object)
 	 */
 	@Override
-	protected void remove(Protocol component) {
+	protected void remove(AbstractProtocol component) {
 		ProtocolID pid=component.getID();
 		logger.debug("Removing protocol " + pid.toString());
 		component.remove(this);
@@ -208,9 +210,9 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 */
 	public void startAll(){
 		synchronized(this){
-			Iterator<Protocol> iter = getIterator();
+			Iterator<AbstractProtocol> iter = getIterator();
 			while (iter.hasNext()) {
-				Protocol e = iter.next();
+				AbstractProtocol e = iter.next();
 				//logger.debug("Starting protocol" + e.toString());
 				try { e.start(); }
 				catch (ConfigurationException ex) { 
@@ -225,9 +227,9 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 */
 	public void stopAll(){
 		synchronized(this){
-			Iterator<Protocol> iter = getIterator();
+			Iterator<AbstractProtocol> iter = getIterator();
 			while (iter.hasNext()) {
-				Protocol e = iter.next();
+				AbstractProtocol e = iter.next();
 				logger.debug("Stopping protocol" + e.toString());
 				e.stop();
 			}
@@ -254,7 +256,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @throws ConfigurationException if the sensor isnt associated with a protocol
 	 * @throws NotActiveException
 	 */
-	public String getCML(SensorID sid) throws ConfigurationException, NotActiveException {
+	public Document getCML(SensorID sid) throws ConfigurationException, NotActiveException {
 		return getProtocol(sid).getCML(sid);
 	}
 	
@@ -289,8 +291,8 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @return the protocol to which the sensor has been added 
 	 * @throws ConfigurationException if the sensor cannot be added (wrong ProtocolName field, or unsupported sensor)
 	 */
-	Protocol associateSensor(Sensor sensor) throws ConfigurationException{
-		Protocol p = null;
+	AbstractProtocol associateSensor(Sensor sensor) throws ConfigurationException{
+		AbstractProtocol p = null;
 		String pname = null;
 		try {
 			pname = sensor.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG);
@@ -316,7 +318,7 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @throws ConfigurationException if the sensor cannot be unassociated (wrong ProtocolName field, or unsupported sensor)
 	 */
 	void unassociateSensor(Sensor s) throws ConfigurationException{
-		Protocol p = null;
+		AbstractProtocol p = null;
 		String pname = null;
 		try {
 			pname = s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG);
@@ -340,8 +342,8 @@ public class ProtocolManager extends ManagerFactory<Protocol> {
 	 * @throws ConfigurationException if the protocol can not be found
 	 * @throws NotActiveException if the sensor can not be foundx 
 	 */
-	Protocol getProtocol(SensorID sid) throws NotActiveException, ConfigurationException{
-			Protocol p=null;
+	AbstractProtocol getProtocol(SensorID sid) throws NotActiveException, ConfigurationException{
+			AbstractProtocol p=null;
 			String pName = null;
 			Sensor s;
 

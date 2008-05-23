@@ -9,6 +9,12 @@
         </Sensor>
         <Sensor sid="2">
             <parameters>
+                <Param name="ProtocolName" value="webcam1"/>
+                <Param name="Address" value="CCD"/>
+            </parameters>
+        </Sensor>
+        <Sensor sid="3">
+            <parameters>
                 <Param name="ProtocolName" value="webcam2"/>
                 <Param name="Address" value="CCD"/>
             </parameters>

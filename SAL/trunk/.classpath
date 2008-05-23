@@ -5,12 +5,13 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="v4l4j/trunk"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="src" path="test"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="lib/comm.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/junit-4.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib"/>
 	<classpathentry exported="true" kind="lib" path="lib/log4j-1.2.15.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/snmp6_0.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/v4l4j"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/v4l4j"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -12,22 +12,22 @@
                     <Param name="channel" value="0"/>
                 </parameters>
             </Protocol>
-            <!--			<Protocol name="webcam2" type="v4l2">
+            <Protocol name="webcam1" type="v4l2">
                 <EndPoint name="pci1" type="pci"/>
                 <parameters>
                     <Param name="deviceFile" value="/dev/video1"/>
-                    <Param name="width" value="640"/>
-                    <Param name="height" value="480"/>
+                    <Param name="width" value="320"/>
+                    <Param name="height" value="240"/>
                     <Param name="standard" value="0"/>
                     <Param name="channel" value="0"/>
                 </parameters>
-            </Protocol>-->
-            <Protocol name="webcam2" type="v4l2">
-                <EndPoint name="pci1" type="pci"/>
+            </Protocol>
+			<Protocol name="webcam2" type="v4l2">
+                <EndPoint name="pci2" type="pci"/>
                 <parameters>
-                    <Param name="deviceFile" value="/dev/video1"/>
-                    <Param name="width" value="640"/>
-                    <Param name="height" value="480"/>
+                    <Param name="deviceFile" value="/dev/video2"/>
+                    <Param name="width" value="320"/>
+                    <Param name="height" value="240"/>
                     <Param name="standard" value="0"/>
                     <Param name="channel" value="0"/>
                 </parameters>

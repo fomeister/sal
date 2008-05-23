@@ -15,7 +15,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
-import jcu.sal.components.protocols.Protocol;
+import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
@@ -129,10 +129,10 @@ public class ConfigService{
 	public synchronized void addProtocol(Node n) throws ConfigurationException{
 		try {
 			//check if the node we re trying to add already exists
-			Node parent = XMLhelper.getNode("//" + Protocol.PROTOCOL_TAG, n, false);
-			String name = XMLhelper.getAttributeFromName(Protocol.PROTOCOLNAME_TAG, parent);
-			if(XMLhelper.getNode("//"+ Protocol.PROTOCOL_TAG +"[@"+Protocol.PROTOCOLNAME_TAG+"='"+name+"']", platformCC, false)==null) {
-				parent = XMLhelper.getNode("//" + Protocol.PROTOCOLSECTION_TAG, platformCC, false);
+			Node parent = XMLhelper.getNode("//" + AbstractProtocol.PROTOCOL_TAG, n, false);
+			String name = XMLhelper.getAttributeFromName(AbstractProtocol.PROTOCOLNAME_TAG, parent);
+			if(XMLhelper.getNode("//"+ AbstractProtocol.PROTOCOL_TAG +"[@"+AbstractProtocol.PROTOCOLNAME_TAG+"='"+name+"']", platformCC, false)==null) {
+				parent = XMLhelper.getNode("//" + AbstractProtocol.PROTOCOLSECTION_TAG, platformCC, false);
 				XMLhelper.addChild(parent, n);
 		        writeDocumentToFile(platformConfigFile,platformCC);
 			} //else {
@@ -160,7 +160,7 @@ public class ConfigService{
 	public synchronized void removeProtocol(ProtocolID pid) throws ConfigurationException{
 		Node n;
 		try {
-			if((n=XMLhelper.getNode("//"+ Protocol.PROTOCOL_TAG +"[@"+Protocol.PROTOCOLNAME_TAG+"='"+pid.getName()+"']", platformCC, false))!=null) {
+			if((n=XMLhelper.getNode("//"+ AbstractProtocol.PROTOCOL_TAG +"[@"+AbstractProtocol.PROTOCOLNAME_TAG+"='"+pid.getName()+"']", platformCC, false))!=null) {
 				XMLhelper.deleteNode(n);
 		        writeDocumentToFile(platformConfigFile,platformCC);
 			} else {
@@ -335,7 +335,7 @@ public class ConfigService{
 				i=0;
 				while(!params.get(i++).equals("value"));
 				pname = params.get(i);
-				//logger.debug("found Protocol name: "+pname);
+				//logger.debug("found AbstractProtocol name: "+pname);
 			} else {
 				logger.error("Cant find the protocol name from given sensor XML node ("+(params.size()>0)+")");
 				throw new ConfigurationException();
@@ -382,7 +382,7 @@ public class ConfigService{
 		Vector<Node> cprotocol = new Vector<Node>();
 		NodeList nl = null;
 		try {
-			nl = XMLhelper.getNodeList("//" + Protocol.PROTOCOL_TAG, platformCC);
+			nl = XMLhelper.getNodeList("//" + AbstractProtocol.PROTOCOL_TAG, platformCC);
 			for(int i=0; i<nl.getLength(); i++)
 				cprotocol.add(XMLhelper.duplicateNode(nl.item(i)));
 			return cprotocol;
@@ -485,7 +485,7 @@ public class ConfigService{
 		Iterator<Node> iter = e.getProtocols().iterator();
 		System.out.println("");
 		while(iter.hasNext()) {
-			System.out.println("Protocol:");
+			System.out.println("AbstractProtocol:");
 			System.out.println(XMLhelper.toString(iter.next()));
 		}
 		System.out.println("");
@@ -504,20 +504,20 @@ public class ConfigService{
 			+"<Param name=\"Address\" value=\"26.0D7F61000000\"/></parameters></Sensor>";
 		e.addSensor(XMLhelper.createDocument(ns));
 		
-		ns = "<Protocol name=\"1wtree\" type=\"PlatformData\">"
+		ns = "<AbstractProtocol name=\"1wtree\" type=\"PlatformData\">"
 				+"<EndPoint name=\"filesystem\" type=\"fs\" /><parameters>"
 					+"<Param name=\"CPUTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp1_input\" />"
 					+"<Param name=\"NBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp3_input\" />"
 					+"<Param name=\"SBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp2_input\" />"
-				+"</parameters></Protocol>";
+				+"</parameters></AbstractProtocol>";
 		e.addProtocol(XMLhelper.createDocument(ns));
 		
-		ns = "<Protocol name=\"osData\" type=\"PlatformData\">"
+		ns = "<AbstractProtocol name=\"osData\" type=\"PlatformData\">"
 			+"<EndPoint name=\"filesystem\" type=\"fs\" /><parameters>"
 				+"<Param name=\"CPUTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp1_input\" />"
 				+"<Param name=\"NBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp3_input\" />"
 				+"<Param name=\"SBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp2_input\" />"
-			+"</parameters></Protocol>";
+			+"</parameters></AbstractProtocol>";
 	e.addProtocol(XMLhelper.createDocument(ns));
 	ArrayList<String> l = e.listSensorID();
 	for (int i = 0; i < l.size(); i++) {

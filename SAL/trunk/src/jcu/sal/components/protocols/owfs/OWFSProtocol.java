@@ -13,8 +13,9 @@ import java.util.Vector;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Command;
 import jcu.sal.components.EndPoints.UsbEndPoint;
-import jcu.sal.components.protocols.Protocol;
+import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.utils.PlatformHelper;
@@ -27,9 +28,9 @@ import org.w3c.dom.Node;
  * @author gilles
  *
  */
-public class OwfsProtocol extends Protocol{
+public class OWFSProtocol extends AbstractProtocol{
 
-	private static Logger logger = Logger.getLogger(OwfsProtocol.class);
+	private static Logger logger = Logger.getLogger(OWFSProtocol.class);
 	private int adapterNb=0;
 	private int maxAdaptersSeen=0;
 
@@ -43,16 +44,16 @@ public class OwfsProtocol extends Protocol{
 	public static String DS_26_FAMILY = "26.";
 	
 	/**
-	 * Construct the OwfsProtocol object. (parseConfig is called in super())
+	 * Construct the OSDataProtocol object. (parseConfig is called in super())
 	 * @throws ConfigurationException if there is a problem with the component's config
 	 */
-	public OwfsProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
+	public OWFSProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super(i,OWFSPROTOCOL_TYPE ,c,d);
 		Slog.setupLogger(logger);
 		epIds = new String[]{DS2490_USBID};
 		autodetect = true;
 		AUTODETECT_INTERVAL = 100;
-		cmls = OwfsCML.getStore();
+		cmls = CMLDescriptionStore.getStore();
 		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
 	}
 
@@ -126,7 +127,7 @@ public class OwfsProtocol extends Protocol{
 
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.components.protocols.Protocol#internal_isSensorSupported(jcu.sal.components.sensors.Sensor)
+	 * @see jcu.sal.components.protocols.AbstractProtocol#internal_isSensorSupported(jcu.sal.components.sensors.Sensor)
 	 */
 	@Override
 	protected boolean internal_isSensorSupported(Sensor sensor) {
@@ -140,7 +141,7 @@ public class OwfsProtocol extends Protocol{
 
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.components.protocols.Protocol#internal_probeSensor(jcu.sal.components.sensors.Sensor)
+	 * @see jcu.sal.components.protocols.AbstractProtocol#internal_probeSensor(jcu.sal.components.sensors.Sensor)
 	 */
 	@Override
 	protected boolean internal_probeSensor(Sensor s) {
@@ -163,7 +164,7 @@ public class OwfsProtocol extends Protocol{
 	
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.components.protocols.Protocol#internal_getCMLStoreKey(jcu.sal.components.sensors.Sensor)
+	 * @see jcu.sal.components.protocols.AbstractProtocol#internal_getCMLStoreKey(jcu.sal.components.sensors.Sensor)
 	 */
 	@Override
 	protected String internal_getCMLStoreKey(Sensor s){
@@ -251,7 +252,7 @@ public class OwfsProtocol extends Protocol{
 			}
 
 			while(++attempt<=OWFSSTART_MAX_ATTEMPTS && !started) {
-				BufferedReader r[] = PlatformHelper.captureOutputs(config.get(OwfsProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OwfsProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
+				BufferedReader r[] = PlatformHelper.captureOutputs(config.get(OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OWFSProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
 				try {Thread.sleep(100);} catch (InterruptedException e) {} 
 				
 				//Check that it actually started ...
@@ -329,7 +330,7 @@ public class OwfsProtocol extends Protocol{
 
 	// TODO create an exception class for this instead of Exception
 	public static String GET_READING_METHOD = "getReading";
-	public byte[] getReading(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getReading(Command c, Sensor s) throws IOException{
 		if(getFamily(s).equals("10.")) {
 			//temperature sensor, read from temperature file
 			return getTemperature(c, s);
@@ -342,7 +343,7 @@ public class OwfsProtocol extends Protocol{
 	}
 	
 	public static String GET_TEMPERATURE_METHOD = "getTemperature";
-	public byte[] getTemperature(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getTemperature(Command c, Sensor s) throws IOException{
 		if(getFamily(s).equals("10.") || getFamily(s).equals("26.")) {
 			//temperature sensor, read from temperature file
 			return getRawReading(s.getNativeAddress()+ "/" + "temperature");
@@ -352,7 +353,7 @@ public class OwfsProtocol extends Protocol{
 	}
 	
 	public static String GET_HUMIDITY_METHOD = "getHumidity";
-	public byte[] getHumidity(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getHumidity(Command c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "humidity");
@@ -362,7 +363,7 @@ public class OwfsProtocol extends Protocol{
 	}
 	
 	public static String GET_HIH400_METHOD = "getHumidityHIH4000";
-	public byte[] getHumidityHIH4000(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getHumidityHIH4000(Command c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "HIH4000/humidity");
@@ -372,7 +373,7 @@ public class OwfsProtocol extends Protocol{
 	}
 	
 	public static String GET_HTM1735_METHOD = "getHumidityHTM1735";
-	public byte[] getHumidityHTM1735(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getHumidityHTM1735(Command c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "HTM1735/humidity");
@@ -382,7 +383,7 @@ public class OwfsProtocol extends Protocol{
 	}
 	
 	public static String GET_VAD_METHOD = "getVAD";
-	public byte[] getVAD(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getVAD(Command c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "VAD");
@@ -392,7 +393,7 @@ public class OwfsProtocol extends Protocol{
 	}
 	
 	public static String GET_VDD_METHOD = "getVDD";
-	public byte[] getVDD(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getVDD(Command c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "VDD");
@@ -402,7 +403,7 @@ public class OwfsProtocol extends Protocol{
 	}
 	
 	public static String GET_VIS_METHOD = "getVIS";
-	public byte[] getVIS(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getVIS(Command c, Sensor s) throws IOException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "vis");

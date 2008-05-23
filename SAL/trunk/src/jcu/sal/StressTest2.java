@@ -152,7 +152,7 @@ public class StressTest2 {
 					while(!Thread.interrupted()) {
 						try {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Adding 1-wire protocol");
-							s.addProtocol("<Protocol name=\"1wtree\" type=\"owfs\"><EndPoint name=\"usb\" type=\"usb\" /><parameters><Param name=\"Location\" value=\"/opt/owfs/bin/owfs\" /><Param name=\"MountPoint\" value=\"/mnt/w1\" /></parameters>	</Protocol>", true);
+							s.addProtocol("<AbstractProtocol name=\"1wtree\" type=\"owfs\"><EndPoint name=\"usb\" type=\"usb\" /><parameters><Param name=\"Location\" value=\"/opt/owfs/bin/owfs\" /><Param name=\"MountPoint\" value=\"/mnt/w1\" /></parameters>	</AbstractProtocol>", true);
 							System.out.println("Thread "+Thread.currentThread().getName()+": 1-wire protocol added");
 						} catch (ConfigurationException e) {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Error creating 1-wire");
@@ -164,7 +164,7 @@ public class StressTest2 {
 						
 						try {
 							System.out.println("Thread "+Thread.currentThread().getName()+":Adding osData protocol");
-							s.addProtocol("<Protocol name=\"osData\" type=\"PlatformData\"><EndPoint name=\"filesystem\" type=\"fs\" /><parameters><Param name=\"CPUTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp2_input\" /><Param name=\"NBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp1_input\" /><Param name=\"SBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp3_input\" /></parameters>	</Protocol>", true);
+							s.addProtocol("<AbstractProtocol name=\"osData\" type=\"PlatformData\"><EndPoint name=\"filesystem\" type=\"fs\" /><parameters><Param name=\"CPUTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp2_input\" /><Param name=\"NBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp1_input\" /><Param name=\"SBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp3_input\" /></parameters>	</AbstractProtocol>", true);
 							System.out.println("Thread "+Thread.currentThread().getName()+":osData protocol added");
 						} catch (ConfigurationException e) {
 							System.out.println("Thread "+Thread.currentThread().getName()+":Error creating endpoint");

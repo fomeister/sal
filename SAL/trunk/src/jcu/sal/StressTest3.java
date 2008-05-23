@@ -104,7 +104,7 @@ public class StressTest3 {
 					while(!Thread.interrupted()) {
 						try {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Adding 1-wire protocol");
-							s.addProtocol("<Protocol name=\"1wtree\" type=\"owfs\"><EndPoint name=\"usb\" type=\"usb\" /><parameters><Param name=\"Location\" value=\"/opt/owfs/bin/owfs\" /><Param name=\"MountPoint\" value=\"/mnt/w1\" /></parameters>	</Protocol>", true);
+							s.addProtocol("<AbstractProtocol name=\"1wtree\" type=\"owfs\"><EndPoint name=\"usb\" type=\"usb\" /><parameters><Param name=\"Location\" value=\"/opt/owfs/bin/owfs\" /><Param name=\"MountPoint\" value=\"/mnt/w1\" /></parameters>	</AbstractProtocol>", true);
 							System.out.println("Thread "+Thread.currentThread().getName()+": 1-wire protocol added");
 						} catch (ConfigurationException e) {
 							System.out.println("Thread "+Thread.currentThread().getName()+": Error creating 1-wire");

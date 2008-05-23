@@ -8,10 +8,15 @@ import java.util.Vector;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.CMLConstants;
 import jcu.sal.common.Command;
+import jcu.sal.common.Response;
+import jcu.sal.common.StreamCallback;
 import jcu.sal.components.EndPoints.PCIEndPoint;
-import jcu.sal.components.protocols.Protocol;
+import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
+import jcu.sal.components.protocols.CMLDescription.ArgTypes;
+import jcu.sal.components.protocols.CMLDescription.ReturnType;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.utils.Slog;
 
@@ -22,7 +27,7 @@ import au.edu.jcu.v4l4j.FrameGrabber;
 import au.edu.jcu.v4l4j.V4L2Control;
 import au.edu.jcu.v4l4j.V4L4JException;
 
-public class V4L2Protocol extends Protocol {
+public class V4L2Protocol extends AbstractProtocol {
 	
 	private static Logger logger = Logger.getLogger(V4L2Protocol.class);
 	public final static String V4L2PROTOCOL_TYPE = "v4l2";
@@ -37,6 +42,8 @@ public class V4L2Protocol extends Protocol {
 	
 	private FrameGrabber fg = null;
 	private Hashtable<String,V4L2Control> ctrls = null;
+	private boolean streaming;
+	private StreamingThread st;
 	
 
 	public V4L2Protocol(ProtocolID i, Hashtable<String, String> c,
@@ -45,8 +52,9 @@ public class V4L2Protocol extends Protocol {
 		Slog.setupLogger(logger);
 		autodetect = true;
 		AUTODETECT_INTERVAL = -1; //run only once
-		cmls = V4L2CML.getStore();
+		cmls = CMLDescriptionStore.getStore();
 		supportedEndPointTypes.add(PCIEndPoint.PCIENDPOINT_TYPE);
+		streaming = false;
 	}
 
 	@Override
@@ -57,7 +65,7 @@ public class V4L2Protocol extends Protocol {
 
 	@Override
 	protected boolean internal_isSensorSupported(Sensor s) {
-		if(s.getNativeAddress().equals(V4L2CML.CCD_KEY)) return true;
+		if(s.getNativeAddress().equals(CMLDescriptionStore.CCD_KEY)) return true;
 		return false;
 	}
 
@@ -65,7 +73,7 @@ public class V4L2Protocol extends Protocol {
 	protected void internal_parseConfig() throws ConfigurationException {
 		//we must have several config directives:
 		String dev;
-		int w,h,std,ch;
+		int w,h,std,ch, cid;
 		try {
 			dev = getConfig(V4L2D_DEVICE_ATTRIBUTE_TAG);
 			w = Integer.parseInt(getConfig(WIDTH_ATTRIBUTE_TAG));
@@ -86,21 +94,36 @@ public class V4L2Protocol extends Protocol {
 			logger.error("Couldnt create/initialise FrameGrabber object");
 			e.printStackTrace();
 			throw new ConfigurationException();
+		} catch(UnsatisfiedLinkError e) {
+			logger.error("Cant load JNI library. Couldnt create/initialise FrameGrabber object");
+			throw new ConfigurationException();
 		}
 		
 		//get the V4L2 controls
 		V4L2Control[] v4l2c = fg.getControls();
 		ctrls = new Hashtable<String, V4L2Control>();
-		String name;
+		String key = CMLDescriptionStore.CCD_KEY, name, ctrlName, desc;
+		String[] argNamesEmpty = new String[0];
+		String[] argNamesValue = new String[]{CMLDescriptionStore.CONTROL_VALUE_NAME};
+		ArgTypes[] tEmpty = new ArgTypes[0];
+		ArgTypes[] tValue = new ArgTypes[] {new ArgTypes(CMLConstants.ARG_TYPE_INT)};
+		ReturnType retInt = new ReturnType(CMLConstants.RET_TYPE_INT);
+		ReturnType retVoid = new ReturnType(CMLConstants.RET_TYPE_VOID);
 		for (int id = 0; id < v4l2c.length; id++) {
-			name = v4l2c[id].getName();
+			ctrlName = v4l2c[id].getName();
 			//add two commands to the CCD sensor for this control
 			//(one to set its value, the other to get its value)
 			//getValue command
-			cmls.addPrivateCMLDesc(V4L2CML.CCD_KEY, GET_CONTROL_METHOD, "get"+name.replace(" ", ""), "Fetches the value of "+name, new String[0], new String[0]);
+			name = "get"+ctrlName.replace(" ", "");
+			desc = "Fetches the value of "+ctrlName;
+			cid = cmls.addPrivateCMLDesc(key, GET_CONTROL_METHOD, name, desc, tEmpty, argNamesEmpty , retInt);
+			ctrls.put(String.valueOf(cid), v4l2c[id]);
 			
 			//setValue command
-			cmls.addPrivateCMLDesc(V4L2CML.CCD_KEY, SET_CONTROL_METHOD, "set"+name.replace(" ", ""), "Sets the value of "+name, new String[0], new String[0]);
+			name = "set"+name.replace(" ", "");
+			desc = "Sets the value of "+ctrlName;
+			cid = cmls.addPrivateCMLDesc(key, SET_CONTROL_METHOD, name, desc, tValue, argNamesValue , retVoid);
+			ctrls.put(String.valueOf(cid), v4l2c[id]);
 		}
 	}
 
@@ -115,6 +138,11 @@ public class V4L2Protocol extends Protocol {
 
 	@Override
 	protected void internal_stop() {
+		if(streaming) {
+			st.stop();
+			st.join();
+		}
+
 		//make sure the frame grabber capture is stopped
 		try {fg.stopCapture();} catch (V4L4JException e) {}
 	}
@@ -133,7 +161,7 @@ public class V4L2Protocol extends Protocol {
 	@Override
 	protected Vector<String> detectConnectedSensors() {
 		Vector <String> v = new Vector<String>();
-		v.add(V4L2CML.CCD_KEY);
+		v.add(CMLDescriptionStore.CCD_KEY);
 		return v; 
 	}
 
@@ -143,42 +171,45 @@ public class V4L2Protocol extends Protocol {
 	 */
 	
 	public static String GET_CONTROL_METHOD = "getControl";
-	public byte[] getControl(Hashtable<String,String> c, Sensor s) throws IOException{
-		V4L2Control ctrl = ctrls.get(c.get(Command.CIDATTRIBUTE_TAG));
+	public byte[] getControl(Command c, Sensor s) throws IOException{
+		V4L2Control ctrl = ctrls.get(String.valueOf(c.getCID()));
 		if(ctrl!=null) {
 			try {
 				return String.valueOf(ctrl.getValue()).getBytes();
 			} catch (V4L4JException e) {
 				logger.error("Could NOT read the value for control "+ctrl.getName());
-				e.printStackTrace();
 				throw new IOException();
 			}			
 		} else {
-			logger.error("Could NOT find the control matching command ID "+c.get(Command.CIDATTRIBUTE_TAG));
+			logger.error("Could NOT find the control matching command ID "+c.getCID());
 			throw new IOException();
 		}
 	}
 
 	public static String SET_CONTROL_METHOD = "setControl";
-	public byte[] setControl(Hashtable<String,String> c, Sensor s) throws IOException{
-		V4L2Control ctrl = ctrls.get(c.get(Command.CIDATTRIBUTE_TAG));
+	public byte[] setControl(Command c, Sensor s) throws IOException{
+		V4L2Control ctrl = ctrls.get(String.valueOf(c.getCID()));
 		if(ctrl!=null) {
 			try {
-				ctrl.setValue(Integer.parseInt(c.get(CONTROL_VALUE_ATTRIBUTE_TAG)));
+				ctrl.setValue(Integer.parseInt(c.getValue(CMLDescriptionStore.CONTROL_VALUE_NAME)));
 				return null;
 			} catch (V4L4JException e) {
 				logger.error("Could NOT set the value for control "+ctrl.getName());
-				e.printStackTrace();
 				throw new IOException();
 			}			
 		} else {
-			logger.error("Could NOT find the control matching command ID "+c.get(Command.CIDATTRIBUTE_TAG));
+			logger.error("Could NOT find the control matching command ID "+c.getCID());
 			throw new IOException();
 		}
 	}
 	
 	public static String GET_FRAME_METHOD = "getFrame";
-	public byte[] getFrame(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getFrame(Command c, Sensor s) throws IOException{
+		if(streaming) {
+			logger.error("Already streaming");
+			throw new IOException();
+		}
+		
 		byte[] b;
 		ByteBuffer bb;
 		try {
@@ -203,5 +234,81 @@ public class V4L2Protocol extends Protocol {
 			}
 		}
 		return b;
+	}
+	
+	public static String START_STREAM_METHOD = "startStream";
+	public byte[] startStream(Command c, Sensor s) throws IOException{
+		if(streaming){
+			logger.error("Already streaming");
+			throw new IOException();
+		}
+		try {
+			fg.startCapture();
+		} catch (V4L4JException e) {
+			logger.error("Cant start capture");
+			throw new IOException();
+		}
+		st = new StreamingThread(c.getStreamCallBack());
+		streaming = true;
+		return new byte[0];
+	}
+	
+	public static String STOP_STREAM_METHOD = "stopStream";
+	public byte[] stopStream(Command c, Sensor s) throws IOException{
+		if(!streaming){
+			logger.error("Not streaming");
+			throw new IOException();
+		}		
+		
+		st.stop();
+		streaming = false;
+		return new byte[0];
+	}
+	
+	private class StreamingThread implements Runnable{
+		StreamCallback cb;
+		Thread t;
+		int stop=0;
+		
+		public StreamingThread(StreamCallback c){
+			cb = c;
+			t = new Thread(this);
+			t.start();
+		}
+		
+		public void stop(){
+			stop=1;
+		}
+		
+		public void join(){
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				logger.error("Interrupted while waiting for Streaming thread to finish");
+			}
+		}
+
+		public void run() {
+			byte[] b;
+			ByteBuffer bb;
+			while(stop==0){
+				try {
+					bb = fg.getFrame();
+					b = new byte[bb.limit()];
+					bb.get(b);
+					bb.position(0);
+					cb.collect(new Response(b));
+				} catch (V4L4JException e1) {
+					logger.error("Cant capture frame");
+					stop=1;
+				}
+			}
+			try {
+				fg.stopCapture();
+			} catch (V4L4JException e) {
+				logger.error("Cant stop capture");
+			}
+		}
+		
 	}
 }

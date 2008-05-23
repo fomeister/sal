@@ -13,6 +13,10 @@ public class ResponseParser {
 		return Integer.parseInt(toString(r));
 	}
 	
+	public static float toFloat(Response r) {
+		return Float.parseFloat(toString(r));
+	}
+	
 	public static byte[] toByteArray(Response r) {
 		return r.getBytes();
 	}

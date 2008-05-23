@@ -11,8 +11,9 @@ import java.util.Iterator;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Command;
 import jcu.sal.components.EndPoints.FSEndPoint;
-import jcu.sal.components.protocols.Protocol;
+import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.utils.PlatformHelper;
@@ -25,7 +26,7 @@ import org.w3c.dom.Node;
  * @author gilles
  *
  */
-public class OSDataProtocol extends Protocol implements Runnable{
+public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	
 	class OSdata {
 		public String file;
@@ -72,7 +73,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 		supportedSensors.put(OSDataConstants.LoadAvg5,new OSdata("/proc/loadavg", null, 2, null, false));
 		supportedSensors.put(OSDataConstants.LoadAvg15,new OSdata("/proc/loadavg", null, 3, null, false));
 		
-		cmls = OSDataCML.getStore();
+		cmls = CMLDescriptionStore.getStore();
 		lastValues = new Hashtable<String,String>();
 //		Add to the list of supported EndPoint IDs
 		supportedEndPointTypes.add(FSEndPoint.FSENDPOINT_TYPE);
@@ -125,7 +126,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 	
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.components.protocols.Protocol#internal_isSensorSupported(jcu.sal.components.sensors.Sensor)
+	 * @see jcu.sal.components.protocols.AbstractProtocol#internal_isSensorSupported(jcu.sal.components.sensors.Sensor)
 	 */
 	@Override
 	protected boolean internal_isSensorSupported(Sensor sensor){
@@ -134,7 +135,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.components.protocols.Protocol#internal_probeSensor(jcu.sal.components.sensors.Sensor)
+	 * @see jcu.sal.components.protocols.AbstractProtocol#internal_probeSensor(jcu.sal.components.sensors.Sensor)
 	 */
 	@Override
 	protected boolean internal_probeSensor(Sensor s) {
@@ -235,7 +236,7 @@ public class OSDataProtocol extends Protocol implements Runnable{
 
 	// TODO create an exception class for this instead of Exception
 	public static String GET_READING_METHOD = "getReading";
-	public byte[] getReading(Hashtable<String,String> c, Sensor s) throws IOException{
+	public byte[] getReading(Command c, Sensor s) throws IOException{
 		OSdata d;
 		String ret;
 		if(s.getNativeAddress().equals(OSDataConstants.UserTime) || s.getNativeAddress().equals(OSDataConstants.NiceTime) || s.getNativeAddress().equals(OSDataConstants.SystemTime)|| s.getNativeAddress().equals(OSDataConstants.IdleTime)) {

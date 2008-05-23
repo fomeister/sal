@@ -13,7 +13,7 @@ import jcu.sal.components.protocols.ProtocolID;
  */
 public class EndPointID extends AbstractIdentifier{
 	
-	/** The Protocol ID associated with this EndPoint **/
+	/** The AbstractProtocol ID associated with this EndPoint **/
 	private ProtocolID pid;
 	
 	/**
