@@ -6,6 +6,8 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.w3c.dom.Document;
+
 import jcu.sal.common.Command;
 import jcu.sal.common.Response;
 import jcu.sal.events.EventHandler;
@@ -79,7 +81,7 @@ public interface SALAgentInterface {
 	 * @return the CML doc
 	 * @throws ConfigurationException if the CML doc cant be found
 	 */
-	public String getCML(String sid) throws ConfigurationException, NotActiveException;
+	public Document getCML(String sid) throws ConfigurationException, NotActiveException;
 	
 	/*
 	 * Protocols-related methods 

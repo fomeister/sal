@@ -45,7 +45,7 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	public String getConfig(String directive) throws BadAttributeValueExpException {
 		String s = config.get(directive);
 		if (s==null) {
-			this.logger.error("Unable to get a config directive with this name "+ directive);
+			//logger.error("Unable to get a config directive with this name "+ directive);
 			throw new BadAttributeValueExpException("Unable to get a config directive with this name "+ directive);
 		}			
 		return s; 

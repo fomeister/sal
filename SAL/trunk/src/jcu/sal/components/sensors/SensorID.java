@@ -14,7 +14,7 @@ import jcu.sal.components.protocols.ProtocolID;
  */
 public class SensorID extends AbstractIdentifier{
 	
-	/** The Protocol ID associated with this sensor **/
+	/** The AbstractProtocol ID associated with this sensor **/
 	private ProtocolID pid;
 	
 	/**

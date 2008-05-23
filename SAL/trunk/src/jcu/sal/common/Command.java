@@ -1,85 +1,85 @@
 package jcu.sal.common;
 
-import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
-import javax.xml.xpath.XPathExpressionException;
 
-import jcu.sal.components.protocols.Protocol;
+import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 
 
 public class Command {
 	
-	private Logger logger = Logger.getLogger(Protocol.class);
+	private int cid;
+	private Logger logger = Logger.getLogger(AbstractProtocol.class);
 	private Hashtable<String,String> parameters;
 	private StreamCallback streamc;
 
-	public static final String COMMAND_TAG = "Command";
-	public static final String PARAMETER_TAG = "Param";
-	public static final String CIDATTRIBUTE_TAG = "CID";
-	
-	public Command(Document d, StreamCallback s) throws ParseException {
-		this(d);
-		if(s==null) {
-			logger.error("Callback object null");
-			throw new ParseException("Callback object null", 0);
-		}
-		streamc = s;
-	}
-	
-	public Command(Document d) throws ParseException {
-		Slog.setupLogger(this.logger);
-		ArrayList<String> xml = null;
-		parameters = new Hashtable<String, String>();
-		String name = null, value = null;
-		
-		try {
-			xml = XMLhelper.getAttributeListFromElements("//" + PARAMETER_TAG, d);
-		} catch (XPathExpressionException e) {
-			this.logger.error("Cannot find parameters for this command");
-			throw new ParseException("Cannot find parameters for this Command", 0);
-		}
-		
-		Iterator<String> iter = xml.iterator();
-		
-		while(iter.hasNext()) {
-			iter.next();
-			name = iter.next();
-			iter.next();
-			value = iter.next();
-			parameters.put(name,value);
-		}
-		
-		logger.debug("Command arguments:");
-		dumpCommand();
 
+	public static final String PARAMETER_TAG = "Param";
+
+	Command(int cid, Hashtable<String, String> values, StreamCallback c){
+		this.cid = cid;
+		parameters = values;
+		streamc = c;		
 	}
-	
-	public Command(Integer cid, String key, String value){
+//	Command(Document d, StreamCallback s) throws ParseException {
+//		this(d);
+//		if(s==null) {
+//			logger.error("Callback object null");
+//			throw new ParseException("Callback object null", 0);
+//		}
+//		streamc = s;
+//	}
+//	
+//	public Command(Document d) throws ParseException {
+//		Slog.setupLogger(this.logger);
+//		ArrayList<String> xml = null;
+//		parameters = new Hashtable<String, String>();
+//		String name = null, value = null;
+//		
+//		try {
+//			xml = XMLhelper.getAttributeListFromElements("//" + PARAMETER_TAG, d);
+//		} catch (XPathExpressionException e) {
+//			this.logger.error("Cannot find parameters for this command");
+//			throw new ParseException("Cannot find parameters for this Command", 0);
+//		}
+//		
+//		Iterator<String> iter = xml.iterator();
+//		
+//		while(iter.hasNext()) {
+//			iter.next();
+//			name = iter.next();
+//			iter.next();
+//			value = iter.next();
+//			parameters.put(name,value);
+//		}
+//		
+//		logger.debug("Command arguments:");
+//		dumpCommand();
+//
+//	}
+//	
+	public Command(int cid, String key, String value){
 		Slog.setupLogger(this.logger);
+		this.cid = cid;
 		parameters = new Hashtable<String, String>();
-		parameters.put(CIDATTRIBUTE_TAG,String.valueOf(cid));
 		parameters.put(key,value);
 	}
-	
-	public Command(Integer cid, String key, String value, StreamCallback s){
-		this(cid, key, value);
-		if(s==null) {
-			logger.error("Callback object null");
-			//throw new ParseException("Callback object null", 0);
-		}
-		streamc = s;
-	}
+//	
+//	public Command(Integer cid, String key, String value, StreamCallback s){
+//		this(cid, key, value);
+//		if(s==null) {
+//			logger.error("Callback object null");
+//			//throw new ParseException("Callback object null", 0);
+//		}
+//		streamc = s;
+//	}
 	
 	public StreamCallback getStreamCallBack(){
 		return streamc;
@@ -95,12 +95,12 @@ public class Command {
 		return s; 
 	}
 	
-	public Integer getCID() throws BadAttributeValueExpException {
-		return Integer.parseInt(getConfig(CIDATTRIBUTE_TAG)); 
+	public int getCID(){
+		return cid; 
 	}
 	
 	public void dumpCommand() {
-		this.logger.debug("Command parameters:");
+		this.logger.debug("Command '"+cid+"' parameters:");
 		Enumeration<String> keys = parameters.keys();
 		Collection<String> values= parameters.values();
 		Iterator<String> iter = values.iterator();
@@ -108,9 +108,7 @@ public class Command {
 		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
 	}
 
-	public Hashtable<String, String> getParameters() {
-		return parameters;
+	public String getValue(String name){
+		return parameters.get(name);
 	}
-	
-	
 }

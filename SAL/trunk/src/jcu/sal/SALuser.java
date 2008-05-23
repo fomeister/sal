@@ -2,16 +2,23 @@ package jcu.sal;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Enumeration;
 
 import javax.naming.ConfigurationException;
 
 import jcu.sal.agent.SALAgent;
+import jcu.sal.common.CMLConstants;
 import jcu.sal.common.Command;
+import jcu.sal.common.CommandFactory;
+import jcu.sal.components.protocols.CMLDescription.ArgTypes;
 import jcu.sal.components.sensors.SensorState;
 import jcu.sal.events.Event;
 import jcu.sal.events.EventHandler;
 import jcu.sal.managers.ProtocolManager;
 import jcu.sal.managers.SensorManager;
+import jcu.sal.utils.XMLhelper;
+
+import org.w3c.dom.Document;
 
 public class SALuser implements EventHandler{
 	static SALAgent s;
@@ -19,6 +26,9 @@ public class SALuser implements EventHandler{
 	public static void main(String [] args) throws ConfigurationException, InterruptedException {
 		int i=0,j=0;
 		String str, str2;
+		Document d;
+		Command c=null;
+		CommandFactory cf;
 		StringBuilder sb = new StringBuilder();
 		BufferedReader b = new BufferedReader(new InputStreamReader(System.in));
 		SALuser user = new SALuser(); 
@@ -38,10 +48,35 @@ public class SALuser implements EventHandler{
 					i=Integer.parseInt(b.readLine());
 					if(i>=0) {
 						System.out.println("\n\nHere is the CML document for this sensor:");
-						System.out.println(s.getCML(String.valueOf(i)));
+						d = s.getCML(String.valueOf(i));
+						System.out.println(XMLhelper.toString(d));
 						System.out.println("Enter a command id:");
 						j=Integer.parseInt(b.readLine());
-						System.out.println("command "+j+" returned : "+s.execute(new Command(j, "", ""), String.valueOf(i)));
+
+						cf = new CommandFactory(d, j);
+						ArgTypes t;
+						boolean ok1=false, ok2=false;
+						while(!ok2) {
+							Enumeration<String> e = cf.listMissingArgNames();
+							while(e.hasMoreElements()){
+								str = e.nextElement();
+								t = cf.getArgType(str);
+								if(t.getArgType()!=CMLConstants.ARG_TYPE_CALLBACK) {
+									while(!ok1) {
+										System.out.println("Enter value of type '"+t.getArgType()+"' for argument '"+str+"'");
+										str2 = b.readLine();
+										try {cf.addArgumentValue(str, str2); ok1 = true;}
+										catch (ConfigurationException e1) {System.out.println("Wrong value"); ok1=false;}
+									}
+								} else {
+									
+								}
+							}
+							try {c = cf.getCommand(); ok2=true;}
+							catch (ConfigurationException e1) {System.out.println("Values missing"); ok2=false;}
+						}
+						
+						System.out.println("command "+j+" returned : "+s.execute(c, String.valueOf(i)));
 					} else if(i==-2)
 						System.out.println(s.listActiveSensors());
 					else if(i==-3) {

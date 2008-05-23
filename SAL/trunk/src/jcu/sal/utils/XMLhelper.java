@@ -538,38 +538,17 @@ public class XMLhelper {
      * Returns the value of the node corresponding to the given xpath expression or null if there is no
      * such node.
      * @param xpath_expression the XPATH expression
+     * @param doc the document
      * @return the value of the node corresponding to the given xpath expression or null if there is no
      * such node.
      * @throws XPathExpressionException 
      */
     public static String getTextValue(String xpath_expression, Document doc)
     throws XPathExpressionException {
-        String value = null;
-        XPathFactory factory = XPathFactory.newInstance();
-        XPath xpath = factory.newXPath();
-
-        value = (String) xpath.evaluate(xpath_expression, doc, XPathConstants.STRING);
-
-        return value;
-    }
-    
-    /**
-     * Returns the value of the node corresponding to the given xpath expression or null if there is no
-     * such node.
-     * @param xpath_expression the XPATH expression
-     * @return the value of the node corresponding to the given xpath expression or null if there is no
-     * such node.
-     * @throws XPathExpressionException 
-     */
-    public static String getTextValue(String xpath_expression, Node n)
-    throws XPathExpressionException {
-        String value = null;
-        XPathFactory factory = XPathFactory.newInstance();
-        XPath xpath = factory.newXPath();
-
-        value = (String) xpath.evaluate(xpath_expression, n, XPathConstants.STRING);
-
-        return value;
+        if(evaluate(xpath_expression, doc)==true)
+        	return (String) XPathFactory.newInstance().newXPath().evaluate(xpath_expression, doc, XPathConstants.STRING);
+        else
+        	throw new XPathExpressionException("The xpath expression doesnt resolve to anything");
     }
 
     /**
@@ -649,7 +628,7 @@ public class XMLhelper {
     }
     
     public static void main(String[] args) 
-	throws ParserConfigurationException {
+	throws ParserConfigurationException, XPathExpressionException {
 //		Document d;
 //		String xpath = "//parameters[Param[@name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" and @value=\"10.1C5AC9000800\"] and "
 //		+"Param[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" and @value=\"1wtree\"]]/parent::*";
@@ -679,7 +658,9 @@ public class XMLhelper {
 				+"<Param name=\"SamplingInterval\" value=\"30\" />"
 				+"</parameters></Sensor>";
 		
-		System.out.println(XMLhelper.toString(XMLhelper.createDocument(s)));
+		Document d = XMLhelper.createDocument(s);
+		System.out.println(XMLhelper.toString(d));
+		System.out.println("nb param tags: " + XMLhelper.getTextValue("count(//Param)", d));
     	
 	}
 }

@@ -29,6 +29,7 @@ import jcu.sal.managers.SensorManager;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 
@@ -36,9 +37,9 @@ import org.w3c.dom.Node;
  * @author gilles
  *
  */
-public abstract class Protocol extends AbstractComponent<ProtocolID>  implements DeviceListener {
+public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  implements DeviceListener {
 
-	private Logger logger = Logger.getLogger(Protocol.class);
+	private Logger logger = Logger.getLogger(AbstractProtocol.class);
 	
 	public static final String PROTOCOLTYPE_TAG = "type";
 	public static final String PROTOCOLNAME_TAG = "name";
@@ -72,7 +73,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	/**
 	 * The CML store associated with this protocol. This field must be instanciated by the subclass
 	 */
-	protected CMLStore cmls;
+	protected AbstractStore cmls;
 	
 	/**
 	 * Is this protocol started ?
@@ -103,7 +104,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	 * @param d the XML node containing the associated endpoint configuration  
 	 * @throws ConfigurationException 
 	 */
-	public Protocol(ProtocolID i, String t, Hashtable<String,String> c, Node d) throws ConfigurationException {
+	public AbstractProtocol(ProtocolID i, String t, Hashtable<String,String> c, Node d) throws ConfigurationException {
 		super();
 		Slog.setupLogger(logger);
 		started= new AtomicBoolean(false);
@@ -140,7 +141,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 		ep.setPid(id);
 		
 		if(!isEPTypeSupported(ep.getType())) {
-			logger.error("This Protocol has been setup with the wrong enpoint: got endpoint type: " +ep.getType()+", expected: ");
+			logger.error("This AbstractProtocol has been setup with the wrong enpoint: got endpoint type: " +ep.getType()+", expected: ");
 			Iterator<String> iter = supportedEndPointTypes.iterator();
 			while(iter.hasNext())
 				logger.error(iter.next());
@@ -175,7 +176,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 			/* Start the ourselves */
 			internal_start();
 			/* Probe associted sensors */
-			logger.debug("Probing associated sensors for Protocol " + toString());
+			logger.debug("Probing associated sensors for AbstractProtocol " + toString());
 			synchronized(sensors) {
 				Iterator<Sensor> i = sensors.values().iterator();
 				while(i.hasNext())
@@ -246,9 +247,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	}
 
 	/**
-	 * Associate a new sensor managed by this Protocol
-	 * Also checks whether this sensor is supported, requires the access to be
-	 * synchronized with respect to this protocol (synchronized(p))
+	 * Associate a new sensor managed by this AbstractProtocol.Also checks whether this sensor is supported
 	 * @param s the sensor to be added
 	 * @throws ConfigurationException if the sensor cannot be associated with the protocol (sensor not supported, protocol removed)  
 	 */
@@ -268,7 +267,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 					}
 			} else {
 				logger.error("cant associate a new sensor, the protocol is about to be removed");
-				throw new ConfigurationException("Protocol removed");
+				throw new ConfigurationException("AbstractProtocol removed");
 			}
 		}
 	}
@@ -315,11 +314,11 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	}
 	
 	/**
-	 * returns a textual representation of a Protocol's instance
-	 * @return the textual representation of the Protocol's instance
+	 * returns a textual representation of a AbstractProtocol's instance
+	 * @return the textual representation of the AbstractProtocol's instance
 	 */
 	public final String toString() {
-		return "Protocol "+id.getName()+"("+type+")";
+		return "AbstractProtocol "+id.getName()+"("+type+")";
 
 	}
 
@@ -340,23 +339,23 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 				//sync with respect to other commands
 				synchronized(s){
 					//Catch the generic commands enable & disable
-					if(c.getCID().intValue()==CMLStore.GENERIC_DISABLE_CID)
+					if(c.getCID()==AbstractStore.GENERIC_DISABLE_CID)
 						s.disable();
-					else if(c.getCID().intValue()==CMLStore.GENERIC_ENABLE_CID)
+					else if(c.getCID()==AbstractStore.GENERIC_ENABLE_CID)
 						s.enable();
 					else {
 						//sensor specific command
 						//Check if it s idle
 						if(s.startRunCmd()) {
 							try {
-								Class<?>[] params = {Hashtable.class,Sensor.class};
-								logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()));
+								Class<?>[] params = {Command.class,Sensor.class};
+								//logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()));
 								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params);
-								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
-								ret_val = (byte[]) m.invoke(this,c.getParameters(), s);
-								logger.debug("running method: "+ m.getName()+" SID:"+sid.getName()+" returned "+ret_val );
+								//logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
+								ret_val = (byte[]) m.invoke(this,c, s);
+								//logger.debug("running method: "+ m.getName()+" SID:"+sid.getName()+" returned "+ret_val );
 							} catch (ConfigurationException e) {
-								logger.error("Cant find the method matching this command");
+								logger.error("Cant find the method matching this command "+c.getCID());
 								s.finishRunCmd();
 								throw new BadAttributeValueExpException("");
 							} catch (SecurityException e) {
@@ -367,10 +366,6 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 								logger.error("Could NOT find the method matching the command");
 								s.finishRunCmd();
 								throw new BadAttributeValueExpException("");
-							} catch (BadAttributeValueExpException e) {
-								logger.error("Could NOT parse the command");
-								s.finishRunCmd();
-								throw e;
 							} catch (InvocationTargetException e) {
 								logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
 								if(e.getCause()!=null) logger.error("Caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
@@ -510,24 +505,18 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 	/**
 	 * This method returns the CML docu for a given sensor
 	 * @param i the sensor whose CML we need
-	 * @return the CML
+	 * @return the CML description document
 	 * @throws ConfigurationException if the sensor is not found or isnt supported by this protocol
 	 */
 	//TODO make me throw a better exception
-	public String getCML(SensorID i) throws ConfigurationException {
-		String cml, key;
+	public Document getCML(SensorID i) throws ConfigurationException {
+		String key;
 		Sensor s =sensors.get(i);
 		if(s!=null) {
 			if(isSensorSupported(s)) {
 				key = internal_getCMLStoreKey(s);
 				if (key!=null) {
-					cml =cmls.getCML(key);  
-					if(cml!=null) {
-						return "<commands xmlns=\"http://jcu.edu.au/sal\">\n"+cml+"<commands>";
-					} else {
-						logger.error("cant find a CML doc for Sensor " +s.toString()+" key:" + key);
-						throw new ConfigurationException("cant find a CML doc for Sensor " +s.toString()+" key:" + key);
-					}
+					return cmls.getCML(key);  
 				} else {
 					logger.error("Error getting the key for sensor " + s.toString());
 					throw new ConfigurationException("Error getting the key for sensor " + s.toString());
@@ -580,7 +569,7 @@ public abstract class Protocol extends AbstractComponent<ProtocolID>  implements
 		Thread t;
 		
 		public Autodetection() {
-			t= new Thread(this, "Protocol autodetection_thread_"+id.getName());
+			t= new Thread(this, "AbstractProtocol autodetection_thread_"+id.getName());
 		}
 		
 		public void start() {

@@ -11,7 +11,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Command;
 import jcu.sal.common.Response;
-import jcu.sal.components.protocols.Protocol;
+import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.events.EventDispatcher;
@@ -22,6 +22,7 @@ import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
 
 /**
  * @author gilles
@@ -110,7 +111,7 @@ public class SALAgent implements SALAgentInterface{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#getCML(java.lang.String)
 	 */
-	public String getCML(String sid) throws ConfigurationException, NotActiveException {
+	public Document getCML(String sid) throws ConfigurationException, NotActiveException {
 		return pm.getCML(new SensorID(sid));
 	}
 
@@ -124,7 +125,7 @@ public class SALAgent implements SALAgentInterface{
 	 */
 	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserConfigurationException {
 		synchronized (this) {
-			Protocol p = pm.createComponent(XMLhelper.createDocument(xml));
+			AbstractProtocol p = pm.createComponent(XMLhelper.createDocument(xml));
 			if(loadSensors) sm.loadSensorsFromConfig(p.getID());
 			p.start();
 		}

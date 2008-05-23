@@ -136,7 +136,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 	 */
 	@Override
 	public String toString() {
-		return "Sensor " + id.getName() + " (" + getNativeAddress() +") State: "+state.toString()+" Protocol: "+id.getPIDName().toString();
+		return "Sensor " + id.getName() + " (" + getNativeAddress() +") State: "+state.toString()+" AbstractProtocol: "+id.getPIDName().toString();
 	}
 
 	/*

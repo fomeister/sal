@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 import org.w3c.dom.Node;
 
 /**
- * Creates manager classes, which create, delete and manage components (Endpoints, Protocol, ...)
+ * Creates manager classes, which create, delete and manage components (Endpoints, AbstractProtocol, ...)
  * @author gilles
  *
  */
@@ -96,6 +96,7 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 			throw new ConfigurationException();
 		} catch (ParseException e) {
 			logger.error("Couldnt retrieve the component ID from XML doc");
+			e.printStackTrace();
 			throw new ConfigurationException();
 		}
 	}
