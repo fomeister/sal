@@ -1,4 +1,4 @@
-package haldbus.match;
+package au.edu.jcu.haldbus.match;
 
 import javax.naming.ConfigurationException;
 

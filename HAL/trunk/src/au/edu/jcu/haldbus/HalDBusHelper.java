@@ -1,6 +1,5 @@
-package haldbus;
+package au.edu.jcu.haldbus;
 
-import haldbus.match.HalMatchInterface;
 
 import java.io.IOException;
 import java.util.Hashtable;
@@ -20,6 +19,9 @@ import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
+
+import au.edu.jcu.haldbus.match.HalMatchInterface;
+
 
 public class HalDBusHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>{
 	private int QUEUE_SIZE=30;
