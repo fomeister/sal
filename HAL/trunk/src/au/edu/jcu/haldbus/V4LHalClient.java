@@ -1,16 +1,18 @@
-package haldbus;
+package au.edu.jcu.haldbus;
 
-import haldbus.match.HalMatchInterface;
-import haldbus.match.HalNextMatch;
-import haldbus.match.HalStringAlwaysMatch;
-import haldbus.match.HalStringMatch;
-import haldbus.match.HalVectorStringMatch;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
+
+import au.edu.jcu.haldbus.match.HalMatchInterface;
+import au.edu.jcu.haldbus.match.HalNextMatch;
+import au.edu.jcu.haldbus.match.HalStringAlwaysMatch;
+import au.edu.jcu.haldbus.match.HalStringMatch;
+import au.edu.jcu.haldbus.match.HalVectorStringMatch;
+
 
 public class V4LHalClient implements HalClientInterface {
 	private HalMatchInterface caps;

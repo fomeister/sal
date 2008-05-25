@@ -1,9 +1,10 @@
-package haldbus;
+package au.edu.jcu.haldbus;
 
-import haldbus.match.HalMatchInterface;
 
 import java.util.List;
 import java.util.Map;
+
+import au.edu.jcu.haldbus.match.HalMatchInterface;
 
 /**
  * This interface must be implemented by all Hal Autodetection clients. The use case goes as follows:
