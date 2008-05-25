@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path=""/>
+	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/home/gilles/download/java/libmatthew-java-0.6/debug-disable-1.1.jar"/>
 	<classpathentry kind="lib" path="/home/gilles/download/java/libmatthew-java-0.6/hexdump-0.2.jar"/>
@@ -10,5 +10,5 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="/home/gilles/download/java/dbus-java-2.4/libdbus-java-2.4.jar"/>
-	<classpathentry kind="output" path=""/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>
