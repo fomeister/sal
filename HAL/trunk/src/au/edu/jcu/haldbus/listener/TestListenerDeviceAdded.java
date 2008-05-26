@@ -80,33 +80,46 @@ public class TestListenerDeviceAdded implements DBusSigHandler<Manager.DeviceAdd
 			System.exit(1);
 		}
 
-		//Manager HAL = null;
+		Manager HAL = null;
 		try {
 //			HAL = (Manager)conn.getRemoteObject("org.freedesktop.Hal","/org/freedesktop/Hal/Manager",Manager.class);
 //			System.out.println("Printing UDI's");
 //			String UDI[] = HAL.GetAllDevices();
 //			for(int i = 0; i < UDI.length; i++) {
-//				System.out.println("UDI: " + UDI[i]);				
+//				System.out.println("UDI: " + UDI[i]);
 //			}
 			
-			Introspectable introspectable = conn.getRemoteObject("org.freedesktop.Hal", "/org/freedesktop/Hal/Manager" , Introspectable.class);
-			System.out.println(introspectable.Introspect());			
-//			Device d = (Device) conn.getRemoteObject("org.freedesktop.Hal","/org/freedesktop/Hal/devices/usb_device_46d_8b5_noserial",Device.class);
-//			Map<String,Variant<Object>> mp = d.GetAllProperties();
-//			Iterator<String> iter = mp.keySet().iterator();
-//			while(iter.hasNext()) {
-//				s = iter.next();
-//				o = mp.get(s).getValue();
-//				System.out.print("Property: "+s + "- type:"+o.getClass().getName() );
-//				if (o instanceof String)
-//					System.out.print(" - Value: "+(String) o);
-//				else
-//					System.out.print(" - Value: "+o.toString());
-//				System.out.println();
-//			}
-			
+			Introspectable introspectable;
+			try {
+				introspectable = conn.getRemoteObject("org.freedesktop.Hal", "/org/freedesktop/Hal/Manager" , Introspectable.class);
+
+				System.out.println(introspectable.Introspect());
+			} catch (DBusException e) {
+				e.printStackTrace();
+			}
+		
 			conn.addSigHandler(Manager.DeviceAdded.class, new TestListenerDeviceAdded(conn));
 			conn.addSigHandler(Manager.DeviceRemoved.class, new TestListenerDeviceRemoved(conn));
+			
+			HAL = (Manager)conn.getRemoteObject("org.freedesktop.Hal","/org/freedesktop/Hal/Manager",Manager.class);
+			System.out.println("FindDeviceStringMatch: info.capabilities");
+			String UDI[] = HAL.FindDeviceStringMatch("info.capabilities", "video4linux");
+			for(int i = 0; i < UDI.length; i++) {
+				System.out.println("UDI: " + UDI[i]);
+			}
+			
+			System.out.println("FindDeviceStringMatch: info.category");
+			UDI = HAL.FindDeviceStringMatch("info.category", "video4linux");
+			for(int i = 0; i < UDI.length; i++) {
+				System.out.println("UDI: " + UDI[i]);
+			}
+			
+			System.out.println("FindDeviceByCapability");
+			UDI = HAL.FindDeviceByCapability("video4linux");
+			for(int i = 0; i < UDI.length; i++) {
+				System.out.println("UDI: " + UDI[i]);
+			}
+			
 		} catch (DBusException DBe) {
 			System.out.println("Could not set connect to HAL: " + DBe);
 			conn.disconnect();
