@@ -1,6 +1,7 @@
 package au.edu.jcu.haldbus.match;
 
-import javax.naming.ConfigurationException;
+import au.edu.jcu.haldbus.exceptions.InvalidMethodCall;
+import au.edu.jcu.haldbus.exceptions.MatchNotFoundException;
 
 
 public interface HalMatchInterface {
@@ -16,9 +17,9 @@ public interface HalMatchInterface {
 	 * of this match (as retrieved with <code>getName()</code>)
 	 * @param o the object to check
 	 * @return a string to be associated with the name of this match
-	 * @throws ConfigurationException if there is no match
+	 * @throws MatchNotFoundException if there is no match
 	 */
-	public String match(Object o) throws ConfigurationException;
+	public String match(Object o) throws MatchNotFoundException;
 	
 	/**
 	 * This method returns true when this match applies to a property found in  the current HAL
@@ -57,32 +58,32 @@ public interface HalMatchInterface {
 	 * by <code>getNextMatch()</code>).
 	 * @return the name of the property in the current HAL object which contains the name of the new
 	 * HAL object whose properties must be checked.
-	 * @throws ConfigurationException if this match doesnt apply to another HAL object accessible through a link
+	 * @throws InvalidMethodCall if this match doesnt apply to another HAL object accessible through a link
 	 */	
-	public String getNextObjectLink() throws ConfigurationException;
+	public String getNextObjectLink() throws InvalidMethodCall;
 	
 	/**
 	 * This method returns the name a new HAL object whose properties must be checked (against the
 	 * HalMatchInterface returned by <code>getNextMatch()</code>).
 	 * @return the name a new HAL object whose properties must be checked
-	 * @throws ConfigurationException if this match doesnt apply to another HAL object accessible through its name
+	 * @throws InvalidMethodCall if this match doesnt apply to another HAL object accessible through its name
 	 */	
-	public String getNextObjectValue() throws ConfigurationException;
+	public String getNextObjectValue() throws InvalidMethodCall;
 	
 	/**
 	 * If this match applies to another HAL object accessible either through its name or a link, this method
 	 * returns the HalMatchInterface against which the properties of the other HAL object must be checked 
 	 * @return the HalMatchInterface against which the properties of the other HAL object must be checked
-	 * @throws ConfigurationException it this match doesnt apply to another HAL object
+	 * @throws InvalidMethodCall it this match doesnt apply to another HAL object
 	 */	
-	public HalMatchInterface getNextMatch()throws ConfigurationException;
+	public HalMatchInterface getNextMatch()throws InvalidMethodCall;
 	
 	/**
 	 * If this match applies to the current HAL object, this method returns the name of a property whose value
 	 * must be passed to <code>match(Object o)</code> to check for a possible match.
 	 * @return the name of a property whose value must be checked
-	 * @throws ConfigurationException it this match doesnt apply to the current HAL object
+	 * @throws InvalidMethodCall it this match doesnt apply to the current HAL object
 	 */
-	public String getPropName() throws ConfigurationException;
+	public String getPropName() throws InvalidMethodCall;
 
 }

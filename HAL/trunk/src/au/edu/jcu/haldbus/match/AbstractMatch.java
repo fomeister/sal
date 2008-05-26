@@ -1,6 +1,8 @@
 package au.edu.jcu.haldbus.match;
 
-import javax.naming.ConfigurationException;
+import au.edu.jcu.haldbus.exceptions.InvalidConstructorArgs;
+import au.edu.jcu.haldbus.exceptions.InvalidMethodCall;
+import au.edu.jcu.haldbus.exceptions.MatchNotFoundException;
 
 public abstract class AbstractMatch implements HalMatchInterface {
 	public final static String THIS_OBJECT = "#ShouldbeFine@@#";
@@ -9,10 +11,9 @@ public abstract class AbstractMatch implements HalMatchInterface {
 	private String propName;
 	private HalMatchInterface nextMatch;
 
-	private AbstractMatch(String obj, String pName, HalMatchInterface n,
-			String name) throws ConfigurationException {
-		if (name == null)
-			throw new ConfigurationException();
+	private AbstractMatch(String obj, String pName, HalMatchInterface n, String name) throws InvalidConstructorArgs {
+		if(name==null)
+			throw new InvalidConstructorArgs();
 		this.name = name;
 		if (obj != null && n != null) {
 			// check that the object name is valid
@@ -22,36 +23,33 @@ public abstract class AbstractMatch implements HalMatchInterface {
 				propName = null;
 				nextMatch = n;
 			} else {
-				throw new ConfigurationException();
+				throw new InvalidConstructorArgs();
 			}
 		} else if (pName != null) {
 			object = THIS_OBJECT;
 			propName = pName;
 			nextMatch = null;
 		} else {
-			throw new ConfigurationException();
+			throw new InvalidConstructorArgs();
 		}
 	}
 
-	protected AbstractMatch(String obj, HalMatchInterface n, String name)
-			throws ConfigurationException {
+	protected AbstractMatch(String obj, HalMatchInterface n, String name) throws InvalidConstructorArgs {
 		this(obj, null, n, name);
 	}
 
-	protected AbstractMatch(String prop, String name)
-			throws ConfigurationException {
+	protected AbstractMatch(String prop, String name) throws InvalidConstructorArgs {
 		this(null, prop, null, name);
 	}
 
-	public String match(Object o) throws ConfigurationException {
+	public String match(Object o) throws MatchNotFoundException {
 		if (o == null)
-			throw new ConfigurationException();
+			throw new MatchNotFoundException();
 
 		return matchObject(o);
 	}
 
-	protected abstract String matchObject(Object o)
-			throws ConfigurationException;
+	protected abstract String matchObject(Object o)	throws MatchNotFoundException;
 
 
 	public boolean matchThisObject() {
@@ -66,28 +64,28 @@ public abstract class AbstractMatch implements HalMatchInterface {
 		return object.charAt(0) == '/';
 	}
 	
-	public HalMatchInterface getNextMatch() throws  ConfigurationException{
+	public HalMatchInterface getNextMatch() throws  InvalidMethodCall{
 		if(matchNextObjectLink() || matchNextObjectValue())
 			return nextMatch;
-		throw new ConfigurationException();
+		throw new InvalidMethodCall();
 	}
 
-	public String getNextObjectLink() throws ConfigurationException {
+	public String getNextObjectLink() throws InvalidMethodCall {
 		if (matchNextObjectLink())
 			return object.substring(1);
-		throw new ConfigurationException();
+		throw new InvalidMethodCall();
 	}
 
-	public String getNextObjectValue() throws ConfigurationException {
+	public String getNextObjectValue() throws InvalidMethodCall {
 		if (matchNextObjectValue())
 			return object;
-		throw new ConfigurationException();
+		throw new InvalidMethodCall();
 	}
 
-	public String getPropName() throws ConfigurationException {
+	public String getPropName() throws InvalidMethodCall {
 		if (matchThisObject())
 			return propName;
-		throw new ConfigurationException();
+		throw new InvalidMethodCall();
 	}
 
 	public String getName() {

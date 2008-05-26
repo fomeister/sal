@@ -5,6 +5,21 @@ import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.exceptions.DBusException;
 
 public interface Manager extends DBusInterface {
+	/**
+     * GetAllDevice method
+     */
+    public String[] GetAllDevices();
+    
+	/**
+     * FindDeviceStringMatch method
+     */
+    public String[] FindDeviceStringMatch(String key, String value);
+    
+	/**
+     * FindDeviceByCapability method
+     */
+    public String[] FindDeviceByCapability(String capability);
+	
     /**
      * DeviceAdded signal
      */

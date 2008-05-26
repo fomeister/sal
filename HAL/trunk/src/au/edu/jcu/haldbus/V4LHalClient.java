@@ -1,55 +1,35 @@
 package au.edu.jcu.haldbus;
 
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
-import javax.naming.ConfigurationException;
-
-import au.edu.jcu.haldbus.match.HalMatchInterface;
-import au.edu.jcu.haldbus.match.HalNextMatch;
-import au.edu.jcu.haldbus.match.HalStringAlwaysMatch;
-import au.edu.jcu.haldbus.match.HalStringMatch;
-import au.edu.jcu.haldbus.match.HalVectorStringMatch;
+import au.edu.jcu.haldbus.exceptions.AddRemoveElemException;
+import au.edu.jcu.haldbus.exceptions.InvalidConstructorArgs;
+import au.edu.jcu.haldbus.match.AlwaysMatch;
+import au.edu.jcu.haldbus.match.TypeMatch;
+import au.edu.jcu.haldbus.match.VectorMatch;
 
 
-public class V4LHalClient implements HalClientInterface {
-	private HalMatchInterface caps;
-	private HalMatchInterface cat;
-	private HalMatchInterface usbVendor;
-	private HalMatchInterface usbProduct;
+public class V4LHalClient extends AbstractDeviceDetection {
 	
-	public V4LHalClient() throws ConfigurationException{
-		caps = new HalVectorStringMatch("info.capabilities", "video4linux", "caps");
-		cat = new HalStringMatch("info.category", "video4linux", "cat");
-		usbVendor = new HalNextMatch("@info.parent", new HalStringAlwaysMatch("usb_device.vendor_id", "usbVendor"), "usbParent");
-		usbProduct = new HalNextMatch("@info.parent", new HalStringAlwaysMatch("usb_device.product_id", "usbProduct"), "usbParent2");		
+	
+	public V4LHalClient() throws InvalidConstructorArgs, AddRemoveElemException{
+		super();
+		addMatch("capability", new VectorMatch<String>("info.capabilities", "video4linux"));
+		addMatch("category", new TypeMatch<String>("info.category", "video4linux"));
+		addMatch("category.capture", new VectorMatch<String>("info.capabilities", "video4linux.video_capture"));
+		addMatch("deviceFile", new AlwaysMatch("linux.device_file"));
+		//addMatch("usbVendor", new NextMatch("@info.parent", new AlwaysMatch("usb_device.vendor_id"));
+		//addMatch("usbProduct", new NextMatch("@info.parent", new AlwaysMatch("usb_device.product_id"));		
 	}
 
+	@Override
 	public void doAction(Map<String,String> l) {
 		System.out.println("Doing action");
 	}
 
-	public List<HalMatchInterface> getMatchList() {
-		List<HalMatchInterface> l = new LinkedList<HalMatchInterface>();
-		l.add(cat);
-		l.add(caps);
-		l.add(usbVendor);
-		l.add(usbProduct);
-		return l;
-	}
-
+	@Override
 	public String getName() {
 		return "V4L HAL DBus client";
 	}
-
-	public int getMaxMatches() {
-		return getMatchList().size();
-	}
-
-	public int getMinMatches() {
-		return getMatchList().size();
-	}
-
 }
