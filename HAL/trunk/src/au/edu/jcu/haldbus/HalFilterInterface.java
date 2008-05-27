@@ -27,6 +27,20 @@ import au.edu.jcu.haldbus.match.HalMatchInterface;
  */
 public interface HalFilterInterface {
 	/**
+	 * This method returns true if matches in this object are to be tested during the initial run.  The initial run
+	 * is done by the Hal helper once on startup to detect already-connected devices. 
+	 * @return true if matches in this object are to be tested during the initial run
+	 */	
+	public boolean initialMatch();
+	
+	/**
+	 * This method returns true if matches in this object are to be tested after the initial run.  The initial run
+	 * is done by the Hal helper once on startup to detect already-connected devices. 
+	 * @return true if matches in this object are to be tested after the initial run
+	 */	
+	public boolean subsequentMatch();
+	
+	/**
 	 * This method returns a map of names and HalMatchInterfaces associated with this client.
 	 * @return a map of HalMatchInterfaces associated with this client
 	 */

@@ -53,10 +53,10 @@ public interface HalMatchInterface {
 	public boolean matchNextObjectValue();
 	
 	/**
-	 * This method returns the name of the property in the current HAL object which contains the name
+	 * This method returns the name of the property in the current HAL object which contains the UDI
 	 * of the new HAL object whose properties must be checked (against the HalMatchInterface returned
 	 * by <code>getNextMatch()</code>).
-	 * @return the name of the property in the current HAL object which contains the name of the new
+	 * @return the name of the property in the current HAL object which contains the UDI of the new
 	 * HAL object whose properties must be checked.
 	 * @throws InvalidMethodCall if this match doesnt apply to another HAL object accessible through a link
 	 */	

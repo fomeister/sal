@@ -40,29 +40,40 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 	private List<HalFilterInterface> clients;
 	
 	/**
-	 * Default constructor. It initialises the new object's members, registers with DBUS and starts the thread.
-	 * @throws ConfigurationException if the DBus registration fails.
+	 * Default constructor. It initialises the new object's members
 	 */
-	public HalDeviceDetectionHelper() throws DBusException {
-		try {
-			conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
-			conn.addSigHandler(Manager.DeviceAdded.class, this);
-		} catch (org.freedesktop.dbus.exceptions.DBusException e) {
-			throw new DBusException(e);
-		}
+	public HalDeviceDetectionHelper(){		
 		t = new Thread(this);
 		properties = new LinkedBlockingQueue<Map<String,Variant<Object>>>();
 		clients = new LinkedList<HalFilterInterface>();
-		t.start();
 	}
 	
 	/**
-	 * This method interrupts the thread, and waits for it to finish. The DBus resources are then freed.	 *
+	 * This method starts the Hal helper
+	 * @throws DBusException if the DBus registration fails.
 	 */
-	public void stop(){
-		t.interrupt();
-		join();
-		conn.disconnect();
+	public synchronized void start() throws DBusException{
+		if(!t.isAlive()) {
+			try {
+				conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
+				conn.addSigHandler(Manager.DeviceAdded.class, this);
+			} catch (org.freedesktop.dbus.exceptions.DBusException e) {
+				throw new DBusException(e);
+			}
+			initialCheck();
+			t.start();
+		}
+	}
+	
+	/**
+	 * This method interrupts the thread, and waits for it to finish. The DBus resources are then freed.
+	 */
+	public synchronized void stop(){
+		if(t.isAlive()) {
+			t.interrupt();
+			join();
+			conn.disconnect();
+		}
 	}
 	
 	/**
@@ -97,72 +108,16 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 	 */
 	public void run() {
 		Map<String,Variant<Object>> map = null;
-		Map<String,String> matches = new Hashtable<String,String>();
-		Map<String, HalMatchInterface> matchList;
-		Iterator<HalFilterInterface> iter;
-		Iterator<String> iter2;
-		HalFilterInterface c;
-		HalMatchInterface m;
-		String s, matchName;
+
 		try {			
-			while((map=properties.take())!=null && !Thread.interrupted()){
-				synchronized(clients) {
-					iter = clients.iterator();
-					while(iter.hasNext()){
-						//for each HAL client, get the match list
-						c = iter.next();
-						matchList = c.getMatchList(); 
-						iter2 = matchList.keySet().iterator();
-							while(iter2.hasNext()){
-								//for each HALMatch object, check if there is a match
-								matchName = iter2.next();
-								m = matchList.get(matchName);
-								try {
-									s = match(map, m);
-									matches.put(matchName,s);
-								} catch (MatchNotFoundException e) {System.out.println("No Match for "+matchName+ " - "+m.getName());}
-							}
-							
-							//if we have enough matches, call doAction()
-							System.out.println("We had "+matches.size()+" matches - expected min: "+c.getMinMatches()+" - max: "+c.getMaxMatches());
-							if(c.getMinMatches()<=matches.size() && matches.size()<=c.getMaxMatches()){
-								//System.out.println("We had "+matches.size()+" matches");
-								iter2 = matches.keySet().iterator();
-								while(iter2.hasNext()){
-									s = iter2.next();
-									System.out.println("Key: "+s+" - value: "+matches.get(s));
-								}
-								c.doAction(matches);
-							}
-						
-						//move on to next client
-						matches.clear();
-					}
-				}
-			}
+			while((map=properties.take())!=null && !Thread.interrupted())
+				checkProperties(map, false);
 		} catch (InterruptedException e) {} 
-	}
-	
-	/**
-	 * This method fetches the properties of an HAL object given its UDI.
-	 * @param udi the UDI of the object whose properties are neede.
-	 * @return a map of the object's properties
-	 * @throws ConfigurationException if there is an error getting the properties
-	 */
-	public Map<String,Variant<Object>> getAllProperties(String udi) throws DBusException{
-		Device d;
-		try {
-			d = (Device) conn.getRemoteObject("org.freedesktop.Hal", udi, Device.class);
-			return d.GetAllProperties();
-		} catch (org.freedesktop.dbus.exceptions.DBusException e) {
-			System.out.println("Cant list properties for HAL object '"+udi+"'");
-			throw new DBusException(e);
-		} 
 	}
 
 	/**
 	 * This method is called by DBus whenever a new HAL object is created. It retrieves the object's properties and
-	 * queue them for filtering by the thread. 
+	 * queues them for filtering by the thread. 
 	 * @param d the DeviceAdded signal object.
 	 */
 	public void handle(DeviceAdded d) {
@@ -172,6 +127,68 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 			System.out.println("Cant add Property list for newly added device - Queue full");
 		} catch (DBusException e) {
 			System.out.println("Cant handle newly added device - no properties");
+		}
+	}
+	
+	
+	/*
+	 * PRIVATE METHODS 
+	 */
+	
+	private void initialCheck() {
+		long start;
+		try {
+			String[] list = getAllDevices();
+			start = System.currentTimeMillis();
+			for (String udi : list) 
+				checkProperties(getAllProperties(udi), true);
+			System.out.println("took "+((float) (System.currentTimeMillis() - start)/1000 ) + " sec overall");
+		} catch (DBusException e) {
+			System.out.println("DBus error "+e.getMessage());
+		}
+	}
+	
+	
+	/**
+	 * This method matches each of the HAL match objects against the HAl property list given in argument
+	 * @param map the property list against which each of the HAL match object must be tested.
+	 */
+	private void checkProperties(Map<String,Variant<Object>> map, boolean initial){
+		Map<String,String> matches = new Hashtable<String,String>();
+		Map<String, HalMatchInterface> matchList;
+		Iterator<HalFilterInterface> iter;
+		Iterator<String> iter2;
+		HalFilterInterface c;
+		HalMatchInterface m;
+		String s, matchName;
+		
+		synchronized(clients) {
+			iter = clients.iterator();
+			while(iter.hasNext()){
+				//for each HAL client, get the match list
+				c = iter.next();
+				if( (initial && c.initialMatch()) || (!initial && c.subsequentMatch()) ) {  
+					matchList = c.getMatchList(); 
+					iter2 = matchList.keySet().iterator();
+						while(iter2.hasNext()){
+							//for each HALMatch object, check if there is a match
+							matchName = iter2.next();
+							m = matchList.get(matchName);
+							try {
+								s = match(map, m);
+								matches.put(matchName,s);
+							} catch (MatchNotFoundException e) {}//System.out.println("No Match for "+matchName+ " - "+m.getName());}
+						}
+						
+						//if we have enough matches, call doAction()
+						//System.out.println("We had "+matches.size()+" matches - expected min: "+c.getMinMatches()+" - max: "+c.getMaxMatches());
+						if(c.getMinMatches()<=matches.size() && matches.size()<=c.getMaxMatches())
+							c.doAction(matches);
+					
+					//move on to next client
+					matches.clear();
+				}
+			}
 		}
 	}
 	
@@ -197,7 +214,7 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 			throw new MatchNotFoundException();
 		} else {
 			//if property in another HAL object, get the object's properties and test them
-			p = (m.matchNextObjectValue()) ? m.getNextObjectValue() : (String) props.get(m.getNextObjectLink()).getValue();
+			p = (m.matchNextObjectValue()) ? m.getNextObjectValue() : props.get(m.getNextObjectLink())!=null ? (String) props.get(m.getNextObjectLink()).getValue() : null;
 
 			if(p==null)
 				throw new MatchNotFoundException();
@@ -211,6 +228,40 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 	}
 	
 	/**
+	 * This method fetches the properties of an HAL object given its UDI.
+	 * @param udi the UDI of the object whose properties are neede.
+	 * @return a map of the object's properties
+	 * @throws ConfigurationException if there is an error getting the properties
+	 */
+	private Map<String,Variant<Object>> getAllProperties(String udi) throws DBusException{
+		Device d;
+		try {
+			d = (Device) conn.getRemoteObject("org.freedesktop.Hal", udi, Device.class);
+			return d.GetAllProperties();
+		} catch (org.freedesktop.dbus.exceptions.DBusException e) {
+			System.out.println("Cant list properties for HAL object '"+udi+"'");
+			throw new DBusException(e);
+		} 
+	}
+	
+	/**
+	 * This method fetches the properties of an HAL object given its UDI.
+	 * @param udi the UDI of the object whose properties are neede.
+	 * @return a map of the object's properties
+	 * @throws ConfigurationException if there is an error getting the properties
+	 */
+	private String[] getAllDevices() throws DBusException{
+		Manager m;
+		try {
+			m =  conn.getRemoteObject("org.freedesktop.Hal", "/org/freedesktop/Hal/Manager", Manager.class);
+			return m.GetAllDevices();
+		} catch (org.freedesktop.dbus.exceptions.DBusException e) {
+			System.out.println("Cant list existing HAL objects");
+			throw new DBusException(e);
+		} 
+	}
+	
+	/**
 	 * This method calls <code>join()</code> on the thread object and wait till the thread exits.
 	 */
 	private void join(){
@@ -221,10 +272,11 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 		}
 	}
 
-	public static void main(String[] args) throws IOException, DBusException{
+	public static void main(String[] args) throws IOException, DBusException, InterruptedException{
 		HalDeviceDetectionHelper h = new HalDeviceDetectionHelper();
 		h.addClient(new V4LHalClient());
-		System.in.read();
+		h.start();
+		Thread.sleep(20*1000);
 		h.stop();		
 	}
 

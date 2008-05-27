@@ -16,12 +16,25 @@ import au.edu.jcu.haldbus.match.HalMatchInterface;
  */
 public abstract class AbstractDeviceDetection implements HalFilterInterface {
 	private Map<String, HalMatchInterface> list;
+	private int whenFlags;
+	public static int INITIAL_RUN_FLAG = 1;
+	public static int SUBSEQUENT_RUN_FLAG = 2;
+	public static int ALWAYS_RUN_FLAG = (INITIAL_RUN_FLAG & SUBSEQUENT_RUN_FLAG);
+	
+
+	/**
+	 * This method creates the AbstractClient, initialises the map and set the execution flags
+	 */
+	protected AbstractDeviceDetection(int when){
+		list = new Hashtable<String,HalMatchInterface>();
+		whenFlags = when; 
+	}
 	
 	/**
 	 * This method creates the AbstractClient and initialises the map
 	 */
 	protected AbstractDeviceDetection(){
-		list = new Hashtable<String,HalMatchInterface>();
+		this(ALWAYS_RUN_FLAG); 
 	}
 	
 	/**
@@ -61,5 +74,14 @@ public abstract class AbstractDeviceDetection implements HalFilterInterface {
 	public int getMinMatches() {
 		return list.size();
 	}
-
+	
+	@Override
+	public boolean initialMatch(){
+		return (whenFlags & INITIAL_RUN_FLAG)!=0;
+	}
+	
+	@Override
+	public boolean subsequentMatch(){
+		return (whenFlags & SUBSEQUENT_RUN_FLAG)!=0;
+	}
 }
