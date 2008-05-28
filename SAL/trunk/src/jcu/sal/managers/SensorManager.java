@@ -17,7 +17,7 @@ import jcu.sal.components.Identifier;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
-import jcu.sal.config.ConfigService;
+import jcu.sal.config.FileConfigService;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.SensorNodeEvent;
 import jcu.sal.utils.Slog;
@@ -32,14 +32,14 @@ import org.w3c.dom.Node;
  * @author gilles
  * 
  */
-public class SensorManager extends ManagerFactory<Sensor> {
+public class SensorManager extends AbstractManager<Sensor> {
 	
 	/**
 	 * specifies (in seconds) how long disconnected sensors should remain before being
 	 * deleted
 	 */
 	public static long DISCONNECT_TIMEOUT = 20;
-	private ConfigService conf;
+	private FileConfigService conf;
 	
 	/**
 	 * specifies (in seconds) how often the sensor removal thread kick in
@@ -61,7 +61,7 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		super();
 		Slog.setupLogger(this.logger);
 		pm = ProtocolManager.getProcotolManager();
-		conf = ConfigService.getService();
+		conf = FileConfigService.getService();
 		ev = EventDispatcher.getInstance();
 		ev.addProducer(PRODUCER_ID);
 	}
@@ -183,8 +183,8 @@ public class SensorManager extends ManagerFactory<Sensor> {
 		try {
 			empty = conf.createEmptySensorConfig();
 			parent = XMLhelper.getNode("//" + Sensor.SENSORSECTION_TAG, empty, false);
-			synchronized (this) {
-				Iterator<Sensor> i = getIterator();
+			synchronized(ctable){
+				Iterator<Sensor> i = ctable.values().iterator();
 				while(i.hasNext()) {
 					s = i.next();
 					tmp = generateSensorConfig(s.getID().getName(),s.getNativeAddress(), new ProtocolID(s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG)));

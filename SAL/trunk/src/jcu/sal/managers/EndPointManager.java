@@ -3,14 +3,9 @@
  */
 package jcu.sal.managers;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.text.ParseException;
 import java.util.Hashtable;
-
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
@@ -21,13 +16,12 @@ import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
 /**
  * @author gilles
  * 
  */
-public class EndPointManager extends ManagerFactory<EndPoint> {
+public class EndPointManager extends AbstractManager<EndPoint> {
 	
 	private static EndPointManager e = new EndPointManager();
 	private Logger logger = Logger.getLogger(EndPointManager.class);
@@ -127,20 +121,20 @@ public class EndPointManager extends ManagerFactory<EndPoint> {
 		return type;
 	}
 	
-	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException, ConfigurationException {
-		EndPointManager e = getEndPointManager();
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb1' type='usb'><parameters><Param name='portNumber' value='1' /></parameters></EndPoint>"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb2' type='usb' />"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='eth0' /><Param name='IPAddress' value='' /></parameters></EndPoint>"));
-		e.createComponent(XMLhelper.createDocument("<EndPoint name='files' type='fs' />"));
-		e.destroyComponent(new EndPointID("eth01"));
-		e.destroyComponent(new EndPointID("usb1"));
-		e.destroyComponent(new EndPointID("usb2"));
-		e.destroyComponent(new EndPointID("serial0"));
-		e.destroyComponent(new EndPointID("eth0"));
-		e.destroyComponent(new EndPointID("files"));
-	}
+//	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException, ConfigurationException {
+//		EndPointManager e = getEndPointManager();
+//		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb1' type='usb'><parameters><Param name='portNumber' value='1' /></parameters></EndPoint>"));
+//		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb2' type='usb' />"));
+//		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
+//		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
+//		e.createComponent(XMLhelper.createDocument("<EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='eth0' /><Param name='IPAddress' value='' /></parameters></EndPoint>"));
+//		e.createComponent(XMLhelper.createDocument("<EndPoint name='files' type='fs' />"));
+//		e.destroyComponent(new EndPointID("eth01"));
+//		e.destroyComponent(new EndPointID("usb1"));
+//		e.destroyComponent(new EndPointID("usb2"));
+//		e.destroyComponent(new EndPointID("serial0"));
+//		e.destroyComponent(new EndPointID("eth0"));
+//		e.destroyComponent(new EndPointID("files"));
+//	}
 
 }

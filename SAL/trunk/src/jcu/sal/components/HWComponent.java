@@ -17,9 +17,14 @@ import javax.naming.ConfigurationException;
  *
  */
 public interface HWComponent {
+	
+	/**
+	 * This method returns the type of this component
+	 */
+	public String getType();
 
 	/**
-	 * Changes the component's configuration and applies these changes 
+	 * Changes this component's configuration and applies these changes 
 	 * @param config the component's configuration
 	 * 
 	 */
@@ -27,14 +32,14 @@ public interface HWComponent {
 	
 		
 	/**
-	 * Retrieves the component'entire configuration
+	 * Retrieves this component'entire configuration
 	 * @param config the component's configuration
 	 *
 	 */
 	public Hashtable<String, String> getConfig();
 	
 	/**
-	 * Retrieves a single configuration directive
+	 * Retrieves a single configuration directive from theis component
 	 * @param key the directive's name
 	 * @throws BadAttributeValueExpException
 	 * 
@@ -42,19 +47,19 @@ public interface HWComponent {
 	public String getConfig(String directive) throws BadAttributeValueExpException;
 	
 	/**
-	 * Starts a component: puts the component in a state where it can be used
+	 * Starts this component: puts the component in a state where it can be used
 	 * without requiring further configuration
 	 */
 	public void start() throws ConfigurationException;
 
 	/**
-	 * Stops a component
+	 * Stops this component
 	 *
 	 */
 	public void stop() ;
 	
 	/**
-	 * Destroy a component 
+	 * Destroy this component 
 	 *
 	 */
 	public void remove(componentRemovalListener c);

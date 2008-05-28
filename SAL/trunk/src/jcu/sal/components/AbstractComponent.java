@@ -37,11 +37,13 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#getConfig()
 	 */
+	@Override
 	public Hashtable<String, String> getConfig() { return config; }
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#getConfig(java.lang.String)
 	 */
+	@Override
 	public String getConfig(String directive) throws BadAttributeValueExpException {
 		String s = config.get(directive);
 		if (s==null) {
@@ -54,17 +56,28 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#remove()
 	 */
+	@Override
 	public abstract void remove(componentRemovalListener c);
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#start()
 	 */
+	@Override
 	public abstract void start() throws ConfigurationException;
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#stop()
 	 */
+	@Override
 	public abstract void stop();
+	
+	/* (non-Javadoc)
+	 * @see jcu.sal.components.HWComponent#getType()
+	 */
+	@Override
+	public String getType() {
+		return this.type;
+	}
 	
 	/**
 	 * Parses the component's configuration directives stored in config,
@@ -85,15 +98,6 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	 * @return the textual representation of the component
 	 */
 	public abstract String toString();
-
-	/**
-	 * Gets the type of a component
-	 * @return the type
-	 */
-			
-	public String getType() {
-		return this.type;
-	}
 
 	/**
 	 * Gets the Identifier of a component

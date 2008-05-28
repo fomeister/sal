@@ -21,7 +21,7 @@ import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.components.sensors.SensorState;
-import jcu.sal.config.ConfigService;
+import jcu.sal.config.FileConfigService;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.ProtocolListEvent;
 import jcu.sal.utils.ProtocolModulesList;
@@ -36,12 +36,12 @@ import org.w3c.dom.Node;
  * @author gilles
  * 
  */
-public class ProtocolManager extends ManagerFactory<AbstractProtocol> {
+public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 
 	public static String PRODUCER_ID = "ProtocolManager";
 	private static ProtocolManager p = new ProtocolManager();
 	private Logger logger = Logger.getLogger(ProtocolManager.class);
-	private ConfigService conf;
+	private FileConfigService conf;
 	private EventDispatcher ev;
 	
 	
@@ -51,7 +51,7 @@ public class ProtocolManager extends ManagerFactory<AbstractProtocol> {
 	private ProtocolManager() {
 		super();
 		Slog.setupLogger(this.logger);
-		conf = ConfigService.getService();
+		conf = FileConfigService.getService();
 		ev = EventDispatcher.getInstance();
 		ev.addProducer(PRODUCER_ID);
 		ev.addProducer(SensorState.PRODUCER_ID);
@@ -77,7 +77,7 @@ public class ProtocolManager extends ManagerFactory<AbstractProtocol> {
 		try {
 			type=getComponentType(config);
 			logger.debug("AbstractProtocol type: " + type);
-			String className = ProtocolModulesList.getClassName(type);
+			String className = ProtocolModulesList.getProtocolClassName(type);
 
 			Class<?>[] params = {ProtocolID.class, Hashtable.class, Node.class};
 			Constructor<?> c = Class.forName(className).getConstructor(params);
@@ -201,16 +201,14 @@ public class ProtocolManager extends ManagerFactory<AbstractProtocol> {
 				logger.error("Could not create the sensor");
 			}
 		} 
-		
-		startAll();
 	}
 
 	/**
 	 * Starts all the protcols  at once
 	 */
 	public void startAll(){
-		synchronized(this){
-			Iterator<AbstractProtocol> iter = getIterator();
+		synchronized(ctable){
+			Iterator<AbstractProtocol> iter = ctable.values().iterator();
 			while (iter.hasNext()) {
 				AbstractProtocol e = iter.next();
 				//logger.debug("Starting protocol" + e.toString());
@@ -226,8 +224,8 @@ public class ProtocolManager extends ManagerFactory<AbstractProtocol> {
 	 * Stops all the protcols  at once
 	 */
 	public void stopAll(){
-		synchronized(this){
-			Iterator<AbstractProtocol> iter = getIterator();
+		synchronized(ctable){
+			Iterator<AbstractProtocol> iter = ctable.values().iterator();
 			while (iter.hasNext()) {
 				AbstractProtocol e = iter.next();
 				logger.debug("Stopping protocol" + e.toString());
