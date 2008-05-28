@@ -32,7 +32,7 @@ import org.w3c.dom.NodeList;
  * @author gilles
  * Makes configuration documents available to SAL components
  */
-public class ConfigService{
+public class FileConfigService{
 	
 	public static String PLATFORMCONFIG_TAG = "PlatformConfiguration";
 	public static String SENSORCONFIG_TAG = "SensorConfiguration";
@@ -40,12 +40,12 @@ public class ConfigService{
 	private Document platformCC, sensorconfig;
 	private File platformConfigFile, sensorConfigFile;
 	
-	private Logger logger = Logger.getLogger(ConfigService.class);
-	private static ConfigService c =  new ConfigService();
+	private Logger logger = Logger.getLogger(FileConfigService.class);
+	private static FileConfigService c =  new FileConfigService();
 	
-	public static ConfigService getService() { return c; }
+	public static FileConfigService getService() { return c; }
 	
-	private ConfigService() {
+	private FileConfigService() {
 		Slog.setupLogger(this.logger);
 	}
 	
@@ -305,7 +305,7 @@ public class ConfigService{
 	
 	/**
 	 * This method looks in the sensor configuration file for a sensor with the same address and protocol
-	 * name as the one given in argument. If one is found, a new SensorID based on the sid found in the
+	 * name as the one given in argument (n). If one is found, a new SensorID object based on the sid found in the
 	 * config file for that sensor is returned. 
 	 * @param n the node whose address and protocol name will be looked for in the sensor configuration document.
 	 * @return a new SensorID as found in the configuration document
@@ -480,7 +480,7 @@ public class ConfigService{
 	}
 	
 	public static void main(String[] args) throws ConfigurationException, ParserConfigurationException {
-		ConfigService e = ConfigService.getService();
+		FileConfigService e = FileConfigService.getService();
 		e.init("/home/gilles/workspace/SAL/src/platformConfig-owfs.xml", "/home/gilles/workspace/SAL/src/sensors-owfs-hb1.xml");
 		Iterator<Node> iter = e.getProtocols().iterator();
 		System.out.println("");

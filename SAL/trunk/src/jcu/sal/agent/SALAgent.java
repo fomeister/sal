@@ -47,7 +47,8 @@ public class SALAgent implements SALAgentInterface{
 	 * @see jcu.sal.agent.SALAgentInterface#init(java.lang.String, java.lang.String)
 	 */
 	public void start(String pc, String sc) throws ConfigurationException {
-		pm.init(sc, pc);		
+		pm.init(sc, pc);
+		pm.startAll();
 	}
 	
 	

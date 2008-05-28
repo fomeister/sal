@@ -5,10 +5,11 @@ package jcu.sal.managers;
 
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import javax.naming.ConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
@@ -27,16 +28,18 @@ import org.w3c.dom.Node;
  * @author gilles
  *
  */
-public abstract class ManagerFactory<T extends HWComponent> implements componentRemovalListener {
+public abstract class AbstractManager<T extends HWComponent> implements componentRemovalListener {
 	
 	public static String COMPONENTPARAM_TAG = "Param";
 	
-	private Logger logger = Logger.getLogger(ManagerFactory.class);
-	private Hashtable<Identifier, T> ctable;
+	private Logger logger = Logger.getLogger(AbstractManager.class);
+	protected Map<Identifier, T> ctable;
+	private Map<String, List<Identifier>> typeMap;
 	
-	public ManagerFactory() {
+	public AbstractManager() {
 		Slog.setupLogger(this.logger);
 		ctable = new Hashtable<Identifier, T>();
+		typeMap = new Hashtable<String, List<Identifier>>();
 	}
 
 	/**
@@ -73,14 +76,22 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 */
 	public T createComponent(Node n) throws ConfigurationException {
 		T newc = null;
+		String t = null;
+		Identifier id;
 		try {
-			Identifier id;
 			synchronized(ctable) {
-				 id = getComponentID(n);
+				id = getComponentID(n);
+				t = getComponentType(n);
 				if(!ctable.containsKey(id)) {
 					newc = build(n, id);
 					if(newc!=null) {
+							//store new component
 							ctable.put(newc.getID(), newc);
+							//store new type
+							if(typeMap.get(t)==null)
+								typeMap.put(t, new LinkedList<Identifier>());
+							typeMap.get(t).add(id);
+							
 							return newc;						
 					} else {
 							logger.error("Couldnt create component");
@@ -107,8 +118,10 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 */
 	public void destroyComponent(Identifier i) throws ConfigurationException {
 		synchronized(ctable) {
-			if(ctable.containsKey(i)) {
-				remove(ctable.get(i));
+			T t = ctable.get(i);
+			if(t != null) {
+				typeMap.get(t.getType()).remove(i);
+				remove(t);
 			} else {
 				logger.error("Element " + i.toString()+ " doesnt exist and can NOT be removed");
 				throw new ConfigurationException();
@@ -137,9 +150,9 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 	 */
 	public void destroyAllComponents() {
 		synchronized(ctable){
-			Enumeration<T> e = ctable.elements();
-			while (e.hasMoreElements())
-				try { destroyComponent(e.nextElement().getID());}
+			Iterator<T> e = ctable.values().iterator();
+			while (e.hasNext())
+				try { destroyComponent(e.next().getID());}
 				catch (ConfigurationException e1) {}
 		}
 	}
@@ -154,31 +167,7 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 		return ctable.get(i);
 	}
 	
-	/** 
-	 * Get an iterator on all components. MUST BE SYNCHRONIZED & 
-	 * MUST NOT ALTER THE CONTENTS OTHER THAN WITH THE ITERATOR ITSELF!!!
-	 * @return the iterator
-	 *
-	 */
-	protected Iterator<T> getIterator() {
-		return ctable.values().iterator();
-	}
 
-	/**
-	 * Prints the content of this manager's component table
-	 *
-	 */	
-	public void dumpTable() {
-		logger.debug("current table contents:" );
-		synchronized(ctable){
-			Enumeration<Identifier> keys = ctable.keys();
-			Collection<T> cvalues = ctable.values();
-			Iterator<T> iter = cvalues.iterator();
-			while ( keys.hasMoreElements() &&  iter.hasNext())
-			   logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
-		}
-	}
-	
 	/**
 	 * Removes the specified component
 	 */
@@ -189,6 +178,19 @@ public abstract class ManagerFactory<T extends HWComponent> implements component
 			else
 				logger.debug("Element " + i.toString()+ " Removed");
 		}
+	}
+	
+	/**
+	 * This method returns a list of components Identifiers of the given type
+	 * @param t the type
+	 * @return the list of Identifiers
+	 * @throws ConfigurationException if the given type is not found
+	 */
+	public List<Identifier> getComponentsOfType(String t) throws ConfigurationException{
+		List<Identifier> l;
+		if((l=typeMap.get(t))==null)
+			throw new ConfigurationException();
+		return l;			
 	}
 	
 	/**
