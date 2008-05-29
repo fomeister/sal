@@ -94,4 +94,38 @@ public abstract class AbstractDeviceDetection implements HalFilterInterface {
 	public final boolean subsequentMatch(){
 		return (whenFlags & SUBSEQUENT_RUN_FLAG)!=0;
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int PRIME = 31;
+		int result = 1;
+		result = PRIME * result + ((list == null) ? 0 : list.hashCode());
+		result = PRIME * result + whenFlags;
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final AbstractDeviceDetection other = (AbstractDeviceDetection) obj;
+		if (list == null) {
+			if (other.list != null)
+				return false;
+		} else if (!list.equals(other.list))
+			return false;
+		if (whenFlags != other.whenFlags)
+			return false;
+		return true;
+	}
 }
