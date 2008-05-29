@@ -76,4 +76,7 @@ public interface HalFilterInterface {
 	 * @return the number of matches  
 	 */
 	public int countMatches();
+	
+	public int hashCode();
+	public boolean equals(Object obj);
 }
