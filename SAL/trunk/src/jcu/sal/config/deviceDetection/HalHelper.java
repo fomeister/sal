@@ -1,7 +1,8 @@
-package jcu.sal.config;
+package jcu.sal.config.deviceDetection;
 
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -10,6 +11,12 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.naming.ConfigurationException;
+
+import jcu.sal.utils.ProtocolModulesList;
+import jcu.sal.utils.Slog;
+
+import org.apache.log4j.Logger;
 import org.freedesktop.Hal.Device;
 import org.freedesktop.Hal.Manager;
 import org.freedesktop.Hal.Manager.DeviceAdded;
@@ -32,25 +39,26 @@ import au.edu.jcu.haldbus.match.HalMatchInterface;
  * @author gilles
  *
  */
-public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>{
+public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>, HwDetectorInterface{
+	public static String NAME = "HalHelper";
+	private static Logger logger = Logger.getLogger(HalHelper.class);
 	private Thread t;
 	private DBusConnection conn = null;
 	private BlockingQueue<Map<String,Variant<Object>>> properties;
 	private List<HalFilterInterface> clients;
 	
 	/**
-	 * Default constructor. It initialises the new object's members
+	 * Default constructor. It initialises the new object's members and creates the list of filters
 	 */
-	public HalDeviceDetectionHelper(){		
+	public HalHelper(){
+		Slog.setupLogger(logger);
 		t = new Thread(this);
 		properties = new LinkedBlockingQueue<Map<String,Variant<Object>>>();
 		clients = new LinkedList<HalFilterInterface>();
+		for (String name : ProtocolModulesList.getFilter(NAME))
+			createClient(name);		
 	}
-	
-	/**
-	 * This method starts the Hal helper
-	 * @throws DBusException if the DBus registration fails.
-	 */
+
 	public synchronized void start() throws DBusException{
 		if(!t.isAlive()) {
 			try {
@@ -64,9 +72,6 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 		}
 	}
 	
-	/**
-	 * This method interrupts the thread, and waits for it to finish. The DBus resources are then freed.
-	 */
 	public synchronized void stop(){
 		if(t.isAlive()) {
 			t.interrupt();
@@ -75,12 +80,6 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 		}
 	}
 	
-	/**
-	 * This method adds a new <code>HalFilterInterface</code> object to the list. This object will be
-	 * matched when the next new device is added.
-	 * @param f the <code>HalFilterInterface</code> object to be added
-	 * @throws AddRemoveElemException if the list already contains this <code>HalFilterInterface</code> object.
-	 */
 	public void addClient(HalFilterInterface f) throws AddRemoveElemException{
 		synchronized (clients) {
 			if(clients.contains(f))
@@ -89,11 +88,6 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 		}
 	}
 	
-	/**
-	 * This method removes an existing <code>HalFilterInterface</code> object from the list.
-	 * @param f the <code>HalFilterInterface</code> object to be removed
-	 * @throws AddRemoveElemException if the list doesnt contains the <code>HalFilterInterface</code> object.
-	 */
 	public void removeClient(HalFilterInterface f) throws AddRemoveElemException{
 		synchronized (clients) {
 			if(!clients.contains(f))
@@ -120,12 +114,10 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 	 * @param d the DeviceAdded signal object.
 	 */
 	public void handle(DeviceAdded d) {
-		System.out.println("New device added '"+d.udiAdded+"'");
+		logger.debug("New device added '"+d.udiAdded+"'");
 		try {properties.add(getAllProperties(d.udiAdded));}
-		catch (IllegalStateException e) {
-			System.out.println("Cant add Property list for newly added device - Queue full");
-		} catch (DBusException e) {
-			System.out.println("Cant handle newly added device - no properties");
+		catch (DBusException e) {
+			logger.error("Cant handle newly added device - unable to list its properties");
 		}
 	}
 	
@@ -134,16 +126,40 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 	 * PRIVATE METHODS 
 	 */
 	
+	/**
+	 * this method creates a filter given its class name.
+	 */
+	private void createClient(String className) {
+		Constructor<?> c;
+		HalFilterInterface h=null;
+		try {
+			c = Class.forName(className).getConstructor(new Class<?>[0]);
+			h = (HalFilterInterface) c.newInstance(new Object[0]);
+			addClient(h);
+			logger.debug("Added filer "+h.getName());
+		} catch (AddRemoveElemException e) {
+			logger.error("filter "+h.getName()+" already exists");
+		} catch (Exception e) {
+			logger.error("Cant instanciate filter "+className);
+			e.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * this method is invoked only once, when the helper is started. It runs the list of filters
+	 * against the exiting devices.
+	 */
 	private void initialCheck() {
-		long start;
+		//long start;
 		try {
 			String[] list = getAllDevices();
-			start = System.currentTimeMillis();
+			//start = System.currentTimeMillis();
 			for (String udi : list) 
 				checkProperties(getAllProperties(udi), true);
-			System.out.println("took "+((float) (System.currentTimeMillis() - start)/1000 ) + " sec overall");
+			//logger.debug("took "+((float) (System.currentTimeMillis() - start)/1000 ) + " sec overall");
 		} catch (DBusException e) {
-			System.out.println("DBus error "+e.getMessage());
+			logger.error("Cant carryout initial check: DBus error "+e.getMessage());
 		}
 	}
 	
@@ -169,7 +185,7 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 				c = iter.next();
 				maxUnmatch = c.countMatches() - c.getMinMatches();
 				countUnmatch = 0;
-				//System.out.println("Checking client "+c.getName() + c.initialMatch() + c.subsequentMatch());
+				//logger.debug("Checking client "+c.getName() + c.initialMatch() + c.subsequentMatch());
 				if( (initial && c.initialMatch()) || (!initial && c.subsequentMatch()) ) {  
 					matchList = c.getMatchList(); 
 					iter2 = matchList.keySet().iterator();
@@ -179,16 +195,16 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 						m = matchList.get(matchName);
 						try {
 							s = match(map, m);
-							//System.out.println("Match for "+matchName+ " - "+m.getName() + " : "+s	);
+							//logger.debug("Match for "+matchName+ " - "+m.getName() + " : "+s	);
 							matches.put(matchName,s);
 						} catch (MatchNotFoundException e) {
-							//System.out.println("No Match for "+matchName+ " - "+m.getName());
+							//logger.debug("No Match for "+matchName+ " - "+m.getName());
 							if(++countUnmatch>maxUnmatch) break;
 						}
 					}
 
 					//if we have enough matches, call doAction()
-					//System.out.println("We had "+matches.size()+" matches - expected min: "+c.getMinMatches()+" - max: "+c.getMaxMatches());
+					//logger.debug("We had "+matches.size()+" matches - expected min: "+c.getMinMatches()+" - max: "+c.getMaxMatches());
 					if(c.getMinMatches()<=matches.size() && matches.size()<=c.getMaxMatches())
 						c.doAction(matches);
 
@@ -246,7 +262,7 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 			d = (Device) conn.getRemoteObject("org.freedesktop.Hal", udi, Device.class);
 			return d.GetAllProperties();
 		} catch (org.freedesktop.dbus.exceptions.DBusException e) {
-			System.out.println("Cant list properties for HAL object '"+udi+"'");
+			logger.error("Cant list properties for HAL object '"+udi+"'");
 			throw new DBusException(e);
 		} 
 	}
@@ -263,7 +279,7 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 			m =  conn.getRemoteObject("org.freedesktop.Hal", "/org/freedesktop/Hal/Manager", Manager.class);
 			return m.GetAllDevices();
 		} catch (org.freedesktop.dbus.exceptions.DBusException e) {
-			System.out.println("Cant list existing HAL objects");
+			logger.error("Cant list existing HAL objects");
 			throw new DBusException(e);
 		} 
 	}
@@ -275,7 +291,7 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 		try {
 			t.join();
 		} catch (InterruptedException e) {
-			System.out.println("Interrupted while joining");
+			logger.error("Interrupted while joining");
 		}
 	}
 
