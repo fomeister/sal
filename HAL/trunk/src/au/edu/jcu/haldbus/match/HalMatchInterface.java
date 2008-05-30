@@ -85,5 +85,8 @@ public interface HalMatchInterface {
 	 * @throws InvalidMethodCall it this match doesnt apply to the current HAL object
 	 */
 	public String getPropName() throws InvalidMethodCall;
+	
+	public int hashCode();
+	public boolean equals(Object obj);
 
 }
