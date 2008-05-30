@@ -165,6 +165,7 @@ public class SALuserFile implements EventHandler, StreamCallback{
 				
 		}
 		finally {
+			System.out.println("Main exiting");
 			s.unregisterEventHandler(user, SensorManager.PRODUCER_ID);
 			s.unregisterEventHandler(user, ProtocolManager.PRODUCER_ID);
 			s.unregisterEventHandler(user, SensorState.PRODUCER_ID);

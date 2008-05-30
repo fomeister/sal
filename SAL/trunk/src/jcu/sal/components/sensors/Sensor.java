@@ -3,7 +3,7 @@
  */
 package jcu.sal.components.sensors;
 
-import java.util.Hashtable;
+import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
@@ -36,7 +36,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 	 * @param c the configuration table
 	 * @throws ConfigurationException if the configuration is wrong
 	 */
-	public Sensor(SensorID i, Hashtable<String,String> c) throws ConfigurationException {
+	public Sensor(SensorID i, Map<String,String> c) throws ConfigurationException {
 		super();
 		Slog.setupLogger(this.logger);
 		id = i;

@@ -3,10 +3,8 @@
  */
 package jcu.sal.components;
 
-import java.util.Collection;
-import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.BadAttributeValueExpException;
@@ -22,7 +20,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class AbstractComponent<T extends Identifier> implements HWComponent {
 	
-	protected Hashtable<String, String> config;
+	protected Map<String, String> config;
 	private Logger logger = Logger.getLogger(AbstractComponent.class);
 //	protected boolean started = false;
 	protected AtomicBoolean removed;
@@ -38,7 +36,7 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	 * @see jcu.sal.components.HWComponent#getConfig()
 	 */
 	@Override
-	public Hashtable<String, String> getConfig() { return config; }
+	public Map<String, String> getConfig() { return config; }
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#getConfig(java.lang.String)
@@ -107,17 +105,4 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	public T getID() {
 		return this.id;
 	}
-
-	/**
-	 * Dumps the contents of the configuration table
-	 */
-	public void dumpConfig() {
-		this.logger.debug("current configuration for " + id.toString() +":" );
-		Enumeration<String> keys = config.keys();
-		Collection<String> cvalues = config.values();
-		Iterator<String> iter = cvalues.iterator();
-		while ( keys.hasMoreElements() &&  iter.hasNext())
-		   this.logger.debug("key: " + keys.nextElement().toString() + " - "+iter.next().toString());
-	}
-	
 }

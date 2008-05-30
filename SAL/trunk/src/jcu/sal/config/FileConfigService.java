@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
@@ -19,6 +20,7 @@ import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
+import jcu.sal.managers.AbstractManager;
 import jcu.sal.managers.SensorManager;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -150,6 +152,23 @@ public class FileConfigService{
 			e.printStackTrace();
 			throw new ConfigurationException();
 		}
+	}
+	
+	/**
+	 * This method goes through the platform config file and looks for a protocol with the matching configuration
+	 * name and value
+	 * @param param the name of the configuration attribute
+	 * @param value the value
+	 * @return a Document containing the matching protocol's configuration
+	 * @throws ConfigurationException if not found
+	 */
+	public synchronized Document findProtocol(String param, String value) throws ConfigurationException{
+		//FIXME hardcoded values
+		try {
+			return XMLhelper.getNode("//"+AbstractManager.COMPONENTPARAM_TAG+"[@name=\""+param+"\" value=\""+value+"\"", platformCC, true).getOwnerDocument();
+		} catch (Exception e) {
+			throw new ConfigurationException();
+		} 
 	}
 	
 	/**
@@ -312,7 +331,7 @@ public class FileConfigService{
 	 * @throws ConfigurationException if the sensor Id cant be found
 	 */
 	public SensorID findSID(Node n) throws ConfigurationException{
-		ArrayList<String> params = null;
+		List<String> params = null;
 		String addr=null, pname=null, xpathQuery;
 		int i=0;		
 		try {
@@ -434,8 +453,8 @@ public class FileConfigService{
 	 * This returns a list of Sensor IDs currently found in the sensor config file
 	 * @return a list of Sensor IDs currently found in the sensor config file
 	 */
-	public synchronized ArrayList<String> listSensorID(){
-		ArrayList<String> list = new ArrayList<String>();
+	public synchronized List<String> listSensorID(){
+		List<String> list = new ArrayList<String>();
 		NodeList nl = null;
 		try {
 			nl = XMLhelper.getNodeList("//" + Sensor.SENSOR_TAG, sensorconfig);
@@ -457,10 +476,6 @@ public class FileConfigService{
 	public Document createEmptyPlatformConfig() throws ParserConfigurationException {
 		String s = "<SAL>\n"
 				+"\t<PlatformConfiguration>\n"
-				+"\t\t<general>\n"
-				+"\t\t\t<logging />\n"
-				+"\t\t\t<readingDirectory>/home/sensor/readings</readingDirectory>\n"
-				+"\t\t</general>\n"
 				+"\t\t<protocols />\n"
 				+"\t</PlatformConfiguration>\n"
 				+"</SAL>";
@@ -519,7 +534,7 @@ public class FileConfigService{
 				+"<Param name=\"SBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp2_input\" />"
 			+"</parameters></AbstractProtocol>";
 	e.addProtocol(XMLhelper.createDocument(ns));
-	ArrayList<String> l = e.listSensorID();
+	List<String> l = e.listSensorID();
 	for (int i = 0; i < l.size(); i++) {
 		System.out.println("SID: "+ l.get(i));		
 	}

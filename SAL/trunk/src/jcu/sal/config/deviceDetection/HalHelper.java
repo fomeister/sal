@@ -1,7 +1,6 @@
 package jcu.sal.config.deviceDetection;
 
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -13,6 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.utils.ListChangeListener;
 import jcu.sal.utils.ProtocolModulesList;
 import jcu.sal.utils.Slog;
 
@@ -39,7 +39,7 @@ import au.edu.jcu.haldbus.match.HalMatchInterface;
  * @author gilles
  *
  */
-public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>, HwDetectorInterface{
+public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>, HwProbeInterface, ListChangeListener{
 	public static String NAME = "HalHelper";
 	private static Logger logger = Logger.getLogger(HalHelper.class);
 	private Thread t;
@@ -55,11 +55,11 @@ public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>,
 		t = new Thread(this);
 		properties = new LinkedBlockingQueue<Map<String,Variant<Object>>>();
 		clients = new LinkedList<HalFilterInterface>();
-		for (String name : ProtocolModulesList.getFilter(NAME))
-			createClient(name);		
+		listChanged();
 	}
 
-	public synchronized void start() throws DBusException{
+	@Override
+	public synchronized void start() throws Exception{
 		if(!t.isAlive()) {
 			try {
 				conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
@@ -72,6 +72,7 @@ public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>,
 		}
 	}
 	
+	@Override
 	public synchronized void stop(){
 		if(t.isAlive()) {
 			t.interrupt();
@@ -99,6 +100,7 @@ public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>,
 	/**
 	 * This method implements a loop which waits for HAL property list to be available, and then filters them
 	 */
+	@Override
 	public void run() {
 		Map<String,Variant<Object>> map = null;
 
@@ -113,6 +115,7 @@ public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>,
 	 * queues them for filtering by the thread. 
 	 * @param d the DeviceAdded signal object.
 	 */
+	@Override
 	public void handle(DeviceAdded d) {
 		logger.debug("New device added '"+d.udiAdded+"'");
 		try {properties.add(getAllProperties(d.udiAdded));}
@@ -122,28 +125,61 @@ public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>,
 	}
 	
 	
+	@Override
+	public void listChanged() {
+		List<HalFilterInterface> tmp = new LinkedList<HalFilterInterface>();
+		HalFilterInterface h = null;
+		Iterator<HalFilterInterface> iter;
+
+		synchronized(clients) {
+			iter= clients.iterator();		
+			while (iter.hasNext())
+				tmp.add(iter.next());
+	
+			//Create the new Halfilter and try to insert it in clients 
+			for (String name : getNewFilterList())
+				try {
+					h = createClient(name);
+					addClient(h);
+				} catch (AddRemoveElemException e) {
+					logger.debug("filter "+h.getName()+" couldnt be added, removing it from tmp");
+					tmp.remove(h);				
+				} catch (InstantiationException e) {} 
+				
+			if(tmp.size()>0){
+				iter = tmp.iterator();
+				while(iter.hasNext()) 
+					try { logger.debug("removing filter "+h.getName());
+					removeClient(iter.next());} catch (AddRemoveElemException e) { logger.error("failed");}			
+			}
+		}
+	}
+	
+	
 	/*
 	 * PRIVATE METHODS 
 	 */
 	
+	private List<String> getNewFilterList(){
+		return ProtocolModulesList.getFilter(NAME);
+	}
+	
 	/**
 	 * this method creates a filter given its class name.
+	 * @return the filter or null
 	 */
-	private void createClient(String className) {
+	private HalFilterInterface createClient(String className) throws InstantiationException{
 		Constructor<?> c;
 		HalFilterInterface h=null;
 		try {
 			c = Class.forName(className).getConstructor(new Class<?>[0]);
 			h = (HalFilterInterface) c.newInstance(new Object[0]);
-			addClient(h);
-			logger.debug("Added filer "+h.getName());
-		} catch (AddRemoveElemException e) {
-			logger.error("filter "+h.getName()+" already exists");
 		} catch (Exception e) {
 			logger.error("Cant instanciate filter "+className);
 			e.printStackTrace();
+			throw new InstantiationException();
 		}
-		
+		return h;		
 	}
 	
 	/**
@@ -294,13 +330,4 @@ public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>,
 			logger.error("Interrupted while joining");
 		}
 	}
-
-	public static void main(String[] args) throws IOException, DBusException, InterruptedException{
-//		HalDeviceDetectionHelper h = new HalDeviceDetectionHelper();
-//		h.addClient(new V4LHalClient());
-//		h.start();
-//		Thread.sleep(20*1000);
-//		h.stop();		
-	}
-
 }

@@ -71,6 +71,11 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	private Node epConfig;
 	
 	/**
+	 * Can there be multiple instances of this protocol at once ? Must be set by the subclass
+	 */
+	protected boolean multipleInstances;
+	
+	/**
 	 * The CML store associated with this protocol. This field must be instanciated by the subclass
 	 */
 	protected AbstractStore cmls;
@@ -119,6 +124,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 		epConfig = d;
 		supportedEndPointTypes = new Vector<String>();
 		sensors = new Hashtable<SensorID, Sensor>();
+		multipleInstances = true;
 		
 	
 		/* Registers with the EventHandler */
@@ -245,6 +251,16 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 			}
 		}
 	}
+	
+	/**
+	 * This method specifies whether or not mulitple instances of this protocol
+	 * can exist at once.
+	 * @return whether or not mulitple instances of this protocol can exist at once.
+	 */
+	public boolean supportsMultipleInstances(){
+		return multipleInstances;
+	}
+	
 
 	/**
 	 * Associate a new sensor managed by this AbstractProtocol.Also checks whether this sensor is supported

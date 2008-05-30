@@ -4,7 +4,6 @@
 package jcu.sal.managers;
 
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -47,9 +46,9 @@ public abstract class AbstractManager<T extends HWComponent> implements componen
 	 * @param n the DOM document
 	 * @return the config directives in a hastable
 	 */
-	protected Hashtable<String, String> getComponentConfig(Node n){
-		ArrayList<String> xml = null;
-		Hashtable<String, String> config = new Hashtable<String, String>();
+	protected Map<String, String> getComponentConfig(Node n){
+		List<String> xml = null;
+		Map<String, String> config = new Hashtable<String, String>();
 		String name = null, value = null;
 		
 		try {
@@ -133,7 +132,7 @@ public abstract class AbstractManager<T extends HWComponent> implements componen
 	 * Removes previoulsy created components
 	 * @param l the list of compoenents to be deleted
 	 */
-	public void destroyComponents(ArrayList<T> l){
+	public void destroyComponents(List<T> l){
 		synchronized(ctable) {
 			for (int i = 0; i < l.size(); i++) {
 				try{destroyComponent(l.get(i).getID());}
@@ -188,9 +187,11 @@ public abstract class AbstractManager<T extends HWComponent> implements componen
 	 */
 	public List<Identifier> getComponentsOfType(String t) throws ConfigurationException{
 		List<Identifier> l;
-		if((l=typeMap.get(t))==null)
-			throw new ConfigurationException();
-		return l;			
+		synchronized(ctable){
+			if((l=typeMap.get(t))==null)
+				throw new ConfigurationException();
+			return new LinkedList<Identifier>(l);
+		}
 	}
 	
 	/**

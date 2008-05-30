@@ -76,6 +76,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		logger.debug("building protocol "+id.getName());
 		try {
 			type=getComponentType(config);
+
 			logger.debug("AbstractProtocol type: " + type);
 			String className = ProtocolModulesList.getProtocolClassName(type);
 
@@ -88,8 +89,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 			o[2] = XMLhelper.getNode("/" + AbstractProtocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config, true);
 			//logger.debug("EndPoint config: " + XMLhelper.toString((Node) o[2])); 
 			p = (AbstractProtocol) c.newInstance(o);
-			logger.debug("done building protocol "+p.toString());
-			
+			logger.debug("done building protocol "+p.toString());			
 		} catch (ParseException e) {
 			logger.error("Error while parsing the DOM document. XML doc:");
 			logger.error(XMLhelper.toString(config));
@@ -97,14 +97,21 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 			throw new InstantiationException();
 		} catch (Exception e) {
 			logger.error("Error in new protocol instanciation.");
-			logger.error("Exception: "+e.getClass()+" - "+e.getMessage() );
-			if (e.getCause()!=null) logger.error("caused by: "+e.getCause().getClass()+" - "+e.getCause().getMessage());
+			e.printStackTrace();
 			logger.error("XML doc:\n");
 			logger.error(XMLhelper.toString(config));
-			e.printStackTrace();
 			throw new InstantiationException();
 		}
 		
+		//check if there are other instances of the same type
+		try {
+			if(!p.supportsMultipleInstances() && getComponentsOfType(type).size()!=0) {
+				logger.debug("Found another instance of type '"+type+"' which doesnt support multiple instance, deleting this protocol");
+				throw new InstantiationException();
+			}
+		} catch (ConfigurationException e) {} //no other instances
+		
+		//Parse the protocol's configuration
 		try {
 			p.parseConfig();
 		} catch (ConfigurationException e1) {
@@ -112,14 +119,13 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 			throw new InstantiationException();
 		}
 
+		logger.debug("saving its config");
 		try {
-			logger.debug("saving its config");
 			conf.addProtocol(config);
 		} catch (ConfigurationException e) {
 			logger.error("Cant save the new protocol config");
 			throw new InstantiationException();
-		} 
-
+		}
 		
 		try {
 			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), PRODUCER_ID));

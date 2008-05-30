@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -354,7 +355,7 @@ public class XMLhelper {
      * @return the attributes and their values in a ArrayList: 0:1st Attr name, 1:1st attr value, 2:2nd attr name,3:2nd attr value...
      * @throws XPathExpressionException 
      */
-    public static ArrayList<String> getAttributeListFromElements(String xpath_expression, Node n) throws XPathExpressionException {
+    public static List<String> getAttributeListFromElements(String xpath_expression, Node n) throws XPathExpressionException {
     	ArrayList<String> table = new ArrayList<String>();
     	
     	NodeList list = getNodeList(xpath_expression, n);
@@ -379,7 +380,7 @@ public class XMLhelper {
      * @throws ParserConfigurationException 
      * @throws DOMException 
      */
-    public static ArrayList<String> getAttributeListFromElement(String xpath_expression, Document doc) throws XPathExpressionException, DOMException, ParserConfigurationException {
+    public static List<String> getAttributeListFromElement(String xpath_expression, Document doc) throws XPathExpressionException, DOMException, ParserConfigurationException {
     	ArrayList<String> table = new ArrayList<String>();
     	
 		Node node = getNode(xpath_expression, doc, false);
