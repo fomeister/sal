@@ -3,7 +3,7 @@
  */
 package jcu.sal.components;
 
-import java.util.Hashtable;
+import java.util.Map;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
@@ -36,7 +36,7 @@ public interface HWComponent {
 	 * @param config the component's configuration
 	 *
 	 */
-	public Hashtable<String, String> getConfig();
+	public Map<String, String> getConfig();
 	
 	/**
 	 * Retrieves a single configuration directive from theis component

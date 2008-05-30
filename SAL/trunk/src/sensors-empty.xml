@@ -1,23 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <SAL>
     <SensorConfiguration>
-        <Sensor sid="1">
-            <parameters>
-                <Param name="ProtocolName" value="webcam"/>
-                <Param name="Address" value="CCD"/>
-            </parameters>
-        </Sensor>
-        <Sensor sid="2">
-            <parameters>
-                <Param name="ProtocolName" value="webcam1"/>
-                <Param name="Address" value="CCD"/>
-            </parameters>
-        </Sensor>
-        <Sensor sid="3">
-            <parameters>
-                <Param name="ProtocolName" value="webcam2"/>
-                <Param name="Address" value="CCD"/>
-            </parameters>
-        </Sensor>
     </SensorConfiguration>
 </SAL>

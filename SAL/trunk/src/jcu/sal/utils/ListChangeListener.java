@@ -1,5 +1,5 @@
 package jcu.sal.utils;
 
-public interface DeviceDetectionListener {
+public interface ListChangeListener {
 	public void listChanged();
 }

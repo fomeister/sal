@@ -54,6 +54,7 @@ public class OWFSProtocol extends AbstractProtocol{
 		autodetect = true;
 		AUTODETECT_INTERVAL = 100;
 		cmls = CMLDescriptionStore.getStore();
+		multipleInstances = false;
 		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
 	}
 

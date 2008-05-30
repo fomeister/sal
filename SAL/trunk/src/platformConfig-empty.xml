@@ -2,7 +2,7 @@
 <SAL>
     <PlatformConfiguration>
         <protocols>
-            <Protocol name="webcam" type="v4l2">
+            <!--            <Protocol name="webcam" type="v4l2">
                 <EndPoint name="pci" type="pci"/>
                 <parameters>
                     <Param name="deviceFile" value="/dev/video0"/>
@@ -32,6 +32,7 @@
                     <Param name="channel" value="0"/>
                 </parameters>
             </Protocol>
+            -->
         </protocols>
     </PlatformConfiguration>
 </SAL>

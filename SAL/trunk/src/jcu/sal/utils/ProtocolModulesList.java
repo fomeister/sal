@@ -45,7 +45,7 @@ public class ProtocolModulesList {
 		/*table.put("PL40", ProtocolModulesList.SALcomponentPackage + "PLIProtocol");*/
 		protocolTable.put(SSNMPProtocol.SIMPLESNMPPROTOCOL_TYPE, SALcomponentPackage + "simpleSNMP.SSNMPProtocol");
 		protocolTable.put(OSDataConstants.OSDATAPROTOCOL_TYPE, SALcomponentPackage + "osData.OSDataProtocol");
-		protocolTable.put(V4L2Protocol.V4L2PROTOCOL_TYPE, SALcomponentPackage + "v4l2.V4L2Protocol");
+		protocolTable.put(V4L2Protocol.PROTOCOL_TYPE, SALcomponentPackage + "v4l2.V4L2Protocol");
 
 		if(filterTable.get(HalHelper.NAME)==null)
 			filterTable.put(HalHelper.NAME, new LinkedList<String>());
@@ -63,11 +63,11 @@ public class ProtocolModulesList {
 		return c;
 	}
 	
-	public static String[] getFilter(String fitlerName) {
-		if(e.filterTable.get(fitlerName)==null)
-			return new String[0];
-		
-		return (String []) e.filterTable.get(fitlerName).toArray(new String[0]);	
+	public static List<String> getFilter(String fitlerName) {
+		if(e.filterTable.get(fitlerName)!=null)
+			return new LinkedList<String>(e.filterTable.get(fitlerName));
+		else 
+			return new LinkedList<String>();
 	}
 
 }

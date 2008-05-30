@@ -13,6 +13,7 @@ import jcu.sal.common.Command;
 import jcu.sal.common.Response;
 import jcu.sal.common.StreamCallback;
 import jcu.sal.components.EndPoints.PCIEndPoint;
+import jcu.sal.components.EndPoints.UsbEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.protocols.CMLDescription.ArgTypes;
@@ -30,14 +31,15 @@ import au.edu.jcu.v4l4j.V4L4JException;
 public class V4L2Protocol extends AbstractProtocol {
 	
 	private static Logger logger = Logger.getLogger(V4L2Protocol.class);
-	public final static String V4L2PROTOCOL_TYPE = "v4l2";
-	public final static String V4L2D_DEVICE_ATTRIBUTE_TAG= "deviceFile";
+	public final static String PROTOCOL_TYPE = "v4l2";
+	public final static String DEVICE_ATTRIBUTE_TAG= "deviceFile";
 	public final static String WIDTH_ATTRIBUTE_TAG= "width";
 	public final static String HEIGHT_ATTRIBUTE_TAG= "height";
 	public final static String CHANNEL_ATTRIBUTE_TAG= "channel";
-	public final static String STANDARD_ATTRIBUTE_TAG= "standard";
-	
+	public final static String STANDARD_ATTRIBUTE_TAG= "standard";	
 	public final static String CONTROL_VALUE_ATTRIBUTE_TAG = "ControlValue";
+	
+	private int intialQuality = 80;
 
 	
 	private FrameGrabber fg = null;
@@ -48,12 +50,13 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	public V4L2Protocol(ProtocolID i, Hashtable<String, String> c,
 			Node d) throws ConfigurationException {
-		super(i, V4L2PROTOCOL_TYPE , c, d);
+		super(i, PROTOCOL_TYPE , c, d);
 		Slog.setupLogger(logger);
 		autodetect = true;
 		AUTODETECT_INTERVAL = -1; //run only once
 		cmls = CMLDescriptionStore.getStore();
 		supportedEndPointTypes.add(PCIEndPoint.PCIENDPOINT_TYPE);
+		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
 		streaming = false;
 	}
 
@@ -71,24 +74,32 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		//we must have several config directives:
+		//Check config directives:
 		String dev;
-		int w,h,std,ch, cid;
+		int w=-1,h=-1,std=-1,ch=-1, cid;
 		try {
-			dev = getConfig(V4L2D_DEVICE_ATTRIBUTE_TAG);
-			w = Integer.parseInt(getConfig(WIDTH_ATTRIBUTE_TAG));
-			h = Integer.parseInt(getConfig(HEIGHT_ATTRIBUTE_TAG));
-			ch = Integer.parseInt(getConfig(CHANNEL_ATTRIBUTE_TAG));
-			std = Integer.parseInt(getConfig(STANDARD_ATTRIBUTE_TAG));
+			dev = getConfig(DEVICE_ATTRIBUTE_TAG);
 		} catch (BadAttributeValueExpException e) {
-			logger.error("Each of these parameters must be present, and some are missing: ");
-			logger.error(V4L2D_DEVICE_ATTRIBUTE_TAG+"-"+WIDTH_ATTRIBUTE_TAG+"-"+HEIGHT_ATTRIBUTE_TAG+"-"+CHANNEL_ATTRIBUTE_TAG+"-"+STANDARD_ATTRIBUTE_TAG);
+			logger.error("The device file parameter is missing, cant instanciate framegrabber");
 			throw new ConfigurationException();
 		}
 		
-		//got all of them, create the frame grabber object
 		try {
-			fg = new FrameGrabber(dev, w, h, ch, std, 80);
+			ch = Integer.parseInt(getConfig(CHANNEL_ATTRIBUTE_TAG));
+			std = Integer.parseInt(getConfig(STANDARD_ATTRIBUTE_TAG));
+			w = Integer.parseInt(getConfig(WIDTH_ATTRIBUTE_TAG));
+			h = Integer.parseInt(getConfig(HEIGHT_ATTRIBUTE_TAG));
+		} catch (Exception e1) {}
+		
+		
+		//create the frame grabber object
+		try {
+			if(w!=-1 && h!=-1 && ch !=-1 && ch!=-1)
+				fg = new FrameGrabber(dev, w, h, ch, std, intialQuality);
+			else if(std!=-1 && ch!=-1)
+				fg = new FrameGrabber(dev, ch, std, intialQuality);
+			else 
+				fg = new FrameGrabber(dev, intialQuality);
 			fg.init();
 		} catch (V4L4JException e) {
 			logger.error("Couldnt create/initialise FrameGrabber object");

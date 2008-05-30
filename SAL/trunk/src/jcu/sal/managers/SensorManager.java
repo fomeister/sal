@@ -4,9 +4,9 @@
 package jcu.sal.managers;
 
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
@@ -279,7 +279,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 	 */
 	private String generateNewSensorID() {
 		//Get the SIDs existing in sensor config file
-		ArrayList<String> sids = conf.listSensorID();
+		List<String> sids = conf.listSensorID();
 		
 		if(sids.size()==0)
 			return "1";

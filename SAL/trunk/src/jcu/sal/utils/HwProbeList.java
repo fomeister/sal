@@ -3,37 +3,37 @@ package jcu.sal.utils;
 import java.util.LinkedList;
 import java.util.List;
 
-public class DeviceDetectionList {
+public class HwProbeList {
 	public final static String DeviceDetectionHelperPackage = "jcu.sal.config.deviceDetection.";
-	private static DeviceDetectionList d = new DeviceDetectionList();
+	private static HwProbeList d = new HwProbeList();
 	/**
-	 * Map of all Device Detection helper names and their associated classes
+	 * Map of all hw probe names and their associated classes
 	 */
 	private List<String> helperTable;
 	
 	/**
 	 * List of listeners
 	 */
-	private List<DeviceDetectionListener> listeners;
+	private List<ListChangeListener> listeners;
 
-	private DeviceDetectionList(){
-		listeners = new LinkedList<DeviceDetectionListener>();
+	private HwProbeList(){
+		listeners = new LinkedList<ListChangeListener>();
 		helperTable = new LinkedList<String>();
 		helperTable.add(DeviceDetectionHelperPackage+"HalHelper");
 	}
 	
-	public static String[] getHelperClassNames(){	
-		return (String []) d.helperTable.toArray();
+	public static List<String> getHelperClassNames(){	
+		return new LinkedList<String>(d.helperTable);
 	}
 	
-	public static void addListener(DeviceDetectionListener l){
+	public static void addListener(ListChangeListener l){
 		synchronized(d.listeners) {
 			if(!d.listeners.contains(l))
 				d.listeners.add(l);
 		}
 	}
 	
-	public static void removeListener(DeviceDetectionListener l){
+	public static void removeListener(ListChangeListener l){
 		synchronized(d.listeners) {
 			if(d.listeners.contains(l))
 				d.listeners.add(l);

@@ -14,6 +14,7 @@ import jcu.sal.common.Response;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.SensorID;
+import jcu.sal.config.HwProbeService;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.EventHandler;
 import jcu.sal.managers.ProtocolManager;
@@ -34,12 +35,14 @@ public class SALAgent implements SALAgentInterface{
 	private ProtocolManager pm;
 	private SensorManager sm;
 	private EventDispatcher ev;
+	private HwProbeService hp;
 	
 	public SALAgent(){
 		Slog.setupLogger(logger);
 		ev = EventDispatcher.getInstance();
 		pm = ProtocolManager.getProcotolManager();
 		sm = SensorManager.getSensorManager();
+		hp = HwProbeService.getService();
 
 	}
 	/*
@@ -49,6 +52,8 @@ public class SALAgent implements SALAgentInterface{
 	public void start(String pc, String sc) throws ConfigurationException {
 		pm.init(sc, pc);
 		pm.startAll();
+		hp.loadAll();
+		
 	}
 	
 	
@@ -57,6 +62,7 @@ public class SALAgent implements SALAgentInterface{
 	 * @see jcu.sal.agent.SALAgentInterface#stop()
 	 */
 	public void stop(){
+		hp.stopAll();
 		pm.destroyAllComponents();
 		ev.stop();
 	}

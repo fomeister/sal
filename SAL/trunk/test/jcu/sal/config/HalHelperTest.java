@@ -1,6 +1,6 @@
 package jcu.sal.config;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 import jcu.sal.components.protocols.v4l2.HalClient;
 import jcu.sal.config.deviceDetection.HalHelper;
 
@@ -8,7 +8,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import au.edu.jcu.haldbus.HalFilterInterface;
 import au.edu.jcu.haldbus.exceptions.AddRemoveElemException;
 import au.edu.jcu.haldbus.exceptions.InvalidConstructorArgs;
 
