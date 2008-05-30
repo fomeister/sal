@@ -235,4 +235,50 @@ public abstract class AbstractMatch implements HalMatchInterface {
 	public final String getName() {
 		return name;
 	}
+
+	@Override
+	public int hashCode() {
+		final int PRIME = 31;
+		int result = 1;
+		result = PRIME * result + ((name == null) ? 0 : name.hashCode());
+		result = PRIME * result + (negate ? 1231 : 1237);
+		result = PRIME * result + ((nextMatch == null) ? 0 : nextMatch.hashCode());
+		result = PRIME * result + ((object == null) ? 0 : object.hashCode());
+		result = PRIME * result + ((propName == null) ? 0 : propName.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final AbstractMatch other = (AbstractMatch) obj;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (negate != other.negate)
+			return false;
+		if (nextMatch == null) {
+			if (other.nextMatch != null)
+				return false;
+		} else if (!nextMatch.equals(other.nextMatch))
+			return false;
+		if (object == null) {
+			if (other.object != null)
+				return false;
+		} else if (!object.equals(other.object))
+			return false;
+		if (propName == null) {
+			if (other.propName != null)
+				return false;
+		} else if (!propName.equals(other.propName))
+			return false;
+		return true;
+	}
 }
