@@ -191,7 +191,7 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 					//if we have enough matches, call doAction()
 					//System.out.println("We had "+matches.size()+" matches - expected min: "+c.getMinMatches()+" - max: "+c.getMaxMatches());
 					if(c.getMinMatches()<=matches.size() && matches.size()<=c.getMaxMatches())
-						c.doAction(matches);
+						c.deviceAdded(matches);
 
 					//move on to next client
 					matches.clear();

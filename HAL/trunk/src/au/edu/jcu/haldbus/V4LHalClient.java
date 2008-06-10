@@ -28,12 +28,17 @@ public class V4LHalClient extends AbstractDeviceDetection {
 	}
 
 	@Override
-	public void doAction(Map<String,String> l) {
+	public void deviceAdded(Map<String,String> l) {
 		System.out.println("Found "+l.get("6-info.product")+" - "+l.get("7-info.vendor")+ " on "+l.get("5-deviceFile"));
 	}
 
 	@Override
 	public String getName() {
 		return "V4L HAL DBus client";
+	}
+
+	public void deviceRemoved(Map<String, String> l) {
+		// TODO Auto-generated method stub
+		
 	}
 }
