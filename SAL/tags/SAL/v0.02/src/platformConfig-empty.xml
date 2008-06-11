@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SAL>
+    <PlatformConfiguration>
+        <protocols>
+            <Protocol name="1wirefs" type="owfs">
+                <EndPoint name="usb-ds9490" type="usb"/>
+                <parameters>
+                    <Param name="Location" value="/opt/owfs/bin/owfs"/>
+                    <Param name="MountPoint" value="/mnt/w1"/>
+                </parameters>
+            </Protocol>
+        </protocols>
+    </PlatformConfiguration>
+</SAL>
