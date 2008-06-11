@@ -9,16 +9,9 @@ import jcu.sal.components.protocols.CMLDescription.ReturnType;
 
 
 public class CMLDescriptionStore extends AbstractStore {
-	//private static CMLDescriptionStore c;
 	public static String CCD_KEY = "CCD";
 	public static String CONTROL_VALUE_NAME="value";
-//	static {
-//		try {
-//			c = new CMLDescriptionStore();
-//		} catch (ConfigurationException e) {
-//			e.printStackTrace();
-//		} 
-//	}
+
 	
 	public static CMLDescriptionStore getStore() {
 		//return c;

@@ -4,11 +4,13 @@
 package jcu.sal.managers;
 
 import java.text.ParseException;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
@@ -149,10 +151,12 @@ public abstract class AbstractManager<T extends HWComponent> implements componen
 	 */
 	public void destroyAllComponents() {
 		synchronized(ctable){
-			Iterator<T> e = ctable.values().iterator();
-			while (e.hasNext())
+			Collection<T>  c = new Vector<T>(ctable.values()); 
+			Iterator<T> e = c.iterator();
+			while (e.hasNext()) {
 				try { destroyComponent(e.next().getID());}
 				catch (ConfigurationException e1) {}
+			}
 		}
 	}
 	

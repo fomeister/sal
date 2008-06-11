@@ -176,7 +176,16 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 		}
 	}
 
-
-	
+	/**
+	 * This method returns the number of currently connected devices with a given set of USB IDs. This method is
+	 * primarily used by Protocols at instanciation. These protocols may need to know the number of initially connected
+	 * devices they re interested in.  
+	 * @param ids the USB IDs we re looking for
+	 * @return the number of currently connected devices with the given set of USB IDs
+	 * @throws UnsupportedOperationException if the EndPoint does not support autodetection
+	 */
+	public int getConnectedDeviceNum(String ids) throws UnsupportedOperationException{
+		throw new UnsupportedOperationException("Autodetection of sensor native controllers not supported by this Endpoint");
+	}	
 	
 }

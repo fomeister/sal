@@ -49,7 +49,9 @@ public class ProtocolModulesList {
 
 		if(filterTable.get(HalHelper.NAME)==null)
 			filterTable.put(HalHelper.NAME, new LinkedList<String>());
-		filterTable.get(HalHelper.NAME).add(SALcomponentPackage + "v4l2.HalClient");
+		//filterTable.get(HalHelper.NAME).add(SALcomponentPackage + "v4l2.HalClient");
+		filterTable.get(HalHelper.NAME).add(SALcomponentPackage + "owfs.HalClient");
+		//filterTable.get(HalHelper.NAME).add(SALcomponentPackage + "osData.HalClient");
 	}
 	
 	public static String getProtocolClassName(String type) throws ClassNotFoundException {	

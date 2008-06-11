@@ -6,7 +6,6 @@ import java.util.Random;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.agent.SALAgent;
 import jcu.sal.common.Command;
@@ -95,39 +94,21 @@ public class StressTest3 {
 		
 		/**
 		 * Implements the Stress test
-		 * @throws NotActiveException 
 		 */
 		public void run() {
 			System.out.println("Thread "+Thread.currentThread().getName()+": starting");
 			if(Thread.currentThread().getName().equals("0")) {
 				try {
 					while(!Thread.interrupted()) {
-						try {
-							System.out.println("Thread "+Thread.currentThread().getName()+": Adding 1-wire protocol");
-							s.addProtocol("<AbstractProtocol name=\"1wtree\" type=\"owfs\"><EndPoint name=\"usb\" type=\"usb\" /><parameters><Param name=\"Location\" value=\"/opt/owfs/bin/owfs\" /><Param name=\"MountPoint\" value=\"/mnt/w1\" /></parameters>	</AbstractProtocol>", true);
-							System.out.println("Thread "+Thread.currentThread().getName()+": 1-wire protocol added");
-						} catch (ConfigurationException e) {
-							System.out.println("Thread "+Thread.currentThread().getName()+": Error creating 1-wire");
-						} catch (ParserConfigurationException e) {
-							System.out.println("Thread "+Thread.currentThread().getName()+": Error creating 1-wire");
-						}
-	
-						Thread.sleep(3000);
-						
-					}
-				} catch (InterruptedException e1) {	}
-			} else if(Thread.currentThread().getName().equals("1")) {
-				try {
-					while(!Thread.interrupted()) {
-						Thread.sleep(9000);
-						try {
-							System.out.println("Thread "+Thread.currentThread().getName()+": Removing 1-wire protocol");
-							s.removeProtocol("1wtree", true);
-							System.out.println("Thread "+Thread.currentThread().getName()+": 1-wire protocol removed");
-						} catch (ConfigurationException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+						Thread.sleep(20000);
+//						try {
+//							System.out.println("Thread "+Thread.currentThread().getName()+": Removing 1-wire protocol");
+//							s.removeProtocol("1wirefs", true);
+//							System.out.println("Thread "+Thread.currentThread().getName()+": 1-wire protocol removed");
+//						} catch (ConfigurationException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
 					}
 				} catch (InterruptedException e1) {	}
 			} else {

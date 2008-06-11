@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -39,7 +40,7 @@ import org.w3c.dom.Node;
  */
 public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  implements DeviceListener {
 
-	private Logger logger = Logger.getLogger(AbstractProtocol.class);
+	private static Logger logger = Logger.getLogger(AbstractProtocol.class);
 	
 	public static final String PROTOCOLTYPE_TAG = "type";
 	public static final String PROTOCOLNAME_TAG = "name";
@@ -78,7 +79,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	/**
 	 * The CML store associated with this protocol. This field must be instanciated by the subclass
 	 */
-	protected AbstractStore cmls;
+	protected AbstractStore cmls=null;
 	
 	/**
 	 * Is this protocol started ?
@@ -107,9 +108,8 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 * @paran t the type of the protocol
 	 * @param c the configuration directives
 	 * @param d the XML node containing the associated endpoint configuration  
-	 * @throws ConfigurationException 
 	 */
-	public AbstractProtocol(ProtocolID i, String t, Hashtable<String,String> c, Node d) throws ConfigurationException {
+	public AbstractProtocol(ProtocolID i, String t, Hashtable<String,String> c, Node d){
 		super();
 		Slog.setupLogger(logger);
 		started= new AtomicBoolean(false);
@@ -137,14 +137,16 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	public final void parseConfig() throws ConfigurationException {
 		logger.debug("Parsing our configuration");
 		logger.debug("Build the EndPoint");
+		/* check if we have already instancicated CMl store (we shouldnt, CML store instanciation msut be done in
+		 * (internal_)parse_config() 
+		 */
+		if(cmls!=null)
+			throw new ConfigurationException();
 		
 		/* construct the endpoint  */
 		ep = EndPointManager.getEndPointManager().createComponent(epConfig);
 		if(ep==null)
 			throw new ConfigurationException("Couldnt create the EndPoint");
-
-		/* Sets the PID field of the EndPointID */
-		ep.setPid(id);
 		
 		if(!isEPTypeSupported(ep.getType())) {
 			logger.error("This AbstractProtocol has been setup with the wrong enpoint: got endpoint type: " +ep.getType()+", expected: ");
@@ -153,7 +155,10 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 				logger.error(iter.next());
 			EndPointManager.getEndPointManager().destroyComponent(ep.getID());
 			throw new ConfigurationException("Wrong Endpoint type");
-		}
+		}		
+
+		/* Sets the PID field of the EndPointID */
+		ep.setPid(id);
 		
 		logger.debug("EndPoint OK");
 		logger.debug("Check " + type +" software");
@@ -170,13 +175,6 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 */
 	public final void start() throws ConfigurationException{
 		if(started.compareAndSet(false, true)) {
-			/* Register ourselves with EndPoint for notifications BEFORE starting the endPoint
-			 * so we get a notification of the initially connected devices !*/ 
-			if(epIds!=null) {
-				try { ep.registerDeviceListener(this, epIds); }
-				catch (UnsupportedOperationException e) { logger.debug("Autodetect not supported by the EndPoint");}
-			}
-			
 			/* Start the EndPoint */
 			ep.start();
 			/* Start the ourselves */
@@ -188,10 +186,28 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 				while(i.hasNext())
 					probeSensor(i.next());
 			}
-			/* Start Autodetect thread */
-			startAutodetectThread();
 			
 			logger.debug("protocol "+type+" started");
+			
+			/* if we need the endpoint to report device plugging / unplugging events
+			 * do it now
+			 */
+			if(epIds!=null) {
+				int nb;
+				//check if the devices we re interested in are connected
+				//Initial run
+				for (String ids : epIds) {
+					nb=ep.getConnectedDeviceNum(ids);
+					logger.debug("devices with "+ids+": "+nb);
+					if(nb!=0)
+						adapterChange(nb, ids);
+				}
+				/* Register ourselves with EndPoint for subsequent notifications */ 
+				try { ep.registerDeviceListener(this, epIds); }
+				catch (UnsupportedOperationException e) { logger.debug("Autodetect not supported by the EndPoint");}
+			} else
+				/* Start Autodetect thread */
+				startAutodetectThread();
 		}
 	}
 	
@@ -247,7 +263,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 				
 				/* Unregisters with the EventHandler */
 				EventDispatcher.getInstance().removeProducer(id.getName());
-				this.logger.debug("protocol " + type +" removed");
+				logger.debug("protocol " + type +" removed");
 			}
 		}
 	}
@@ -257,7 +273,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 * can exist at once.
 	 * @return whether or not mulitple instances of this protocol can exist at once.
 	 */
-	public boolean supportsMultipleInstances(){
+	public final boolean supportsMultipleInstances(){
 		return multipleInstances;
 	}
 	
@@ -289,12 +305,13 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	}
 	
 	/**
-	 * Lists all sensors associated to this logical port
+	 * This method returns (a copy of) the list of all sensors associated to this protocol.
+	 * Sensors in this list may / may not exist anymore at the time the list is used. 
 	 * @return a list of all sensors associated
 	 */
-	public final ArrayList<Sensor> getSensors() {
+	public final List<Sensor> getSensors() {
 		synchronized(sensors){
-			return new ArrayList<Sensor>(sensors.values());
+			return new Vector<Sensor>(sensors.values());
 		}
 	}
 
@@ -334,7 +351,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 * @return the textual representation of the AbstractProtocol's instance
 	 */
 	public final String toString() {
-		return "AbstractProtocol "+id.getName()+"("+type+")";
+		return "protocol "+id.getName()+"("+type+")";
 
 	}
 
@@ -346,7 +363,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 * @throws BadAttributeValueExpException 
 	 * @throws NotActiveException 
 	 */
-	public byte[] execute(Command c, SensorID sid) throws BadAttributeValueExpException, NotActiveException {
+	public final byte[] execute(Command c, SensorID sid) throws BadAttributeValueExpException, NotActiveException {
 		byte[] ret_val = {};
 		Sensor s = sensors.get(sid);
 		if(started.get()) {
@@ -504,9 +521,9 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	
 	/**
 	 * this method should be overriden by protocols which provide sensor autodetection
-	 * and return a Vector of native address (strings) of currently connected/visible sensors 
+	 * and return a list of native address (strings) of currently connected/visible sensors 
 	 */
-	protected Vector<String> detectConnectedSensors() {
+	protected List<String> detectConnectedSensors() {
 		logger.debug(id.toString() + "Not configured for autodetection");
 		return null;
 	}
@@ -515,8 +532,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 * (non-Javadoc)
 	 * @see jcu.sal.components.EndPoints.DeviceListener#adapterChange(int)
 	 */
-	public void adapterChange(int n){
-	}
+	public void adapterChange(int n, String id){}
 	
 	/**
 	 * This method returns the CML docu for a given sensor
@@ -525,7 +541,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 * @throws ConfigurationException if the sensor is not found or isnt supported by this protocol
 	 */
 	//TODO make me throw a better exception
-	public Document getCML(SensorID i) throws ConfigurationException {
+	public final Document getCML(SensorID i) throws ConfigurationException {
 		String key;
 		Sensor s =sensors.get(i);
 		if(s!=null) {
@@ -546,7 +562,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 		throw new ConfigurationException("Sensor "+ i.toString()+" is not associated with this protocol");
 	}
 	
-	protected synchronized void startAutodetectThread(){
+	protected final synchronized void startAutodetectThread(){
 		if(autodetectThread==null || !autodetectThread.isAlive()) {
 			//Start the sensor monitoring thread
 			autodetectThread = new Autodetection();
@@ -562,7 +578,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 		}
 	}
 	
-	protected synchronized void stopAutodetectThread() {
+	protected final synchronized void stopAutodetectThread() {
 		if(autodetectThread!=null && autodetectThread.isAlive()) {
 			logger.debug("stopping autodetect thread ...");
 			autodetectThread.interrupt();
@@ -608,14 +624,14 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 		 * Implements the autodetection thread
 		 */
 		public void run() {
-			Vector<String> detected;
+			List<String> detected;
 			Sensor stmp;
-			ArrayList<Sensor> current;
+			List<Sensor> current;
 			Iterator<Sensor> iter;
 			SensorManager sm = SensorManager.getSensorManager();
 			try {
 				logger.debug("Autodetect thread started ("+id.toString()+")");
-				while(!Thread.interrupted() && ((detected = detectConnectedSensors())!=null)) {
+				while(!Thread.interrupted() && (detected = detectConnectedSensors())!=null) {
 
 					//for each sensor in current
 					synchronized(sensors) {

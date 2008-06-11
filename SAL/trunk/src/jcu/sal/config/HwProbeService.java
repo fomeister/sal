@@ -54,11 +54,13 @@ public class HwProbeService implements ListChangeListener{
 		Iterator<String> iter = m.keySet().iterator();
 		HwProbeInterface h;
 		String name;
+		logger.debug("reloading all HwProbes");
 		while (iter.hasNext()) {
 			try {
 				name = iter.next();
 				h = m.get(name);
 				h.start();
+				logger.debug("Starting "+name);
 				helperMap.put(name, h);
 			} catch (Exception e) {
 				logger.error("error starting helper");
@@ -68,14 +70,16 @@ public class HwProbeService implements ListChangeListener{
 	}
 	
 	public synchronized void stopAll() {
-		Map<String, HwProbeInterface> m = loadHelpers(); 
-		Iterator<String> iter = m.keySet().iterator();
+		Iterator<String> iter = helperMap.keySet().iterator();
 		HwProbeInterface h;
 		String name;
+		logger.debug("Removing all HwProbes");
 		while (iter.hasNext()) {
 			name = iter.next();
-			h = m.get(name);
+			h = helperMap.get(name);
+			logger.debug("Stopping "+name);
 			h.stop();
+			logger.debug(name+" stopped");
 			helperMap.remove(name);
 		}
 	}
