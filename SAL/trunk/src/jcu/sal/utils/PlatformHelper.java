@@ -9,6 +9,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -28,9 +29,10 @@ public class PlatformHelper {
 	 */
 	public static boolean rmModule(String module){
 		boolean ok=true;
+		Process p = null;
 		if(PlatformHelper.isModuleLoaded(module)) {
 			try {
-				Process p = createProcess("/usr/bin/sudo /sbin/rmmod " + module);
+				p = createProcess("/usr/bin/sudo /sbin/rmmod " + module);
 				if(p.waitFor()!=0) {
 					String err = null;
 					BufferedReader b = new BufferedReader(new InputStreamReader(p.getErrorStream()));
@@ -38,6 +40,7 @@ public class PlatformHelper {
 						logger.error(err);
 					logger.error("Return status of rmmod !=0 ");
 					ok=false;
+					b.close();
 				}
 			} catch (InterruptedException e) {
 				logger.error("Interrupted while waiting for rmmod to complete");
@@ -45,6 +48,8 @@ public class PlatformHelper {
 			} catch (IOException e) {
 				logger.error("cant run the rmmod command");
 				ok=false;
+			} finally {
+				if(p!=null) p.destroy();
 			}
 		} else
 			logger.debug("Module " + module + " not loaded, cant remove it...");
@@ -73,9 +78,10 @@ public class PlatformHelper {
 	 */
 	public static boolean loadModule(String module){
 		boolean ok=true;
+		Process p = null;
 		if(!PlatformHelper.isModuleLoaded(module)) {
 			try {
-				Process p = createProcess("/usr/bin/sudo /sbin/modprobe " + module);
+				p = createProcess("/usr/bin/sudo /sbin/modprobe " + module);
 				if(p.waitFor()!=0) {
 					String err = null;
 					BufferedReader b = new BufferedReader(new InputStreamReader(p.getErrorStream()));
@@ -83,6 +89,7 @@ public class PlatformHelper {
 						logger.error(err);
 					logger.error("Return status of modprobe !=0 ");
 					ok=false;
+					b.close();
 				}
 			} catch (InterruptedException e) {
 				logger.error("Interrupted while waiting for moprobed to complete");
@@ -90,6 +97,8 @@ public class PlatformHelper {
 			} catch (IOException e) {
 				logger.error("cant run the modprobe command");
 				ok=false;
+			} finally {
+				if (p!=null) p.destroy();
 			}
 		} else
 			logger.debug("Module " + module + " already loaded");
@@ -146,7 +155,7 @@ public class PlatformHelper {
 	 * [2]: exit value (only if wait = true)
 	 * @throws IOException if there is a problem creating the new process
 	 */
-	public static BufferedReader[] captureOutputs(String cmdline, boolean wait) throws IOException {
+	public static ProcessOutput captureOutputs(String cmdline, boolean wait) throws IOException {
 		BufferedReader[] b = new BufferedReader[3];
 		Process p = PlatformHelper.createProcess(cmdline);
 		b[0] = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -154,12 +163,9 @@ public class PlatformHelper {
 		if(wait){
 			try {
 				b[2] = new BufferedReader(new StringReader(String.valueOf(p.waitFor())));
-			} catch (InterruptedException e) {
-				//System.err.println("The command '" + cmdline + "' has been interrupted" );
-				throw new IOException();
-			}
+			} catch (InterruptedException e) {}
 		}
-		return b;
+		return new ProcessOutput(b, p);
 	}
 	
 	/**
@@ -168,14 +174,15 @@ public class PlatformHelper {
 	 * @return the PIDs
 	 * @throws IOException 
 	 */
-	public static ArrayList<Integer> getPid(String pattern) throws IOException {
-		ArrayList<Integer> pids = new ArrayList<Integer>();		
-		Process p;
+	public static List<Integer> getPid(String pattern) throws IOException {
+		List<Integer> pids = new ArrayList<Integer>();		
+		Process p = null;
 
 		p = createProcess("pgrep " + pattern);
 		try { p.waitFor(); } catch (InterruptedException e) {}
 		BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		while(b.ready()) { pids.add(Integer.parseInt(b.readLine())); }
+		p.destroy();
 		return pids;
 		
 	}
@@ -187,15 +194,19 @@ public class PlatformHelper {
 	 */
 	public static int killProcesses(String pattern) {
 		int n = 0;
+		Process p = null;
 		try {
 			n = getPid(pattern).size()-1;
-			Process p = createProcess("pkill " + pattern);
+			p = createProcess("pkill " + pattern);
 			p.waitFor();
 		} catch (IOException e) {
 			logger.error("cant run the pkill command");
 		} catch (InterruptedException e) {
 			logger.error("interrupted while running the pkill command");
+		} finally {
+			if(p!=null) p.destroy();
 		}
+		
 		return n;
 	}
 	
@@ -208,7 +219,7 @@ public class PlatformHelper {
 	 */
 	public static Hashtable<String,String> getRunningProcessArgs(String pattern)  {
 		Hashtable<String,String> args = new Hashtable<String,String>();  
-		ArrayList<Integer> pids = new ArrayList<Integer>();
+		List<Integer> pids;
 		BufferedReader b = null;
 		int instance = 0;
 
@@ -272,7 +283,10 @@ public class PlatformHelper {
 	 * @throws IOException
 	 */
 	public static String getFieldFromCommand(String cmd, String pattern, int field, String delim, boolean translate) throws IOException {
-		return getFieldFromBuffer(captureOutputs(cmd, true)[0], pattern, field, delim, translate);
+		ProcessOutput c = captureOutputs(cmd, true);
+		String ret = getFieldFromBuffer(c.getBuffers()[0], pattern, field, delim, translate);
+		c.destroyProcess();
+		return ret;
 	}
 
 	/**
@@ -286,7 +300,10 @@ public class PlatformHelper {
 	 * @throws IOException
 	 */
 	public static String getFieldFromCommand(String cmd, int line, int field, String delim, boolean translate) throws IOException {
-		return getFieldFromBuffer(captureOutputs(cmd, true)[0], line, field, delim, translate);
+		ProcessOutput c = captureOutputs(cmd, true);
+		String ret = getFieldFromBuffer(c.getBuffers()[0], line, field, delim, translate);
+		c.destroyProcess();
+		return ret;
 	}
 	
 	/**
@@ -436,5 +453,36 @@ public class PlatformHelper {
 	public static boolean isDirReadWrite(String d){
 		File f = new File(d);
 		return (f.isDirectory() && f.canRead() && f.canWrite());
+	}
+	
+	/**
+	 * Returns whether a directory exists
+	 * @param d the full path to the directory
+	 * @return whether the file exists and is readable
+	 */
+	public static boolean isDir(String d){
+		File f = new File(d);
+		return (f.isDirectory());
+	}
+	
+	public static class ProcessOutput {
+		BufferedReader[] b;
+		Process p;
+		public ProcessOutput(BufferedReader[] b, Process p){
+			this.b = b;
+			this.p = p;
+		}
+		public BufferedReader[] getBuffers() {
+			return b;
+		}
+		public void destroyProcess() {
+			try { p.getInputStream().close();}
+			catch (IOException e) {}
+			try { p.getOutputStream().close();}
+			catch (IOException e) {}
+			try { p.getErrorStream().close();}
+			catch (IOException e) {}
+			p.destroy();
+		}	
 	}
 }

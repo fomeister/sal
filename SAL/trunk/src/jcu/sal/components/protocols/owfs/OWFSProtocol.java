@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
 
 import javax.management.BadAttributeValueExpException;
@@ -20,6 +21,7 @@ import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
+import jcu.sal.utils.PlatformHelper.ProcessOutput;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Node;
@@ -44,16 +46,14 @@ public class OWFSProtocol extends AbstractProtocol{
 	public static String DS_26_FAMILY = "26.";
 	
 	/**
-	 * Construct the OSDataProtocol object. (parseConfig is called in super())
-	 * @throws ConfigurationException if there is a problem with the component's config
+	 * Construct the OSDataProtocol object.
 	 */
-	public OWFSProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
+	public OWFSProtocol(ProtocolID i, Hashtable<String,String> c, Node d){
 		super(i,OWFSPROTOCOL_TYPE ,c,d);
 		Slog.setupLogger(logger);
 		epIds = new String[]{DS2490_USBID};
 		autodetect = true;
 		AUTODETECT_INTERVAL = 100;
-		cmls = CMLDescriptionStore.getStore();
 		multipleInstances = false;
 		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
 	}
@@ -63,25 +63,32 @@ public class OWFSProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
+		cmls = CMLDescriptionStore.getStore();
 		String mtpt, temp;
+		ProcessOutput c;
 
 		try {
 			mtpt = getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG);
 			if(mtpt.length()==0) throw new BadAttributeValueExpException("Empty mount point directive...");
-			if(!PlatformHelper.isDirReadWrite(mtpt)) {
+			if(!PlatformHelper.isDir(mtpt)) {
 				//try creating it
 				logger.debug("OWFS Mount point doesnt exist, try creating it");
 				if (! new File(mtpt).mkdirs()) throw new BadAttributeValueExpException("Cant create mount point");
 				logger.debug("done");
+			} else if(!PlatformHelper.isDirReadWrite(mtpt)) {
+				//it is unlikely we have rights to change the permissions
+				logger.error("OWFS Mount point not readable/writeable");
+				throw new BadAttributeValueExpException("OWFS Mount point not readable/writeable");
 			}
 
 			//Next, we check that OWFS is installed in the given directory
 			//and try to get the OWFS version 
 			logger.debug("Detecting OWFS version");
-			BufferedReader[] b = PlatformHelper.captureOutputs(getConfig(OWFSLOCATIONATTRIBUTE_TAG) + " --version", true);
+			c = PlatformHelper.captureOutputs(getConfig(OWFSLOCATIONATTRIBUTE_TAG) + " --version", true);
+			BufferedReader[] b = c.getBuffers();
 			while((temp = b[0].readLine()) != null) logger.debug(temp);
 			while((temp = b[1].readLine()) != null) logger.debug(temp);
-			
+			c.destroyProcess();
 			logger.debug("OWFS protocol configured");
 			
 		} catch (IOException e) {
@@ -99,9 +106,7 @@ public class OWFSProtocol extends AbstractProtocol{
 	 * @see jcu.sal.components.Protocol#internal_remove()
 	 */
 	protected void internal_stop() {
-		logger.debug("OWFS internal stop");
 		stopOWFS();
-
 	}
 
 	/* (non-Javadoc)
@@ -122,9 +127,7 @@ public class OWFSProtocol extends AbstractProtocol{
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.Protocol#internal_stop()
 	 */
-	protected void internal_remove() {
-		logger.debug("OWFS internal removed");
-	}
+	protected void internal_remove() {}
 
 	/*
 	 * (non-Javadoc)
@@ -176,12 +179,13 @@ public class OWFSProtocol extends AbstractProtocol{
 	 * (non-Javadoc)
 	 * @see jcu.sal.components.EndPoints.DeviceListener#deviceChange(int)
 	 */
-	public void adapterChange(int n) {
+	@Override
+	public void adapterChange(int n, String id) {
 		synchronized(removed){
 			if(!removed.get()){
-				if(n>=adapterNb) {
+				if(n>adapterNb) {
 					logger.debug("new OWFS adapters have been plugged in, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
-					if(n>=maxAdaptersSeen){
+					if(n>maxAdaptersSeen){
 						logger.debug("Restarting OWFS to detect new adapters");
 						try {
 							stopAutodetectThread();
@@ -212,9 +216,10 @@ public class OWFSProtocol extends AbstractProtocol{
 				} else if (n<adapterNb) {
 					logger.debug("a new OWFS adapter has been unplugged, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
 					//adapterNb=n;
-				} else {
-					logger.error("Weird condition, recevied a device change event, but the reported device count("+n+") is the same as ours("+adapterNb+")");
-				}
+				} 
+				//may happen right after instanciation if endpoint reports device plugged in atfer Protocol.start() has already
+				//detected it and called this method
+				//else logger.error("Weird condition, recevied a device change event, but the reported device count("+n+") is the same as ours("+adapterNb+")");
 			}
 		}
 	}
@@ -226,6 +231,7 @@ public class OWFSProtocol extends AbstractProtocol{
 	private void startOWFS() throws ConfigurationException{
 		StringBuffer err = new StringBuffer();
 		String s;
+		ProcessOutput c;
 		int attempt=0;
 		boolean started=false;
 		
@@ -253,25 +259,28 @@ public class OWFSProtocol extends AbstractProtocol{
 			}
 
 			while(++attempt<=OWFSSTART_MAX_ATTEMPTS && !started) {
-				BufferedReader r[] = PlatformHelper.captureOutputs(config.get(OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OWFSProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
-				try {Thread.sleep(100);} catch (InterruptedException e) {} 
+				c = PlatformHelper.captureOutputs(config.get(OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OWFSProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
+				BufferedReader r[] = c.getBuffers(); 
+				try {Thread.sleep(100);} catch (InterruptedException e) {}
+				//check stdout & stderr
+				while ((s=r[0].readLine())!=null)
+					err.append("out: "+s);
+				while ((s=r[1].readLine())!=null)
+					err.append("err: "+s);
+				if(err.length()!=0)
+				logger.error("OWFS said:\n"+err);
+				err.delete(0, err.length());
 				
 				//Check that it actually started ...
-				if(PlatformHelper.getPid("owfs").isEmpty() || err.length() > 0){
-					//check stdout & stderr
-					while ((s=r[0].readLine())!=null)
-						err.append("out: "+s);
-					while ((s=r[1].readLine())!=null)
-						err.append("err: "+s);
-					
-					logger.error("Starting OWFS command failed with:");
-					System.out.println(err);
-					err.delete(0, err.length());
+				if(PlatformHelper.getPid("owfs").isEmpty()){
+					logger.error("Starting OWFS command failed.");
 					logger.error("Killing any instances of owfs");
 					PlatformHelper.killProcesses("owfs");
 					started=false;
+					c.destroyProcess();
 					continue;
 				}
+				
 				started=true;
 			}
 			
@@ -285,20 +294,15 @@ public class OWFSProtocol extends AbstractProtocol{
 			throw new ConfigurationException();
 		}
 	}
-
-	
-	
-	
-	
-	
 	
 	
 	/**
 	 * this method should be overriden by protocols which provide sensor autodetection
-	 * and return a Vector of native address (strings) of currently connected/visible sensors 
+	 * and return a List of native address (strings) of currently connected/visible sensors 
 	 */
-	protected Vector<String> detectConnectedSensors() {
-		Vector<String> v = new Vector<String>();
+	@Override
+	protected List<String> detectConnectedSensors() {
+		List<String> v = new Vector<String>();
 		try {
 			File dir = new File(getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG));
 		    String[] info = dir.list();

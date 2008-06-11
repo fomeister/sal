@@ -2,6 +2,7 @@ package jcu.sal.components.protocols.simpleSNMP;
 
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
 
 import javax.management.BadAttributeValueExpException;
@@ -39,16 +40,13 @@ public class SSNMPProtocol extends AbstractProtocol{
 	private SnmpContext s ;
 
 	/**
-	 * Construct the OSDataProtocol object. The Endpoint is instanciated in super(), 
-	 * and parseConfig is called in super()
-	 * @throws ConfigurationException if there is a problem with the component's config
-	 * 
+	 * Construct the SSNMPProtocol object
 	 */
-	public SSNMPProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
+	public SSNMPProtocol(ProtocolID i, Hashtable<String,String> c, Node d) {
 		super(i,SIMPLESNMPPROTOCOL_TYPE,c,d);
 		Slog.setupLogger(logger);
 		
-		cmls = CMLDescriptionStore.getStore();
+
 //		Add to the list of supported EndPoint IDs
 		supportedEndPointTypes.add(EthernetEndPoint.ETHERNETENDPOINT_TYPE);
 		//runs auto detect thread only once if it is going to run
@@ -61,6 +59,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
+		cmls = CMLDescriptionStore.getStore();
 		try {
 			agent = getConfig("AgentIP");
 			comm_string = getConfig("CommunityString");
@@ -150,8 +149,8 @@ public class SSNMPProtocol extends AbstractProtocol{
 	 * @see jcu.sal.components.protocols.AbstractProtocol#detectConnectedSensors()
 	 */
 	@Override
-	protected Vector<String> detectConnectedSensors() {
-		Vector<String> detected = new Vector<String>();
+	protected List<String> detectConnectedSensors() {
+		List<String> detected = new Vector<String>();
 		varbind v=null;
 		int limit=0;
 

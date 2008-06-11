@@ -15,6 +15,7 @@ import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
 
 /**
+ * This class does something
  * @author gilles
  *
  */

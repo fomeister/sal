@@ -165,7 +165,7 @@ public class FileConfigService{
 	public synchronized Document findProtocol(String param, String value) throws ConfigurationException{
 		//FIXME hardcoded values
 		try {
-			return XMLhelper.getNode("//"+AbstractManager.COMPONENTPARAM_TAG+"[@name=\""+param+"\" value=\""+value+"\"", platformCC, true).getOwnerDocument();
+			return XMLhelper.getNode("//"+AbstractManager.COMPONENTPARAM_TAG+"[@name=\""+param+"\"][@value=\""+value+"\"]/parent::*/parent::*", platformCC, true).getOwnerDocument();
 		} catch (Exception e) {
 			throw new ConfigurationException();
 		} 

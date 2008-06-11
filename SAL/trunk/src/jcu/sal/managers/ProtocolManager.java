@@ -190,16 +190,19 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 	public void init(String sml, String pcml) throws ConfigurationException {
 		try {
 			conf.init(pcml,sml);
-			Iterator<Node> iter = conf.getProtocols().iterator();
-			while(iter.hasNext()) {
-				createComponent(iter.next());
-			}
 		} catch (ConfigurationException e) {
-			logger.error("Could not read/parse the configuration files.");
+			logger.error("Could not read the configuration files");
 			throw e;
 		} 
 		
-		Iterator<Node> iter = conf.getSensors().iterator();
+		Iterator<Node> iter = conf.getProtocols().iterator();
+		while(iter.hasNext()) {
+			try {
+				createComponent(iter.next());
+			} catch (ConfigurationException e){}
+		}
+				
+		iter = conf.getSensors().iterator();
 		while(iter.hasNext()) {
 			try {
 				SensorManager.getSensorManager().createComponent(iter.next());
@@ -207,6 +210,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 				logger.error("Could not create the sensor");
 			}
 		} 
+		logger.debug("Finished parsing the configuration files");
 	}
 
 	/**

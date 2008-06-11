@@ -3,6 +3,8 @@ package jcu.sal.events;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
@@ -18,7 +20,7 @@ public class EventDispatcher implements Runnable{
 
 	private static EventDispatcher ev = new EventDispatcher();
 
-	private Hashtable<String, Vector<EventHandler>> table;
+	private Map<String, List<EventHandler>> eventHandlers;
 	private Thread dispatcher;
 	private BlockingQueue<Event> eventQueue;
 	private Set<String> producers; 
@@ -27,7 +29,7 @@ public class EventDispatcher implements Runnable{
 	private int QUEUE_SIZE = 500;
 	
 	private EventDispatcher() {
-		table = new Hashtable<String, Vector<EventHandler>>();
+		eventHandlers = new Hashtable<String, List<EventHandler>>();
 		dispatcher = new Thread(this, "SALEventDispatcher");
 		eventQueue = new LinkedBlockingQueue<Event>(QUEUE_SIZE);
 		producers = new HashSet<String>();
@@ -51,7 +53,7 @@ public class EventDispatcher implements Runnable{
 	public boolean removeProducer(String p) {
 		logger.debug("Removing producer "+p);
 		synchronized(producers) { 
-			synchronized(table) { table.remove(p); }
+			synchronized(eventHandlers) { eventHandlers.remove(p); }
 			return producers.remove(p);
 		}
 	}
@@ -59,10 +61,10 @@ public class EventDispatcher implements Runnable{
 	public void registerEventHandler(EventHandler e, String producer) throws ConfigurationException{
 		synchronized (producers) {
 			if(producers.contains(producer)) {
-				synchronized(table) {
-					if(!table.contains(producer))
-						table.put(producer, new Vector<EventHandler>());
-					table.get(producer).add(e);
+				synchronized(eventHandlers) {
+					if(!eventHandlers.containsKey(producer))
+						eventHandlers.put(producer, new Vector<EventHandler>());
+					eventHandlers.get(producer).add(e);
 				}
 				logger.debug("Registered event handler "+e.getName()+" with producer: "+producer);
 			} else {
@@ -75,8 +77,8 @@ public class EventDispatcher implements Runnable{
 	public void unregisterEventHandler(EventHandler e, String producer) throws ConfigurationException{
 		synchronized (producers) {
 			if(producers.contains(producer)) {
-				synchronized(table) {
-					if(!table.get(producer).remove(e)) {
+				synchronized(eventHandlers) {
+					if(!eventHandlers.get(producer).remove(e)) {
 						logger.debug("Unregistering event handler "+e.getName()+" from producer: "+producer+" failed");
 						throw new ConfigurationException();
 					}
@@ -91,52 +93,24 @@ public class EventDispatcher implements Runnable{
 	}
 	
 	public void queueEvent(Event e) throws ConfigurationException{
-//		synchronized(eventQueue) {
 			if(!eventQueue.offer(e)){
 				logger.error("Cant queue event, queue full");
 				throw new ConfigurationException();
 			}
 			logger.debug("Queued "+e);
-//		}
 	}
 	
 	public void run() {
 		logger.debug("Event dispatcher thread starting");
 		Event e;
-		Vector<EventHandler> v;
+		List<EventHandler> v;
 		Iterator<EventHandler> iterh;
 		EventHandler ev;
-//		Iterator<Event> iter;
-//		int i;
-//		Collection<Event> c = new Vector<Event>();
 		try {
 			while(!Thread.interrupted()) {
-	//			c.clear();
-	//			synchronized(eventQueue) {
-	//				logger.debug(eventQueue.size()+" events in the queue");
-	//				i = eventQueue.drainTo(c);
-	//				logger.debug(i+" events dequeue for processing");
-	//			}
-	//			iter = c.iterator();
-	//			while(iter.hasNext()) {
-	//				e = iter.next();
-	//				synchronized(table) {
-	//					v = table.get(e.getProducer());
-	//					if(v!=null) {
-	//						iterh = v.iterator();
-	//						while(iterh.hasNext()) {
-	//							ev = iterh.next();
-	//							logger.debug("Dispatching event from source " +e.getSourceID()+" to handler "+ev.getName());
-	//							ev.handle(e);
-	//						}
-	//					}
-	//				}
-	//			}
-//				logger.debug("Waiting for events");
 				e = eventQueue.take();
-//				logger.debug("Got event");
-				synchronized(table) {
-					v = table.get(e.getProducer());
+				synchronized(eventHandlers) {
+					v = eventHandlers.get(e.getProducer());
 					if(v!=null) {
 						iterh = v.iterator();
 						while(iterh.hasNext()) {

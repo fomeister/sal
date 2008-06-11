@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
@@ -54,12 +56,9 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	
 	
 	/**
-	 * Construct the OSDataProtocol object. The Endpoint is instanciated in super(), 
-	 * and parseConfig is called in super()
-	 * @throws ConfigurationException if there is a problem with the component's config
-	 * 
+	 * Construct the OSDataProtocol object
 	 */
-	public OSDataProtocol(ProtocolID i, Hashtable<String,String> c, Node d) throws ConfigurationException {
+	public OSDataProtocol(ProtocolID i, Hashtable<String,String> c, Node d){
 		super(i,OSDataConstants.OSDATAPROTOCOL_TYPE,c,d);
 		Slog.setupLogger(logger);
 		
@@ -73,10 +72,12 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 		supportedSensors.put(OSDataConstants.LoadAvg5,new OSdata("/proc/loadavg", null, 2, null, false));
 		supportedSensors.put(OSDataConstants.LoadAvg15,new OSdata("/proc/loadavg", null, 3, null, false));
 		
-		cmls = CMLDescriptionStore.getStore();
 		lastValues = new Hashtable<String,String>();
+		autodetect = true;
+		AUTODETECT_INTERVAL = -1; //run only once
 //		Add to the list of supported EndPoint IDs
 		supportedEndPointTypes.add(FSEndPoint.FSENDPOINT_TYPE);
+		multipleInstances=false;
 	}
 
 	
@@ -84,26 +85,19 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	 * @see jcu.sal.components.Protocol#internal_parseConfig()
 	 */
 	protected void internal_parseConfig() throws ConfigurationException {
-		OSdata d;
+		cmls = CMLDescriptionStore.getStore();
 		try {
-			if(getConfig(OSDataConstants.CPUTempFile)!=null) supportedSensors.put(OSDataConstants.CPUTemp,new OSdata(getConfig(OSDataConstants.CPUTempFile), null, 1, null, false));
+			if(getConfig(OSDataConstants.CPUTempFile)!=null)
+				supportedSensors.put(OSDataConstants.CPUTemp,new OSdata(getConfig(OSDataConstants.CPUTempFile), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
 		try {
-			if(getConfig(OSDataConstants.NBTempFile)!=null) supportedSensors.put(OSDataConstants.NBTemp,new OSdata(getConfig(OSDataConstants.NBTempFile), null, 1, null, false));
+			if(getConfig(OSDataConstants.NBTempFile)!=null)
+				supportedSensors.put(OSDataConstants.NBTemp,new OSdata(getConfig(OSDataConstants.NBTempFile), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
 		try {
-			if(getConfig(OSDataConstants.SBTempFile)!=null)  supportedSensors.put(OSDataConstants.SBTemp,new OSdata(getConfig(OSDataConstants.SBTempFile), null, 1, null, false));
+			if(getConfig(OSDataConstants.SBTempFile)!=null)
+				supportedSensors.put(OSDataConstants.SBTemp,new OSdata(getConfig(OSDataConstants.SBTempFile), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
-		
-		//check that all our supported sensors are here, if not remove them from supportedSensors
-		Iterator<OSdata> i = supportedSensors.values().iterator();
-		while(i.hasNext()) {
-			d = i.next();
-			if(!PlatformHelper.isFileReadable(d.file)) {
-				logger.error("Cant find file "+d.file);
-				i.remove();
-			}
-		}
 		
 		logger.debug("OSData protocol configured");
 	}
@@ -155,6 +149,25 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 			logger.debug("Disconnecting sensor "+s.toString()+", couldnt find the matching file for "+s.getNativeAddress());
 		s.disconnect();
 		return false;
+	}
+	
+	@Override
+	protected List<String> detectConnectedSensors() {
+		List<String> v = new Vector<String>();
+		//check that all our supported sensors are here, if not remove them from supportedSensors
+		Iterator<String> i = supportedSensors.keySet().iterator();
+		OSdata d;
+		String s;
+		while(i.hasNext()) {
+			s = i.next();
+			d = supportedSensors.get(s);
+			if(!PlatformHelper.isFileReadable(d.file)) {
+				logger.error("Cant find file "+d.file);
+				i.remove();
+			} else
+				v.add(s);
+		}
+		return v; 
 	}
 	
 	private synchronized void startCounterThread() {

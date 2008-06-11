@@ -9,11 +9,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.naming.ConfigurationException;
 
 import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
+import jcu.sal.utils.PlatformHelper.ProcessOutput;
 
 import org.apache.log4j.Logger;
 
@@ -76,8 +78,10 @@ public class UsbEndPoint extends EndPoint{
 	public void parseConfig() throws ConfigurationException {
 		// Check if we have any USB ports on this platform
 		logger.debug("check if we have USB ports.");
+		ProcessOutput c = null;
 		try {
-			BufferedReader b[] = PlatformHelper.captureOutputs("lsusb", true);
+			c = PlatformHelper.captureOutputs("lsusb", true);
+			BufferedReader b[] = c.getBuffers();
 			if(!b[0].readLine().contains("Bus"))
 				throw new ConfigurationException("Did not detect USB ports");
 			configured = true;
@@ -86,6 +90,8 @@ public class UsbEndPoint extends EndPoint{
 			e.printStackTrace();
 			logger.debug("Problem capturing output of lsusb");
 			throw new ConfigurationException("Did not detect USB ports");
+		} finally {
+			if(c!=null) c.destroyProcess();
 		}
 	}
 	
@@ -103,22 +109,36 @@ public class UsbEndPoint extends EndPoint{
 	@Override
 	protected void internal_start() throws ConfigurationException {startAutoDectectThread();}
 	
+	@Override
+	public int getConnectedDeviceNum(String ids){
+		int nb = 0;
+		try {
+			Iterator<String> i = getConnectedDevices().iterator();
+			while(i.hasNext())
+				if(i.next().equals(ids))
+					nb++;
+		} catch (IOException e) {}		
+		return nb;
+	}
+	
 	/**
 	 * This method runs the "lsusb" and parse the output to find out the currently connected USB devices 
-	 * @return an arraylist of USB IDs (string) of currently connected devices 
+	 * @return a list of USB IDs (string) of currently connected devices 
 	 * @throws IOException if there s a problem running/parsing the lsusb
-	 */
-	
-	private static ArrayList<String> getConnectedDevices() throws IOException {
+	 */	
+	private static List<String> getConnectedDevices() throws IOException {
 		/** 
 		 * noDevId contains the USB id "0000:0000" which belongs to the USB host controller
 		 * obviously this is not a USB device we re interested in, so we add this ID to noDevId
 		 * the elements in noDevId are removed from the output of lsusb every time it is called  
 		 */
-		ArrayList<String> plists, noDevId = new ArrayList<String>();
+		ProcessOutput c;
+		List<String> plists, noDevId = new ArrayList<String>();
 		noDevId.add(NODEVICE_USBID);
-		BufferedReader b[] = PlatformHelper.captureOutputs("lsusb", true);
+		c = PlatformHelper.captureOutputs("lsusb", true);
+		BufferedReader b[] = c.getBuffers();
 		plists = PlatformHelper.getFieldsFromBuffer(b[0], LSUSBOUTPUT_KEY, 6, " ", false);
+		c.destroyProcess();
 		plists.removeAll(noDevId);
 		return plists;
 	}
@@ -158,16 +178,19 @@ public class UsbEndPoint extends EndPoint{
 	 */
 	private static class Autodetection implements Runnable{
 		Thread t;
+		int stop=0;
 		
 		public Autodetection(String n) {
 			t= new Thread(this, "EP_autodetection_thread_"+n);
 		}
 		
 		public void start() {
+			stop=0;
 			t.start();
 		}
 		
 		public void interrupt() {
+			stop=1;
 			t.interrupt();
 		}
 		
@@ -181,7 +204,7 @@ public class UsbEndPoint extends EndPoint{
 		
 		private void notifyListeners(HashSet<String> ids) {
 			Iterator<DeviceListener> idl;
-			ArrayList<DeviceListener> d = null;
+			List<DeviceListener> d = null;
 			String temp;
 			Iterator<String> i = ids.iterator();
 			while(i.hasNext()){
@@ -201,7 +224,7 @@ public class UsbEndPoint extends EndPoint{
 					idl = d.iterator();
 					while(idl.hasNext()) {
 						logger.debug("Notifying change on device(s) with ID: "+temp+", nb: "+devices.get(temp));
-						idl.next().adapterChange(devices.get(temp));
+						idl.next().adapterChange(devices.get(temp), temp);
 					}
 				}
 			}
@@ -212,7 +235,7 @@ public class UsbEndPoint extends EndPoint{
 		 * Implements the autodetection thread
 		 */
 		public void run(){
-			ArrayList<String> previousList, currentList, tempList;
+			List<String> previousList, currentList, tempList;
 			String temp;
 			HashSet<String> changedList = new HashSet<String>();
 			
@@ -229,7 +252,7 @@ public class UsbEndPoint extends EndPoint{
 				/* notify the listeners of the connected devices */
 				notifyListeners(changedList);
 				
-				while(!Thread.interrupted()){
+				while(!Thread.interrupted() && stop==0){
 					
 					Thread.sleep(deviceWatchInterval);
 
@@ -267,8 +290,7 @@ public class UsbEndPoint extends EndPoint{
 			} catch (InterruptedException e) {}
 			catch (IOException e) {
 				logger.error("error detecting connected devices");
-				logger.error("Exception: " + e.getClass()+" - "+e.getMessage());
-				if(e.getCause()!=null) logger.error("caused by: " + e.getCause().getClass()+" - "+e.getCause().getMessage());
+				e.printStackTrace();
 			}
 		}
 		

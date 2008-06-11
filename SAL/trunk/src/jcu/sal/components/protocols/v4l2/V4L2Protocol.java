@@ -3,6 +3,7 @@ package jcu.sal.components.protocols.v4l2;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
 
 import javax.management.BadAttributeValueExpException;
@@ -49,12 +50,11 @@ public class V4L2Protocol extends AbstractProtocol {
 	
 
 	public V4L2Protocol(ProtocolID i, Hashtable<String, String> c,
-			Node d) throws ConfigurationException {
+			Node d){
 		super(i, PROTOCOL_TYPE , c, d);
 		Slog.setupLogger(logger);
 		autodetect = true;
 		AUTODETECT_INTERVAL = -1; //run only once
-		cmls = CMLDescriptionStore.getStore();
 		supportedEndPointTypes.add(PCIEndPoint.PCIENDPOINT_TYPE);
 		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
 		streaming = false;
@@ -74,6 +74,7 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
+		cmls = CMLDescriptionStore.getStore();
 		//Check config directives:
 		String dev;
 		int w=-1,h=-1,std=-1,ch=-1, cid;
@@ -170,8 +171,8 @@ public class V4L2Protocol extends AbstractProtocol {
 	}
 	
 	@Override
-	protected Vector<String> detectConnectedSensors() {
-		Vector <String> v = new Vector<String>();
+	protected List<String> detectConnectedSensors() {
+		List <String> v = new Vector<String>();
 		v.add(CMLDescriptionStore.CCD_KEY);
 		return v; 
 	}
@@ -259,7 +260,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			logger.error("Cant start capture");
 			throw new IOException();
 		}
-		st = new StreamingThread(c.getStreamCallBack());
+		st = new StreamingThread(c.getStreamCallBack(), s);
 		streaming = true;
 		return new byte[0];
 	}
@@ -279,15 +280,18 @@ public class V4L2Protocol extends AbstractProtocol {
 	private class StreamingThread implements Runnable{
 		StreamCallback cb;
 		Thread t;
+		Sensor s;
 		int stop=0;
 		
-		public StreamingThread(StreamCallback c){
+		public StreamingThread(StreamCallback c, Sensor s){
 			cb = c;
-			t = new Thread(this);
+			this.s = s;
+			t = new Thread(this, "V4L streaming thread");
 			t.start();
 		}
 		
 		public void stop(){
+			t.interrupt();
 			stop=1;
 		}
 		
@@ -302,7 +306,7 @@ public class V4L2Protocol extends AbstractProtocol {
 		public void run() {
 			byte[] b;
 			ByteBuffer bb;
-			while(stop==0){
+			while(stop==0 || Thread.interrupted()){
 				try {
 					bb = fg.getFrame();
 					b = new byte[bb.limit()];
@@ -312,6 +316,10 @@ public class V4L2Protocol extends AbstractProtocol {
 				} catch (V4L4JException e1) {
 					logger.error("Cant capture frame");
 					stop=1;
+				} catch (Exception e) {
+					logger.error("Cant capture frame");
+					e.printStackTrace();
+					stop=1;
 				}
 			}
 			try {
@@ -319,7 +327,8 @@ public class V4L2Protocol extends AbstractProtocol {
 			} catch (V4L4JException e) {
 				logger.error("Cant stop capture");
 			}
-		}
-		
+			logger.debug("Capture thread stopped");
+		}		
 	}
+	
 }

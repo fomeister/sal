@@ -20,8 +20,10 @@ import org.apache.log4j.Logger;
 import org.freedesktop.Hal.Device;
 import org.freedesktop.Hal.Manager;
 import org.freedesktop.Hal.Manager.DeviceAdded;
+import org.freedesktop.Hal.Manager.DeviceRemoved;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
+import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.Variant;
 
 import au.edu.jcu.haldbus.HalFilterInterface;
@@ -31,39 +33,49 @@ import au.edu.jcu.haldbus.exceptions.MatchNotFoundException;
 import au.edu.jcu.haldbus.match.HalMatchInterface;
 
 /**
- * Objects of this class run a single thread waiting for HAL DeviceAdded signals. When such a signal is recevied, 
+ * Objects of this class run a single thread waiting for HAL DeviceAdded/DeviceRemoved signals. When a DeviceAdded signal is recevied, 
  * a list of <code>HalFilterInterface</code> objects is matched against the new device's properties. If enough 
- * matches are successful, <code>HalFilterInterface.doAction()</code> is called. The list of
- * <code>HalFilterInterface</code> objects can be changed at runtime using <code>addClient()</code> and 
- * <code>removeClient()</code>.
+ * matches are successful, <code>HalFilterInterface.doAction()</code> is called. When a DeviceRemoved signal is received,  
+ * The list of <code>HalFilterInterface</code> objects can be changed at runtime using <code>addClient()</code> and 
+ * <code>removeClient()</code>. 
  * @author gilles
  *
  */
-public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>, HwProbeInterface, ListChangeListener{
+public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, ListChangeListener{
 	public static String NAME = "HalHelper";
 	private static Logger logger = Logger.getLogger(HalHelper.class);
 	private Thread t;
 	private DBusConnection conn = null;
 	private BlockingQueue<Map<String,Variant<Object>>> properties;
 	private List<HalFilterInterface> clients;
+	/**
+	 * The following is a map of the UDI we have seen so far and their associated successful matches.
+	 * Entries to this map are added when a DeviceAdded signal is received and the matches in a filter are successful.
+	 * The matches are stored with the UDI of the added object. When this object is removed (DeviceRemoved signal), the same
+	 * matches are passed to the filter. 
+	 */
+	private Map<String, MatchingFilter> udiMatches;
 	
 	/**
 	 * Default constructor. It initialises the new object's members and creates the list of filters
 	 */
 	public HalHelper(){
 		Slog.setupLogger(logger);
-		t = new Thread(this);
+		t = new Thread(this, "HalHelper thread");
 		properties = new LinkedBlockingQueue<Map<String,Variant<Object>>>();
 		clients = new LinkedList<HalFilterInterface>();
+		udiMatches = new Hashtable<String, MatchingFilter>();
 		listChanged();
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public synchronized void start() throws Exception{
 		if(!t.isAlive()) {
 			try {
 				conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
 				conn.addSigHandler(Manager.DeviceAdded.class, this);
+				conn.addSigHandler(Manager.DeviceRemoved.class, this);
 			} catch (org.freedesktop.dbus.exceptions.DBusException e) {
 				throw new DBusException(e);
 			}
@@ -116,41 +128,49 @@ public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>,
 	 * @param d the DeviceAdded signal object.
 	 */
 	@Override
-	public void handle(DeviceAdded d) {
-		logger.debug("New device added '"+d.udiAdded+"'");
-		try {properties.add(getAllProperties(d.udiAdded));}
-		catch (DBusException e) {
-			logger.error("Cant handle newly added device - unable to list its properties");
+	public void handle(DBusSignal s) {
+		if(s instanceof DeviceAdded) {
+			DeviceAdded d = (DeviceAdded) s;
+			logger.debug("New device added '"+d.udiAdded+"'");
+			try {properties.add(getAllProperties(d.udiAdded));}
+			catch (DBusException e) {
+				logger.error("Cant handle newly added device - unable to list its properties");
+			}
+		} else if(s instanceof DeviceRemoved) {
+			DeviceRemoved d = (DeviceRemoved) s;
+			logger.debug("Device removed '"+d.udiRemoved+"'");
+			MatchingFilter f = udiMatches.get(d.udiRemoved);
+			if(f!=null) {
+				f.f.deviceRemoved(f.matches);
+				udiMatches.remove(d.udiRemoved);
+			}
 		}
+			
 	}
 	
 	
 	@Override
 	public void listChanged() {
-		List<HalFilterInterface> tmp = new LinkedList<HalFilterInterface>();
+		List<HalFilterInterface> tmp;
 		HalFilterInterface h = null;
 		Iterator<HalFilterInterface> iter;
 
 		synchronized(clients) {
-			iter= clients.iterator();		
-			while (iter.hasNext())
-				tmp.add(iter.next());
-	
+			tmp = new LinkedList<HalFilterInterface>(clients);
+			
 			//Create the new Halfilter and try to insert it in clients 
 			for (String name : getNewFilterList())
 				try {
 					h = createClient(name);
 					addClient(h);
 				} catch (AddRemoveElemException e) {
-					logger.debug("filter "+h.getName()+" couldnt be added, removing it from tmp");
 					tmp.remove(h);				
 				} catch (InstantiationException e) {} 
 				
 			if(tmp.size()>0){
 				iter = tmp.iterator();
 				while(iter.hasNext()) 
-					try { logger.debug("removing filter "+h.getName());
-					removeClient(iter.next());} catch (AddRemoveElemException e) { logger.error("failed");}			
+					try { removeClient(iter.next());} catch (AddRemoveElemException e) {}			
 			}
 		}
 	}
@@ -222,31 +242,36 @@ public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>,
 				maxUnmatch = c.countMatches() - c.getMinMatches();
 				countUnmatch = 0;
 				//logger.debug("Checking client "+c.getName() + c.initialMatch() + c.subsequentMatch());
-				if( (initial && c.initialMatch()) || (!initial && c.subsequentMatch()) ) {  
-					matchList = c.getMatchList(); 
-					iter2 = matchList.keySet().iterator();
-					while(iter2.hasNext()){
-						//for each HALMatch object, check if there is a match
-						matchName = iter2.next();
-						m = matchList.get(matchName);
-						try {
-							s = match(map, m);
-							//logger.debug("Match for "+matchName+ " - "+m.getName() + " : "+s	);
-							matches.put(matchName,s);
-						} catch (MatchNotFoundException e) {
-							//logger.debug("No Match for "+matchName+ " - "+m.getName());
-							if(++countUnmatch>maxUnmatch) break;
-						}
+
+				matchList = c.getMatchList(); 
+				iter2 = matchList.keySet().iterator();
+				while(iter2.hasNext()){
+					//for each HALMatch object, check if there is a match
+					matchName = iter2.next();
+					m = matchList.get(matchName);
+					try {
+						s = match(map, m);
+						//logger.debug("Match for "+matchName+ " - "+m.getName() + " : "+s	);
+						matches.put(matchName,s);
+					} catch (MatchNotFoundException e) {
+						//logger.debug("No Match for "+matchName+ " - "+m.getName());
+						if(++countUnmatch>maxUnmatch) break;
 					}
-
-					//if we have enough matches, call doAction()
-					//logger.debug("We had "+matches.size()+" matches - expected min: "+c.getMinMatches()+" - max: "+c.getMaxMatches());
-					if(c.getMinMatches()<=matches.size() && matches.size()<=c.getMaxMatches())
-						c.doAction(matches);
-
-					//move on to next client
-					matches.clear();
 				}
+
+				//if we have enough matches, call deviceAdded()
+				//logger.debug("We had "+matches.size()+" matches - expected min: "+c.getMinMatches()+" - max: "+c.getMaxMatches());
+				if(c.getMinMatches()<=matches.size() && matches.size()<=c.getMaxMatches()) {
+					
+					if(udiMatches.put(getUDI(map), new MatchingFilter(c, new Hashtable<String,String>(matches)))!=null)
+						logger.error("There was a previous MatchingFilter in udiMatches for UDI "+getUDI(map));
+
+					if( (initial && c.initialMatch()) || (!initial && c.subsequentMatch()) )
+						c.deviceAdded(matches);
+				}
+
+				//move on to next client
+				matches.clear();
 			}
 		}
 	}
@@ -303,6 +328,10 @@ public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>,
 		} 
 	}
 	
+	private String getUDI(Map<String,Variant<Object>> m) {
+		return (String) m.get("info.udi").getValue();
+	}
+	
 	/**
 	 * This method fetches the properties of an HAL object given its UDI.
 	 * @param udi the UDI of the object whose properties are neede.
@@ -328,6 +357,15 @@ public class HalHelper implements Runnable, DBusSigHandler<Manager.DeviceAdded>,
 			t.join();
 		} catch (InterruptedException e) {
 			logger.error("Interrupted while joining");
+		}
+	}
+	
+	private class MatchingFilter {
+		public HalFilterInterface f;
+		public Map<String,String> matches;
+		public MatchingFilter(HalFilterInterface f, Map<String,String> m){
+			this.f =f;
+			matches = m;
 		}
 	}
 }
