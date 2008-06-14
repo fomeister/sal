@@ -8,7 +8,7 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.agent.SALAgent;
-import jcu.sal.common.Command;
+import jcu.sal.common.CommandFactory.Command;
 
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;

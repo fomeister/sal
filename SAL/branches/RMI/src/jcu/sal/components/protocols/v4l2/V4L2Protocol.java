@@ -9,12 +9,12 @@ import java.util.Vector;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.ArgTypes;
-import jcu.sal.common.CMLConstants;
-import jcu.sal.common.Command;
 import jcu.sal.common.Response;
-import jcu.sal.common.ReturnType;
-import jcu.sal.common.StreamCallback;
+import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.ReturnType;
+import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.components.EndPoints.PCIEndPoint;
 import jcu.sal.components.EndPoints.UsbEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -109,16 +109,26 @@ public class V4L2Protocol extends AbstractProtocol {
 		} catch(UnsatisfiedLinkError e) {
 			logger.error("Cant load JNI library. Couldnt create/initialise FrameGrabber object");
 			throw new ConfigurationException();
+		} catch (NoClassDefFoundError e){
+			//thrown the second time a FrameGrabber is instanciated and the JNI is not found.
+			//I suspect that at the first instanciation attempt, since the JVM cant find the JNI lib,
+			//it unloads the FrameGrabber class, which is why the second attempt throws NoClassDefFound
+			logger.error("Cant load JNI library. Couldnt create FrameGrabber object");
+			throw new ConfigurationException();
 		}
 		
 		//get the V4L2 controls
 		V4L2Control[] v4l2c = fg.getControls();
 		ctrls = new Hashtable<String, V4L2Control>();
 		String key = CMLDescriptionStore.CCD_KEY, name, ctrlName, desc;
-		String[] argNamesEmpty = new String[0];
-		String[] argNamesValue = new String[]{CMLDescriptionStore.CONTROL_VALUE_NAME};
-		ArgTypes[] tEmpty = new ArgTypes[0];
-		ArgTypes[] tValue = new ArgTypes[] {new ArgTypes(CMLConstants.ARG_TYPE_INT)};
+		List<String> argNamesEmpty = new Vector<String>();
+		List<String> argNamesValue = new Vector<String>();
+		argNamesValue.add(CMLDescriptionStore.CONTROL_VALUE_NAME);
+		
+		List<ArgTypes> tEmpty = new Vector<ArgTypes>();
+		List<ArgTypes> tValue = new Vector<ArgTypes>();
+		tValue.add(new ArgTypes(CMLConstants.ARG_TYPE_INT));
+		
 		ReturnType retInt = new ReturnType(CMLConstants.RET_TYPE_INT);
 		ReturnType retVoid = new ReturnType(CMLConstants.RET_TYPE_VOID);
 		for (int id = 0; id < v4l2c.length; id++) {
@@ -260,7 +270,13 @@ public class V4L2Protocol extends AbstractProtocol {
 			logger.error("Cant start capture");
 			throw new IOException();
 		}
-		st = new StreamingThread(c.getStreamCallBack(), s);
+		try {
+			st = new StreamingThread(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s);
+		} catch (BadAttributeValueExpException e) {
+			// TODO Auto-generated catch block
+			//FIXME
+			e.printStackTrace();
+		}
 		streaming = true;
 		return new byte[0];
 	}
@@ -306,18 +322,21 @@ public class V4L2Protocol extends AbstractProtocol {
 		public void run() {
 			byte[] b;
 			ByteBuffer bb;
+			String sid = s.getID().getName();
 			while(stop==0 || Thread.interrupted()){
 				try {
 					bb = fg.getFrame();
 					b = new byte[bb.limit()];
 					bb.get(b);
 					bb.position(0);
-					cb.collect(new Response(b));
+					cb.collect(new Response(b, sid));
 				} catch (V4L4JException e1) {
 					logger.error("Cant capture frame");
+					cb.collect(new Response(sid));
 					stop=1;
 				} catch (Exception e) {
 					logger.error("Cant capture frame");
+					cb.collect(new Response(sid));
 					e.printStackTrace();
 					stop=1;
 				}

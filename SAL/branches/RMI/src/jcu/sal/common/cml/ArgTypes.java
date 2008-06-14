@@ -1,4 +1,4 @@
-package jcu.sal.common;
+package jcu.sal.common.cml;
 
 import javax.naming.ConfigurationException;
 

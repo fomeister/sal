@@ -17,7 +17,7 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.common.Command;
+import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.EndPoints.DeviceListener;
@@ -30,7 +30,6 @@ import jcu.sal.managers.SensorManager;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 
@@ -541,7 +540,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 * @throws ConfigurationException if the sensor is not found or isnt supported by this protocol
 	 */
 	//TODO make me throw a better exception
-	public final Document getCML(SensorID i) throws ConfigurationException {
+	public final String getCML(SensorID i) throws ConfigurationException {
 		String key;
 		Sensor s =sensors.get(i);
 		if(s!=null) {

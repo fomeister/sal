@@ -12,8 +12,8 @@ import java.util.Iterator;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.Command;
 import jcu.sal.common.Response;
+import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -29,7 +29,6 @@ import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 /**
@@ -254,7 +253,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 	 * @throws NotActiveException if the sensor is not available to run commands
 	 */
 	public Response execute(Command c, SensorID sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
-		return new Response(getProtocol(sid).execute(c, sid));
+		return new Response(getProtocol(sid).execute(c, sid), sid.getName());
 	}
 	
 	/**
@@ -264,7 +263,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 	 * @throws ConfigurationException if the sensor isnt associated with a protocol
 	 * @throws NotActiveException
 	 */
-	public Document getCML(SensorID sid) throws ConfigurationException, NotActiveException {
+	public String  getCML(SensorID sid) throws ConfigurationException, NotActiveException {
 		return getProtocol(sid).getCML(sid);
 	}
 	

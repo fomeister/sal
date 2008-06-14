@@ -106,7 +106,12 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	
 	protected void createProtocol(Document d) throws ConfigurationException{
 		logger.debug("Creating new protocol with document: \n"+XMLhelper.toString(d));
-		pm.createComponent(d).start();
+		try {pm.createComponent(d).start();}
+		catch (Throwable t){
+			logger.error("Cant instanciate protocol");
+			//t.printStackTrace();
+			throw new ConfigurationException();
+		}
 	}
 	
 	protected void removeProtocol(Identifier i) throws ConfigurationException{

@@ -1,10 +1,13 @@
 package jcu.sal.components.protocols.osData;
 
+import java.util.List;
+import java.util.Vector;
+
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.ArgTypes;
-import jcu.sal.common.CMLConstants;
-import jcu.sal.common.ReturnType;
+import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.ReturnType;
 import jcu.sal.components.protocols.AbstractStore;
 
 
@@ -26,8 +29,8 @@ public class CMLDescriptionStore extends AbstractStore{
 		super();
 		int i;
 		String key, name, mName, desc;
-		String[] argNames;
-		ArgTypes[] t;
+		List<String> argNames;
+		List<ArgTypes> t;
 		ReturnType r;
 
 		/* 
@@ -37,8 +40,8 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.FreeMem;
 		desc = "Reads the amount of free memory";
-		t = new ArgTypes[0];
-		argNames = new String[0];
+		t = new Vector<ArgTypes>();
+		argNames = new Vector<String>();
 		r = new ReturnType(CMLConstants.RET_TYPE_INT);
 		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
 		//generic 100 GetReading command

@@ -1,12 +1,20 @@
 package jcu.sal.common;
 
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Vector;
 
+import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
+import jcu.sal.common.RMICommandFactory.RMICommand;
+import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -20,10 +28,10 @@ public class CommandFactory {
 	}
 
 	private int cid;
-	private Hashtable<String,ArgTypes> args;
-	private Hashtable<String, String> argValues;
+	private Map<String,ArgTypes> args;
+	private Map<String, String> argValues;
 	private Vector<String> missingArgs;
-	private StreamCallback callback;
+	private Map<String,StreamCallback> callback;
 	
 	/**
 	 * Create a command template based on the given Command's CML descriptor 
@@ -43,6 +51,7 @@ public class CommandFactory {
 		args = new Hashtable<String, ArgTypes>();
 		argValues = new Hashtable<String, String>();
 		missingArgs = new Vector<String>();
+		callback = new Hashtable<String, StreamCallback>();
 		parseArguments(desc, cid);
 		parseArgumentValues(inst);
 	}
@@ -57,6 +66,7 @@ public class CommandFactory {
 		argValues = new Hashtable<String, String>();
 		args = new Hashtable<String, ArgTypes>();
 		missingArgs = new Vector<String>();
+		callback = new Hashtable<String, StreamCallback>();
 		parseArguments(desc, cid);
 	}
 	
@@ -85,8 +95,8 @@ public class CommandFactory {
 	
 	/**
 	 * This method adds a callback argument and overwrites any previous values.
-	 * @param val the callback
 	 * @param name the name of the argument for which the value is to be added
+	 * @param val the callback
 	 * @throws ConfigurationException if the given callback object is null or the argument
 	 * <code>name</code> isnt of type callback
 	 */
@@ -97,7 +107,9 @@ public class CommandFactory {
 		}
 		if(val==null)
 			throw new ConfigurationException("Callback object null");
-		callback = val;
+		if(callback.containsKey(name))
+			logger.debug("A previous value exists for callback "+name+" - will be overwritten");
+		callback.put(name, val);
 		missingArgs.remove(name);
 	}
 	
@@ -181,9 +193,9 @@ public class CommandFactory {
 		//Make sure we have all the args and their values
 		String name;
 		ArgTypes t;
-		Enumeration<String> e = args.keys();
-		while(e.hasMoreElements()) {
-			name = e.nextElement();
+		Iterator<String> e = args.keySet().iterator();
+		while(e.hasNext()) {
+			name = e.next();
 			t = args.get(name); 
 			if(t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK) && callback==null) {
 				logger.error("We are missing the callback object to create the command");
@@ -266,9 +278,9 @@ public class CommandFactory {
 	private void parseArgumentValues(Document d) throws ConfigurationException {
 		String val = null, name;
 		ArgTypes t;
-		Enumeration<String> e = args.keys();
-		while(e.hasMoreElements()) {
-			name = e.nextElement();
+		Iterator<String> e = args.keySet().iterator();
+		while(e.hasNext()) {
+			name = e.next();
 			t = args.get(name);
 			if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
 				try {
@@ -280,6 +292,80 @@ public class CommandFactory {
 					logger.error("The string '"+val+"'for argument '"+name+"' cant be parsed to a "+t.getArgType());
 				}
 			}
+		}
+	}
+	
+	public static Command getCommand(RMICommand c, Map<String,StreamCallback> cb) {
+		return new Command(c.getCommand(), cb);
+	}
+	
+	public static class Command {
+		
+		private int cid;
+		private static Logger logger = Logger.getLogger(Command.class);
+		static{
+			Slog.setupLogger(logger);
+		}
+		private Map<String,String> parameters;
+		private Map<String,StreamCallback> streamc;
+
+		public static final String PARAMETER_TAG = "Param";
+
+		private Command(int cid, Map<String, String> values, Map<String,StreamCallback> c){
+			this.cid = cid;
+			parameters = values;
+			streamc = c;		
+		}
+		
+		private Command(Command cmd, Map<String,StreamCallback> c){
+			this(cmd.cid, cmd.parameters, null);
+			streamc = c;
+		}
+
+		/**
+		 * @deprecated do not use this constructor. Use CommandFactory instead.
+		 * @param cid
+		 * @param key
+		 * @param value
+		 */
+		//MUST BE REMOVED - USED FOR TEST PURPOSES ONLY - ALSO MAKE THE INNER CLASS NON STATIC
+		public Command(int cid, String key, String value){
+			this.cid = cid;
+			parameters = new Hashtable<String, String>();
+			parameters.put(key,value);
+		}
+		
+		public StreamCallback getStreamCallBack(String name) throws BadAttributeValueExpException{
+			if(!streamc.containsKey(name))
+				throw new BadAttributeValueExpException("");
+			
+			return streamc.get(name);
+		}
+
+		public String getConfig(String directive) throws BadAttributeValueExpException {
+			String s = parameters.get(directive);
+			if (s==null) {
+				logger.error("Unable to get a config directive with this name "+ directive);
+				throw new BadAttributeValueExpException("Unable to get a config directive with this name "+ directive);
+			}			
+			return s; 
+		}
+		
+		public int getCID(){
+			return cid; 
+		}
+		
+		public void dumpCommand() {
+			logger.debug("Command '"+cid+"' parameters:");
+			Iterator<String> keys = parameters.keySet().iterator();
+			Collection<String> values= parameters.values();
+			Iterator<String> iter = values.iterator();
+			while ( keys.hasNext() &&  iter.hasNext())
+			   logger.debug("key: " + keys.next().toString() + " - "+iter.next().toString());
+		}
+
+		public String getValue(String name){
+			return parameters.get(name);
 		}
 	}
 }

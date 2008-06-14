@@ -9,21 +9,20 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.common.Command;
 import jcu.sal.common.Response;
+import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.events.EventHandler;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.config.HwProbeService;
 import jcu.sal.events.EventDispatcher;
-import jcu.sal.events.EventHandler;
 import jcu.sal.managers.ProtocolManager;
 import jcu.sal.managers.SensorManager;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 
 /**
  * @author gilles
@@ -118,7 +117,7 @@ public class SALAgent implements SALAgentInterface{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#getCML(java.lang.String)
 	 */
-	public Document getCML(String sid) throws ConfigurationException, NotActiveException {
+	public String  getCML(String sid) throws ConfigurationException, NotActiveException {
 		return pm.getCML(new SensorID(sid));
 	}
 

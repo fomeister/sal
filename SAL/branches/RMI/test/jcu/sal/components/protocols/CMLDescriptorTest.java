@@ -3,15 +3,16 @@ package jcu.sal.components.protocols;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
+import java.util.List;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.common.ArgTypes;
-import jcu.sal.common.CMLConstants;
-import jcu.sal.common.CMLDescription;
-import jcu.sal.common.ReturnType;
+import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.CMLDescription;
+import jcu.sal.common.cml.ReturnType;
 import jcu.sal.utils.XMLhelper;
 
 import org.junit.After;
@@ -21,8 +22,8 @@ import org.junit.Test;
 public class CMLDescriptorTest {
 	
 	private CMLDescription c1, c2, c3;
-	private ArgTypes[] t1;
-	private String[] n1;
+	private List<ArgTypes> t1;
+	private List<String> n1;
 	private ReturnType r1;
 //	private String noArgDoc = "<CommandDescription name=\"noArgDoc\">\n"
 //								+"<CID>100</CID> <!-- Command ID -->\n"
@@ -34,9 +35,11 @@ public class CMLDescriptorTest {
 	public void setUp() throws Exception {
 
 		
-		t1 = new ArgTypes[] {new ArgTypes(CMLConstants.ARG_TYPE_INT)};
+		t1 = new Vector<ArgTypes>();
+		t1.add(new ArgTypes(CMLConstants.ARG_TYPE_INT));
 		
-		n1 = new String[] {"integer"};
+		n1 = new Vector<String>();
+		n1.add("integer");
 		
 		r1 = new ReturnType(CMLConstants.RET_TYPE_BYTE_ARRAY);
 		
@@ -50,6 +53,8 @@ public class CMLDescriptorTest {
 
 	@Test
 	public void testCMLDescriptorStringIntegerStringStringArgTypesArrayStringArrayReturnType() throws ConfigurationException {
+		List<ArgTypes> args;
+		List<String> argNames;
 		assertTrue(c1.getMethodName().equals("MethodName1"));
 		
 		assertTrue(c1.getCID().equals(new Integer(1)));
@@ -57,11 +62,14 @@ public class CMLDescriptorTest {
 		assertTrue(c1.getName().equals("Command1"));
 		
 		assertTrue(c1.getDesc().equals("Description for command 1"));
+
+		args = new Vector<ArgTypes>();
+		args.add(new ArgTypes(CMLConstants.ARG_TYPE_INT));		
+		assertTrue(c1.getArgTypes().equals(args));
 		
-		assertTrue(Arrays.equals(c1.getArgTypes(), new ArgTypes[] {new ArgTypes(CMLConstants.ARG_TYPE_INT)}));
-		assertTrue(Arrays.equals(c1.getArgTypes(), new ArgTypes[] {new ArgTypes(CMLConstants.ARG_TYPE_INT)}));
-		
-		assertTrue(Arrays.equals( c1.getArgNames(), new String[] {"integer"}));
+		argNames = new Vector<String>();
+		argNames.add("integer");
+		assertTrue(c1.getArgNames().equals(argNames));
 		
 		assertFalse(c1.getReturnType().equals(new ReturnType(CMLConstants.RET_TYPE_VOID)));
 		assertTrue(c1.getReturnType().equals(new ReturnType(CMLConstants.RET_TYPE_BYTE_ARRAY)));
@@ -70,6 +78,8 @@ public class CMLDescriptorTest {
 	@Test
 	public void testCMLDescriptorIntegerStringCMLDescriptor() throws ConfigurationException {
 		c2 = new CMLDescription(new Integer(2), "Command2",c1);
+		List<String> argNames;
+		List<ArgTypes> args;
 	
 		assertTrue(c2.getMethodName().equals(c1.getMethodName()));
 		assertTrue(c2.getMethodName().equals("MethodName1"));
@@ -82,23 +92,32 @@ public class CMLDescriptorTest {
 		assertTrue(c2.getDesc().equals("Description for command 1"));
 		assertTrue(c2.getDesc().equals(c1.getDesc()));
 		
-		assertTrue(Arrays.equals(c2.getArgTypes(),c1.getArgTypes()));
-		assertFalse(Arrays.equals(c2.getArgTypes(),new ArgTypes[] {new ArgTypes(CMLConstants.ARG_TYPE_FLOAT)}));
+		assertTrue(c2.getArgTypes().equals(c1.getArgTypes()));
+		
+		args = new Vector<ArgTypes>();
+		args.add(new ArgTypes(CMLConstants.ARG_TYPE_FLOAT));	
+		assertFalse(c2.getArgTypes().equals(args));
 
-		assertTrue(Arrays.equals(c2.getArgNames(),c1.getArgNames()));
-		assertFalse(Arrays.equals(c2.getArgNames(),new String[] {"Int"}));
-		assertTrue(Arrays.equals(c2.getArgNames(),new String[] {"integer"}));
+
+		assertTrue(c2.getArgNames().equals(c1.getArgNames()));
+		argNames = new Vector<String>();
+		argNames.add("Int");
+		assertFalse(c2.getArgNames().equals(argNames));
+		argNames = new Vector<String>();
+		argNames.add("integer");
+		assertTrue(c2.getArgNames().equals(argNames));
 		
 		assertTrue(c2.getReturnType().equals(c1.getReturnType()));		
 		assertFalse(c2.getReturnType().equals(new ReturnType(CMLConstants.RET_TYPE_VOID)));
 		assertTrue(c2.getReturnType().equals(new ReturnType(CMLConstants.RET_TYPE_BYTE_ARRAY)));
 		
-		assertFalse(c2.getCML().equals(c1.getCML()));
+		assertFalse(c2.getCMLString().equals(c1.getCMLString()));
 	}
 
 	@Test
 	public void testCMLDescriptorDocument() throws ConfigurationException, ParserConfigurationException {
-		c3 = new CMLDescription(XMLhelper.createDocument(c1.getCML()));
+		c3 = new CMLDescription(XMLhelper.createDocument(c1.getCMLString()));
+		List<String> argNames;
 		
 		assertFalse(c3.getMethodName().equals(c1.getMethodName()));
 		assertTrue(c3.getMethodName().equals(""));
@@ -112,11 +131,15 @@ public class CMLDescriptorTest {
 		assertTrue(c3.getDesc().equals(c1.getDesc()));
 		assertTrue(c3.getDesc().equals("Description for command 1"));
 		
-		assertTrue(Arrays.equals(c3.getArgTypes(), c1.getArgTypes()));
+		assertTrue(c3.getArgTypes().equals(c1.getArgTypes()));
 		
-		assertTrue(Arrays.equals(c3.getArgNames(), c1.getArgNames()));
-		assertTrue(Arrays.equals(c3.getArgNames(), new String[] {"integer"}));
-		assertFalse(Arrays.equals(c3.getArgNames(), new String[] {"Integer"}));
+		assertTrue(c3.getArgNames().equals(c1.getArgNames()));
+		argNames = new Vector<String>();
+		argNames.add("integer");
+		assertTrue(c3.getArgNames().equals(argNames));
+		argNames = new Vector<String>();
+		argNames.add("Integer");
+		assertFalse(c3.getArgNames().equals(argNames));
 		
 		assertTrue(c3.getReturnType().equals(c1.getReturnType()));
 		assertTrue(c3.getReturnType().equals(new ReturnType(CMLConstants.RET_TYPE_BYTE_ARRAY)));
@@ -137,34 +160,38 @@ public class CMLDescriptorTest {
 
 		assertTrue(c2.getDesc().equals(c3.getDesc()));
 		assertTrue(c2.getDesc().equals(c1.getDesc()));
+
+		assertTrue(c2.getArgTypes().equals(c3.getArgTypes()));
+		assertTrue(c2.getArgTypes().equals(c1.getArgTypes()));
 		
-		assertTrue(Arrays.equals(c2.getArgTypes(),c3.getArgTypes()));
-		assertTrue(Arrays.equals(c2.getArgTypes(),c1.getArgTypes()));
-		
-		assertTrue(Arrays.equals(c2.getArgNames(),c3.getArgNames()));
-		assertTrue(Arrays.equals(c2.getArgNames(),c1.getArgNames()));
+		argNames = new Vector<String>();
+		argNames.add("Int");
+		assertTrue(c2.getArgNames().equals(c3.getArgNames()));
+		assertTrue(c2.getArgNames().equals(c1.getArgNames()));
 		
 		assertTrue(c2.getReturnType().equals(c3.getReturnType()));
 		assertTrue(c2.getReturnType().equals(c1.getReturnType()));
 		
-		//c3 = new CMLDescription(XMLhelper.createDocument(noArgDoc));
-		assertFalse(c3.getMethodName().equals("noArgDoc"));
-		assertTrue(c3.getMethodName().equals(""));
-		
-		assertFalse(c3.getCID().equals(new Integer(100)));
-		assertTrue(c3.getCID().equals(c1.getCID()));
-		
-		assertTrue(c3.getName().equals("noArgDoc"));
-				
-		assertTrue(c3.getDesc().equals("it works without args too"));
-		
-		assertTrue(c3.getArgCount()==0);
-		
-		assertTrue(Arrays.equals(c3.getArgTypes(), new ArgTypes[0]));
-		
-		assertTrue(Arrays.equals(c3.getArgNames(), new String[0]));
-				
-		assertTrue(c3.getReturnType().equals(new ReturnType(CMLConstants.RET_TYPE_VOID)));
+//		c3 = new CMLDescription(XMLhelper.createDocument(noArgDoc));
+//		assertFalse(c3.getMethodName().equals("noArgDoc"));
+//		assertTrue(c3.getMethodName().equals(""));
+//		
+//		assertFalse(c3.getCID().equals(new Integer(100)));
+//		assertTrue(c3.getCID().equals(c1.getCID()));
+//		
+//		assertTrue(c3.getName().equals("noArgDoc"));
+//				
+//		assertTrue(c3.getDesc().equals("it works without args too"));
+//		
+//		assertTrue(c3.getArgCount()==0);
+//		
+//		args = new Vector<ArgTypes>();
+//		assertTrue(c3.getArgTypes().equals(args));
+//		
+//		argNames = new Vector<String>();
+//		assertTrue(c3.getArgNames().equals(argNames));
+//				
+//		assertTrue(c3.getReturnType().equals(new ReturnType(CMLConstants.RET_TYPE_VOID)));
 	}
 
 }
