@@ -53,7 +53,6 @@ public class XMLhelper {
     public static Document createEmptyDocument() throws ParserConfigurationException {
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document document = builder.newDocument();
-        document.createElement("root");
         return document;
         
     }
@@ -212,6 +211,18 @@ public class XMLhelper {
     	Document d = parent.getOwnerDocument();
     	if(child.getNodeType()==Node.DOCUMENT_NODE) child=child.getFirstChild();
     	Node n = d.importNode(child, true);
+        return parent.appendChild(n);
+    }
+    
+    /**
+     * Adds a child containing text to the parent node inside the DOM document
+     * @param parent the node under which to add the child
+     * @param child the node to be added
+     * @return the new appended node
+     */
+    public static Node addChild(Document parent, Node child) {
+    	if(child.getNodeType()==Node.DOCUMENT_NODE) child=child.getFirstChild();
+    	Node n = parent.importNode(child, true);
         return parent.appendChild(n);
     }
     

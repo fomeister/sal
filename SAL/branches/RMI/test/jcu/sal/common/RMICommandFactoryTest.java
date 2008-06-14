@@ -14,7 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
-public class CommandFactoryTest implements StreamCallback {
+public class RMICommandFactoryTest implements StreamCallback {
 	private String descStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 							+"<commandDescriptions>"
 							+"<CommandDescription cid=\"1000\">"

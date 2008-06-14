@@ -1,10 +1,13 @@
 package jcu.sal.components.protocols.owfs;
 
+import java.util.List;
+import java.util.Vector;
+
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.ArgTypes;
-import jcu.sal.common.CMLConstants;
-import jcu.sal.common.ReturnType;
+import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.ReturnType;
 import jcu.sal.components.protocols.AbstractStore;
 
 
@@ -26,8 +29,8 @@ public class CMLDescriptionStore extends AbstractStore {
 	private CMLDescriptionStore() throws ConfigurationException{
 		int i;
 		String key, name, mName, desc;
-		String[] argNames;
-		ArgTypes[] t;
+		List<String> argNames;
+		List<ArgTypes> t;
 		ReturnType r;
 		
 		/* 
@@ -37,8 +40,8 @@ public class CMLDescriptionStore extends AbstractStore {
 		mName = OWFSProtocol.GET_TEMPERATURE_METHOD;
 		name = "ReadTemperature";
 		desc = "Reads the temperature";
-		t = new ArgTypes[0];
-		argNames = new String[0];
+		t = new Vector<ArgTypes>();
+		argNames = new Vector<String>();
 		r = new ReturnType(CMLConstants.RET_TYPE_FLOAT);
 		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
 		//generic GetReading command

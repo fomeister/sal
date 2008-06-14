@@ -1,11 +1,11 @@
-package jcu.sal.common;
+package jcu.sal.common.cml;
 
 public interface CMLConstants {
-	public static String CMD_DESCRIPTIONS_TAG = 		"commandDescriptions";
+//	public static String CMD_DESCRIPTIONS_TAG = 		"commandDescriptions";
 	public static String CMD_DESCRIPTION_TAG = 			"CommandDescription";
 	public static String CMD_INSTANCE_TAG = 			"CommandInstance";
 	public static String CID_ATTRIBUTE = 				"cid";
-	public static String NAME_TAG = 					"name";
+	public static String NAME_TAG = 					"Name";
 	public static String SHORT_DESCRIPTION_TAG = 		"ShortDescription";
 	public static String ARGUMENTS_TAG = 				"arguments";
 	public static String ARGUMENT_TAG = 				"Argument";
@@ -13,7 +13,8 @@ public interface CMLConstants {
 	public static String TYPE_ATTRIBUTE = 				"type";
 	public static String RETURN_TYPE_TAG = 				"ReturnType";
 	
-	public static String XPATH_CMD_DESC = 				"/"+CMD_DESCRIPTIONS_TAG+"/"+CMD_DESCRIPTION_TAG;
+	//public static String XPATH_CMD_DESC = 				"/"+CMD_DESCRIPTIONS_TAG+"/"+CMD_DESCRIPTION_TAG;
+	public static String XPATH_CMD_DESC = 				"//"+CMD_DESCRIPTION_TAG;
 	public static String XPATH_CMD_DESC_NAME = 			XPATH_CMD_DESC+"/"+NAME_TAG;
 	public static String XPATH_CMD_DESC_SHORT_DESC = 	XPATH_CMD_DESC+"/"+SHORT_DESCRIPTION_TAG;
 	public static String XPATH_CMD_DESC_ARGUMENTS = 	XPATH_CMD_DESC+"/"+ARGUMENTS_TAG;

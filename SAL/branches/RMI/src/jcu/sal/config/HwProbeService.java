@@ -59,8 +59,8 @@ public class HwProbeService implements ListChangeListener{
 			try {
 				name = iter.next();
 				h = m.get(name);
-				h.start();
 				logger.debug("Starting "+name);
+				h.start();
 				helperMap.put(name, h);
 			} catch (Exception e) {
 				logger.error("error starting helper");
@@ -79,7 +79,6 @@ public class HwProbeService implements ListChangeListener{
 			h = helperMap.get(name);
 			logger.debug("Stopping "+name);
 			h.stop();
-			logger.debug(name+" stopped");
 			helperMap.remove(name);
 		}
 	}

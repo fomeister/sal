@@ -25,5 +25,17 @@
                 <Param name="Address" value="26.627E61000000"/>
             </parameters>
         </Sensor>
+        <Sensor sid="5">
+            <parameters>
+                <Param name="ProtocolName" value="v4l-/dev/video0"/>
+                <Param name="Address" value="CCD"/>
+            </parameters>
+        </Sensor>
+        <Sensor sid="6">
+            <parameters>
+                <Param name="ProtocolName" value="v4l-/dev/video1"/>
+                <Param name="Address" value="CCD"/>
+            </parameters>
+        </Sensor>
     </SensorConfiguration>
 </SAL>

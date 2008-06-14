@@ -8,7 +8,7 @@ import java.util.Vector;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.Command;
+import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.components.EndPoints.EthernetEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;

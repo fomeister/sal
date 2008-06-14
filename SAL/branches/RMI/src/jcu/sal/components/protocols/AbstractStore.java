@@ -2,14 +2,16 @@ package jcu.sal.components.protocols;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.common.ArgTypes;
-import jcu.sal.common.CMLConstants;
-import jcu.sal.common.CMLDescription;
-import jcu.sal.common.ReturnType;
+import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.CMLDescription;
+import jcu.sal.common.cml.ReturnType;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -74,23 +76,29 @@ public abstract class AbstractStore {
 	 * @return the CML command description doc 
 	 * @throws ConfigurationException if the key can not be found 
 	 */
-	public Document getCML(String k) throws ConfigurationException{
+	public String getCML(String k) throws ConfigurationException{
 		if(!cmls.containsKey(k)) {
 			logger.error("Cant find key "+k);
 			throw new ConfigurationException();
 		}
-		StringBuffer b = new StringBuffer();
-		b.append("<"+CMLConstants.CMD_DESCRIPTIONS_TAG+">\n");
-		Enumeration<CMLDescription> i = cmls.get(k).elements();
-		while(i.hasMoreElements())
-			b.append(i.nextElement().getCML());
-		b.append("</"+CMLConstants.CMD_DESCRIPTIONS_TAG+">\n");
+		Document d;
 		try {
-			return XMLhelper.createDocument(b.toString());
+			d = XMLhelper.createEmptyDocument();
 		} catch (ParserConfigurationException e) {
-			logger.error("Parser error");
+			logger.error("Cant create an empty XML doc");
 			throw new ConfigurationException();
 		}
+		
+		Enumeration<CMLDescription> i = cmls.get(k).elements();
+		try {
+			d = XMLhelper.createDocument(i.nextElement().getCML());
+		} catch (ParserConfigurationException e) {
+			throw new ConfigurationException();
+		}
+		while(i.hasMoreElements())
+			XMLhelper.addChild(d,i.nextElement().getCML());
+		
+		return XMLhelper.toString(d);
 	}
 	
 	/**
@@ -125,7 +133,7 @@ public abstract class AbstractStore {
 	 * @return the cid associated with this command
 	 * @throws ConfigurationException if the command cant be created
 	 */
-	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, ArgTypes[] argTypes, String[] names, ReturnType returnType) throws ConfigurationException{
+	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, List<ArgTypes> argTypes, List<String> names, ReturnType returnType) throws ConfigurationException{
 		//computes the CID
 		Integer cid = priv_cid.get(k);
 		if(cid==null)
@@ -150,17 +158,15 @@ public abstract class AbstractStore {
 		//computes the CID
 		Integer c;
 		CMLDescription cml;
+		List<ArgTypes> t = new Vector<ArgTypes>();
+		List<String> s = new Vector<String>();
 		logger.debug("Adding generic CML for key "+k+", alias: "+aliasName);
 		if(aliasName.equals(GENERIC_ENABLE)){
 			c = new Integer(GENERIC_ENABLE_CID);
-			ArgTypes[] t = new ArgTypes[0];
-			String[] s = new String[0];
 			addCML(k, new CMLDescription(null, c, GENERIC_ENABLE, "Enables the sensor", t, s, new ReturnType(CMLConstants.RET_TYPE_VOID)));
 			return c.intValue();
 		} else if(aliasName.equals(GENERIC_DISABLE)){
 			c = new Integer(GENERIC_DISABLE_CID);
-			ArgTypes[] t = new ArgTypes[0];
-			String[] s = new String[0];
 			addCML(k, new CMLDescription(null, c, GENERIC_DISABLE, "Disables the sensor", t, s, new ReturnType(CMLConstants.RET_TYPE_VOID)));
 			return c.intValue();
 		} else if(aliasName.equals(GENERIC_GETREADING)){
@@ -178,9 +184,9 @@ public abstract class AbstractStore {
 			throw new ConfigurationException();
 		}
 		
-		Hashtable<Integer, CMLDescription> t = cmls.get(k);
-		if(t != null) {
-			cml = t.get(new Integer(cid));
+		Hashtable<Integer, CMLDescription> table = cmls.get(k);
+		if(table != null) {
+			cml = table.get(new Integer(cid));
 			if(cml==null){
 				logger.error("Cant find any pre-existing command "+cid+" to create the alias");
 				throw new ConfigurationException();				

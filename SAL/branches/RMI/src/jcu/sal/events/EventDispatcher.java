@@ -12,6 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.events.EventHandler;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
