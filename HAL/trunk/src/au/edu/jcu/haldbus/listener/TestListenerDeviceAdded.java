@@ -82,12 +82,12 @@ public class TestListenerDeviceAdded implements DBusSigHandler<Manager.DeviceAdd
 
 		Manager HAL = null;
 		try {
-//			HAL = (Manager)conn.getRemoteObject("org.freedesktop.Hal","/org/freedesktop/Hal/Manager",Manager.class);
-//			System.out.println("Printing UDI's");
-//			String UDI[] = HAL.GetAllDevices();
-//			for(int i = 0; i < UDI.length; i++) {
-//				System.out.println("UDI: " + UDI[i]);
-//			}
+			HAL = (Manager)conn.getRemoteObject("org.freedesktop.Hal","/org/freedesktop/Hal/Manager",Manager.class);
+			System.out.println("UDIs of all existing objects:");
+			String UDI[] = HAL.GetAllDevices();
+			for(int i = 0; i < UDI.length; i++) {
+				System.out.println("UDI: " + UDI[i]);
+			}
 			
 			Introspectable introspectable;
 			try {
@@ -101,27 +101,8 @@ public class TestListenerDeviceAdded implements DBusSigHandler<Manager.DeviceAdd
 			conn.addSigHandler(Manager.DeviceAdded.class, new TestListenerDeviceAdded(conn));
 			conn.addSigHandler(Manager.DeviceRemoved.class, new TestListenerDeviceRemoved(conn));
 			
-			HAL = (Manager)conn.getRemoteObject("org.freedesktop.Hal","/org/freedesktop/Hal/Manager",Manager.class);
-			System.out.println("FindDeviceStringMatch: info.capabilities");
-			String UDI[] = HAL.FindDeviceStringMatch("info.capabilities", "video4linux");
-			for(int i = 0; i < UDI.length; i++) {
-				System.out.println("UDI: " + UDI[i]);
-			}
-			
-			System.out.println("FindDeviceStringMatch: info.category");
-			UDI = HAL.FindDeviceStringMatch("info.category", "video4linux");
-			for(int i = 0; i < UDI.length; i++) {
-				System.out.println("UDI: " + UDI[i]);
-			}
-			
-			System.out.println("FindDeviceByCapability");
-			UDI = HAL.FindDeviceByCapability("video4linux");
-			for(int i = 0; i < UDI.length; i++) {
-				System.out.println("UDI: " + UDI[i]);
-			}
-			
 		} catch (DBusException DBe) {
-			System.out.println("Could not set connect to HAL: " + DBe);
+			System.out.println("Could not connect to HAL: " + DBe);
 			conn.disconnect();
 			System.exit(1);
 		} catch (Exception e) {
@@ -130,6 +111,7 @@ public class TestListenerDeviceAdded implements DBusSigHandler<Manager.DeviceAdd
 			System.exit(1);
 		}
 		try {
+			System.out.println("Press enter to quit");
 			System.in.read();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
