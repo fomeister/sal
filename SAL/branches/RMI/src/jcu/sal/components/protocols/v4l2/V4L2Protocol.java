@@ -47,6 +47,7 @@ public class V4L2Protocol extends AbstractProtocol {
 	private Hashtable<String,V4L2Control> ctrls = null;
 	private boolean streaming;
 	private StreamingThread st;
+	private StreamingThreadFake stf;
 	
 
 	public V4L2Protocol(ProtocolID i, Hashtable<String, String> c,
@@ -293,11 +294,41 @@ public class V4L2Protocol extends AbstractProtocol {
 		return new byte[0];
 	}
 	
+	public static String START_STREAM_FAKE_METHOD = "startStreamFake";
+	public byte[] startStreamFake(Command c, Sensor s) throws IOException{
+		if(streaming){
+			logger.error("Already streaming");
+			throw new IOException();
+		}
+		
+		try {
+			stf = new StreamingThreadFake(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s);
+		} catch (BadAttributeValueExpException e) {
+			// TODO Auto-generated catch block
+			//FIXME
+			e.printStackTrace();
+		}
+		streaming = true;
+		return new byte[0];
+	}
+	
+	public static String STOP_STREAM_FAKE_METHOD = "stopStreamFake";
+	public byte[] stopStreamFake(Command c, Sensor s) throws IOException{
+		if(!streaming){
+			logger.error("Not streaming");
+			throw new IOException();
+		}		
+		
+		stf.stop();
+		streaming = false;
+		return new byte[0];
+	}
+	
 	private class StreamingThread implements Runnable{
-		StreamCallback cb;
-		Thread t;
-		Sensor s;
-		int stop=0;
+		private StreamCallback cb;
+		private Thread t;
+		private Sensor s;
+		private boolean error=false;
 		
 		public StreamingThread(StreamCallback c, Sensor s){
 			cb = c;
@@ -308,7 +339,6 @@ public class V4L2Protocol extends AbstractProtocol {
 		
 		public void stop(){
 			t.interrupt();
-			stop=1;
 		}
 		
 		public void join(){
@@ -323,22 +353,27 @@ public class V4L2Protocol extends AbstractProtocol {
 			byte[] b;
 			ByteBuffer bb;
 			String sid = s.getID().getName();
-			while(stop==0 || Thread.interrupted()){
+			long before;//, before2;
+			while(!error && !Thread.interrupted()){
 				try {
+					before = System.currentTimeMillis();
 					bb = fg.getFrame();
+					//logger.debug("getFrame: "+(System.currentTimeMillis()- before)+" ms");
 					b = new byte[bb.limit()];
 					bb.get(b);
 					bb.position(0);
+					//before2 = System.currentTimeMillis();
 					cb.collect(new Response(b, sid));
-				} catch (V4L4JException e1) {
-					logger.error("Cant capture frame");
-					cb.collect(new Response(sid));
-					stop=1;
+					//logger.debug("collect: "+(System.currentTimeMillis()- before2)+" ms");
+					logger.debug("total: "+(System.currentTimeMillis()- before)+" ms");
+				} catch (IOException e1) {
+					logger.error("Callback error");
+					error=true;
 				} catch (Exception e) {
 					logger.error("Cant capture frame");
-					cb.collect(new Response(sid));
+					try {cb.collect(new Response(sid, true));} catch (IOException e1) {}				
 					e.printStackTrace();
-					stop=1;
+					error=true;
 				}
 			}
 			try {
@@ -346,7 +381,67 @@ public class V4L2Protocol extends AbstractProtocol {
 			} catch (V4L4JException e) {
 				logger.error("Cant stop capture");
 			}
+			
+			if(!error)
+				try {cb.collect(new Response(sid, false));} catch (IOException e) {}
+				
 			logger.debug("Capture thread stopped");
+			streaming = false;
+		}		
+	}
+	
+	private class StreamingThreadFake implements Runnable{
+		private StreamCallback cb;
+		private Thread t;
+		private Sensor s;
+		private boolean error=false;
+		private byte[] b;
+		private int FAKE_ARRAY_SIZE=200000;
+		
+		
+		public StreamingThreadFake(StreamCallback c, Sensor s){
+			cb = c;
+			this.s = s;
+			t = new Thread(this, "V4L streaming thread fake");
+			t.start();
+		}
+		
+		public void stop(){
+			t.interrupt();
+		}
+		
+		public void join(){
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				logger.error("Interrupted while waiting for Streaming thread fake to finish");
+			}
+		}
+
+		public void run() {
+			String sid = s.getID().getName();
+			long before;
+			while(error==false && !Thread.interrupted()){
+				try {
+					before = System.currentTimeMillis();
+					b = new byte[FAKE_ARRAY_SIZE];
+					for(int i=0; i<FAKE_ARRAY_SIZE; i++)
+						b[i]=(byte) (i%100);
+					cb.collect(new Response(b, sid));
+					//logger.debug("collect: "+(System.currentTimeMillis()- before2)+" ms");
+					logger.debug("total: "+(System.currentTimeMillis()- before)+" ms");
+				} catch (IOException e1) {
+					logger.error("Callback error");
+					error=true;
+				}  catch (Exception e) {
+					try {cb.collect(new Response(sid, false));} catch (IOException e1) {}
+					e.printStackTrace();
+					error=true;
+				}
+			}
+			if(!error)
+				try {cb.collect(new Response(sid, false));} catch (IOException e) {}
+			logger.debug("Capture thread fake stopped");
 		}		
 	}
 	

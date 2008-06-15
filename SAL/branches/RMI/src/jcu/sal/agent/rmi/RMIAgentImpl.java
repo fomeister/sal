@@ -20,13 +20,13 @@ import jcu.sal.agent.SALAgent;
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Response;
 import jcu.sal.common.RMICommandFactory.RMICommand;
+import jcu.sal.common.cml.RMIStreamCallback;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.EventHandler;
-import jcu.sal.utils.Slog;
+import jcu.sal.common.events.RMIEventHandler;
+import jcu.sal.events.Event;
 
-import org.apache.log4j.Logger;
-
-public class RMIAgentImpl implements RMIAgent {
+public class RMIAgentImpl implements RMISALAgent {
 	private static class SALClient {
 		public static int RMI_REGISTRY_PORT = 1099;
 		private int port;
@@ -47,21 +47,17 @@ public class RMIAgentImpl implements RMIAgent {
 			try {
 				return registry.lookup(objName);
 			} catch (Exception e) {
-				logger.error("Cant find object '"+objName+"' at "+ip+":"+port);
+				System.out.println("Cant find object '"+objName+"' at "+ip+":"+port);
 				e.printStackTrace();
 				throw new RemoteException();
 			}
 		}
 	}
 	
-	public static String RMI_STUB_NAME = "RMI SAL Agent";
-	
 	private SALAgent agent;
 	private Map<String, SALClient> clients;
-	private static Logger logger = Logger.getLogger(RMIAgentImpl.class);
 	
 	public RMIAgentImpl(){
-		Slog.setupLogger(logger);
 		clients = new Hashtable<String, SALClient>();
 		agent = new SALAgent();
 	}
@@ -93,14 +89,14 @@ public class RMIAgentImpl implements RMIAgent {
 			name = i.next();
 			l = src.get(name);
 			try {
-				target.put(name, (StreamCallback) clients.get(l.get(0)).getRef(l.get(1)));
+				target.put(name, new ProxyStreamCallback((RMIStreamCallback )clients.get(l.get(0)).getRef(l.get(1)), l.get(0), l.get(1) ));
 			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				throw new ConfigurationException();
 			}	
 		}
-		
+		System.out.println("Running command "+c.getCID()+" on sensor "+sid);
 		return agent.execute(CommandFactory.getCommand(c, target), sid);
 	}
 
@@ -123,6 +119,7 @@ public class RMIAgentImpl implements RMIAgent {
 				throw new ConfigurationException();
 			clients.put(name, c);
 		}
+		System.out.println("Client '"+name+"' registered");
 	}
 
 	public void unregisterClient(String name) throws ConfigurationException {
@@ -131,6 +128,7 @@ public class RMIAgentImpl implements RMIAgent {
 				throw new ConfigurationException();
 			clients.remove(name);
 		}
+		System.out.println("Client '"+name+"' unregistered");
 	}
 
 	public void registerEventHandler(String rmiName, String objName, String producerID) throws ConfigurationException, RemoteException {
@@ -140,9 +138,9 @@ public class RMIAgentImpl implements RMIAgent {
 				throw new ConfigurationException();
 			
 			try {
-				eh = (EventHandler) clients.get(rmiName).getRef(objName);
+				eh = new ProxyEventHandler((RMIEventHandler) clients.get(rmiName).getRef(objName),rmiName, objName,producerID);
 			} catch (RemoteException e) {
-				logger.error("Cant find specified object "+objName+" for client "+rmiName);
+				System.out.println("Cant find specified object "+objName+" for client "+rmiName);
 				throw e;
 			}
 
@@ -157,9 +155,9 @@ public class RMIAgentImpl implements RMIAgent {
 				throw new ConfigurationException();
 			
 			try {
-				eh = (EventHandler) clients.get(rmiName).getRef(objName);
+				eh = new ProxyEventHandler((RMIEventHandler) clients.get(rmiName).getRef(objName), rmiName, objName,producerID);
 			} catch (RemoteException e) {
-				logger.error("Cant find specified object "+objName+" for client "+rmiName);
+				System.out.println("Cant find specified object "+objName+" for client "+rmiName);
 				throw e;
 			} 
 
@@ -177,15 +175,130 @@ public class RMIAgentImpl implements RMIAgent {
 	}
 	
 	public static void main (String args[]) throws ConfigurationException, IOException {
+		if(args.length!=3) {
+			System.out.println("We need three arguments:");
+			System.out.println("1: the IP address of our registry - 2: the platform configuration file - 3: the sensor configuration file");
+			System.exit(1);
+		}
 		Registry registry = LocateRegistry.getRegistry(args[0]);
 		RMIAgentImpl agent = new RMIAgentImpl();
-		RMIAgent stub = (RMIAgent) UnicastRemoteObject.exportObject(agent, 0);
 		agent.start(args[1], args[2]);
-		registry.rebind(RMI_STUB_NAME, stub);
-		System.out.println("RMI SAL Agent ready. Press <Enter> to quit");
-		System.in.read();
+		RMISALAgent stub = (RMISALAgent) UnicastRemoteObject.exportObject((RMISALAgent) agent, 0);
+		try {
+			registry.rebind(RMI_STUB_NAME, stub);
+			System.out.println("RMI SAL Agent ready. Press <Enter> to quit");
+			System.in.read();
+		} catch (RemoteException e) {
+			System.out.println("Error binding agent to the RMI registry");
+			e.printStackTrace();
+		}
 		agent.stop();
 		System.exit(0);
 	}
+	
+	private static class ProxyEventHandler implements EventHandler{
+		private RMIEventHandler r;
+		private String rmiName, objName, producerID;
+		public ProxyEventHandler(RMIEventHandler r, String rmiName, String objName, String producerID){
+			this.r = r;
+			this.rmiName = rmiName;
+			this.objName = objName;
+			this.producerID = producerID;
+		}
+
+		@Override
+		public void handle(Event e) {
+			try {
+				r.handle(e);
+			} catch (Throwable e1) {
+				e1.printStackTrace();
+			}
+		}
+		@Override
+		public int hashCode() {
+			final int PRIME = 57;
+			int result = 1;
+			result = PRIME * result + ((objName == null) ? 0 : objName.hashCode());
+			result = PRIME * result + ((producerID == null) ? 0 : producerID.hashCode());
+			result = PRIME * result + ((rmiName == null) ? 0 : rmiName.hashCode());
+			return result;
+		}
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			final ProxyEventHandler other = (ProxyEventHandler) obj;
+			if (objName == null) {
+				if (other.objName != null)
+					return false;
+			} else if (!objName.equals(other.objName))
+				return false;
+			if (producerID == null) {
+				if (other.producerID != null)
+					return false;
+			} else if (!producerID.equals(other.producerID))
+				return false;
+			if (rmiName == null) {
+				if (other.rmiName != null)
+					return false;
+			} else if (!rmiName.equals(other.rmiName))
+				return false;
+			return true;
+		}		
+	}
+	
+	private static class ProxyStreamCallback implements StreamCallback{
+		private RMIStreamCallback s;
+		private String rmiName, objName;
+		public ProxyStreamCallback(RMIStreamCallback s, String rmiName, String objName){
+			this.s = s;
+			this.rmiName = rmiName;
+			this.objName = objName;
+		}
+
+		@Override
+		public void collect(Response r) throws IOException {
+			try {
+				s.collect(r);
+			} catch (Throwable e1) {
+				throw new IOException();
+			}			
+		}
+		
+		@Override
+		public int hashCode() {
+			final int PRIME = 13;
+			int result = 1;
+			result = PRIME * result + ((objName == null) ? 0 : objName.hashCode());
+			result = PRIME * result + ((rmiName == null) ? 0 : rmiName.hashCode());
+			return result;
+		}
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			final ProxyEventHandler other = (ProxyEventHandler) obj;
+			if (objName == null) {
+				if (other.objName != null)
+					return false;
+			} else if (!objName.equals(other.objName))
+				return false;
+			if (rmiName == null) {
+				if (other.rmiName != null)
+					return false;
+			} else if (!rmiName.equals(other.rmiName))
+				return false;
+			return true;
+		}
+	}
+
 
 }

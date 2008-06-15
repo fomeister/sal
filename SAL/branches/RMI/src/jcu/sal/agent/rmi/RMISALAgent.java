@@ -11,7 +11,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import jcu.sal.common.Response;
 import jcu.sal.common.RMICommandFactory.RMICommand;
 
-public interface RMIAgent extends Remote{
+public interface RMISALAgent extends Remote{
+	/**
+	 * This string is the name of the SAL agent stub as found in the RMI registry.
+	 */
+	public static String RMI_STUB_NAME = "RMI SAL Agent";
+	
 	/**
 	 * This method registers a new SAL client. 
 	 * @param rmiName A unique name associated with the RMI Client. The name is chosen by the caller and must be used in subsequent calls
@@ -37,7 +42,7 @@ public interface RMIAgent extends Remote{
 	/**
 	 * This method instanciate a new sensor given its XML document. the returned value is a representation
 	 * of the sensor identifier. If one is specified in the XML document, it will be ignored and replaced
-	 * with a new one (the returned value). 
+	 * with a new one (the returned value). public static String RMI_STUB_NAME = "RMI SAL Agent";
 	 * @param xml the sensor's XML configuration document
 	 * @return a string representing the sensor identifier
 	 * @throws ParserConfigurationException if the XML document cannot be parsed

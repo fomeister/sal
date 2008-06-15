@@ -3,6 +3,8 @@ package jcu.sal.events;
 import javax.naming.ConfigurationException;
 
 public class ProtocolListEvent extends Event {
+
+	private static final long serialVersionUID = 4394564002895838509L;
 	public static int PROTOCOL_ADDED = 1;
 	public static int PROTOCOL_REMOVED = 2;
 	public static int PROTOCOL_MASK = (PROTOCOL_ADDED | PROTOCOL_REMOVED); 

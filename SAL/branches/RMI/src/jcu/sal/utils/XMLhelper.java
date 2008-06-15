@@ -215,18 +215,6 @@ public class XMLhelper {
     }
     
     /**
-     * Adds a child containing text to the parent node inside the DOM document
-     * @param parent the node under which to add the child
-     * @param child the node to be added
-     * @return the new appended node
-     */
-    public static Node addChild(Document parent, Node child) {
-    	if(child.getNodeType()==Node.DOCUMENT_NODE) child=child.getFirstChild();
-    	Node n = parent.importNode(child, true);
-        return parent.appendChild(n);
-    }
-    
-    /**
      * Adds an attribute to a node
      * @param parent the node to which the attribue will be attached
      * @param name the name of the attribute

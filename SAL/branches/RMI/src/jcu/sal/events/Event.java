@@ -1,8 +1,10 @@
 package jcu.sal.events;
 
+import java.io.Serializable;
+
 import javax.naming.ConfigurationException;
 
-public abstract class Event {
+public abstract class Event implements Serializable{
 	final protected int type;
 	final protected String sourceID;
 	final protected String sourceDocument;

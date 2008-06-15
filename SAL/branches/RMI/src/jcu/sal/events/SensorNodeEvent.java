@@ -3,6 +3,7 @@ package jcu.sal.events;
 import javax.naming.ConfigurationException;
 
 public class SensorNodeEvent extends Event {
+	private static final long serialVersionUID = -7000825364492820746L;
 	public static int SENSOR_NODE_ADDED = 1;
 	public static int SENSOR_NODE_REMOVED = 2;
 	public static int SENSOR_NODE_MASK = (SENSOR_NODE_ADDED | SENSOR_NODE_REMOVED); 
