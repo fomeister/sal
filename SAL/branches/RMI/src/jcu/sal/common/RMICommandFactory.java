@@ -1,7 +1,6 @@
 package jcu.sal.common;
 
 import java.io.Serializable;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -15,75 +14,94 @@ import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.ArgTypes;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
+import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
 /**
- * This class is an adapter wrapped around a CommandFactory object, which adds code to handle RMI StreamCallback
- * objects.
+ * This class is an adapter wrapped around a CommandFactory object, which adds code to handle RMIStreamCallback objects
+ * (instead of StreamCallback).
  * @author gilles
  *
  */
 public class RMICommandFactory {
-	private static Logger logger = Logger.getLogger(RMICommandFactory.class);
-	static {
-		Slog.setupLogger(logger);
-	}
+	private Logger logger = Logger.getLogger(RMICommandFactory.class);
+
 	private CommandFactory factory;
 	private Map<String, List<String>> callbackNames;
+	private CMLDescription cml;
 	
 	/**
-	 * Create a command template based on the given Command's CML descriptor 
-	 * using values in the command instance
-	 * @param desc the command description document
+	 * Create a RMI command template and set the command arguments to the values in the command instance document.
+	 * The command ID used is the one specified in the command instance document.
+	 * @param desc the CML descriptions document
 	 * @param inst the command instance document
 	 * @return whether or not some arguments are missing
 	 */
 	public RMICommandFactory(Document desc, Document inst)  throws ConfigurationException{
-		factory = new CommandFactory(checkForCallbacks(desc),inst);
+		Slog.setupLogger(logger);
+		cml = new CMLDescriptions(desc).getDescription(CommandFactory.getCIDFromInstance(inst));
+		factory = new CommandFactory(removeCallbacks(),inst);
+
 	}
 	
 	/**
-	 * Create a empty command template based on the Command description document 
-	 * and the givencommand id
-	 * @param desc the command description document
+	 * Create a empty RMI command template based on the CML descriptions document 
+	 * and the given command id
+	 * @param desc the command descriptions document
 	 * @param cid the command id
 	 */
 	public RMICommandFactory(Document desc, int cid) throws ConfigurationException{
-		factory = new CommandFactory(checkForCallbacks(desc),cid);
+		Slog.setupLogger(logger);
+		cml = new CMLDescriptions(desc).getDescription(cid);
+		factory = new CommandFactory(removeCallbacks());
 	}
 	
-	private Document checkForCallbacks(Document srcDoc) throws ConfigurationException{
+	/**
+	 * This method checks our CML description object to see if there are any callback arguments. If there are, this method returns 
+	 * a copy of out CML description document in which callback arguments have been removed.  
+	 * @return a copy of out CML description document in which callback arguments have been removed.
+	 * @throws ConfigurationException if the copy cant be created
+	 */
+	private CMLDescription removeCallbacks() throws ConfigurationException{
 		callbackNames = new Hashtable<String, List<String>>();
-		CMLDescription src = new CMLDescription(srcDoc);
 		
 		//Check if we have a callback function
-		List<ArgTypes> types = src.getArgTypes();
+		List<ArgTypes> types = cml.getArgTypes();
 		if(types.contains(new ArgTypes(CMLConstants.ARG_TYPE_CALLBACK))) {
-			List<String> names = src.getArgNames();
+			List<String> names = cml.getArgNames();
 			for (int i = 0; i < types.size(); i++) {
 				if(types.get(i).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
-					logger.debug("Found arg of type Callback, removing it");
 					types.remove(i);
 					callbackNames.put(names.remove(i), new Vector<String>(2));
 				}
 			}
-			return new CMLDescription("",src.getCID(),src.getName(),src.getDesc(),types,names, src.getReturnType()).getCML();
+			return new CMLDescription("",cml.getCID(),cml.getName(),cml.getDesc(),types,names, cml.getReturnType());
 		}
 		
-		return srcDoc;
+		return cml;
 	}
 	
 	/**
 	 * This method returns the type of a given argument
 	 * @param name the name of the argument
 	 * @return the type of the argument
+	 * @throws ConfigurationException 
 	 * @throws ConfigurationException if the argument cant be found
 	 */
-	public ArgTypes getArgType(String name) throws ConfigurationException {
-		return factory.getArgType(name);
+	public ArgTypes getArgType(String name) throws ConfigurationException{
+		ArgTypes t;
+		try {
+			t = factory.getArgType(name);
+		} catch (ConfigurationException e) {
+			if(!callbackNames.containsKey(name))
+				throw new ConfigurationException();
+			else
+				t = new ArgTypes(CMLConstants.ARG_TYPE_CALLBACK);
+		}		
+		return t;
 			
 	}	
 	
@@ -91,15 +109,19 @@ public class RMICommandFactory {
 	 * This method returns an Enumeration<String> of the argument names for which a value is missing 
 	 * @return an Enumeration<String> of the argument names for which a value is missing
 	 */
-	public Enumeration<String> listMissingArgNames() {
-		return factory.listMissingArgNames();
+	public List<String> listMissingArgNames() {
+		List<String> l = factory.listMissingArgNames();
+		Iterator<String> i = callbackNames.keySet().iterator();
+		while(i.hasNext())
+			l.add(i.next());
+		return l;
 	}
 	
 	
 	/**
 	 * This method adds a callback argument and overwrites any previous values.
-	 * @param name the name of the callback argument
-	 * @param rmiName the name of the RMI client as previously registered with RMIAgent.registerClient().
+	 * @param name the name of the callback argument (as per CML description)
+	 * @param rmiName the name of the RMI client as previously registered with RMISALAgent.registerClient().
 	 * @param objName the name of the RMI StreamCallback to lookup in the RMI registry.
 	 * <code>name</code> isnt of type callback
 	 */
@@ -180,7 +202,12 @@ public class RMICommandFactory {
 		return new RMICommand(factory.getCommand(), callbackNames);
 	}
 
-	
+	/**
+	 * Objects of this class represent a SAL command when using the RMI version.
+	 * An RMICommandFactory is responsible for instanciating these objects.
+	 * @author gilles
+	 *
+	 */
 	public static class RMICommand implements Serializable{
 		private static final long serialVersionUID = 6054676797304225967L;
 		private Map<String,List<String>> callbacks;
@@ -197,7 +224,7 @@ public class RMICommandFactory {
 
 		/**
 		 * This method returns a list of string representing an RMI callback argument.
-		 * The string at position 0 in the list is the rmiName (the name the Client used when calling RMIAgent.registerClient()). 
+		 * The string at position 0 in the list is the rmiName (the name the Client used when calling RMISALAgent.registerClient()). 
 		 * The string at position 1 in the list is the objName (the name of the object in the RMI registry representing the callback object).
 		 * @param name the name of the callback argument
 		 * @return

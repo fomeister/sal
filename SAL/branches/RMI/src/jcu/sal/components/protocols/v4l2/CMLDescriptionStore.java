@@ -56,6 +56,12 @@ public class CMLDescriptionStore extends AbstractStore {
 		//generic stopStream
 		addGenericCMLDesc(CCD_KEY, GENERIC_STOPSTREAM, i);
 		
+		mName = V4L2Protocol.STOP_STREAM_FAKE_METHOD;
+		name = "StopStreamFake";
+		desc = "Stops a fake JPEG stream";
+		r = new ReturnType(CMLConstants.RET_TYPE_VOID);
+		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
+				
 		
 		t.add(new ArgTypes(CMLConstants.ARG_TYPE_CALLBACK));
 		argNames.add(CALLBACK_ARG_NAME);
@@ -66,7 +72,12 @@ public class CMLDescriptionStore extends AbstractStore {
 		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
 		//generic startStream
 		addGenericCMLDesc(CCD_KEY, GENERIC_STARTSTREAM, i);
+		
 
+		mName = V4L2Protocol.START_STREAM_FAKE_METHOD;
+		name =  "StartStreamFake";
+		desc = "Starts a new fake JPEG stream";
+		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
 
 	}
 }

@@ -18,6 +18,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.EndPoints.DeviceListener;
@@ -383,9 +384,8 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 								Class<?>[] params = {Command.class,Sensor.class};
 								//logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()));
 								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params);
-								//logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
+								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
 								ret_val = (byte[]) m.invoke(this,c, s);
-								//logger.debug("running method: "+ m.getName()+" SID:"+sid.getName()+" returned "+ret_val );
 							} catch (ConfigurationException e) {
 								logger.error("Cant find the method matching this command "+c.getCID());
 								s.finishRunCmd();
@@ -402,8 +402,10 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 								logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
 								if(e.getCause()!=null) logger.error("Caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
 								e.printStackTrace();
-								//s.finishRunCmd();
-								s.disconnect();
+								//FIXME: when exceptions are fixed, get subclasses to throw two different exceptions,
+								//FIXME: check which one is thrown here, and call either s.finishRunCmd(); or s.disconnect();  
+								s.finishRunCmd();
+								//s.disconnect();
 								throw new NotActiveException("");
 							} catch (Exception e) {
 								logger.error("Could NOT run the command (error with invoke() )");
@@ -540,14 +542,14 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 * @throws ConfigurationException if the sensor is not found or isnt supported by this protocol
 	 */
 	//TODO make me throw a better exception
-	public final String getCML(SensorID i) throws ConfigurationException {
+	public final CMLDescriptions getCML(SensorID i) throws ConfigurationException {
 		String key;
 		Sensor s =sensors.get(i);
 		if(s!=null) {
 			if(isSensorSupported(s)) {
 				key = internal_getCMLStoreKey(s);
 				if (key!=null) {
-					return cmls.getCML(key);  
+					return cmls.getCMLDescriptions(key);  
 				} else {
 					logger.error("Error getting the key for sensor " + s.toString());
 					throw new ConfigurationException("Error getting the key for sensor " + s.toString());

@@ -6,17 +6,15 @@ import java.util.List;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.cml.ArgTypes;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
+import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.ReturnType;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 
 /**
  * Defines the base behaviour of AbstractStore objects
@@ -71,34 +69,18 @@ public abstract class AbstractStore {
 	}
 
 	/**
-	 * Retrieves the CML document for the given key f (native address, sensor family, ...)
+	 * Retrieves the CML descriptions document for the given key f (native address, sensor family, ...)
 	 * @param k the key
-	 * @return the CML command description doc 
+	 * @return the CML command descriptions doc 
 	 * @throws ConfigurationException if the key can not be found 
 	 */
-	public String getCML(String k) throws ConfigurationException{
+	public CMLDescriptions getCMLDescriptions(String k) throws ConfigurationException{
 		if(!cmls.containsKey(k)) {
 			logger.error("Cant find key "+k);
 			throw new ConfigurationException();
 		}
-		Document d;
-		try {
-			d = XMLhelper.createEmptyDocument();
-		} catch (ParserConfigurationException e) {
-			logger.error("Cant create an empty XML doc");
-			throw new ConfigurationException();
-		}
-		
-		Enumeration<CMLDescription> i = cmls.get(k).elements();
-		try {
-			d = XMLhelper.createDocument(i.nextElement().getCML());
-		} catch (ParserConfigurationException e) {
-			throw new ConfigurationException();
-		}
-		while(i.hasMoreElements())
-			XMLhelper.addChild(d,i.nextElement().getCML());
-		
-		return XMLhelper.toString(d);
+				
+		return new CMLDescriptions(cmls.get(k));
 	}
 	
 	/**

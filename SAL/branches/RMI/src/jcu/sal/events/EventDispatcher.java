@@ -21,6 +21,9 @@ public class EventDispatcher implements Runnable{
 
 	private static EventDispatcher ev = new EventDispatcher();
 
+	/**
+	 * This map associates an event producer name to a map of names and event handlers. 
+	 */
 	private Map<String, List<EventHandler>> eventHandlers;
 	private Thread dispatcher;
 	private BlockingQueue<Event> eventQueue;
@@ -67,7 +70,7 @@ public class EventDispatcher implements Runnable{
 						eventHandlers.put(producer, new Vector<EventHandler>());
 					eventHandlers.get(producer).add(e);
 				}
-				logger.debug("Registered event handler "+e.getName()+" with producer: "+producer);
+				logger.debug("Registered event handler "+e+" with producer: "+producer);
 			} else {
 				logger.error("No registered event producer with this name: "+producer);
 				throw new ConfigurationException();
@@ -80,11 +83,11 @@ public class EventDispatcher implements Runnable{
 			if(producers.contains(producer)) {
 				synchronized(eventHandlers) {
 					if(!eventHandlers.get(producer).remove(e)) {
-						logger.debug("Unregistering event handler "+e.getName()+" from producer: "+producer+" failed");
+						logger.error("Unregistering event handler "+e+" from producer: "+producer+" failed");
 						throw new ConfigurationException();
 					}
 					else
-						logger.debug("Unregistered event handler "+e.getName()+" from producer: "+producer);
+						logger.debug("Unregistered event handler "+e+" from producer: "+producer);
 				}				
 			} else {
 				logger.error("No registered event producer with this name: "+producer);
@@ -104,19 +107,19 @@ public class EventDispatcher implements Runnable{
 	public void run() {
 		logger.debug("Event dispatcher thread starting");
 		Event e;
-		List<EventHandler> v;
+		List<EventHandler> l;
 		Iterator<EventHandler> iterh;
 		EventHandler ev;
 		try {
 			while(!Thread.interrupted()) {
 				e = eventQueue.take();
 				synchronized(eventHandlers) {
-					v = eventHandlers.get(e.getProducer());
-					if(v!=null) {
-						iterh = v.iterator();
+					l = eventHandlers.get(e.getProducer());
+					if(l!=null) {
+						iterh = l.iterator();
 						while(iterh.hasNext()) {
 							ev = iterh.next();
-							logger.debug("Dispatching "+e.toString()+" to handler "+ev.getName());
+							logger.debug("Dispatching "+e.toString()+" to handler "+ev);
 							ev.handle(e);
 						}
 					}

@@ -14,13 +14,14 @@ import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
+import jcu.sal.components.sensors.SensorConstants;
 import jcu.sal.components.sensors.SensorID;
-import jcu.sal.components.sensors.SensorState;
 import jcu.sal.config.FileConfigService;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.ProtocolListEvent;
@@ -37,7 +38,6 @@ import org.w3c.dom.Node;
  */
 public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 
-	public static String PRODUCER_ID = "ProtocolManager";
 	private static ProtocolManager p = new ProtocolManager();
 	private Logger logger = Logger.getLogger(ProtocolManager.class);
 	private FileConfigService conf;
@@ -52,8 +52,8 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		Slog.setupLogger(this.logger);
 		conf = FileConfigService.getService();
 		ev = EventDispatcher.getInstance();
-		ev.addProducer(PRODUCER_ID);
-		ev.addProducer(SensorState.PRODUCER_ID);
+		ev.addProducer(Constants.PROTOCOL_MANAGER_PRODUCER_ID);
+		ev.addProducer(SensorConstants.SENSOR_STATE_PRODUCER_ID);
 	}
 	
 	/**
@@ -127,7 +127,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		}
 		
 		try {
-			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), PRODUCER_ID));
+			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), Constants.PROTOCOL_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 		return p;
 	}
@@ -172,7 +172,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		SensorManager.getSensorManager().destroyComponents(component.getSensors());
 		componentRemovable(pid);
 		try {
-			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_REMOVED,component.getID().getName(),PRODUCER_ID));
+			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_REMOVED,component.getID().getName(),Constants.PROTOCOL_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 	}
 	
@@ -263,7 +263,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 	 * @throws ConfigurationException if the sensor isnt associated with a protocol
 	 * @throws NotActiveException
 	 */
-	public String  getCML(SensorID sid) throws ConfigurationException, NotActiveException {
+	public CMLDescriptions  getCML(SensorID sid) throws ConfigurationException, NotActiveException {
 		return getProtocol(sid).getCML(sid);
 	}
 	

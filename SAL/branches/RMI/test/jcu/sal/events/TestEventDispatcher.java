@@ -16,6 +16,8 @@ public class TestEventDispatcher extends TestCase implements EventHandler {
 
 	private class TestEvent extends Event {
 
+		private static final long serialVersionUID = -3204866425549264529L;
+
 		public TestEvent(int t, String sid, String p) throws ConfigurationException {
 			super(t, sid, p);
 		}

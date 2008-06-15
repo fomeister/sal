@@ -33,20 +33,12 @@ import org.w3c.dom.Node;
  * 
  */
 public class SensorManager extends AbstractManager<Sensor> {
-	
-	/**
-	 * specifies (in seconds) how long disconnected sensors should remain before being
-	 * deleted
-	 */
-	public static long DISCONNECT_TIMEOUT = 20;
 	private FileConfigService conf;
 	
 	/**
 	 * specifies (in seconds) how often the sensor removal thread kick in
 	 */
 	public static int REMOVE_SENSOR_INTERVAL = 0;
-	
-	public static String PRODUCER_ID = "SensorManager";
 	
 	private static SensorManager s = new SensorManager();
 	private Logger logger = Logger.getLogger(SensorManager.class);
@@ -63,7 +55,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 		pm = ProtocolManager.getProcotolManager();
 		conf = FileConfigService.getService();
 		ev = EventDispatcher.getInstance();
-		ev.addProducer(PRODUCER_ID);
+		ev.addProducer(Constants.SENSOR_MANAGER_PRODUCER_ID);
 	}
 
 	/**
@@ -106,7 +98,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 		}
 		
 		try {
-			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_ADDED, i.getName(), PRODUCER_ID));
+			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_ADDED, i.getName(), Constants.SENSOR_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 		
 		return sensor;
@@ -159,7 +151,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 		}
 		component.remove(this);
 		try {
-			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_REMOVED,component.getID().getName(),PRODUCER_ID));
+			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_REMOVED,component.getID().getName(),Constants.SENSOR_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 	}
 	

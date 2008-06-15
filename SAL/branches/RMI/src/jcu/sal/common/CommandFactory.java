@@ -1,9 +1,10 @@
 package jcu.sal.common;
 
+import java.io.Serializable;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
@@ -14,6 +15,8 @@ import javax.xml.xpath.XPathExpressionException;
 import jcu.sal.common.RMICommandFactory.RMICommand;
 import jcu.sal.common.cml.ArgTypes;
 import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.CMLDescription;
+import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -27,47 +30,60 @@ public class CommandFactory {
 		Slog.setupLogger(logger);
 	}
 
-	private int cid;
-	private Map<String,ArgTypes> args;
 	private Map<String, String> argValues;
-	private Vector<String> missingArgs;
+	private CMLDescription cml;
+	private List<String> missingArgs;
 	private Map<String,StreamCallback> callback;
 	
 	/**
-	 * Create a command template based on the given Command's CML descriptor 
-	 * using values in the command instance
+	 * Create a empty command template based on the CML descriptions document 
+	 * and the given command id
 	 * @param desc the command description document
+	 * @param cid the command id
+	 */
+	public CommandFactory(Document desc, int cid) throws ConfigurationException {
+		argValues = new Hashtable<String, String>();
+		missingArgs = new Vector<String>();
+		callback = new Hashtable<String, StreamCallback>();
+		cml = new CMLDescriptions(desc).getDescription(cid);
+		parseArguments(desc, cid);
+	}
+	
+	/**
+	 * Create a command template and set the command arguments to the values in the command instance document.
+	 * The command ID used is the one specified in the command instance document.
+	 * @param desc the CML descriptions document
 	 * @param inst the command instance document
 	 * @return whether or not some arguments are missing
 	 */
 	public CommandFactory(Document desc, Document inst)  throws ConfigurationException{
-		int cid;
-		try {
-			cid = Integer.parseInt(XMLhelper.getAttributeFromName(CMLConstants.XPATH_CMD_INST, CMLConstants.CID_ATTRIBUTE, inst));
-		} catch (Exception e) {
-			logger.error("Cant parse the cid in CML instance XML doc");
-			throw new ConfigurationException();
-		}
-		args = new Hashtable<String, ArgTypes>();
-		argValues = new Hashtable<String, String>();
-		missingArgs = new Vector<String>();
-		callback = new Hashtable<String, StreamCallback>();
-		parseArguments(desc, cid);
+		this(desc, getCIDFromInstance(inst));
 		parseArgumentValues(inst);
 	}
 	
 	/**
-	 * Create a empty command template based on the Command description document 
-	 * and the givencommand id
-	 * @param desc the command description document
-	 * @param cid the command id
+	 * Create a command template and set the command arguments to the values in the command instance document.
+	 * The command ID used is the one specified in the command instance document.
+	 * @param desc the CML descriptions document
+	 * @param inst the command instance document
+	 * @return whether or not some arguments are missing
 	 */
-	public CommandFactory(Document desc, int cid) throws ConfigurationException{
+	CommandFactory(CMLDescription desc, Document inst)  throws ConfigurationException{
+		this(desc);
+		parseArgumentValues(inst);
+	}
+	
+	/**
+	 * Create a empty command template based on the CML description document object
+	 * and the given command id
+	 * @param desc the command description document
+	 */
+	CommandFactory(CMLDescription desc) throws ConfigurationException {
 		argValues = new Hashtable<String, String>();
-		args = new Hashtable<String, ArgTypes>();
 		missingArgs = new Vector<String>();
 		callback = new Hashtable<String, StreamCallback>();
-		parseArguments(desc, cid);
+		cml = desc;
+		missingArgs = cml.getArgNames();
 	}
 	
 	/**
@@ -77,19 +93,15 @@ public class CommandFactory {
 	 * @throws ConfigurationException if the argument cant be found
 	 */
 	public ArgTypes getArgType(String name) throws ConfigurationException {
-		ArgTypes t = args.get(name);
-		if(t==null)
-			throw new ConfigurationException();
-		return t;
-			
+		return cml.getArgType(name);
 	}	
 	
 	/**
 	 * This method returns an Enumeration<String> of the argument names for which a value is missing 
 	 * @return an Enumeration<String> of the argument names for which a value is missing
 	 */
-	public Enumeration<String> listMissingArgNames() {
-		return missingArgs.elements();
+	public List<String> listMissingArgNames() {
+		return new Vector<String>(missingArgs);
 	}
 	
 	
@@ -101,8 +113,8 @@ public class CommandFactory {
 	 * <code>name</code> isnt of type callback
 	 */
 	public void addArgumentCallback(String name, StreamCallback val) throws ConfigurationException{
-		if(!args.get(name).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
-			logger.error("Type of argument '"+name+"' is '"+args.get(name).getArgType()+"' not 'callback'");
+		if(!cml.getArgType(name).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'callback'");
 			throw new ConfigurationException();
 		}
 		if(val==null)
@@ -120,8 +132,8 @@ public class CommandFactory {
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type float
 	 */
 	public void addArgumentValueFloat(String name, float val) throws ConfigurationException{
-		if(!args.get(name).getArgType().equals(CMLConstants.ARG_TYPE_FLOAT)) {
-			logger.error("Type of argument '"+name+"' is '"+args.get(name).getArgType()+"' not 'float'");
+		if(!cml.getArgType(name).getArgType().equals(CMLConstants.ARG_TYPE_FLOAT)) {
+			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'float'");
 			throw new ConfigurationException();
 		}		
 		addValue(name, String.valueOf(val));
@@ -134,8 +146,8 @@ public class CommandFactory {
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type int
 	 */
 	public void addArgumentValueInt(String name, int val) throws ConfigurationException{
-		if(!args.get(name).getArgType().equals(CMLConstants.ARG_TYPE_INT)) {
-			logger.error("Type of argument '"+name+"' is '"+args.get(name).getArgType()+"' not 'int'");
+		if(!cml.getArgType(name).getArgType().equals(CMLConstants.ARG_TYPE_INT)) {
+			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'int'");
 			throw new ConfigurationException();
 		}
 		addValue(name, String.valueOf(val));
@@ -148,8 +160,8 @@ public class CommandFactory {
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type string
 	 */
 	public void addArgumentValueString(String name, String val) throws ConfigurationException{
-		if(!args.get(name).getArgType().equals(CMLConstants.ARG_TYPE_STRING)) {
-			logger.error("Type of argument '"+name+"' is '"+args.get(name).getArgType()+"' not 'string'");
+		if(!cml.getArgType(name).getArgType().equals(CMLConstants.ARG_TYPE_STRING)) {
+			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'string'");
 			throw new ConfigurationException();
 		}		
 		addValue(name, String.valueOf(val));
@@ -165,7 +177,7 @@ public class CommandFactory {
 	 */
 	public void addArgumentValue(String name, String val) throws ConfigurationException{
 		ArgTypes t;
-		if((t= args.get(name))==null){
+		if((t= cml.getArgType(name))==null){
 			logger.debug("Cant find argument '"+name+"'");
 			throw new ConfigurationException();
 		} else if(t.getArgType().equals(CMLConstants.ARG_TYPE_FLOAT))
@@ -193,10 +205,10 @@ public class CommandFactory {
 		//Make sure we have all the args and their values
 		String name;
 		ArgTypes t;
-		Iterator<String> e = args.keySet().iterator();
+		Iterator<String> e = cml.getArgNames().iterator();
 		while(e.hasNext()) {
 			name = e.next();
-			t = args.get(name); 
+			t = cml.getArgType(name); 
 			if(t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK) && callback==null) {
 				logger.error("We are missing the callback object to create the command");
 				throw new ConfigurationException("CallBack object missing");
@@ -205,7 +217,7 @@ public class CommandFactory {
 				throw new ConfigurationException("value for argument '"+name+"' missing");
 			}
 		}
-		return new Command(cid, argValues, callback);
+		return new Command(cml.getCID().intValue(), argValues, callback);
 	}
 	
 	/**
@@ -219,54 +231,28 @@ public class CommandFactory {
 	}
 	
 	/**
+	 * This method takes a CML command instance document and extracts the command ID from it.
+	 * @param inst the CML command instance document
+	 * @return the CID
+	 * @throws ConfigurationException if the instance cant be parsed.
+	 */
+	static int getCIDFromInstance(Document inst) throws ConfigurationException{
+		try {
+			return Integer.parseInt(XMLhelper.getAttributeFromName(CMLConstants.XPATH_CMD_INST, CMLConstants.CID_ATTRIBUTE, inst));
+		} catch (Exception e) {
+			logger.error("Cant parse the cid in CML instance XML doc");
+			throw new ConfigurationException();
+		}
+	}
+	
+	/**
 	 * This method parse the given command description document and extracts the argument types and argNames
 	 * @param d the CML command description document
 	 * @throws ConfigurationException if the document cant be parsed
 	 */
-	private void parseArguments(Document d, int cid) throws ConfigurationException {
-		int nbArgs;
-		ArgTypes t;
-		String n;
-		String xpath_base=CMLConstants.XPATH_CMD_DESC+"[@"+CMLConstants.CID_ATTRIBUTE+"=\""+cid+"\"]/"+CMLConstants.ARGUMENTS_TAG+"/"+CMLConstants.ARGUMENT_TAG;
-		//Check that we have a description for this CID in the command description doc
-		try {
-			XMLhelper.getTextValue(CMLConstants.XPATH_CMD_DESC+"[@"+CMLConstants.CID_ATTRIBUTE+"=\""+cid+"\"]", d);
-		} catch (XPathExpressionException e) {
-			logger.error("Cant find the CID '"+cid+"' in the command description");
-			throw new ConfigurationException();
-		}
-		
-		//Check how many arguments this command needs
-		String xpath="count("+xpath_base+")";
-		try {
-			nbArgs = Integer.parseInt(XMLhelper.getTextValue(xpath, d));
-		} catch (NumberFormatException e) {
-			logger.error("Cant count how many arguments are needed for this command");
-			throw new ConfigurationException();
-		} catch (XPathExpressionException e) {
-			logger.error("Cant find the arguments in CMLdescriptor XML doc");
-			throw new ConfigurationException();
-		}
-		
-		//Fetch the arguments and put them together with the arg name in  the hashtable
-		for(int i=0; i<nbArgs; i++) {
-			try {
-				t = new ArgTypes(XMLhelper.getAttributeFromName(xpath_base+"["+(i+1)+"]", CMLConstants.TYPE_ATTRIBUTE, d));
-			} catch (Exception e) {
-				logger.error("Cant parse the argument type for argument "+i+" in CMLdescriptor XML doc");
-				throw new ConfigurationException();
-			}
-			
-			try {
-				n = XMLhelper.getAttributeFromName(xpath_base+"["+(i+1)+"]", CMLConstants.NAME_ATTRIBUTE, d);
-			} catch (Exception e) {
-				logger.error("Cant parse the argument name for argument "+i+" in CMLdescriptor XML doc");
-				throw new ConfigurationException();
-			}
-			args.put(n,t);
-			missingArgs.add(n);
-		}
-		this.cid = cid;
+	void parseArguments(Document d, int cid) throws ConfigurationException {
+		cml = new CMLDescriptions(d).getDescription(cid);
+		missingArgs = cml.getArgNames();
 	}
 	
 	/**
@@ -278,10 +264,10 @@ public class CommandFactory {
 	private void parseArgumentValues(Document d) throws ConfigurationException {
 		String val = null, name;
 		ArgTypes t;
-		Iterator<String> e = args.keySet().iterator();
+		Iterator<String> e = cml.getArgNames().iterator();
 		while(e.hasNext()) {
 			name = e.next();
-			t = args.get(name);
+			t = cml.getArgType(name);
 			if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
 				try {
 					val = XMLhelper.getTextValue(CMLConstants.XPATH_CMD_INST_ARGUMENT+"[@"+CMLConstants.NAME_ATTRIBUTE+"=\""+name+"\"]", d);
@@ -299,8 +285,13 @@ public class CommandFactory {
 		return new Command(c.getCommand(), cb);
 	}
 	
-	public static class Command {
-		
+	public int getCID(){
+		return cml.getCID().intValue();
+	}
+	
+	public static class Command implements Serializable{
+
+		private static final long serialVersionUID = -8361578743898576812L;
 		private int cid;
 		private static Logger logger = Logger.getLogger(Command.class);
 		static{

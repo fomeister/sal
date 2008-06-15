@@ -1,6 +1,7 @@
 package jcu.sal.common;
 
 import java.io.Serializable;
+import java.nio.channels.ClosedChannelException;
 
 import javax.naming.ConfigurationException;
 
@@ -21,18 +22,27 @@ public class Response implements Serializable {
 			b = bb;
 	}
 	
-	public Response(String sid){
+	/**
+	 * This constructor builds a response object with either the errror or the end flag set. It is only intended to be used
+	 * by streaming threads returning a response via a callback method 
+	 * @param sid the sensor id
+	 * @param e whether there was an error or not (normal end of stream)
+	 */
+	public Response(String sid, boolean e){
 		this(null,sid);
-		error = true;
+		b=null;
+		error = e;
 	}
 	
 	public String getSID() {
 		return sid;
 	}
 	
-	public byte[] getBytes() throws ConfigurationException {
-		if(error)
+	public byte[] getBytes() throws ConfigurationException, ClosedChannelException {
+		if(b==null && error)
 			throw new ConfigurationException();
+		else if(b==null && !error)
+			throw new ClosedChannelException();
 		return b;
 	}
 	
