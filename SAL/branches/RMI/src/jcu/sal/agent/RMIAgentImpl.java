@@ -1,4 +1,4 @@
-package jcu.sal.agent.rmi;
+package jcu.sal.agent;
 
 import java.io.IOException;
 import java.io.NotActiveException;
@@ -16,15 +16,15 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.agent.SALAgent;
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Response;
 import jcu.sal.common.RMICommandFactory.RMICommand;
+import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.cml.RMIStreamCallback;
 import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
 import jcu.sal.common.events.RMIEventHandler;
-import jcu.sal.events.Event;
 
 public class RMIAgentImpl implements RMISALAgent {
 	private static class SALClient {
@@ -54,12 +54,12 @@ public class RMIAgentImpl implements RMISALAgent {
 		}
 	}
 	
-	private SALAgent agent;
+	private SALAgentImpl agent;
 	private Map<String, SALClient> clients;
 	
 	public RMIAgentImpl(){
 		clients = new Hashtable<String, SALClient>();
-		agent = new SALAgent();
+		agent = new SALAgentImpl();
 	}
 	
 	public void start(String pc, String sc) throws ConfigurationException{
@@ -145,6 +145,9 @@ public class RMIAgentImpl implements RMISALAgent {
 			}
 
 			agent.registerEventHandler(eh, producerID);
+			
+			/* null any ref to remote objects for GC*/
+			eh = null;
 		}
 	}
 	
@@ -162,6 +165,9 @@ public class RMIAgentImpl implements RMISALAgent {
 			} 
 
 			agent.unregisterEventHandler(eh, producerID);
+			
+			/* null any ref to remote objects for GC*/
+			eh = null;
 		}
 	}
 

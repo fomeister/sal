@@ -2,7 +2,9 @@ package jcu.sal.common.cml;
 
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -16,7 +18,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 /**
- * This class encapsulate a CML descriptions document. This type of docuement contains of one or more CML descriptions. 
+ * This class encapsulate a CML descriptions document. This type of docuement contains of one or more CML descriptions.
  * @author gilles
  *
  */
@@ -56,6 +58,7 @@ public class CMLDescriptions {
 			n = XMLhelper.getNodeList(CMLConstants.XPATH_CMD_DESC, cmls);
 		} catch (XPathExpressionException e) {
 			logger.error("Unable to parse the CML descriptions document:");
+			e.printStackTrace();
 			logger.error(XMLhelper.toString(cmls));
 			throw new ConfigurationException();
 		}
@@ -64,7 +67,9 @@ public class CMLDescriptions {
 				d = new CMLDescription(XMLhelper.createDocument(n.item(i)));
 				this.cmls.put(d.getCID(), d);
 			} catch (ParserConfigurationException e) {
-				logger.error("error creating a document from node "+n.item(i));
+				logger.error("error creating a document from node");
+				e.printStackTrace();
+				logger.error(XMLhelper.toString(n.item(i)));
 				throw new ConfigurationException();
 			}
 		}
@@ -74,8 +79,16 @@ public class CMLDescriptions {
 	 * This method returns a copy of the map of cids and associated CML description documents
 	 * @return a copy of the map of cids and associated CML description documents
 	 */
-	public synchronized Map<Integer,CMLDescription> getDescriptions(){
+	public Map<Integer,CMLDescription> getDescriptions(){
 		return new Hashtable<Integer,CMLDescription>(cmls);
+	}
+	
+	/**
+	 * This method returns a list of the command identifier present in this CML descriptions document
+	 * @return a list of the command identifier present in this CML descriptions document
+	 */
+	public List<Integer> getSIDs(){
+		return new Vector<Integer>(cmls.keySet());
 	}
 	
 	/**
@@ -84,7 +97,7 @@ public class CMLDescriptions {
 	 * @return the CML description associated with the given CID
 	 * @throws ConfigurationException the the CID is not found
 	 */
-	public synchronized  CMLDescription getDescription(int cid) throws ConfigurationException{
+	public CMLDescription getDescription(int cid) throws ConfigurationException{
 		if(cmls.containsKey(new Integer(cid)))
 			return cmls.get(new Integer(cid));
 		throw new ConfigurationException();
@@ -94,7 +107,7 @@ public class CMLDescriptions {
 	 * This method returns the CML descriptions document as a string
 	 * @return the CML descriptions document as a string
 	 */
-	public synchronized String getCMLString(){
+	public String getCMLString(){
 		StringBuilder cmlString = new StringBuilder("<commandDescriptions>\n");
 		Iterator<CMLDescription> i = cmls.values().iterator();
 		while(i.hasNext())
@@ -108,7 +121,7 @@ public class CMLDescriptions {
 	 * @return the CML descriptions document as a DOM document
 	 * @throws ConfigurationException if the document cant be created
 	 */
-	public synchronized Document getCML() throws ConfigurationException{
+	public Document getCML() throws ConfigurationException{
 		try {
 			return XMLhelper.createDocument(getCMLString());
 		} catch (ParserConfigurationException e) {

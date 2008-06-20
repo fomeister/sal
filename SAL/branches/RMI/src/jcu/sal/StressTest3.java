@@ -7,7 +7,7 @@ import java.util.Random;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.agent.SALAgent;
+import jcu.sal.agent.SALAgentImpl;
 import jcu.sal.common.CommandFactory.Command;
 
 import org.apache.log4j.ConsoleAppender;
@@ -18,7 +18,7 @@ import org.apache.log4j.PatternLayout;
 public class StressTest3 {
 
 	private static Logger logger = Logger.getLogger(StressTest3.class);
-	static SALAgent s;
+	static SALAgentImpl s;
 	private int NB_THREADS = 5;
 	private ArrayList<StressUser> threads;
 	static {
@@ -130,14 +130,14 @@ public class StressTest3 {
 						
 						if(count++==10) {Thread.sleep(10); count=0;}
 					}
-				} catch (InterruptedException e) {}			}
-			
+				} catch (InterruptedException e) {}			
+			}
 		}
 	}
 
 	
 	public static void main(String [] args) throws ConfigurationException, InterruptedException{
-		s = new SALAgent();
+		s = new SALAgentImpl();
 		logger.setAdditivity(false);
 		logger.setLevel(Level.ALL);
 		logger.addAppender(new ConsoleAppender(new PatternLayout("%c{1}.%M(%F:%L) %r - %m%n")));

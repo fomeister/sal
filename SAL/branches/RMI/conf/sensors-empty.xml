@@ -3,7 +3,7 @@
     <SensorConfiguration>
         <Sensor sid="1">
             <parameters>
-                <Param name="ProtocolName" value="v4l-/dev/video0"/>
+                <Param name="ProtocolName" value="v4l-/dev/video1"/>
                 <Param name="Address" value="CCD"/>
             </parameters>
         </Sensor>

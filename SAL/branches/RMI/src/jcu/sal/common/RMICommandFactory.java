@@ -11,7 +11,7 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.CommandFactory.Command;
-import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
@@ -61,16 +61,16 @@ public class RMICommandFactory {
 	
 	/**
 	 * This method checks our CML description object to see if there are any callback arguments. If there are, this method returns 
-	 * a copy of out CML description document in which callback arguments have been removed.  
-	 * @return a copy of out CML description document in which callback arguments have been removed.
+	 * a copy of our CML description document in which all callback arguments have been removed.  
+	 * @return a copy of our CML description document in which callback arguments have been removed.
 	 * @throws ConfigurationException if the copy cant be created
 	 */
 	private CMLDescription removeCallbacks() throws ConfigurationException{
 		callbackNames = new Hashtable<String, List<String>>();
 		
 		//Check if we have a callback function
-		List<ArgTypes> types = cml.getArgTypes();
-		if(types.contains(new ArgTypes(CMLConstants.ARG_TYPE_CALLBACK))) {
+		List<ArgumentType> types = cml.getArgTypes();
+		if(types.contains(new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK))) {
 			List<String> names = cml.getArgNames();
 			for (int i = 0; i < types.size(); i++) {
 				if(types.get(i).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
@@ -91,15 +91,15 @@ public class RMICommandFactory {
 	 * @throws ConfigurationException 
 	 * @throws ConfigurationException if the argument cant be found
 	 */
-	public ArgTypes getArgType(String name) throws ConfigurationException{
-		ArgTypes t;
+	public ArgumentType getArgType(String name) throws ConfigurationException{
+		ArgumentType t;
 		try {
 			t = factory.getArgType(name);
 		} catch (ConfigurationException e) {
 			if(!callbackNames.containsKey(name))
 				throw new ConfigurationException();
 			else
-				t = new ArgTypes(CMLConstants.ARG_TYPE_CALLBACK);
+				t = new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK);
 		}		
 		return t;
 			
@@ -212,10 +212,6 @@ public class RMICommandFactory {
 		private static final long serialVersionUID = 6054676797304225967L;
 		private Map<String,List<String>> callbacks;
 		private Command c;
-		private static Logger logger = Logger.getLogger(RMICommand.class);
-		static{
-			Slog.setupLogger(logger);
-		}
 
 		private RMICommand(Command c, Map<String,List<String>> RMIcallbacks){
 			this.c = c;

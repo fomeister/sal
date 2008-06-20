@@ -2,6 +2,8 @@ package jcu.sal.events;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.events.Event;
+
 public class ProtocolListEvent extends Event {
 
 	private static final long serialVersionUID = 4394564002895838509L;

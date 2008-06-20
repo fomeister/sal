@@ -2,6 +2,8 @@ package jcu.sal.events;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.events.Event;
+
 public class SensorNodeEvent extends Event {
 	private static final long serialVersionUID = -7000825364492820746L;
 	public static int SENSOR_NODE_ADDED = 1;

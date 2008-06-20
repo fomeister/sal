@@ -2,7 +2,6 @@ package jcu.sal.components.sensors;
 
 public interface SensorConstants {
 
-	public static final String SENSOR_STATE_PRODUCER_ID = "SensorState";
 	public static final int REMOVED=6;
 	public static final int STOPPED=5;
 	public static final int DISCONNECTED=4;

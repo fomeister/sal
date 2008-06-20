@@ -5,6 +5,7 @@ package jcu.sal.components.sensors;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Constants;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.SensorStateEvent;
@@ -91,7 +92,7 @@ public class SensorState {
 			if(state==SensorConstants.DISABLED || state==SensorConstants.UNASSOCIATED || state==SensorConstants.IDLE) {
 				if(state!=SensorConstants.UNASSOCIATED) {
 					try {
-						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),SensorConstants.SENSOR_STATE_PRODUCER_ID));
+						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 					} catch (ConfigurationException e) {logger.error("Cant queue event");}
 				}
 				state=SensorConstants.IDLE; return true;
@@ -105,7 +106,7 @@ public class SensorState {
 			if(state==SensorConstants.IDLE || state==SensorConstants.INUSE || state==SensorConstants.DISCONNECTED || state==SensorConstants.UNASSOCIATED) {
 				if(state!=SensorConstants.DISCONNECTED) {
 					try {
-						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),SensorConstants.SENSOR_STATE_PRODUCER_ID));
+						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 					} catch (ConfigurationException e) {logger.error("Cant queue event");}
 				}
 				state=SensorConstants.DISCONNECTED;
@@ -126,7 +127,7 @@ public class SensorState {
 				disconnect_timestamp = -1;
 				state=SensorConstants.IDLE;
 				try {
-					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),SensorConstants.SENSOR_STATE_PRODUCER_ID));
+					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 				} catch (ConfigurationException e) {logger.error("Cant queue event");}
 				return true; 
 			}

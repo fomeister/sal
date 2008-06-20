@@ -2,10 +2,10 @@
 <SAL>
     <PlatformConfiguration>
         <protocols>
-            <Protocol name="v4l-/dev/video0" type="v4l2">
-                <EndPoint name="usb-/dev/video0" type="usb"/>
+            <Protocol name="v4l-/dev/video1" type="v4l2">
+                <EndPoint name="usb-/dev/video1" type="usb"/>
                 <parameters>
-                    <Param name="deviceFile" value="/dev/video0"/>
+                    <Param name="deviceFile" value="/dev/video1"/>
                 </parameters>
             </Protocol>
         </protocols>

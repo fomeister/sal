@@ -2,6 +2,7 @@ package jcu.sal.events;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
 
 import junit.framework.TestCase;

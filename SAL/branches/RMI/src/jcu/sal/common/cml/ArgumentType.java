@@ -11,9 +11,9 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public class ArgTypes {
+public class ArgumentType {
 	private String t;
-	private static Logger logger = Logger.getLogger(ArgTypes.class);
+	private static Logger logger = Logger.getLogger(ArgumentType.class);
 	static {
 		Slog.setupLogger(logger);
 	}
@@ -22,7 +22,7 @@ public class ArgTypes {
 	 * @param s the type (CMLConstants.ARG_TYPE_*)
 	 * @throws ConfigurationException if the type is invalid
 	 */
-	public ArgTypes(String s) throws ConfigurationException{
+	public ArgumentType(String s) throws ConfigurationException{
 		if(!s.equals(CMLConstants.ARG_TYPE_STRING) && !s.equals(CMLConstants.ARG_TYPE_INT) && !s.equals(CMLConstants.ARG_TYPE_FLOAT) && !s.equals(CMLConstants.ARG_TYPE_CALLBACK)) {
 			logger.error("Unknown argument type: "+s);
 			throw new ConfigurationException();
@@ -51,7 +51,7 @@ public class ArgTypes {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		final ArgTypes other = (ArgTypes) obj;
+		final ArgumentType other = (ArgumentType) obj;
 		if (t == null) {
 			if (other.t != null)
 				return false;

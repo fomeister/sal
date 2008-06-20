@@ -5,7 +5,7 @@ import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.ReturnType;
 import jcu.sal.components.protocols.AbstractStore;
@@ -31,7 +31,7 @@ public class CMLDescriptionStore extends AbstractStore {
 		int i;
 		String key, name, mName, desc;
 		List<String> argNames;
-		List<ArgTypes> t;
+		List<ArgumentType> t;
 		ReturnType r;
 		
 		/* 
@@ -41,7 +41,7 @@ public class CMLDescriptionStore extends AbstractStore {
 		mName = V4L2Protocol.GET_FRAME_METHOD;
 		name = "GetFrame";
 		desc = "Reads a single frame";
-		t = new Vector<ArgTypes>();
+		t = new Vector<ArgumentType>();
 		argNames = new Vector<String>();
 		r = new ReturnType(CMLConstants.RET_TYPE_BYTE_ARRAY);
 		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
@@ -63,7 +63,7 @@ public class CMLDescriptionStore extends AbstractStore {
 		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
 				
 		
-		t.add(new ArgTypes(CMLConstants.ARG_TYPE_CALLBACK));
+		t.add(new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK));
 		argNames.add(CALLBACK_ARG_NAME);
 		mName = V4L2Protocol.START_STREAM_METHOD;
 		name =  "StartStream";

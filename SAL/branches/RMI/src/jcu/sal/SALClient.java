@@ -11,19 +11,17 @@ import javax.naming.ConfigurationException;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
-import jcu.sal.agent.SALAgent;
-import jcu.sal.agent.SALAgentInterface;
+import jcu.sal.agent.SALAgentImpl;
 import jcu.sal.common.CommandFactory;
+import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
-import jcu.sal.common.ResponseParser;
 import jcu.sal.common.CommandFactory.Command;
-import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
-import jcu.sal.components.sensors.SensorConstants;
-import jcu.sal.events.Event;
-import jcu.sal.managers.Constants;
 import jcu.sal.utils.XMLhelper;
 
 import org.w3c.dom.Document;
@@ -73,18 +71,18 @@ public class SALClient implements EventHandler, StreamCallback{
 	}
 	
 	private Map<String, JpgMini> viewers;
-	private SALAgentInterface agent;
+	private SALAgent agent;
 	
 	public SALClient() {
 		viewers = new Hashtable<String, JpgMini>();
 	}
 	
 	public void start(String pc, String sc) throws ConfigurationException{
-		agent = new SALAgent();
+		agent = new SALAgentImpl();
 		try {
 			agent.registerEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
-			agent.registerEventHandler(this, SensorConstants.SENSOR_STATE_PRODUCER_ID);
+			agent.registerEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
 		} catch (ConfigurationException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
@@ -100,7 +98,7 @@ public class SALClient implements EventHandler, StreamCallback{
 		Command c = null;
 		Response res;
 		CommandFactory cf;
-		ArgTypes t;
+		ArgumentType t;
 		StringBuilder sb = new StringBuilder();	
 
 		while(sid!=-1) {
@@ -148,10 +146,10 @@ public class SALClient implements EventHandler, StreamCallback{
 						String type = XMLhelper.getAttributeFromName(xpath, CMLConstants.TYPE_ATTRIBUTE, d);
 						if(type.equals(CMLConstants.RET_TYPE_BYTE_ARRAY)) {
 							JpgMini v = new JpgMini(String.valueOf(sid));
-							v.setImage(ResponseParser.toByteArray(res));
+							v.setImage(res.getBytes());
 							v.setVisible();
 						} else {
-							System.out.println("Command returned: " + ResponseParser.toString(res));
+							System.out.println("Command returned: " + res.getString());
 						}
 					} catch (Exception e){
 						System.out.println("Cant find the return type");
@@ -202,7 +200,7 @@ public class SALClient implements EventHandler, StreamCallback{
 		try {
 			agent.unregisterEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
-			agent.unregisterEventHandler(this, SensorConstants.SENSOR_STATE_PRODUCER_ID);
+			agent.unregisterEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
 		} catch (ConfigurationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -238,7 +236,7 @@ public class SALClient implements EventHandler, StreamCallback{
 			new Thread ( new Runnable() {
 				public void run() {
 					try {
-						viewers.get(rr.getSID()).setImage(ResponseParser.toByteArray(rr));
+						viewers.get(rr.getSID()).setImage(rr.getBytes());
 					} catch (ConfigurationException e) {
 						System.out.println("Stream from sensor "+rr.getSID()+" returned an error");
 						viewers.remove(rr.getSID()).close();

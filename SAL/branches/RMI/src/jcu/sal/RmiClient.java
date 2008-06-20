@@ -19,18 +19,16 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
-import jcu.sal.agent.rmi.RMISALAgent;
+import jcu.sal.common.Constants;
 import jcu.sal.common.RMICommandFactory;
 import jcu.sal.common.Response;
-import jcu.sal.common.ResponseParser;
 import jcu.sal.common.RMICommandFactory.RMICommand;
-import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.RMIStreamCallback;
+import jcu.sal.common.events.Event;
 import jcu.sal.common.events.RMIEventHandler;
-import jcu.sal.components.sensors.SensorConstants;
-import jcu.sal.events.Event;
-import jcu.sal.managers.Constants;
 import jcu.sal.utils.XMLhelper;
 
 import org.w3c.dom.Document;
@@ -51,6 +49,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	        f.getContentPane().add(l);
 	        f.setSize(640,480);
 	        f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	        setVisible();
 	    }
 	    
 	    public void setImage(byte[] b) {
@@ -58,7 +57,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	    	if(start==0)
 	    		start = System.currentTimeMillis();
 	    	else if(System.currentTimeMillis()>start+10000) {
-    			System.out.println("SID: "+sid+" - FPS: "+ ( (float) (1000*n/(System.currentTimeMillis()-start))  ));
+    			System.out.println("SID: "+sid+" - FPS: "+ (((float) 1000*n/(System.currentTimeMillis()-start))  ));
     			start = System.currentTimeMillis();
     			n = 0;
     		} else
@@ -113,7 +112,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		try {
 			agent.registerEventHandler(RMIname, RMIname, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(RMIname, RMIname, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
-			agent.registerEventHandler(RMIname, RMIname, SensorConstants.SENSOR_STATE_PRODUCER_ID);
+			agent.registerEventHandler(RMIname, RMIname, Constants.SENSOR_STATE_PRODUCER_ID);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 			throw new ConfigurationException();
@@ -128,7 +127,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		RMICommand c = null;
 		Response res;
 		RMICommandFactory cf;
-		ArgTypes t;
+		ArgumentType t;
 		StringBuilder sb = new StringBuilder();	
 
 		while(sid!=-1) {
@@ -168,16 +167,15 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 					}
 					
 					res = agent.execute(c, String.valueOf(sid));
-					//new FileOutputStream("file"+(fn++),false).write(ResponseParser.toByteArray(res));
 					String xpath=CMLConstants.XPATH_CMD_DESC+"[@"+CMLConstants.CID_ATTRIBUTE+"=\""+j+"\"]/"+CMLConstants.RETURN_TYPE_TAG;
 					try {
 						String type = XMLhelper.getAttributeFromName(xpath, CMLConstants.TYPE_ATTRIBUTE, d);
 						if(type.equals(CMLConstants.RET_TYPE_BYTE_ARRAY)) {
 							JpgMini v = new JpgMini(String.valueOf(sid));
-							v.setImage(ResponseParser.toByteArray(res));
+							v.setImage(res.getBytes());
 							v.setVisible();
 						} else {
-							System.out.println("Command returned: " + ResponseParser.toString(res));
+							System.out.println("Command returned: " + res.getString());
 						}
 					} catch (Exception e){
 						System.out.println("Cant find the return type");
@@ -227,7 +225,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		try {
 			agent.unregisterEventHandler(RMIname, RMIname, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(RMIname, RMIname, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
-			agent.unregisterEventHandler(RMIname, RMIname, SensorConstants.SENSOR_STATE_PRODUCER_ID);
+			agent.unregisterEventHandler(RMIname, RMIname, Constants.SENSOR_STATE_PRODUCER_ID);
 		} catch (ConfigurationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -239,6 +237,9 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		agent = null;
+		System.gc();
+		
 	}
 	
 	
@@ -257,7 +258,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			c.stop();
+			try{c.stop();} catch(RemoteException e){}
 			System.out.println("Main exiting");
 			System.exit(0);
 		}
@@ -267,16 +268,27 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		System.out.println("Received "+e.toString());
 	}
 
+	private int n;
+	private long ts;
+	
 	public void collect(Response r) {
-		try {
-			viewers.get(r.getSID()).setImage(ResponseParser.toByteArray(r));
-		} catch (ConfigurationException e) {
-			System.out.println("Stream from sensor "+r.getSID()+" returned an error");
-			viewers.remove(r.getSID());
-		} catch (ClosedChannelException e) {
-			System.out.println("Stream from sensor "+r.getSID()+" completed");
-			viewers.remove(r.getSID());
-		}
+		if(ts==0)
+			ts = System.currentTimeMillis();
+		else if((ts+10000)<System.currentTimeMillis()){
+			System.out.println("FPS: "+( (float) ((float) 1000*n/((float)(System.currentTimeMillis()-ts))) ) );
+			ts = System.currentTimeMillis();
+			n=0;
+		} else
+			n++;
+//		try {
+//			viewers.get(r.getSID()).setImage(r.getBytes());
+//		} catch (ConfigurationException e) {
+//			System.out.println("Stream from sensor "+r.getSID()+" returned an error");
+//			viewers.remove(r.getSID());
+//		} catch (ClosedChannelException e) {
+//			System.out.println("Stream from sensor "+r.getSID()+" completed");
+//			viewers.remove(r.getSID());
+//		}
 	}
 	
 	public void export(String name, Remote r) throws AccessException, RemoteException{

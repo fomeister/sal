@@ -12,6 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
 import jcu.sal.utils.Slog;
 
@@ -84,7 +85,7 @@ public class EventDispatcher implements Runnable{
 				synchronized(eventHandlers) {
 					if(!eventHandlers.get(producer).remove(e)) {
 						logger.error("Unregistering event handler "+e+" from producer: "+producer+" failed");
-						throw new ConfigurationException();
+						throw new ConfigurationException("No such event handler");
 					}
 					else
 						logger.debug("Unregistered event handler "+e+" from producer: "+producer);

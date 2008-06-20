@@ -11,7 +11,7 @@ import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
-import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.ReturnType;
 import jcu.sal.common.cml.StreamCallback;
@@ -26,8 +26,8 @@ import org.apache.log4j.Logger;
 import org.w3c.dom.Node;
 
 import au.edu.jcu.v4l4j.FrameGrabber;
-import au.edu.jcu.v4l4j.V4L2Control;
-import au.edu.jcu.v4l4j.V4L4JException;
+import au.edu.jcu.v4l4j.Control;
+import au.edu.jcu.v4l4j.exceptions.V4L4JException;
 
 public class V4L2Protocol extends AbstractProtocol {
 	
@@ -44,7 +44,7 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	
 	private FrameGrabber fg = null;
-	private Hashtable<String,V4L2Control> ctrls = null;
+	private Hashtable<String,Control> ctrls = null;
 	private boolean streaming;
 	private StreamingThread st;
 	private StreamingThreadFake stf;
@@ -75,7 +75,6 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		cmls = CMLDescriptionStore.getStore();
 		//Check config directives:
 		String dev;
 		int w=-1,h=-1,std=-1,ch=-1, cid;
@@ -111,24 +110,25 @@ public class V4L2Protocol extends AbstractProtocol {
 			logger.error("Cant load JNI library. Couldnt create/initialise FrameGrabber object");
 			throw new ConfigurationException();
 		} catch (NoClassDefFoundError e){
-			//thrown the second time a FrameGrabber is instanciated and the JNI is not found.
+			//thrown the second time a FrameGrabber is instanciated and the JNI lib is not found.
 			//I suspect that at the first instanciation attempt, since the JVM cant find the JNI lib,
 			//it unloads the FrameGrabber class, which is why the second attempt throws NoClassDefFound
 			logger.error("Cant load JNI library. Couldnt create FrameGrabber object");
 			throw new ConfigurationException();
 		}
 		
+		cmls = CMLDescriptionStore.getStore();
 		//get the V4L2 controls
-		V4L2Control[] v4l2c = fg.getControls();
-		ctrls = new Hashtable<String, V4L2Control>();
+		Control[] v4l2c = fg.getControls();
+		ctrls = new Hashtable<String, Control>();
 		String key = CMLDescriptionStore.CCD_KEY, name, ctrlName, desc;
 		List<String> argNamesEmpty = new Vector<String>();
 		List<String> argNamesValue = new Vector<String>();
 		argNamesValue.add(CMLDescriptionStore.CONTROL_VALUE_NAME);
 		
-		List<ArgTypes> tEmpty = new Vector<ArgTypes>();
-		List<ArgTypes> tValue = new Vector<ArgTypes>();
-		tValue.add(new ArgTypes(CMLConstants.ARG_TYPE_INT));
+		List<ArgumentType> tEmpty = new Vector<ArgumentType>();
+		List<ArgumentType> tValue = new Vector<ArgumentType>();
+		tValue.add(new ArgumentType(CMLConstants.ARG_TYPE_INT));
 		
 		ReturnType retInt = new ReturnType(CMLConstants.RET_TYPE_INT);
 		ReturnType retVoid = new ReturnType(CMLConstants.RET_TYPE_VOID);
@@ -143,7 +143,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			ctrls.put(String.valueOf(cid), v4l2c[id]);
 			
 			//setValue command
-			name = "set"+name.replace(" ", "");
+			name = "set"+ctrlName.replace(" ", "");
 			desc = "Sets the value of "+ctrlName;
 			cid = cmls.addPrivateCMLDesc(key, SET_CONTROL_METHOD, name, desc, tValue, argNamesValue , retVoid);
 			ctrls.put(String.valueOf(cid), v4l2c[id]);
@@ -161,10 +161,8 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	@Override
 	protected void internal_stop() {
-		if(streaming) {
+		if(streaming)
 			st.stop();
-			st.join();
-		}
 
 		//make sure the frame grabber capture is stopped
 		try {fg.stopCapture();} catch (V4L4JException e) {}
@@ -195,7 +193,7 @@ public class V4L2Protocol extends AbstractProtocol {
 	
 	public static String GET_CONTROL_METHOD = "getControl";
 	public byte[] getControl(Command c, Sensor s) throws IOException{
-		V4L2Control ctrl = ctrls.get(String.valueOf(c.getCID()));
+		Control ctrl = ctrls.get(String.valueOf(c.getCID()));
 		if(ctrl!=null) {
 			try {
 				return String.valueOf(ctrl.getValue()).getBytes();
@@ -211,7 +209,7 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	public static String SET_CONTROL_METHOD = "setControl";
 	public byte[] setControl(Command c, Sensor s) throws IOException{
-		V4L2Control ctrl = ctrls.get(String.valueOf(c.getCID()));
+		Control ctrl = ctrls.get(String.valueOf(c.getCID()));
 		if(ctrl!=null) {
 			try {
 				ctrl.setValue(Integer.parseInt(c.getValue(CMLDescriptionStore.CONTROL_VALUE_NAME)));
@@ -339,9 +337,6 @@ public class V4L2Protocol extends AbstractProtocol {
 		
 		public void stop(){
 			t.interrupt();
-		}
-		
-		public void join(){
 			try {
 				t.join();
 			} catch (InterruptedException e) {
@@ -353,19 +348,21 @@ public class V4L2Protocol extends AbstractProtocol {
 			byte[] b;
 			ByteBuffer bb;
 			String sid = s.getID().getName();
-			long before;//, before2;
+//			long ts, ts2, ts3;
 			while(!error && !Thread.interrupted()){
 				try {
-					before = System.currentTimeMillis();
+					//ts = System.currentTimeMillis();
 					bb = fg.getFrame();
-					//logger.debug("getFrame: "+(System.currentTimeMillis()- before)+" ms");
+					//ts2 = System.currentTimeMillis();;
+					//logger.debug("getFrame: "+(ts2 - ts)+" ms");
 					b = new byte[bb.limit()];
 					bb.get(b);
 					bb.position(0);
-					//before2 = System.currentTimeMillis();
+					//ts3 = System.currentTimeMillis();
+					//logger.debug("prepFrame: "+(ts3 - ts2)+" ms");
 					cb.collect(new Response(b, sid));
-					//logger.debug("collect: "+(System.currentTimeMillis()- before2)+" ms");
-					logger.debug("total: "+(System.currentTimeMillis()- before)+" ms");
+					//logger.debug("collect: "+(System.currentTimeMillis()- ts3)+" ms");
+					//logger.debug("total: "+(System.currentTimeMillis()- ts)+" ms");
 				} catch (IOException e1) {
 					logger.error("Callback error");
 					error=true;
@@ -396,7 +393,7 @@ public class V4L2Protocol extends AbstractProtocol {
 		private Sensor s;
 		private boolean error=false;
 		private byte[] b;
-		private int FAKE_ARRAY_SIZE=200000;
+		private int FAKE_ARRAY_SIZE=100000;
 		
 		
 		public StreamingThreadFake(StreamCallback c, Sensor s){
@@ -420,16 +417,16 @@ public class V4L2Protocol extends AbstractProtocol {
 
 		public void run() {
 			String sid = s.getID().getName();
-			long before;
+			//long before;
 			while(error==false && !Thread.interrupted()){
 				try {
-					before = System.currentTimeMillis();
+					//before = System.currentTimeMillis();
 					b = new byte[FAKE_ARRAY_SIZE];
 					for(int i=0; i<FAKE_ARRAY_SIZE; i++)
 						b[i]=(byte) (i%100);
 					cb.collect(new Response(b, sid));
 					//logger.debug("collect: "+(System.currentTimeMillis()- before2)+" ms");
-					logger.debug("total: "+(System.currentTimeMillis()- before)+" ms");
+					//logger.debug("total: "+(System.currentTimeMillis()- before)+" ms");
 				} catch (IOException e1) {
 					logger.error("Callback error");
 					error=true;
