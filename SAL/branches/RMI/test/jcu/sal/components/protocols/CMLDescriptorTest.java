@@ -9,7 +9,7 @@ import java.util.Vector;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.ReturnType;
@@ -22,7 +22,7 @@ import org.junit.Test;
 public class CMLDescriptorTest {
 	
 	private CMLDescription c1, c2, c3;
-	private List<ArgTypes> t1;
+	private List<ArgumentType> t1;
 	private List<String> n1;
 	private ReturnType r1;
 //	private String noArgDoc = "<CommandDescription name=\"noArgDoc\">\n"
@@ -35,8 +35,8 @@ public class CMLDescriptorTest {
 	public void setUp() throws Exception {
 
 		
-		t1 = new Vector<ArgTypes>();
-		t1.add(new ArgTypes(CMLConstants.ARG_TYPE_INT));
+		t1 = new Vector<ArgumentType>();
+		t1.add(new ArgumentType(CMLConstants.ARG_TYPE_INT));
 		
 		n1 = new Vector<String>();
 		n1.add("integer");
@@ -53,7 +53,7 @@ public class CMLDescriptorTest {
 
 	@Test
 	public void testCMLDescriptorStringIntegerStringStringArgTypesArrayStringArrayReturnType() throws ConfigurationException {
-		List<ArgTypes> args;
+		List<ArgumentType> args;
 		List<String> argNames;
 		assertTrue(c1.getMethodName().equals("MethodName1"));
 		
@@ -63,8 +63,8 @@ public class CMLDescriptorTest {
 		
 		assertTrue(c1.getDesc().equals("Description for command 1"));
 
-		args = new Vector<ArgTypes>();
-		args.add(new ArgTypes(CMLConstants.ARG_TYPE_INT));		
+		args = new Vector<ArgumentType>();
+		args.add(new ArgumentType(CMLConstants.ARG_TYPE_INT));		
 		assertTrue(c1.getArgTypes().equals(args));
 		
 		argNames = new Vector<String>();
@@ -79,7 +79,7 @@ public class CMLDescriptorTest {
 	public void testCMLDescriptorIntegerStringCMLDescriptor() throws ConfigurationException {
 		c2 = new CMLDescription(new Integer(2), "Command2",c1);
 		List<String> argNames;
-		List<ArgTypes> args;
+		List<ArgumentType> args;
 	
 		assertTrue(c2.getMethodName().equals(c1.getMethodName()));
 		assertTrue(c2.getMethodName().equals("MethodName1"));
@@ -94,8 +94,8 @@ public class CMLDescriptorTest {
 		
 		assertTrue(c2.getArgTypes().equals(c1.getArgTypes()));
 		
-		args = new Vector<ArgTypes>();
-		args.add(new ArgTypes(CMLConstants.ARG_TYPE_FLOAT));	
+		args = new Vector<ArgumentType>();
+		args.add(new ArgumentType(CMLConstants.ARG_TYPE_FLOAT));	
 		assertFalse(c2.getArgTypes().equals(args));
 
 

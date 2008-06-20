@@ -5,7 +5,7 @@ import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.ReturnType;
 import jcu.sal.components.protocols.AbstractStore;
@@ -30,7 +30,7 @@ public class CMLDescriptionStore extends AbstractStore{
 		int i;
 		String key, name, mName, desc;
 		List<String> argNames;
-		List<ArgTypes> t;
+		List<ArgumentType> t;
 		ReturnType r;
 
 		/* 
@@ -40,7 +40,7 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.FreeMem;
 		desc = "Reads the amount of free memory";
-		t = new Vector<ArgTypes>();
+		t = new Vector<ArgumentType>();
 		argNames = new Vector<String>();
 		r = new ReturnType(CMLConstants.RET_TYPE_INT);
 		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);

@@ -1,4 +1,4 @@
-package jcu.sal.events;
+package jcu.sal.common.events;
 
 import java.io.Serializable;
 

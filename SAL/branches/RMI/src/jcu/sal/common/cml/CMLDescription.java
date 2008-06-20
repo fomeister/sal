@@ -39,7 +39,7 @@ public class CMLDescription {
 	private String name;
 	private String methodName;
 	private String desc;
-	private List<ArgTypes> argTypes;
+	private List<ArgumentType> argTypes;
 	private List<String> argNames;
 	private ReturnType returnType;
 	
@@ -55,11 +55,11 @@ public class CMLDescription {
 	 * @param returnType the type of the return result
 	 * @throws ConfigurationException if the three arrays have different lengths,   
 	 */
-	public CMLDescription(String methodName, Integer id, String name, String desc, List<ArgTypes> argTypes,  List<String> argNames, ReturnType returnType) throws ConfigurationException{
+	public CMLDescription(String methodName, Integer id, String name, String desc, List<ArgumentType> argTypes,  List<String> argNames, ReturnType returnType) throws ConfigurationException{
 		cid=id;
 		this.name = name;
 		this.desc = desc;
-		this.argTypes = new Vector<ArgTypes>(argTypes);
+		this.argTypes = new Vector<ArgumentType>(argTypes);
 		this.argNames = new Vector<String>(argNames);
 		this.returnType = returnType;
 		this.methodName = methodName!=null ? methodName : "";
@@ -204,7 +204,7 @@ public class CMLDescription {
 			nbArgs = 0;
 		}
 		
-		argTypes = new Vector<ArgTypes>(nbArgs);
+		argTypes = new Vector<ArgumentType>(nbArgs);
 		argNames = new Vector<String>(nbArgs);
 		for(int i=0; i<nbArgs; i++) {
 			try {
@@ -218,7 +218,7 @@ public class CMLDescription {
 			}
 			
 			try {
-				argTypes.add(new ArgTypes(XMLhelper.getAttributeFromName(XPATH_CMD_DESC_ARGUMENT+"["+(i+1)+"]", CMLConstants.TYPE_ATTRIBUTE, d)));
+				argTypes.add(new ArgumentType(XMLhelper.getAttributeFromName(XPATH_CMD_DESC_ARGUMENT+"["+(i+1)+"]", CMLConstants.TYPE_ATTRIBUTE, d)));
 			} catch (Exception e) {
 //				logger.error("Cant parse the argument type for argument "+i+" in CMLdescriptor XML doc");
 //				logger.error("XPATH: "+XPATH_CMD_DESC_ARGUMENT+"["+(i+1)+"]");
@@ -291,7 +291,7 @@ public class CMLDescription {
 	 * This method returns an array of argument types for this  CML descriptor
 	 * @return an array of argument types for this  CML descriptor
 	 */
-	public List<ArgTypes> getArgTypes() {
+	public List<ArgumentType> getArgTypes() {
 		return argTypes;
 	}
 	
@@ -333,7 +333,7 @@ public class CMLDescription {
 	 * @return the argument type for a given argument.
 	 * @throws ConfigurationException if the argument <code>"name"</code> does not exist
 	 */
-	public ArgTypes getArgType(String name) throws ConfigurationException{
+	public ArgumentType getArgType(String name) throws ConfigurationException{
 		int pos = argNames.indexOf(name);
 		if(pos>=0)
 			return argTypes.get(pos);

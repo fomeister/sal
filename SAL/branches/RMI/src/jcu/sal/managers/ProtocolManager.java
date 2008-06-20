@@ -12,6 +12,7 @@ import java.util.Iterator;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
@@ -20,7 +21,6 @@ import jcu.sal.components.EndPoints.EndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
-import jcu.sal.components.sensors.SensorConstants;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.config.FileConfigService;
 import jcu.sal.events.EventDispatcher;
@@ -53,7 +53,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		conf = FileConfigService.getService();
 		ev = EventDispatcher.getInstance();
 		ev.addProducer(Constants.PROTOCOL_MANAGER_PRODUCER_ID);
-		ev.addProducer(SensorConstants.SENSOR_STATE_PRODUCER_ID);
+		ev.addProducer(Constants.SENSOR_STATE_PRODUCER_ID);
 	}
 	
 	/**

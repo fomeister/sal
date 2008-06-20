@@ -13,7 +13,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.common.RMICommandFactory.RMICommand;
-import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
@@ -92,7 +92,7 @@ public class CommandFactory {
 	 * @return the type of the argument
 	 * @throws ConfigurationException if the argument cant be found
 	 */
-	public ArgTypes getArgType(String name) throws ConfigurationException {
+	public ArgumentType getArgType(String name) throws ConfigurationException {
 		return cml.getArgType(name);
 	}	
 	
@@ -176,7 +176,7 @@ public class CommandFactory {
 	 * @throws ConfigurationException if the value cant be converted, the argument cant be found or is of type callback
 	 */
 	public void addArgumentValue(String name, String val) throws ConfigurationException{
-		ArgTypes t;
+		ArgumentType t;
 		if((t= cml.getArgType(name))==null){
 			logger.debug("Cant find argument '"+name+"'");
 			throw new ConfigurationException();
@@ -204,7 +204,7 @@ public class CommandFactory {
 	public Command getCommand() throws ConfigurationException{
 		//Make sure we have all the args and their values
 		String name;
-		ArgTypes t;
+		ArgumentType t;
 		Iterator<String> e = cml.getArgNames().iterator();
 		while(e.hasNext()) {
 			name = e.next();
@@ -263,7 +263,7 @@ public class CommandFactory {
 	 */
 	private void parseArgumentValues(Document d) throws ConfigurationException {
 		String val = null, name;
-		ArgTypes t;
+		ArgumentType t;
 		Iterator<String> e = cml.getArgNames().iterator();
 		while(e.hasNext()) {
 			name = e.next();

@@ -63,7 +63,6 @@ public class OWFSProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		cmls = CMLDescriptionStore.getStore();
 		String mtpt, temp;
 		ProcessOutput c;
 
@@ -100,6 +99,7 @@ public class OWFSProtocol extends AbstractProtocol{
 			e.printStackTrace();
 			throw new ConfigurationException("Could not setup OWFS protocol");
 		}
+		cmls = CMLDescriptionStore.getStore();
 	}
 
 	/* (non-Javadoc)

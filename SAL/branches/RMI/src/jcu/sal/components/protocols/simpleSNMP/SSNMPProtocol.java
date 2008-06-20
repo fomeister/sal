@@ -59,7 +59,6 @@ public class SSNMPProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		cmls = CMLDescriptionStore.getStore();
 		try {
 			agent = getConfig("AgentIP");
 			comm_string = getConfig("CommunityString");
@@ -73,6 +72,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 		try { autodetect = (getConfig("AutodetectOIDs").equals("1") || getConfig("AutodetectOIDs").equalsIgnoreCase("true")) ? true : false;}
 		catch (BadAttributeValueExpException e) {autodetect=true;}
 		
+		cmls = CMLDescriptionStore.getStore();
 		logger.debug("SimpleSNMP protocol configured");
 	}
 

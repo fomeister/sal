@@ -7,7 +7,7 @@ import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.cml.ArgTypes;
+import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
@@ -115,7 +115,7 @@ public abstract class AbstractStore {
 	 * @return the cid associated with this command
 	 * @throws ConfigurationException if the command cant be created
 	 */
-	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, List<ArgTypes> argTypes, List<String> names, ReturnType returnType) throws ConfigurationException{
+	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, List<ArgumentType> argTypes, List<String> names, ReturnType returnType) throws ConfigurationException{
 		//computes the CID
 		Integer cid = priv_cid.get(k);
 		if(cid==null)
@@ -140,7 +140,7 @@ public abstract class AbstractStore {
 		//computes the CID
 		Integer c;
 		CMLDescription cml;
-		List<ArgTypes> t = new Vector<ArgTypes>();
+		List<ArgumentType> t = new Vector<ArgumentType>();
 		List<String> s = new Vector<String>();
 		logger.debug("Adding generic CML for key "+k+", alias: "+aliasName);
 		if(aliasName.equals(GENERIC_ENABLE)){

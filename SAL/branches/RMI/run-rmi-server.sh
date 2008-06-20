@@ -18,5 +18,5 @@ rm ${SENSORS_CONFIG}
 #DEBUG=-Dsun.rmi.loader.logLevel=VERBOSE
 
 
-java -classpath ./lib/*:./bin:../HAL/lib/*:../HAL/bin:../v4l4j/* -Djava.library.path=../v4l4j:../HAL/lib -Djava.rmi.server.codebase="file:${SAL_DIR}/bin/ file:${SAL_DIR}/lib/log4j-1.2.15.jar" ${DEBUG} -Djava.rmi.server.hostname=$1 jcu.sal.agent.rmi.RMIAgentImpl $1 ${PLATFORM_CONFIG} ${SENSORS_CONFIG}
+java -classpath ./lib/*:./bin:../HAL/lib/*:../HAL/bin:../v4l4j/* -Djava.library.path=../v4l4j:../HAL/lib -Djava.rmi.server.codebase="file:${SAL_DIR}/bin/ file:${SAL_DIR}/lib/log4j-1.2.15.jar" ${DEBUG} -Djava.rmi.server.hostname=$1 jcu.sal.agent.RMIAgentImpl $1 ${PLATFORM_CONFIG} ${SENSORS_CONFIG}
 

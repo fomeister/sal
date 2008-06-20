@@ -11,6 +11,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.events.EventHandler;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
@@ -28,15 +29,15 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public class SALAgent implements SALAgentInterface{
+public class SALAgentImpl implements SALAgent{
 	
-	private Logger logger = Logger.getLogger(SALAgent.class);
+	private Logger logger = Logger.getLogger(SALAgentImpl.class);
 	private ProtocolManager pm;
 	private SensorManager sm;
 	private EventDispatcher ev;
 	private HwProbeService hp;
 	
-	public SALAgent(){
+	public SALAgentImpl(){
 		Slog.setupLogger(logger);
 		ev = EventDispatcher.getInstance();
 		pm = ProtocolManager.getProcotolManager();

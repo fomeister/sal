@@ -1,39 +1,30 @@
-package jcu.sal.agent.rmi;
+package jcu.sal.common.agents;
 
 import java.io.NotActiveException;
-import java.rmi.Remote;
-import java.rmi.RemoteException;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Response;
-import jcu.sal.common.RMICommandFactory.RMICommand;
+import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.events.EventHandler;
 
-public interface RMISALAgent extends Remote{
+public interface SALAgent {
 	/**
-	 * This string is the name of the SAL agent stub as found in the RMI registry.
+	 * This method initialises the SAL agent. It parses the platform & sensor configuration files
+	 * and creates the required components as per configuration files. 
+	 * @param pc the platform config file
+	 * @param sc the sensor config file
+	 * @throws ConfigurationException if the files can not be parsed, or the configuration is incorrect
 	 */
-	public static String RMI_STUB_NAME = "RMI SAL Agent";
+	public void start(String pc, String sc) throws ConfigurationException;
 	
 	/**
-	 * This method registers a new SAL client. 
-	 * @param rmiName A unique name associated with the RMI Client. The name is chosen by the caller and must be used in subsequent calls
-	 * to execute() and {un}registerEventHandler().
-	 * @param ipAddress the IP address of the RMI registry the client will use to register its objects. The RMI registry
-	 * will be accessed by this Agent to invoke methods on the Client (StreamCallbacks and EventHandlers) 
-	 * @throws ConfigurationException if this name already exists
-	 * @throws RemoteException if the registry cant be reached
+	 * This method stops the SAL agent
+	 *
 	 */
-	public void registerClient(String rmiName, String ipAddress) throws ConfigurationException, RemoteException;
-	
-	/**
-	 * This method unregisters a SAL client. 
-	 * @param rmiName The unique name associated with the Client
-	 * @throws ConfigurationException if this name already exists
-	 */
-	public void unregisterClient(String rmiName) throws ConfigurationException, RemoteException;
+	public void stop();
 	
 	/*
 	 * Sensor-related methods
@@ -42,20 +33,20 @@ public interface RMISALAgent extends Remote{
 	/**
 	 * This method instanciate a new sensor given its XML document. the returned value is a representation
 	 * of the sensor identifier. If one is specified in the XML document, it will be ignored and replaced
-	 * with a new one (the returned value). public static String RMI_STUB_NAME = "RMI SAL Agent";
+	 * with a new one (the returned value). 
 	 * @param xml the sensor's XML configuration document
 	 * @return a string representing the sensor identifier
 	 * @throws ParserConfigurationException if the XML document cannot be parsed
 	 * @throws ConfigurationException if the XML document is incorrect
 	 */
-	public String addSensor(String xml) throws ConfigurationException, ParserConfigurationException, RemoteException;
+	public String addSensor(String xml) throws ConfigurationException, ParserConfigurationException;
 	
 	/**
 	 * This method removes a sensor given its identifier
 	 * @param sid the sensor identifier
 	 * @throws ConfigurationException if the ID cannot be found
 	 */
-	public void removeSensor(String sid) throws ConfigurationException, RemoteException;
+	public void removeSensor(String sid) throws ConfigurationException;
 	
 	/**
 	 * This method returns an XML document containing the configuration of all currently active sensors.
@@ -63,7 +54,7 @@ public interface RMISALAgent extends Remote{
 	 * sensor may not be currently connected (for instance if its protocol has been removed).
 	 * @return the list of all active sensors as an XML doc
 	 */
-	public String listActiveSensors() throws RemoteException;
+	public String listActiveSensors();
 	
 	/**
 	 * This method returns an XML document containing the configuration of all known sensors.
@@ -72,7 +63,7 @@ public interface RMISALAgent extends Remote{
 	 * startup.
 	 * @return the list of all known sensors as an XML doc
 	 */
-	public String listSensors() throws RemoteException;
+	public String listSensors();
 	
 	/**
 	 * This method instructs a sensor identified by sid to execute the command c 
@@ -80,7 +71,7 @@ public interface RMISALAgent extends Remote{
 	 * @param sid the target sensor identifier
 	 * @return the result
 	 */
-	public Response execute(RMICommand c, String sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException, RemoteException;
+	public Response execute(Command c, String sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException;
 	
 	/**
 	 * This method returns the CML document for a given sensor
@@ -88,7 +79,7 @@ public interface RMISALAgent extends Remote{
 	 * @return the CML doc
 	 * @throws ConfigurationException if the CML doc cant be found
 	 */
-	public String getCML(String sid) throws ConfigurationException, NotActiveException, RemoteException;
+	public String getCML(String sid) throws ConfigurationException, NotActiveException;
 	
 	/*
 	 * Protocols-related methods 
@@ -103,41 +94,38 @@ public interface RMISALAgent extends Remote{
 	 * @throws ParserConfigurationException if the XML document cannot be parsed
 	 * @throws ConfigurationException if the XML document is incorrect
 	 */
-	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserConfigurationException, RemoteException;
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserConfigurationException;
 	
 	/**
 	 * This method removes a protocol given its ID. The protocol is first stopped so commands are no further 
 	 * accepted. It then removes all associated sensors and their configuration if <code>removeSensors</code> is set to true. 
 	 * @throws ConfigurationException if the ID cannot be found
 	 */
-	public void removeProtocol(String pid, boolean removeSensors) throws ConfigurationException, RemoteException;
+	public void removeProtocol(String pid, boolean removeSensors) throws ConfigurationException;
 	
 	/*
 	 * Event-related methods 
 	 */
 	
 	/**
-	 * This method registers an RMI event handler. Whenever the producer <code>producerID</code> generates an event, the method
-	 * <code>handle</code> will be called on the RMI EventHandler <code>ev</code> with a matching Event object as the sole argument.
+	 * This method registers an event handler. Whenever the producer <code>producerID</code> generates an event, the method
+	 * <code>handle</code> will be called on the EventHandler <code>ev</code> with a matching Event object as the sole argument.
 	 * A Producers ID is a protocol name. Three special producers also exist: <code>SensorManager.PRODUCER_ID</code> which generates
 	 * <code>SensorNodeEvent</code> events when sensors are created and deleted, <code>ProtocolManager.PRODUCER_ID</code> which
 	 * generates <code>ProtocolListEvent</code> events when protocols are created and deleted, <code>SensorState.PRODUCER_ID</code>
 	 * which generates <code>SensorStateEvent</code> events when a sensor is connected or disconnected.  
-	 * @param rmiName the name of the RMI client as previously registered with registerClient().
-	 * @param objName the name of the RMI event handler to lookup in the RMI registry.
+	 * @param eh an instance of a class implementing the EventHandler interface which will receive events.
 	 * @param producerID the identifier of a protocol or the special identifiers "SensorManager", "ProtocolManager" or "SensorState"
 	 * @throws ConfigurationException if the given producerID doesnt exist
-	 * @throws RemoteException if the RMI event handler obejct cant be found in the RMI registry
 	 */
-	public void registerEventHandler(String rmiName, String objName, String producerID) throws ConfigurationException, RemoteException;
+	public void registerEventHandler(EventHandler eh, String producerID) throws ConfigurationException;
 	
 	/**
 	 * This method unregisters an EventHandler previously registered with <code>registerEventHandler()</code>
-	 * @param rmiName the name of the RMI client as previously registered with registerClient().
-	 * @param objName the name of the object to lookup in the RMI registry.
+	 * @param eh the EventHandler to re be removed
 	 * @param producerID the producer to which it is associated
 	 * @throws ConfigurationException if the handler can not be found/removed
-	 * @throws RemoteException if the RMI event handler obejct cant be found in the RMI registry
 	 */
-	public void unregisterEventHandler(String rmiName, String objName, String producerID) throws ConfigurationException, RemoteException;
+	public void unregisterEventHandler(EventHandler eh, String producerID) throws ConfigurationException;
 }
+
