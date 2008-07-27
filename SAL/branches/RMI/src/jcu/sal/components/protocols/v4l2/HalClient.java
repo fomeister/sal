@@ -30,6 +30,10 @@ public class HalClient extends AbstractHalClient {
 								+"<EndPoint name=\"%SUBSYSNAME%\" type=\"%SUBSYS%\"/>"
 								+"<parameters>"
 								+"<Param name=\"deviceFile\" value=\"%DEVICE%\"/>"
+								+"<Param name=\"channel\" value=\"0\"/>"
+								+"<Param name=\"standard\" value=\"0\"/>"
+								+"<Param name=\"width\" value=\"%WIDTH%\"/>"
+								+"<Param name=\"height\" value=\"%HEIGHT%\"/>"
                     			+"</parameters></Protocol>";
                     			
 
@@ -53,6 +57,7 @@ public class HalClient extends AbstractHalClient {
 		logger.debug("Found "+l.get("8-info.product")+" - "+l.get("9-info.vendor")+ " on "+l.get("5-deviceFile"));
 		Document d = null;
 		String doc;
+		int width=0, height=0;
 
 		try {
 			//check if a running protocol already uses our device file (can happen during the initial run if for instance a protocol is 
@@ -76,6 +81,16 @@ public class HalClient extends AbstractHalClient {
 			doc = doc.replaceFirst("%SUBSYS%", l.get("7-linux.subsystem"));
 			//Add the device file
 			doc = doc.replaceFirst("%DEVICE%", l.get("5-deviceFile"));
+			//check width and height
+			if(l.get("7-linux.subsystem").equals("pci")){
+				//if pci capture card, limit the width and height, otherwise, bttv 
+				//returns a green or blue image is the resolution is too high...
+				width=640;
+				height=480;
+			}//leave width and height = 0 for usb webcams
+			doc = doc.replaceFirst("%WIDTH%", String.valueOf(width));
+			doc = doc.replaceFirst("%HEIGHT%", String.valueOf(height));
+				
 			try {
 				d = XMLhelper.createDocument(doc);
 				logger.debug(doc);
