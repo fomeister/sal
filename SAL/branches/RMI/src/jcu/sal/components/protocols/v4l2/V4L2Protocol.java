@@ -25,8 +25,8 @@ import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Node;
 
-import au.edu.jcu.v4l4j.FrameGrabber;
 import au.edu.jcu.v4l4j.Control;
+import au.edu.jcu.v4l4j.FrameGrabber;
 import au.edu.jcu.v4l4j.exceptions.V4L4JException;
 
 public class V4L2Protocol extends AbstractProtocol {
@@ -101,7 +101,9 @@ public class V4L2Protocol extends AbstractProtocol {
 				fg = new FrameGrabber(dev, ch, std, intialQuality);
 			else 
 				fg = new FrameGrabber(dev, intialQuality);
+			
 			fg.init();
+
 		} catch (V4L4JException e) {
 			logger.error("Couldnt create/initialise FrameGrabber object");
 			e.printStackTrace();

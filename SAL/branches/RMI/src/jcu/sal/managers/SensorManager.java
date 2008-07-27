@@ -180,8 +180,10 @@ public class SensorManager extends AbstractManager<Sensor> {
 				Iterator<Sensor> i = ctable.values().iterator();
 				while(i.hasNext()) {
 					s = i.next();
-					tmp = generateSensorConfig(s.getID().getName(),s.getNativeAddress(), new ProtocolID(s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG)));
-					XMLhelper.addChild(parent, tmp);
+					if(!s.isDisconnected())	{
+						tmp = generateSensorConfig(s.getID().getName(),s.getNativeAddress(), new ProtocolID(s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG)));
+						XMLhelper.addChild(parent, tmp);
+					}
 				}	
 			}
 	    } catch (XPathExpressionException e) {
