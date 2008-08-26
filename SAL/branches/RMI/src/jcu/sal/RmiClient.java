@@ -78,6 +78,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	private RMISALAgent agent;
 	private Registry agentRegistry, ourRegistry;
 	private String RMIname;
+	private BufferedReader b;
 	
 	public RmiClient(String rmiName, String agentRMIRegIP, String ourIP) throws RemoteException {
 		agentRegistry = LocateRegistry.getRegistry(agentRMIRegIP);
@@ -89,8 +90,10 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RemoteException();
-		} 
+		}
+		b = new BufferedReader(new InputStreamReader(System.in));
 	}
+	
 	
 	public void start(String ourRmiIP) throws ConfigurationException{
 		
@@ -120,82 +123,98 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		}
 	}
 	
-	public void run(){
-		BufferedReader b = new BufferedReader(new InputStreamReader(System.in));
-		int sid=0, j;
-		String str, str2;
+	public int getAction(){
+		int sid=-1;;
+		boolean ok=false;
+		System.out.println("Enter either :\n\ta sensor id to send a command\n\t-1 to quit\n\t-2 to see a list of active sensors (XML)");
+		System.out.println("\t-3 to see a list of active sensors (shorter, human readable listing)");
+		System.out.println("\t-4 to add a new protocol\n\t-5 to remove a protocol\n\t-6 to add a new sensor\n\t-7 to remove a sensor");
+		System.out.println("\t-8 to list all sensors (XML)\n\t-9 to list all sensors(shorter, human readable listing)");
+		while(!ok)
+			try {
+				sid = Integer.parseInt(b.readLine());
+				ok = true;
+			} catch (Exception e) {}
+
+		return sid;
+	}
+	
+	public void doActionSensor(int sid) throws Exception{
 		Document d;
+		String str, str2;
+		RMICommandFactory cf;
 		RMICommand c = null;
 		Response res;
-		RMICommandFactory cf;
 		ArgumentType t;
+		int j;
+		
+		System.out.println("\n\nHere is the CML document for this sensor:");
+		d = XMLhelper.createDocument(agent.getCML(String.valueOf(sid)));
+		System.out.println(XMLhelper.toString(d));
+		System.out.println("Print human-readable form ?(Y/n)");
+		if(!b.readLine().equals("n")){
+			NodeList nl = XMLhelper.getNodeList("/commandDescriptions/CommandDescription", XMLhelper.createDocument(agent.getCML(String.valueOf(sid))));
+			for (int i = 0; i < nl.getLength(); i++) {
+				str = XMLhelper.getAttributeFromName("cid", nl.item(i));
+				System.out.print("CID: "+str);
+				System.out.println(" - "+XMLhelper.getTextValue("//CommandDescription[@cid=\""+str+"\"]/ShortDescription", nl.item(i).getOwnerDocument()));
+			}
+		}
+		System.out.println("Enter a command id:");
+		j=Integer.parseInt(b.readLine());
+		
+		cf = new RMICommandFactory(d, j);
+		boolean argOK=false, argsDone=false;
+		while(!argsDone) {
+			Iterator<String> e = cf.listMissingArgNames().iterator();
+			while(e.hasNext()){
+				str = e.next();
+				t = cf.getArgType(str);
+				if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+					while(!argOK) {
+						System.out.println("Enter value of type '"+t.getArgType()+"' for argument '"+str+"'");
+						str2 = b.readLine();
+						try {cf.addArgumentValue(str, str2); argOK = true;}
+						catch (ConfigurationException e1) {System.out.println("Wrong value"); argOK=false;}
+					}
+				} else {
+					cf.addArgumentCallback(str,RMIname, RMIname);
+					viewers.put(String.valueOf(sid), new JpgMini(String.valueOf(sid)));	
+				}
+			}
+			try {c = cf.getCommand(); argsDone=true;}
+			catch (ConfigurationException e1) {System.out.println("Values missing"); throw e1; }//argsDone=false;}
+		}
+		
+		res = agent.execute(c, String.valueOf(sid));
+		String xpath=CMLConstants.XPATH_CMD_DESC+"[@"+CMLConstants.CID_ATTRIBUTE+"=\""+j+"\"]/"+CMLConstants.RETURN_TYPE_TAG;
+		try {
+			String type = XMLhelper.getAttributeFromName(xpath, CMLConstants.TYPE_ATTRIBUTE, d);
+			if(type.equals(CMLConstants.RET_TYPE_BYTE_ARRAY)) {
+				JpgMini v = new JpgMini(String.valueOf(sid));
+				v.setImage(res.getBytes());
+				v.setVisible();
+			} else {
+				System.out.println("Command returned: " + res.getString());
+			}
+		} catch (Exception e){
+			System.out.println("Cant find the return type");
+			System.out.println("XPATH: "+xpath);
+			e.printStackTrace();
+		}
+	}
+	
+	public void run(){
+		int sid=0;
+		String str, str2;
 		StringBuilder sb = new StringBuilder();	
 
-		while(sid!=-1) {
-			System.out.println("Enter either :\n\ta sensor id to send a command\n\t-1 to quit\n\t-2 to see a list of active sensors (XML)");
-			System.out.println("\t-3 to see a list of active sensors (shorter, human readable listing)");
-			System.out.println("\t-4 to add a new protocol\n\t-5 to remove a protocol\n\t-6 to add a new sensor\n\t-7 to remove a sensor");
-			System.out.println("\t-8 to list all sensors (XML)\n\t-9 to list all sensors(shorter, human readable listing)");
+		while((sid=getAction())!=-1) {
 			try {
-				sid=Integer.parseInt(b.readLine());
-				if(sid>=0) {
-					System.out.println("\n\nHere is the CML document for this sensor:");
-					d = XMLhelper.createDocument(agent.getCML(String.valueOf(sid)));
-					System.out.println(XMLhelper.toString(d));
-					System.out.println("Print human-readable form ?(Y/n)");
-					if(!b.readLine().equals("n")){
-						NodeList nl = XMLhelper.getNodeList("/commandDescriptions/CommandDescription", XMLhelper.createDocument(agent.getCML(String.valueOf(sid))));
-						for (int i = 0; i < nl.getLength(); i++) {
-							str = XMLhelper.getAttributeFromName("cid", nl.item(i));
-							System.out.print("CID: "+str);
-							System.out.println(" - "+XMLhelper.getTextValue("//CommandDescription[@cid=\""+str+"\"]/ShortDescription", nl.item(i).getOwnerDocument()));
-						}
-					}
-					System.out.println("Enter a command id:");
-					j=Integer.parseInt(b.readLine());
-					
-					cf = new RMICommandFactory(d, j);
-					boolean argOK=false, argsDone=false;
-					while(!argsDone) {
-						Iterator<String> e = cf.listMissingArgNames().iterator();
-						while(e.hasNext()){
-							str = e.next();
-							t = cf.getArgType(str);
-							if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
-								while(!argOK) {
-									System.out.println("Enter value of type '"+t.getArgType()+"' for argument '"+str+"'");
-									str2 = b.readLine();
-									try {cf.addArgumentValue(str, str2); argOK = true;}
-									catch (ConfigurationException e1) {System.out.println("Wrong value"); argOK=false;}
-								}
-							} else {
-								cf.addArgumentCallback(str,RMIname, RMIname);
-								viewers.put(String.valueOf(sid), new JpgMini(String.valueOf(sid)));	
-							}
-						}
-						try {c = cf.getCommand(); argsDone=true;}
-						catch (ConfigurationException e1) {System.out.println("Values missing"); throw e1; }//argsDone=false;}
-					}
-					
-					res = agent.execute(c, String.valueOf(sid));
-					String xpath=CMLConstants.XPATH_CMD_DESC+"[@"+CMLConstants.CID_ATTRIBUTE+"=\""+j+"\"]/"+CMLConstants.RETURN_TYPE_TAG;
-					try {
-						String type = XMLhelper.getAttributeFromName(xpath, CMLConstants.TYPE_ATTRIBUTE, d);
-						if(type.equals(CMLConstants.RET_TYPE_BYTE_ARRAY)) {
-							JpgMini v = new JpgMini(String.valueOf(sid));
-							v.setImage(res.getBytes());
-							v.setVisible();
-						} else {
-							System.out.println("Command returned: " + res.getString());
-						}
-					} catch (Exception e){
-						System.out.println("Cant find the return type");
-						System.out.println("XPATH: "+xpath);
-						e.printStackTrace();
-					}
-					
-										
-				} else if(sid==-2)
+	
+				if(sid>=0)
+					doActionSensor(sid);										
+				else if(sid==-2)
 					System.out.println(agent.listActiveSensors());
 				else if(sid==-3){
 					NodeList nl = XMLhelper.getNodeList("/SAL/SensorConfiguration/Sensor", XMLhelper.createDocument(agent.listActiveSensors()));

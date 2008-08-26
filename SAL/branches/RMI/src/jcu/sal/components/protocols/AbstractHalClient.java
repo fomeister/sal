@@ -109,7 +109,7 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 		try {pm.createComponent(d).start();}
 		catch (Throwable t){
 			logger.error("Cant instanciate protocol");
-			//t.printStackTrace();
+			t.printStackTrace();
 			throw new ConfigurationException();
 		}
 	}

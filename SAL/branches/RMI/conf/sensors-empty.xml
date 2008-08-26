@@ -3,50 +3,50 @@
     <SensorConfiguration>
         <Sensor sid="1">
             <parameters>
-                <Param name="ProtocolName" value="osdata"/>
-                <Param name="Address" value="NiceTime"/>
+                <Param name="ProtocolName" value="v4l-/dev/video1"/>
+                <Param name="Address" value="CCD"/>
             </parameters>
         </Sensor>
         <Sensor sid="2">
             <parameters>
                 <Param name="ProtocolName" value="osdata"/>
-                <Param name="Address" value="IdleTime"/>
+                <Param name="Address" value="NiceTime"/>
             </parameters>
         </Sensor>
         <Sensor sid="3">
             <parameters>
                 <Param name="ProtocolName" value="osdata"/>
-                <Param name="Address" value="UserTime"/>
+                <Param name="Address" value="IdleTime"/>
             </parameters>
         </Sensor>
         <Sensor sid="4">
             <parameters>
-                <Param name="ProtocolName" value="v4l-/dev/video3"/>
-                <Param name="Address" value="CCD"/>
+                <Param name="ProtocolName" value="osdata"/>
+                <Param name="Address" value="UserTime"/>
             </parameters>
         </Sensor>
         <Sensor sid="5">
             <parameters>
-                <Param name="ProtocolName" value="osdata"/>
-                <Param name="Address" value="LoadAvg15"/>
+                <Param name="ProtocolName" value="v4l-/dev/video0"/>
+                <Param name="Address" value="CCD"/>
             </parameters>
         </Sensor>
         <Sensor sid="6">
             <parameters>
                 <Param name="ProtocolName" value="osdata"/>
-                <Param name="Address" value="LoadAvg1"/>
+                <Param name="Address" value="LoadAvg15"/>
             </parameters>
         </Sensor>
         <Sensor sid="7">
             <parameters>
                 <Param name="ProtocolName" value="osdata"/>
-                <Param name="Address" value="SystemTime"/>
+                <Param name="Address" value="LoadAvg1"/>
             </parameters>
         </Sensor>
         <Sensor sid="8">
             <parameters>
-                <Param name="ProtocolName" value="v4l-/dev/video2"/>
-                <Param name="Address" value="CCD"/>
+                <Param name="ProtocolName" value="osdata"/>
+                <Param name="Address" value="SystemTime"/>
             </parameters>
         </Sensor>
         <Sensor sid="9">
@@ -57,26 +57,8 @@
         </Sensor>
         <Sensor sid="10">
             <parameters>
-                <Param name="ProtocolName" value="v4l-/dev/video1"/>
-                <Param name="Address" value="CCD"/>
-            </parameters>
-        </Sensor>
-        <Sensor sid="11">
-            <parameters>
                 <Param name="ProtocolName" value="osdata"/>
                 <Param name="Address" value="LoadAvg5"/>
-            </parameters>
-        </Sensor>
-        <Sensor sid="12">
-            <parameters>
-                <Param name="ProtocolName" value="v4l-/dev/video0"/>
-                <Param name="Address" value="CCD"/>
-            </parameters>
-        </Sensor>
-        <Sensor sid="13">
-            <parameters>
-                <Param name="ProtocolName" value="v4l-/dev/video4"/>
-                <Param name="Address" value="CCD"/>
             </parameters>
         </Sensor>
     </SensorConfiguration>
