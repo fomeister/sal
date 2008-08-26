@@ -2,39 +2,19 @@
 <SAL>
     <PlatformConfiguration>
         <protocols>
-            <Protocol name="osdata" type="PlatformData">
-                <EndPoint name="fs-osdata" type="fs"/>
-                <parameters/>
-            </Protocol>
-            <Protocol name="v4l-/dev/video3" type="v4l2">
-                <EndPoint name="pci-/dev/video3" type="pci"/>
-                <parameters>
-                    <Param name="deviceFile" value="/dev/video3"/>
-                    <Param name="channel" value="0"/>
-                    <Param name="standard" value="0"/>
-                    <Param name="width" value="640"/>
-                    <Param name="height" value="480"/>
-                </parameters>
-            </Protocol>
-            <Protocol name="v4l-/dev/video2" type="v4l2">
-                <EndPoint name="pci-/dev/video2" type="pci"/>
-                <parameters>
-                    <Param name="deviceFile" value="/dev/video2"/>
-                    <Param name="channel" value="0"/>
-                    <Param name="standard" value="0"/>
-                    <Param name="width" value="640"/>
-                    <Param name="height" value="480"/>
-                </parameters>
-            </Protocol>
             <Protocol name="v4l-/dev/video1" type="v4l2">
-                <EndPoint name="pci-/dev/video1" type="pci"/>
+                <EndPoint name="usb-/dev/video1" type="usb"/>
                 <parameters>
                     <Param name="deviceFile" value="/dev/video1"/>
                     <Param name="channel" value="0"/>
                     <Param name="standard" value="0"/>
-                    <Param name="width" value="640"/>
-                    <Param name="height" value="480"/>
+                    <Param name="width" value="0"/>
+                    <Param name="height" value="0"/>
                 </parameters>
+            </Protocol>
+            <Protocol name="osdata" type="PlatformData">
+                <EndPoint name="fs-osdata" type="fs"/>
+                <parameters/>
             </Protocol>
             <Protocol name="v4l-/dev/video0" type="v4l2">
                 <EndPoint name="pci-/dev/video0" type="pci"/>
@@ -44,16 +24,6 @@
                     <Param name="standard" value="0"/>
                     <Param name="width" value="640"/>
                     <Param name="height" value="480"/>
-                </parameters>
-            </Protocol>
-            <Protocol name="v4l-/dev/video4" type="v4l2">
-                <EndPoint name="usb-/dev/video4" type="usb"/>
-                <parameters>
-                    <Param name="deviceFile" value="/dev/video4"/>
-                    <Param name="channel" value="0"/>
-                    <Param name="standard" value="0"/>
-                    <Param name="width" value="0"/>
-                    <Param name="height" value="0"/>
                 </parameters>
             </Protocol>
         </protocols>

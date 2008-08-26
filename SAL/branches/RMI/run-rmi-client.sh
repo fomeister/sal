@@ -4,5 +4,6 @@ if [ $# -ne 3 ]; then
 	exit 1
 fi
 
-java -classpath ./lib/*:./bin -Djava.rmi.server.codebase=file:/home/gilles/workspace/SAL/bin/ -Djava.rmi.server.hostname=$2 jcu.sal.RmiClient $1 $2 $3
+DIR="$(dirname $0)"
+java -classpath ./lib/*:./classes -Djava.rmi.server.codebase="file:${DIR}/classes/" -Djava.rmi.server.hostname=$2 jcu.sal.RmiClient $1 $2 $3
 
