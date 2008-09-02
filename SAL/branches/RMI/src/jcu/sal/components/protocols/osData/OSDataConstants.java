@@ -4,7 +4,7 @@ public class OSDataConstants {
 	/**
 	 * The string used in PCML docs to represent this protocol 
 	 */
-	public static final String OSDATAPROTOCOL_TYPE = "PlatformData";
+	public static final String PROTOCOL_TYPE = "PlatformData";
 	
 	/**
 	 * The string used in the procol parameters section of PCML docs

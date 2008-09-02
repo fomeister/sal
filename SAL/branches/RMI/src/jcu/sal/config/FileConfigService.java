@@ -330,7 +330,7 @@ public class FileConfigService{
 	 * @return a new SensorID as found in the configuration document
 	 * @throws ConfigurationException if the sensor Id cant be found
 	 */
-	public SensorID findSID(Node n) throws ConfigurationException{
+	public SensorID findSensor(Node n) throws ConfigurationException{
 		List<String> params = null;
 		String addr=null, pname=null, xpathQuery;
 		int i=0;		

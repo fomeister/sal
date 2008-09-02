@@ -40,7 +40,7 @@ public class V4L2Protocol extends AbstractProtocol {
 	public final static String STANDARD_ATTRIBUTE_TAG= "standard";	
 	public final static String CONTROL_VALUE_ATTRIBUTE_TAG = "ControlValue";
 	
-	private int intialQuality = 80;
+	private int intialQuality = 60;
 
 	
 	private FrameGrabber fg = null;
@@ -54,8 +54,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			Node d){
 		super(i, PROTOCOL_TYPE , c, d);
 		Slog.setupLogger(logger);
-		autodetect = true;
-		AUTODETECT_INTERVAL = -1; //run only once
+		autoDetectionInterval = -1; //run only once
 		supportedEndPointTypes.add(PCIEndPoint.PCIENDPOINT_TYPE);
 		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
 		streaming = false;

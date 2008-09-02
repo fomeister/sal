@@ -116,8 +116,8 @@ public class SensorManager extends AbstractManager<Sensor> {
 		 */
 		Identifier id = null;
 		try {
-			//we first check to see if it exists in the sensor configuration file
-			id =conf.findSID(n);
+			//we first check to see if the sensor exists in the sensor configuration file
+			id =conf.findSensor(n);
 			logger.debug("Found the sid "+id.getName()+" in sensor config file");
 		} catch (Exception e) {
 			//we havent found a matching sensor in the sensor config file, so we are going to generate a new ID
@@ -246,9 +246,11 @@ public class SensorManager extends AbstractManager<Sensor> {
 	
 	/**
 	 * this method generates a partial SML doc using the newly detected sensor's
-	 * native address. The SML document is partial because it contains the 
-	 * placeholder 'SensorManager.SENSORID_MARKER' where the final sensor id will be.
-	 * @param the newly detected sensor's native addres
+	 * native address. The SML document is partial because it may or may not contains the 
+	 * sensor ID if sid is null(in which case the sid attribue is omitted from the Sensor tag).
+	 * @param sid the sensor id (can be null)
+	 * @param nativeAddress the newly detected sensor's native addres
+	 * @param pid the protocol id associated with this sensor
 	 * @return a string which is the SML doc for this new sensor  
 	 * @throws ParserConfigurationException If the document can not be created
 	 */

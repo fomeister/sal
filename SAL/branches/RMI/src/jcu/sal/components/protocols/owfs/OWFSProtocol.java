@@ -52,8 +52,7 @@ public class OWFSProtocol extends AbstractProtocol{
 		super(i,OWFSPROTOCOL_TYPE ,c,d);
 		Slog.setupLogger(logger);
 		epIds = new String[]{DS2490_USBID};
-		autodetect = true;
-		AUTODETECT_INTERVAL = 100;
+		autoDetectionInterval = 100;
 		multipleInstances = false;
 		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
 	}
