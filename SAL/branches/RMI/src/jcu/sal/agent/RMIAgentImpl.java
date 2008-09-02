@@ -96,7 +96,6 @@ public class RMIAgentImpl implements RMISALAgent {
 				throw new ConfigurationException();
 			}	
 		}
-		System.out.println("Running command "+c.getCID()+" on sensor "+sid);
 		return agent.execute(CommandFactory.getCommand(c, target), sid);
 	}
 

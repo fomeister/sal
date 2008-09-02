@@ -18,7 +18,7 @@ import au.edu.jcu.haldbus.match.GenericMatch;
 public class HalClient extends AbstractHalClient {
 	private static Logger logger = Logger.getLogger(HalClient.class);
 
-	private final String defaultDoc = "<Protocol name=\"osdata\" type=\""+OSDataConstants.OSDATAPROTOCOL_TYPE+"\">"
+	private final String defaultDoc = "<Protocol name=\"osdata\" type=\""+OSDataConstants.PROTOCOL_TYPE+"\">"
 								+"<EndPoint name=\""+FSEndPoint.FSENDPOINT_TYPE+"-osdata\" type=\""+FSEndPoint.FSENDPOINT_TYPE+"\"/>"
 								+"<parameters/>"
 								//+"<Param name=\"deviceFile\" value=\"%DEVICE%\"/>"
@@ -35,7 +35,7 @@ public class HalClient extends AbstractHalClient {
 	@Override
 	public void deviceAdded(Map<String,String> l) {
 		logger.debug("Found root filesystem");
-		if(!isProtocolRunning(OSDataConstants.OSDATAPROTOCOL_TYPE)){
+		if(!isProtocolRunning(OSDataConstants.PROTOCOL_TYPE)){
 			try {
 				createProtocol(XMLhelper.createDocument(defaultDoc));
 			} catch (Exception e) {

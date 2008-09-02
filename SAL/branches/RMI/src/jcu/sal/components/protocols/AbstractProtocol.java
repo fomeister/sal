@@ -46,13 +46,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	public static final String PROTOCOLNAME_TAG = "name";
 	public static final String PROTOCOL_TAG="Protocol";
 	public static final String PROTOCOLSECTION_TAG="protocols";
-	
-	/**
-	 * how often the autodetection process should kick in (in milliseconds)
-	 * if this value is negative, then the autodetection thread is executed only once
-	 * if it is set to 0, the autodetection thread never starts
-	 */
-	protected int AUTODETECT_INTERVAL = 2 * 1000;
+
 	
 	/**
 	 * A list of endpoints types supported by this protocol
@@ -86,10 +80,16 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 */
 	private AtomicBoolean started;
 	
+	
 	/**
-	 * Can the protocol automatically detect sensor addition/removal ? 
+	 * Can the protocol automatically detect sensor addition/removal ?
+	 * how often the autodetection process should kick in (in milliseconds)
+	 * if this value is negative, then the autodetection thread is executed only once
+	 * if it is set to 0, the autodetection thread never starts
+	 * A positive value specifies how often (in milliseconds) the autodetect thread will try to detect
+	 * what s cuccrently connected
 	 */
-	protected boolean autodetect;
+	protected int autoDetectionInterval = 2 * 1000;
 	private Autodetection autodetectThread = null;
 	
 	/**
@@ -114,7 +114,6 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 		Slog.setupLogger(logger);
 		started= new AtomicBoolean(false);
 		removed=new AtomicBoolean(false);
-		autodetect = false;
 
 		
 		/* init the rest of the fields */
@@ -434,29 +433,40 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	}
 	
 	/**
-	 * Check whether a endPoint type is supported by this protocol
+	 * This method is called by parseConfig() when this object is contructed to 
+	 * check whether a endPoint type is supported by this protocol
 	 * @param String the EndPoint type
 	 */
-	public final boolean isEPTypeSupported(String type) {
+	private final boolean isEPTypeSupported(String type) {
 		return supportedEndPointTypes.contains(type);
 	}
 	
 	/**
-	 * Check whether a sensor is currently plugged-in/reachable/readable 
+	 * This method is called by associateSensor() and start() to
+	 * check whether a sensor is currently plugged-in/reachable/readable 
 	 * and set its state accordingly (protocol specific)
 	 * @param sensor the sensor to be probed
 	 */
-	public final boolean probeSensor(Sensor sensor) {
+	private final boolean probeSensor(Sensor sensor) {
 		if(started.get())
 			synchronized(sensor) {return internal_probeSensor(sensor);}
 		return false;
-	}
+	}	
+
+	/**
+	 * This method is called when the protocol is started and when a new sensor is associated with this protocol.
+	 * It must check whether a sensor is currently plugged-in/reachable/readable and set its state accordingly 
+	 * using s.enable(). The sensor must NOT be removed ! (calls to this methods are synchronized wrt. commands)
+	 * @param s the sensor to be probed
+	 */
+	protected abstract boolean internal_probeSensor(Sensor s);
 	
 	/**
-	 * Check whether a sensor is supported by this protocol
+	 * This method is called by associateSensor() and getCML() to
+	 * check whether a sensor is supported by this protocol
 	 * @param sensor the sensor to be probed
 	 */
-	public final boolean isSensorSupported(Sensor s) {
+	private final boolean isSensorSupported(Sensor s) {
 		try {
 			if(s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG).equals(id.getName())) {
 				return internal_isSensorSupported(s);
@@ -475,13 +485,6 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 */
 	protected abstract boolean internal_isSensorSupported(Sensor s);
 	
-	/**
-	 * This method is called when the protocol is started and when a new sensor is associated with this protocol.
-	 * It must check whether a sensor is currently plugged-in/reachable/readable and set its state accordingly 
-	 * using s.enable(). The sensor must NOT be removed ! (calls to this methods are synchronized wrt. commands)
-	 * @param s the sensor to be probed
-	 */
-	protected abstract boolean internal_probeSensor(Sensor s);
 
 	/**
 	 * This method must stop the protocol. Calls to this method are synchronized wrt to calls to execute(),
@@ -507,33 +510,11 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	/**
 	 * Parse the configuration of the protocol itself.
 	 * !!! this method is called from the super class constructor and BEFORE the subclass constructor !!!
-	 * !!! therefore none of the fields from teh subclass are accessible. This method should only check!!
+	 * !!! therefore none of the fields from the subclass are accessible. This method should only check!!
 	 * !!! that the required config directive are present and nothing more !!!
 	 */
 	protected abstract void internal_parseConfig() throws ConfigurationException;
 	
-	/**
-	 * Returns the CML store key for a sensor if supported. The key is the one used by the CML store:
-	 * one CML doc is associated with one key (sensor native address, sensor family, ...)
-	 * @param s the sensor
-	 * @return the CML store key as a string
-	 */
-	protected abstract String internal_getCMLStoreKey(Sensor s) throws ConfigurationException;
-	
-	/**
-	 * this method should be overriden by protocols which provide sensor autodetection
-	 * and return a list of native address (strings) of currently connected/visible sensors 
-	 */
-	protected List<String> detectConnectedSensors() {
-		logger.debug(id.toString() + "Not configured for autodetection");
-		return null;
-	}
-	
-	/*
-	 * (non-Javadoc)
-	 * @see jcu.sal.components.EndPoints.DeviceListener#adapterChange(int)
-	 */
-	public void adapterChange(int n, String id){}
 	
 	/**
 	 * This method returns the CML docu for a given sensor
@@ -563,19 +544,38 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 		throw new ConfigurationException("Sensor "+ i.toString()+" is not associated with this protocol");
 	}
 	
+	/**
+	 * Returns the CML store key for a sensor if supported. The key is the one used by the CML store:
+	 * one CML doc is associated with one key (sensor native address, sensor family, ...)
+	 * @param s the sensor
+	 * @return the CML store key as a string
+	 */
+	protected abstract String internal_getCMLStoreKey(Sensor s) throws ConfigurationException;
+	
+	/**
+	 * this method should be overriden by protocols which provide sensor autodetection
+	 * and return a list of native address (strings) of currently connected/visible sensors 
+	 */
+	protected List<String> detectConnectedSensors() {
+		logger.debug(id.toString() + "Not configured for autodetection");
+		return null;
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.components.EndPoints.DeviceListener#adapterChange(int)
+	 */
+	public void adapterChange(int n, String id){}
+	
 	protected final synchronized void startAutodetectThread(){
-		if(autodetectThread==null || !autodetectThread.isAlive()) {
+		if(autoDetectionInterval != 0 && (autodetectThread==null || !autodetectThread.isAlive())) {
 			//Start the sensor monitoring thread
 			autodetectThread = new Autodetection();
-			if(autodetect && AUTODETECT_INTERVAL!=0) {
-				logger.debug("Starting autodetect thread");
-				autodetectThread.start();
-			} else if (AUTODETECT_INTERVAL==0){
-				logger.info("Autodetect interval set to 0 in the protocol config.");
-				logger.info("Disabling sensor autodetection");
-			} else {
-				logger.debug("Sensor autodetection not supported");
-			}
+			logger.debug("Starting autodetect thread");
+			autodetectThread.start();
+		} else {
+			logger.info("Autodetect interval set to 0 in the protocol config.");
+			logger.info("Disabling sensor autodetection");
 		}
 	}
 	
@@ -680,8 +680,8 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 							logger.debug("disconnecting "+stmp.toString());
 							stmp.disconnect();
 					}
-					if(AUTODETECT_INTERVAL > 0)
-						Thread.sleep(Long.valueOf(AUTODETECT_INTERVAL));
+					if(autoDetectionInterval > 0)
+						Thread.sleep(Long.valueOf(autoDetectionInterval));
 					else 
 						interrupt();
 				}

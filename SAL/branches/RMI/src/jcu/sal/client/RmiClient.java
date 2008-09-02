@@ -1,7 +1,15 @@
-package jcu.sal;
+package jcu.sal.client;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.channels.ClosedChannelException;
+import java.rmi.AccessException;
+import java.rmi.NotBoundException;
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
@@ -11,24 +19,22 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
-import jcu.sal.agent.SALAgentImpl;
-import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Constants;
+import jcu.sal.common.RMICommandFactory;
 import jcu.sal.common.Response;
-import jcu.sal.common.CommandFactory.Command;
-import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.RMICommandFactory.RMICommand;
+import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
-import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.cml.RMIStreamCallback;
 import jcu.sal.common.events.Event;
-import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.events.RMIEventHandler;
 import jcu.sal.utils.XMLhelper;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
-public class SALClient implements EventHandler, StreamCallback{
-	private static final long serialVersionUID = -8376295971546676596L;
+public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	
 	public static class JpgMini {
 		private JLabel l;
@@ -49,7 +55,9 @@ public class SALClient implements EventHandler, StreamCallback{
 	    
 	    public void setImage(byte[] b) {
 	    	l.setIcon(new ImageIcon(b));
-	    	if(System.currentTimeMillis()>start+10000) {
+	    	if(start==0)
+	    		start = System.currentTimeMillis();
+	    	else if(System.currentTimeMillis()>start+10000) {
     			System.out.println("SID: "+sid+" - FPS: "+ (((float) 1000*n/(System.currentTimeMillis()-start))  ));
     			start = System.currentTimeMillis();
     			n = 0;
@@ -67,28 +75,54 @@ public class SALClient implements EventHandler, StreamCallback{
 	}
 	
 	private Map<String, JpgMini> viewers;
-	private SALAgent agent;
-	private BufferedReader b; 
+	private RMISALAgent agent;
+	private Registry agentRegistry, ourRegistry;
+	private String RMIname;
+	private BufferedReader b;
 	
-	public SALClient() {
+	public RmiClient(String rmiName, String agentRMIRegIP, String ourIP) throws RemoteException {
+		agentRegistry = LocateRegistry.getRegistry(agentRMIRegIP);
+		ourRegistry = LocateRegistry.getRegistry(ourIP);
 		viewers = new Hashtable<String, JpgMini>();
-	}
-	
-	public void start(String pc, String sc) throws ConfigurationException{
-		agent = new SALAgentImpl();
+		RMIname = rmiName;
 		try {
-			agent.registerEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
-			agent.registerEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
-			agent.registerEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
-		} catch (ConfigurationException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
+			agent = (RMISALAgent) agentRegistry.lookup(RMISALAgent.RMI_STUB_NAME);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RemoteException();
 		}
-		agent.start(pc, sc);
 		b = new BufferedReader(new InputStreamReader(System.in));
 	}
 	
-
+	
+	public void start(String ourRmiIP) throws ConfigurationException{
+		
+		try {
+			agent.registerClient(RMIname, ourRmiIP);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+			throw new ConfigurationException();
+		}
+		try {
+			export(RMIname, this);
+		} catch (AccessException e) {
+			e.printStackTrace();
+			throw new ConfigurationException();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+			throw new ConfigurationException();
+		}
+		
+		try {
+			agent.registerEventHandler(RMIname, RMIname, Constants.SENSOR_MANAGER_PRODUCER_ID);
+			agent.registerEventHandler(RMIname, RMIname, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
+			agent.registerEventHandler(RMIname, RMIname, Constants.SENSOR_STATE_PRODUCER_ID);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+			throw new ConfigurationException();
+		}
+	}
+	
 	public int getAction(){
 		int sid=-1;;
 		boolean ok=false;
@@ -108,8 +142,8 @@ public class SALClient implements EventHandler, StreamCallback{
 	public void doActionSensor(int sid) throws Exception{
 		Document d;
 		String str, str2;
-		CommandFactory cf;
-		Command c = null;
+		RMICommandFactory cf;
+		RMICommand c = null;
 		Response res;
 		ArgumentType t;
 		int j;
@@ -129,7 +163,7 @@ public class SALClient implements EventHandler, StreamCallback{
 		System.out.println("Enter a command id:");
 		j=Integer.parseInt(b.readLine());
 		
-		cf = new CommandFactory(d, j);
+		cf = new RMICommandFactory(d, j);
 		boolean argOK=false, argsDone=false;
 		while(!argsDone) {
 			Iterator<String> e = cf.listMissingArgNames().iterator();
@@ -144,13 +178,12 @@ public class SALClient implements EventHandler, StreamCallback{
 						catch (ConfigurationException e1) {System.out.println("Wrong value"); argOK=false;}
 					}
 				} else {
-					cf.addArgumentCallback(str, this);
-					//JpgMini jpg = new JpgMini(String.valueOf(sid));
-					//viewers.put(String.valueOf(sid), jpg);	
+					cf.addArgumentCallback(str,RMIname, RMIname);
+					viewers.put(String.valueOf(sid), new JpgMini(String.valueOf(sid)));	
 				}
 			}
 			try {c = cf.getCommand(); argsDone=true;}
-			catch (ConfigurationException e1) {System.out.println("Values missing"); argsDone=false;}
+			catch (ConfigurationException e1) {System.out.println("Values missing"); throw e1; }//argsDone=false;}
 		}
 		
 		res = agent.execute(c, String.valueOf(sid));
@@ -169,8 +202,6 @@ public class SALClient implements EventHandler, StreamCallback{
 			System.out.println("XPATH: "+xpath);
 			e.printStackTrace();
 		}
-		
-							
 	}
 	
 	public void run(){
@@ -180,8 +211,9 @@ public class SALClient implements EventHandler, StreamCallback{
 
 		while((sid=getAction())!=-1) {
 			try {
+	
 				if(sid>=0)
-					doActionSensor(sid);
+					doActionSensor(sid);										
 				else if(sid==-2)
 					System.out.println(agent.listActiveSensors());
 				else if(sid==-3){
@@ -191,7 +223,7 @@ public class SALClient implements EventHandler, StreamCallback{
 						System.out.print("SID: "+str);
 						System.out.println(" - "+XMLhelper.getAttributeFromName("//Sensor[@sid=\""+str+"\"]/parameters/Param[@name=\"Address\"]", "value", nl.item(i)));
 					}					
-				} else if (sid==-4)	{
+				} else if(sid==-4) {
 					System.out.println("Enter the XML doc for the new procotol:");
 					sb.delete(0, sb.length());
 					while(!(str=b.readLine()).equals(""))
@@ -234,35 +266,47 @@ public class SALClient implements EventHandler, StreamCallback{
 		}
 	}
 	
-	public void stop(){
-		agent.stop();
+	public void stop() throws RemoteException{
 		try {
-			agent.unregisterEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
-			agent.unregisterEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
-			agent.unregisterEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
+			agent.unregisterEventHandler(RMIname, RMIname, Constants.SENSOR_MANAGER_PRODUCER_ID);
+			agent.unregisterEventHandler(RMIname, RMIname, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
+			agent.unregisterEventHandler(RMIname, RMIname, Constants.SENSOR_STATE_PRODUCER_ID);
 		} catch (ConfigurationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Main exiting");
+		
+		try {
+			agent.unregisterClient(RMIname);
+		} catch (ConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		agent = null;
+		System.gc();
+		
 	}
 	
 	
-	public static void main(String [] args){
-		SALClient c = new SALClient();
+	public static void main(String [] args) throws RemoteException, NotBoundException{
+		if(args.length!=3) {
+			System.out.println("We need three arguments:");
+			System.out.println("1: our RMI name - 2: the IP address of our agentRegistry - 3: the IP address of the Agent agentRegistry");
+			System.exit(1);
+		}
+		
+		RmiClient c = new RmiClient(args[0], args[2], args[1]);
 		try {
-			c.start(args[0], args[1]);
+			c.start(args[1]);
 			c.run();
 		} catch (ConfigurationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			c.stop();
+			try{c.stop();} catch(RemoteException e){}
+			System.out.println("Main exiting");
+			System.exit(0);
 		}
-	}
-
-	public String getName() {
-		return "SAL user";
 	}
 
 	public void handle(Event e) {
@@ -281,15 +325,20 @@ public class SALClient implements EventHandler, StreamCallback{
 			n=0;
 		} else
 			n++;
-//		try {
-//				viewers.get(r.getSID()).setImage(r.getBytes());
-//			} catch (ConfigurationException e) {
-//				System.out.println("Stream from sensor "+r.getSID()+" returned an error");
-//				viewers.remove(r.getSID()).close();
-//			} catch (ClosedChannelException e) {
-//				System.out.println("Stream from sensor "+r.getSID()+" completed");
-//				viewers.remove(r.getSID()).close();
-//		}
+		
+		try {
+			viewers.get(r.getSID()).setImage(r.getBytes());
+		} catch (ConfigurationException e) {
+			System.out.println("Stream from sensor "+r.getSID()+" returned an error");
+			viewers.remove(r.getSID());
+		} catch (ClosedChannelException e) {
+			System.out.println("Stream from sensor "+r.getSID()+" completed");
+			viewers.remove(r.getSID());
+		}
 	}
-
+	
+	public void export(String name, Remote r) throws AccessException, RemoteException{
+		ourRegistry.rebind(name, UnicastRemoteObject.exportObject(r, 0));
+	}
 }
+

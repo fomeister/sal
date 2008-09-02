@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import jcu.sal.components.protocols.dummy.DummyProtocol;
 import jcu.sal.components.protocols.osData.OSDataConstants;
 import jcu.sal.components.protocols.owfs.OWFSProtocol;
 import jcu.sal.components.protocols.simpleSNMP.SSNMPProtocol;
@@ -43,9 +44,10 @@ public class ProtocolModulesList {
 		protocolTable.put(OWFSProtocol.OWFSPROTOCOL_TYPE , SALcomponentPackage + "owfs.OWFSProtocol");
 		
 		/*table.put("PL40", ProtocolModulesList.SALcomponentPackage + "PLIProtocol");*/
-		protocolTable.put(SSNMPProtocol.SIMPLESNMPPROTOCOL_TYPE, SALcomponentPackage + "simpleSNMP.SSNMPProtocol");
-		protocolTable.put(OSDataConstants.OSDATAPROTOCOL_TYPE, SALcomponentPackage + "osData.OSDataProtocol");
+		protocolTable.put(SSNMPProtocol.PROTOCOL_TYPE, SALcomponentPackage + "simpleSNMP.SSNMPProtocol");
+		protocolTable.put(OSDataConstants.PROTOCOL_TYPE, SALcomponentPackage + "osData.OSDataProtocol");
 		protocolTable.put(V4L2Protocol.PROTOCOL_TYPE, SALcomponentPackage + "v4l2.V4L2Protocol");
+		protocolTable.put(DummyProtocol.PROTOCOL_TYPE, SALcomponentPackage + "dummy.DummyProtocol");
 
 		if(filterTable.get(HalHelper.NAME)==null)
 			filterTable.put(HalHelper.NAME, new LinkedList<String>());

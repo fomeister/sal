@@ -47,17 +47,23 @@ public class HalClient extends AbstractHalClient {
 		addMatch("4-video4linux.device", new GenericMatch<String>("video4linux.device", "video", true,true));
 		addMatch("5-deviceFile", new AlwaysMatch("linux.device_file"));
 		addMatch("7-linux.subsystem", new NextMatch("@info.parent", new AlwaysMatch("linux.subsystem")));
-		addMatch("8-info.product", new NextMatch("@info.parent", new AlwaysMatch("info.product")));
-		addMatch("9-info.vendor", new NextMatch("@info.parent", new AlwaysMatch("info.vendor")));
+		//addMatch("8-info.product", new NextMatch("@info.parent", new AlwaysMatch("info.product")));v
+		addMatch("8-info.product", new AlwaysMatch("info.product"));
+		//the following has been removed: linux UVC creates the V4L UDI as a child of the USB video ifce UDI, which
+		//itself is a child of the USB device IDU (where info.vendor is located)
+		//whereas other drivers (pwc, bttv, ...) create the V4L UDI as a child of the USB UDI.
+		//so the following works with everything except linux UVC
+		//addMatch("9-info.vendor", new NextMatch("@info.parent", new AlwaysMatch("info.vendor")));
 		
 	}
 
 	@Override
 	public void deviceAdded(Map<String,String> l) {
-		logger.debug("Found "+l.get("8-info.product")+" - "+l.get("9-info.vendor")+ " on "+l.get("5-deviceFile"));
+		//logger.debug("Found "+l.get("8-info.product")+" - "+l.get("9-info.vendor")+ " on "+l.get("5-deviceFile"));
+		logger.debug("Found "+l.get("8-info.product")+"  on "+l.get("5-deviceFile"));
 		Document d = null;
 		String doc;
-		int width=0, height=0;
+		int width=640, height=480;
 
 		try {
 			//check if a running protocol already uses our device file (can happen during the initial run if for instance a protocol is 
