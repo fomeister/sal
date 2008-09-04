@@ -8,7 +8,7 @@ import java.util.Vector;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.Command;
+import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.components.EndPoints.EthernetEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
@@ -28,7 +28,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 	/**
 	 * The string used in PCML docs to represent this protocol 
 	 */
-	public static final String SIMPLESNMPPROTOCOL_TYPE = "SSNMP";
+	public static final String PROTOCOL_TYPE = "SSNMP";
 	private static Logger logger = Logger.getLogger(SSNMPProtocol.class);
 	private static String OID_START = "1.3";
 	//Maximum number of OIDs to be detected automatically  
@@ -43,14 +43,12 @@ public class SSNMPProtocol extends AbstractProtocol{
 	 * Construct the SSNMPProtocol object
 	 */
 	public SSNMPProtocol(ProtocolID i, Hashtable<String,String> c, Node d) {
-		super(i,SIMPLESNMPPROTOCOL_TYPE,c,d);
+		super(i,PROTOCOL_TYPE,c,d);
 		Slog.setupLogger(logger);
 		
 
 //		Add to the list of supported EndPoint IDs
 		supportedEndPointTypes.add(EthernetEndPoint.ETHERNETENDPOINT_TYPE);
-		//runs auto detect thread only once if it is going to run
-		AUTODETECT_INTERVAL = -1;
 	}
 
 	
@@ -59,7 +57,6 @@ public class SSNMPProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		cmls = CMLDescriptionStore.getStore();
 		try {
 			agent = getConfig("AgentIP");
 			comm_string = getConfig("CommunityString");
@@ -70,9 +67,10 @@ public class SSNMPProtocol extends AbstractProtocol{
 
 		try { timeout = Integer.parseInt(getConfig("Timeout")); }
 		catch (BadAttributeValueExpException e) { timeout=1500;}
-		try { autodetect = (getConfig("AutodetectOIDs").equals("1") || getConfig("AutodetectOIDs").equalsIgnoreCase("true")) ? true : false;}
-		catch (BadAttributeValueExpException e) {autodetect=true;}
+		try { autoDetectionInterval = (getConfig("AutodetectOIDs").equals("1") || getConfig("AutodetectOIDs").equalsIgnoreCase("true")) ? -1 : 0;}
+		catch (BadAttributeValueExpException e) {autoDetectionInterval=-1;}
 		
+		cmls = CMLDescriptionStore.getStore();
 		logger.debug("SimpleSNMP protocol configured");
 	}
 
@@ -141,7 +139,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected String internal_getCMLStoreKey(Sensor s){
-		return "ALL";
+		return CMLDescriptionStore.SNMP_KEY;
 	}
 	
 	/*

@@ -17,7 +17,11 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.common.Command;
+import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.EndPoints.DeviceListener;
@@ -30,7 +34,6 @@ import jcu.sal.managers.SensorManager;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 
@@ -46,13 +49,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	public static final String PROTOCOLNAME_TAG = "name";
 	public static final String PROTOCOL_TAG="Protocol";
 	public static final String PROTOCOLSECTION_TAG="protocols";
-	
-	/**
-	 * how often the autodetection process should kick in (in milliseconds)
-	 * if this value is negative, then the autodetection thread is executed only once
-	 * if it is set to 0, the autodetection thread never starts
-	 */
-	protected int AUTODETECT_INTERVAL = 2 * 1000;
+
 	
 	/**
 	 * A list of endpoints types supported by this protocol
@@ -86,10 +83,16 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 */
 	private AtomicBoolean started;
 	
+	
 	/**
-	 * Can the protocol automatically detect sensor addition/removal ? 
+	 * Can the protocol automatically detect sensor addition/removal ?
+	 * how often the autodetection process should kick in (in milliseconds)
+	 * if this value is negative, then the autodetection thread is executed only once
+	 * if it is set to 0, the autodetection thread never starts
+	 * A positive value specifies how often (in milliseconds) the autodetect thread will try to detect
+	 * what s cuccrently connected
 	 */
-	protected boolean autodetect;
+	protected int autoDetectionInterval = 2 * 1000;
 	private Autodetection autodetectThread = null;
 	
 	/**
@@ -114,7 +117,6 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 		Slog.setupLogger(logger);
 		started= new AtomicBoolean(false);
 		removed=new AtomicBoolean(false);
-		autodetect = false;
 
 		
 		/* init the rest of the fields */
@@ -384,9 +386,8 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 								Class<?>[] params = {Command.class,Sensor.class};
 								//logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()));
 								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params);
-								//logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
+								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
 								ret_val = (byte[]) m.invoke(this,c, s);
-								//logger.debug("running method: "+ m.getName()+" SID:"+sid.getName()+" returned "+ret_val );
 							} catch (ConfigurationException e) {
 								logger.error("Cant find the method matching this command "+c.getCID());
 								s.finishRunCmd();
@@ -403,8 +404,10 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 								logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
 								if(e.getCause()!=null) logger.error("Caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
 								e.printStackTrace();
-								//s.finishRunCmd();
-								s.disconnect();
+								//FIXME: when exceptions are fixed, get subclasses to throw two different exceptions,
+								//FIXME: check which one is thrown here, and call either s.finishRunCmd(); or s.disconnect();  
+								s.finishRunCmd();
+								//s.disconnect();
 								throw new NotActiveException("");
 							} catch (Exception e) {
 								logger.error("Could NOT run the command (error with invoke() )");
@@ -433,31 +436,42 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	}
 	
 	/**
-	 * Check whether a endPoint type is supported by this protocol
+	 * This method is called by parseConfig() when this object is contructed to 
+	 * check whether a endPoint type is supported by this protocol
 	 * @param String the EndPoint type
 	 */
-	public final boolean isEPTypeSupported(String type) {
+	private final boolean isEPTypeSupported(String type) {
 		return supportedEndPointTypes.contains(type);
 	}
 	
 	/**
-	 * Check whether a sensor is currently plugged-in/reachable/readable 
+	 * This method is called by associateSensor() and start() to
+	 * check whether a sensor is currently plugged-in/reachable/readable 
 	 * and set its state accordingly (protocol specific)
 	 * @param sensor the sensor to be probed
 	 */
-	public final boolean probeSensor(Sensor sensor) {
+	private final boolean probeSensor(Sensor sensor) {
 		if(started.get())
 			synchronized(sensor) {return internal_probeSensor(sensor);}
 		return false;
-	}
+	}	
+
+	/**
+	 * This method is called when the protocol is started and when a new sensor is associated with this protocol.
+	 * It must check whether a sensor is currently plugged-in/reachable/readable and set its state accordingly 
+	 * using s.enable(). The sensor must NOT be removed ! (calls to this methods are synchronized wrt. commands)
+	 * @param s the sensor to be probed
+	 */
+	protected abstract boolean internal_probeSensor(Sensor s);
 	
 	/**
-	 * Check whether a sensor is supported by this protocol
+	 * This method is called by associateSensor() and getCML() to
+	 * check whether a sensor is supported by this protocol
 	 * @param sensor the sensor to be probed
 	 */
-	public final boolean isSensorSupported(Sensor s) {
+	private final boolean isSensorSupported(Sensor s) {
 		try {
-			if(s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG).equals(id.getName())) {
+			if(s.getConfig(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE).equals(id.getName())) {
 				return internal_isSensorSupported(s);
 			}
 		} catch (BadAttributeValueExpException e) {
@@ -474,13 +488,6 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 */
 	protected abstract boolean internal_isSensorSupported(Sensor s);
 	
-	/**
-	 * This method is called when the protocol is started and when a new sensor is associated with this protocol.
-	 * It must check whether a sensor is currently plugged-in/reachable/readable and set its state accordingly 
-	 * using s.enable(). The sensor must NOT be removed ! (calls to this methods are synchronized wrt. commands)
-	 * @param s the sensor to be probed
-	 */
-	protected abstract boolean internal_probeSensor(Sensor s);
 
 	/**
 	 * This method must stop the protocol. Calls to this method are synchronized wrt to calls to execute(),
@@ -506,10 +513,39 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	/**
 	 * Parse the configuration of the protocol itself.
 	 * !!! this method is called from the super class constructor and BEFORE the subclass constructor !!!
-	 * !!! therefore none of the fields from teh subclass are accessible. This method should only check!!
+	 * !!! therefore none of the fields from the subclass are accessible. This method should only check!!
 	 * !!! that the required config directive are present and nothing more !!!
 	 */
 	protected abstract void internal_parseConfig() throws ConfigurationException;
+	
+	
+	/**
+	 * This method returns the CML docu for a given sensor
+	 * @param i the sensor whose CML we need
+	 * @return the CML description document
+	 * @throws ConfigurationException if the sensor is not found or isnt supported by this protocol
+	 */
+	//TODO make me throw a better exception
+	public final CMLDescriptions getCML(SensorID i) throws ConfigurationException {
+		String key;
+		Sensor s =sensors.get(i);
+		if(s!=null) {
+			if(isSensorSupported(s)) {
+				key = internal_getCMLStoreKey(s);
+				if (key!=null) {
+					return cmls.getCMLDescriptions(key);  
+				} else {
+					logger.error("Error getting the key for sensor " + s.toString());
+					throw new ConfigurationException("Error getting the key for sensor " + s.toString());
+				}
+			}else {
+				logger.error("Sensor " +s.toString()+" not supported by this protocol");
+				throw new ConfigurationException("Sensor " +s.toString()+" not supported by this protocol");
+			}
+		}
+		logger.error("Sensor "+ i.toString()+" is not associated with this protocol" );
+		throw new ConfigurationException("Sensor "+ i.toString()+" is not associated with this protocol");
+	}
 	
 	/**
 	 * Returns the CML store key for a sensor if supported. The key is the one used by the CML store:
@@ -534,47 +570,15 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 */
 	public void adapterChange(int n, String id){}
 	
-	/**
-	 * This method returns the CML docu for a given sensor
-	 * @param i the sensor whose CML we need
-	 * @return the CML description document
-	 * @throws ConfigurationException if the sensor is not found or isnt supported by this protocol
-	 */
-	//TODO make me throw a better exception
-	public final Document getCML(SensorID i) throws ConfigurationException {
-		String key;
-		Sensor s =sensors.get(i);
-		if(s!=null) {
-			if(isSensorSupported(s)) {
-				key = internal_getCMLStoreKey(s);
-				if (key!=null) {
-					return cmls.getCML(key);  
-				} else {
-					logger.error("Error getting the key for sensor " + s.toString());
-					throw new ConfigurationException("Error getting the key for sensor " + s.toString());
-				}
-			}else {
-				logger.error("Sensor " +s.toString()+" not supported by this protocol");
-				throw new ConfigurationException("Sensor " +s.toString()+" not supported by this protocol");
-			}
-		}
-		logger.error("Sensor "+ i.toString()+" is not associated with this protocol" );
-		throw new ConfigurationException("Sensor "+ i.toString()+" is not associated with this protocol");
-	}
-	
 	protected final synchronized void startAutodetectThread(){
-		if(autodetectThread==null || !autodetectThread.isAlive()) {
+		if(autoDetectionInterval != 0 && (autodetectThread==null || !autodetectThread.isAlive())) {
 			//Start the sensor monitoring thread
 			autodetectThread = new Autodetection();
-			if(autodetect && AUTODETECT_INTERVAL!=0) {
-				logger.debug("Starting autodetect thread");
-				autodetectThread.start();
-			} else if (AUTODETECT_INTERVAL==0){
-				logger.info("Autodetect interval set to 0 in the protocol config.");
-				logger.info("Disabling sensor autodetection");
-			} else {
-				logger.debug("Sensor autodetection not supported");
-			}
+			logger.debug("Starting autodetect thread");
+			autodetectThread.start();
+		} else {
+			logger.info("Autodetect interval set to 0 in the protocol config.");
+			logger.info("Disabling sensor autodetection");
 		}
 	}
 	
@@ -679,8 +683,8 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 							logger.debug("disconnecting "+stmp.toString());
 							stmp.disconnect();
 					}
-					if(AUTODETECT_INTERVAL > 0)
-						Thread.sleep(Long.valueOf(AUTODETECT_INTERVAL));
+					if(autoDetectionInterval > 0)
+						Thread.sleep(Long.valueOf(autoDetectionInterval));
 					else 
 						interrupt();
 				}

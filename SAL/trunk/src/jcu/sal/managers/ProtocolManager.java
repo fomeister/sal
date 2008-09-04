@@ -12,15 +12,17 @@ import java.util.Iterator;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.Command;
+import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
+import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
-import jcu.sal.components.sensors.SensorState;
 import jcu.sal.config.FileConfigService;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.ProtocolListEvent;
@@ -29,7 +31,6 @@ import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 /**
@@ -38,7 +39,6 @@ import org.w3c.dom.Node;
  */
 public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 
-	public static String PRODUCER_ID = "ProtocolManager";
 	private static ProtocolManager p = new ProtocolManager();
 	private Logger logger = Logger.getLogger(ProtocolManager.class);
 	private FileConfigService conf;
@@ -53,8 +53,8 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		Slog.setupLogger(this.logger);
 		conf = FileConfigService.getService();
 		ev = EventDispatcher.getInstance();
-		ev.addProducer(PRODUCER_ID);
-		ev.addProducer(SensorState.PRODUCER_ID);
+		ev.addProducer(Constants.PROTOCOL_MANAGER_PRODUCER_ID);
+		ev.addProducer(Constants.SENSOR_STATE_PRODUCER_ID);
 	}
 	
 	/**
@@ -128,7 +128,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		}
 		
 		try {
-			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), PRODUCER_ID));
+			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), Constants.PROTOCOL_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 		return p;
 	}
@@ -173,7 +173,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		SensorManager.getSensorManager().destroyComponents(component.getSensors());
 		componentRemovable(pid);
 		try {
-			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_REMOVED,component.getID().getName(),PRODUCER_ID));
+			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_REMOVED,component.getID().getName(),Constants.PROTOCOL_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 	}
 	
@@ -254,7 +254,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 	 * @throws NotActiveException if the sensor is not available to run commands
 	 */
 	public Response execute(Command c, SensorID sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
-		return new Response(getProtocol(sid).execute(c, sid));
+		return new Response(getProtocol(sid).execute(c, sid), sid.getName());
 	}
 	
 	/**
@@ -264,7 +264,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 	 * @throws ConfigurationException if the sensor isnt associated with a protocol
 	 * @throws NotActiveException
 	 */
-	public Document getCML(SensorID sid) throws ConfigurationException, NotActiveException {
+	public CMLDescriptions  getCML(SensorID sid) throws ConfigurationException, NotActiveException {
 		return getProtocol(sid).getCML(sid);
 	}
 	
@@ -303,7 +303,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		AbstractProtocol p = null;
 		String pname = null;
 		try {
-			pname = sensor.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG);
+			pname = sensor.getConfig(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
 			if((p = getComponent(new ProtocolID(pname)))!=null) {
 					p.associateSensor(sensor);
 			} else {
@@ -329,7 +329,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		AbstractProtocol p = null;
 		String pname = null;
 		try {
-			pname = s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG);
+			pname = s.getConfig(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
 			if((p = getComponent(new ProtocolID(pname)))!=null)
 				p.unassociateSensor(s.getID());
 			else

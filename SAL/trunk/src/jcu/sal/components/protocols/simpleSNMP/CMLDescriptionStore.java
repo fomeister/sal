@@ -1,11 +1,14 @@
 package jcu.sal.components.protocols.simpleSNMP;
 
+import java.util.List;
+import java.util.Vector;
+
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.CMLConstants;
+import jcu.sal.common.cml.ArgumentType;
+import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.ReturnType;
 import jcu.sal.components.protocols.AbstractStore;
-import jcu.sal.components.protocols.CMLDescription.ArgTypes;
-import jcu.sal.components.protocols.CMLDescription.ReturnType;
 
 
 public class CMLDescriptionStore extends AbstractStore{
@@ -27,8 +30,8 @@ public class CMLDescriptionStore extends AbstractStore{
 	private CMLDescriptionStore() throws ConfigurationException{
 		int i;
 		String key, name, mName, desc;
-		String[] argNames;
-		ArgTypes[] t;
+		List<String> argNames;
+		List<ArgumentType> t;
 		ReturnType r;
 		
 		/* 
@@ -38,8 +41,8 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = SSNMPProtocol.GET_READING_METHOD;
 		name = "ReadValue";
 		desc = "Reads the value of this sensor";
-		t = new ArgTypes[0];
-		argNames = new String[0];
+		t = new Vector<ArgumentType>();
+		argNames = new Vector<String>();
 		r = new ReturnType(CMLConstants.ARG_TYPE_STRING);
 		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
 		//generic GetReading command

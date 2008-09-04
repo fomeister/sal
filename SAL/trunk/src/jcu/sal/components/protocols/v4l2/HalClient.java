@@ -30,6 +30,10 @@ public class HalClient extends AbstractHalClient {
 								+"<EndPoint name=\"%SUBSYSNAME%\" type=\"%SUBSYS%\"/>"
 								+"<parameters>"
 								+"<Param name=\"deviceFile\" value=\"%DEVICE%\"/>"
+								+"<Param name=\"channel\" value=\"0\"/>"
+								+"<Param name=\"standard\" value=\"0\"/>"
+								+"<Param name=\"width\" value=\"%WIDTH%\"/>"
+								+"<Param name=\"height\" value=\"%HEIGHT%\"/>"
                     			+"</parameters></Protocol>";
                     			
 
@@ -43,16 +47,23 @@ public class HalClient extends AbstractHalClient {
 		addMatch("4-video4linux.device", new GenericMatch<String>("video4linux.device", "video", true,true));
 		addMatch("5-deviceFile", new AlwaysMatch("linux.device_file"));
 		addMatch("7-linux.subsystem", new NextMatch("@info.parent", new AlwaysMatch("linux.subsystem")));
-		addMatch("8-info.product", new NextMatch("@info.parent", new AlwaysMatch("info.product")));
-		addMatch("9-info.vendor", new NextMatch("@info.parent", new AlwaysMatch("info.vendor")));
+		//addMatch("8-info.product", new NextMatch("@info.parent", new AlwaysMatch("info.product")));v
+		addMatch("8-info.product", new AlwaysMatch("info.product"));
+		//the following has been removed: linux UVC creates the V4L UDI as a child of the USB video ifce UDI, which
+		//itself is a child of the USB device IDU (where info.vendor is located)
+		//whereas other drivers (pwc, bttv, ...) create the V4L UDI as a child of the USB UDI.
+		//so the following works with everything except linux UVC
+		//addMatch("9-info.vendor", new NextMatch("@info.parent", new AlwaysMatch("info.vendor")));
 		
 	}
 
 	@Override
 	public void deviceAdded(Map<String,String> l) {
-		logger.debug("Found "+l.get("8-info.product")+" - "+l.get("9-info.vendor")+ " on "+l.get("5-deviceFile"));
+		//logger.debug("Found "+l.get("8-info.product")+" - "+l.get("9-info.vendor")+ " on "+l.get("5-deviceFile"));
+		logger.debug("Found "+l.get("8-info.product")+"  on "+l.get("5-deviceFile"));
 		Document d = null;
 		String doc;
+		int width=640, height=480;
 
 		try {
 			//check if a running protocol already uses our device file (can happen during the initial run if for instance a protocol is 
@@ -76,6 +87,16 @@ public class HalClient extends AbstractHalClient {
 			doc = doc.replaceFirst("%SUBSYS%", l.get("7-linux.subsystem"));
 			//Add the device file
 			doc = doc.replaceFirst("%DEVICE%", l.get("5-deviceFile"));
+			//check width and height
+			if(l.get("7-linux.subsystem").equals("pci")){
+				//if pci capture card, limit the width and height, otherwise, bttv 
+				//returns a green or blue image is the resolution is too high...
+				width=640;
+				height=480;
+			}//leave width and height = 0 for usb webcams
+			doc = doc.replaceFirst("%WIDTH%", String.valueOf(width));
+			doc = doc.replaceFirst("%HEIGHT%", String.valueOf(height));
+				
 			try {
 				d = XMLhelper.createDocument(doc);
 				logger.debug(doc);

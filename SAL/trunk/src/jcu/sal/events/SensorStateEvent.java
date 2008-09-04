@@ -2,8 +2,11 @@ package jcu.sal.events;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.events.Event;
+
 public class SensorStateEvent extends Event {
 
+	private static final long serialVersionUID = 6308401724433999891L;
 	public static int SENSOR_STATE_CONNECTED = 1;
 	public static int SENSOR_STATE_DISCONNECTED = 2;
 	public static int SENSOR_STATE_MASK = (SENSOR_STATE_CONNECTED | SENSOR_STATE_DISCONNECTED);

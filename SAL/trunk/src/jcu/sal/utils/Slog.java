@@ -21,8 +21,9 @@ public class Slog {
 	public static void setupLogger(Logger l) {
 		if(!l.getAllAppenders().hasMoreElements() ) {
 			l.setAdditivity(false);
-			//l.setLevel(Level.ERROR);
-			l.setLevel(Level.DEBUG);
+			//l.setLevel(Level.ALL);
+			//l.setLevel(Level.DEBUG);
+			l.setLevel(Level.ERROR);
 			l.addAppender(new ConsoleAppender(new PatternLayout(pattern)));
 		}
 

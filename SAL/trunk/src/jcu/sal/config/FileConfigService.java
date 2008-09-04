@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -16,9 +15,10 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
+import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
-import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.managers.AbstractManager;
 import jcu.sal.managers.SensorManager;
@@ -57,11 +57,15 @@ public class FileConfigService{
 		if (p.exists()) {
 			if (!p.isFile())
 				throw new ConfigurationException("Should not be a directory: " + p);
+			
+		    if (!p.canRead())
+		    	throw new ConfigurationException("File cannot be read: " + p);
 
 		    if (!p.canWrite())
 		    	throw new ConfigurationException("File cannot be written: " + p);
 		} else {
 			logger.debug("Platform config file " + p.getName() +" does not exist - creating one");
+			//FIXME: 
 			try {writeDocumentToFile(p, createEmptyPlatformConfig());}
 			catch (IOException e) {
 				logger.error("Cant create an empty platform config file - " +e.getMessage());
@@ -76,19 +80,20 @@ public class FileConfigService{
 		if (s.exists()) {
 			if (!s.isFile())
 				throw new ConfigurationException("Should not be a directory: " + s);
+		
+		    if (!s.canRead())
+		    	throw new ConfigurationException("File cannot be read: " + s);
 			
 		    if (!s.canWrite())
 		    	throw new ConfigurationException("File cannot be written: " + s);
 			
 		} else {
 			logger.debug("Sensor config file " + s.getName() +" does not exist - creating one");
-			try {writeDocumentToFile(s, createEmptySensorConfig());}
-			catch (IOException e) {
+			try {writeDocumentToFile(s, SMLDescriptions.createEmptySML());}
+			catch (Exception e) {
 				logger.error("Cant create an empty sensor config file - " +e.getMessage());
-				throw new ConfigurationException();
-			}catch (ParserConfigurationException e) { 
-				logger.error("Cant generate an empty sensor config document - " +e.getMessage());
-				throw new ConfigurationException();
+				e.printStackTrace();
+				throw new ConfigurationException("Cant create sensor config file");
 			}
 		}
 
@@ -219,10 +224,10 @@ public class FileConfigService{
 	public synchronized void addSensor(Node n) throws ConfigurationException{
 		try {
 			//check if the node we re trying to add already exists
-			Node parent = XMLhelper.getNode("//" + Sensor.SENSOR_TAG, n, false);
-			String name = XMLhelper.getAttributeFromName(Sensor.SENSORID_TAG, parent);
-			if(XMLhelper.getNode("//"+ Sensor.SENSOR_TAG+"[@"+Sensor.SENSORID_TAG+"='"+name+"']", sensorconfig, false)==null) {
-				parent = XMLhelper.getNode("//" + Sensor.SENSORSECTION_TAG, sensorconfig, false);
+			Node parent = XMLhelper.getNode("//" + SMLConstants.SENSOR_TAG, n, false);
+			String name = XMLhelper.getAttributeFromName(SMLConstants.SENSOR_ID_ATTRIBUTE_NODE, parent);
+			if(XMLhelper.getNode("//"+ SMLConstants.SENSOR_TAG+"[@"+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"='"+name+"']", sensorconfig, false)==null) {
+				parent = XMLhelper.getNode("//" + SMLConstants.SENSOR_CONF_NODE, sensorconfig, false);
 				XMLhelper.addChild(parent, n);
 		        writeDocumentToFile(sensorConfigFile,sensorconfig);
 			} //else
@@ -250,7 +255,7 @@ public class FileConfigService{
 	public synchronized void removeSensor(SensorID sid) throws ConfigurationException{
 		Node n;
 		try {
-			if((n=XMLhelper.getNode("//"+ Sensor.SENSOR_TAG+"[@"+Sensor.SENSORID_TAG+"='"+sid.getName()+"']", sensorconfig, false))!=null) {
+			if((n=XMLhelper.getNode("//"+ SMLConstants.SENSOR_TAG+"[@"+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"='"+sid.getName()+"']", sensorconfig, false))!=null) {
 				XMLhelper.deleteNode(n);
 		        writeDocumentToFile(sensorConfigFile,sensorconfig);
 			} else {
@@ -280,8 +285,8 @@ public class FileConfigService{
 		Vector<Node> v = new Vector<Node>();
 		NodeList nl;
 		try {
-			nl = XMLhelper.getNodeList("//"+ Sensor.SENSOR_TAG+"//parameters["
-					+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" and @value=\""+pid.getName()+"\"]]/parent::*"
+			nl = XMLhelper.getNodeList("//"+ SMLConstants.SENSOR_TAG+"//parameters["
+					+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" and @value=\""+pid.getName()+"\"]]/parent::*"
 					, sensorconfig);
 			for(int i=0; i<nl.getLength(); i++)
 				v.add(XMLhelper.duplicateNode(nl.item(i)));
@@ -305,8 +310,8 @@ public class FileConfigService{
 	public synchronized void removeSensors(ProtocolID pid) throws ConfigurationException{
 		NodeList nl;
 		try {
-			nl = XMLhelper.getNodeList("//"+ Sensor.SENSOR_TAG+"//parameters["
-					+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" and @value=\""+pid.getName()+"\"]]/parent::*"
+			nl = XMLhelper.getNodeList("//"+ SMLConstants.SENSOR_TAG+"//parameters["
+					+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" and @value=\""+pid.getName()+"\"]]/parent::*"
 					, sensorconfig);
 			for(int i=0; i<nl.getLength(); i++)
 				XMLhelper.deleteNode(nl.item(i));
@@ -330,13 +335,13 @@ public class FileConfigService{
 	 * @return a new SensorID as found in the configuration document
 	 * @throws ConfigurationException if the sensor Id cant be found
 	 */
-	public SensorID findSID(Node n) throws ConfigurationException{
+	public SensorID findSensor(Node n) throws ConfigurationException{
 		List<String> params = null;
 		String addr=null, pname=null, xpathQuery;
 		int i=0;		
 		try {
 			//fetches the native address
-			params = XMLhelper.getAttributeListFromElement("//"+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\"]", n);
+			params = XMLhelper.getAttributeListFromElement("//"+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\"]", n);
 			if(params.size()>0 && params.contains("value")) {
 				//FIXME hardcoded value below
 				while(!params.get(i++).equals("value"));
@@ -348,7 +353,7 @@ public class FileConfigService{
 			}
 
 			//fetches the protocol name
-			params = XMLhelper.getAttributeListFromElement("//"+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\"]", n);
+			params = XMLhelper.getAttributeListFromElement("//"+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\"]", n);
 			if(params.size()>0 && params.contains("value")) {
 				//FIXME hardcoded value below
 				i=0;
@@ -362,13 +367,13 @@ public class FileConfigService{
 			
 			//look up those two value (native address and protocol name) in the sensor config file
 			//FIXME hardcoded values below
-			xpathQuery = "//parameters["+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" and @value=\""+addr+"\"]"
-						+" and "+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" and @value=\""+pname+"\"]]/parent::*";
+			xpathQuery = "//parameters["+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" and @value=\""+addr+"\"]"
+						+" and "+SensorManager.COMPONENTPARAM_TAG+"[@name=\""+SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" and @value=\""+pname+"\"]]/parent::*";
 			//logger.debug("XPATH query: "+xpathQuery);
 			params = XMLhelper.getAttributeListFromElement(xpathQuery, sensorconfig);
-			if(params.size()>0 && params.contains(Sensor.SENSORID_TAG)) {
+			if(params.size()>0 && params.contains(SMLConstants.SENSOR_ID_ATTRIBUTE_NODE)) {
 				i=0;
-				while(!params.get(i++).equals(Sensor.SENSORID_TAG));
+				while(!params.get(i++).equals(SMLConstants.SENSOR_ID_ATTRIBUTE_NODE));
 				//logger.debug("Found matching sensor in config file: returning id: "+params.get(i));
 				return new SensorID(params.get(i));
 			}
@@ -425,7 +430,7 @@ public class FileConfigService{
 		Vector<Node> csensor = new Vector<Node>();
 		NodeList nl = null;
 		try {
-			nl = XMLhelper.getNodeList("//" + Sensor.SENSOR_TAG, sensorconfig);
+			nl = XMLhelper.getNodeList("//" + SMLConstants.SENSOR_TAG, sensorconfig);
 			for(int i=0; i<nl.getLength(); i++)
 				csensor.add(XMLhelper.duplicateNode(nl.item(i)));
 			return csensor;
@@ -457,9 +462,9 @@ public class FileConfigService{
 		List<String> list = new ArrayList<String>();
 		NodeList nl = null;
 		try {
-			nl = XMLhelper.getNodeList("//" + Sensor.SENSOR_TAG, sensorconfig);
+			nl = XMLhelper.getNodeList("//" + SMLConstants.SENSOR_TAG, sensorconfig);
 			for(int i=0; i<nl.getLength(); i++) {
-				list.add(XMLhelper.getAttributeFromName(Sensor.SENSORID_TAG, nl.item(i)));
+				list.add(XMLhelper.getAttributeFromName(SMLConstants.SENSOR_ID_ATTRIBUTE_NODE, nl.item(i)));
 			}
 		} catch (XPathExpressionException e) {
 			logger.error("Could not parse the XML configuration file");
@@ -469,80 +474,20 @@ public class FileConfigService{
 	}
 	
 	/**
-	 * This method generates an empty platform configuration file 
+	 * This method generates an empty platform configuration file
 	 * @return an empty document containing the barebone structure for a platform config file
 	 * @throws ParserConfigurationException if the document can not be created
 	 */
 	public Document createEmptyPlatformConfig() throws ParserConfigurationException {
 		String s = "<SAL>\n"
-				+"\t<PlatformConfiguration>\n"
-				+"\t\t<protocols />\n"
-				+"\t</PlatformConfiguration>\n"
-				+"</SAL>";
+			+"\t<PlatformConfiguration>\n"
+			+"\t\t<protocols />\n"
+			+"\t</PlatformConfiguration>\n"
+			+"</SAL>";
 		return XMLhelper.createDocument(s);
 	}
-	
-	/**
-	 * This method generates an empty sensor configuration file 
-	 * @return an empty document containing the barebone structure for a sensor config file
-	 * @throws ParserConfigurationException if the document can not be created
-	 */
-	public Document createEmptySensorConfig() throws ParserConfigurationException {
-		String s = "<SAL>\n"
-				+"\t<SensorConfiguration />\n"
-				+"</SAL>";
-		return XMLhelper.createDocument(s);
-	}
-	
-	public static void main(String[] args) throws ConfigurationException, ParserConfigurationException {
-		FileConfigService e = FileConfigService.getService();
-		e.init("/home/gilles/workspace/SAL/src/platformConfig-owfs.xml", "/home/gilles/workspace/SAL/src/sensors-owfs-hb1.xml");
-		Iterator<Node> iter = e.getProtocols().iterator();
-		System.out.println("");
-		while(iter.hasNext()) {
-			System.out.println("AbstractProtocol:");
-			System.out.println(XMLhelper.toString(iter.next()));
-		}
-		System.out.println("");
-		iter = e.getSensors().iterator();
-		while(iter.hasNext()) {
-			System.out.println("Sensor:");
-			System.out.println(XMLhelper.toString(iter.next()));
-		}
-		
-		String ns = "<Sensor sid=\"4\"><parameters><Param name=\"ProtocolName\" value=\"1wtree\"/>"
-				+"<Param name=\"Address\" value=\"26.0D7F61000000\"/></parameters></Sensor>";
-		
-		e.addSensor(XMLhelper.createDocument(ns));
-		
-		ns = "<Sensor sid=\"5\"><parameters><Param name=\"ProtocolName\" value=\"1wtree\"/>"
-			+"<Param name=\"Address\" value=\"26.0D7F61000000\"/></parameters></Sensor>";
-		e.addSensor(XMLhelper.createDocument(ns));
-		
-		ns = "<AbstractProtocol name=\"1wtree\" type=\"PlatformData\">"
-				+"<EndPoint name=\"filesystem\" type=\"fs\" /><parameters>"
-					+"<Param name=\"CPUTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp1_input\" />"
-					+"<Param name=\"NBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp3_input\" />"
-					+"<Param name=\"SBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp2_input\" />"
-				+"</parameters></AbstractProtocol>";
-		e.addProtocol(XMLhelper.createDocument(ns));
-		
-		ns = "<AbstractProtocol name=\"osData\" type=\"PlatformData\">"
-			+"<EndPoint name=\"filesystem\" type=\"fs\" /><parameters>"
-				+"<Param name=\"CPUTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp1_input\" />"
-				+"<Param name=\"NBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp3_input\" />"
-				+"<Param name=\"SBTempFile\" value=\"/sys/class/hwmon/hwmon0/device/temp2_input\" />"
-			+"</parameters></AbstractProtocol>";
-	e.addProtocol(XMLhelper.createDocument(ns));
-	List<String> l = e.listSensorID();
-	for (int i = 0; i < l.size(); i++) {
-		System.out.println("SID: "+ l.get(i));		
-	}
-	}
-	
+
 	private void writeDocumentToFile(File f, Document d) throws IOException{
-//        logger.debug("Writing new config to file "+f.getName()+" :");
-//        logger.debug(XMLhelper.toString(d));
         BufferedWriter out = new BufferedWriter(new FileWriter(f));
 		out.write(XMLhelper.toString(d));
         out.close();

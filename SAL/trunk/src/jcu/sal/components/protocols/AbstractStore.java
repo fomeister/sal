@@ -2,18 +2,19 @@ package jcu.sal.components.protocols;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.common.CMLConstants;
-import jcu.sal.components.protocols.CMLDescription.ArgTypes;
-import jcu.sal.components.protocols.CMLDescription.ReturnType;
+import jcu.sal.common.cml.ArgumentType;
+import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.CMLDescription;
+import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.cml.ReturnType;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 
 /**
  * Defines the base behaviour of AbstractStore objects
@@ -68,28 +69,18 @@ public abstract class AbstractStore {
 	}
 
 	/**
-	 * Retrieves the CML document for the given key f (native address, sensor family, ...)
+	 * Retrieves the CML descriptions document for the given key f (native address, sensor family, ...)
 	 * @param k the key
-	 * @return the CML command description doc 
+	 * @return the CML command descriptions doc 
 	 * @throws ConfigurationException if the key can not be found 
 	 */
-	public Document getCML(String k) throws ConfigurationException{
+	public CMLDescriptions getCMLDescriptions(String k) throws ConfigurationException{
 		if(!cmls.containsKey(k)) {
 			logger.error("Cant find key "+k);
 			throw new ConfigurationException();
 		}
-		StringBuffer b = new StringBuffer();
-		b.append("<"+CMLConstants.CMD_DESCRIPTIONS_TAG+">\n");
-		Enumeration<CMLDescription> i = cmls.get(k).elements();
-		while(i.hasMoreElements())
-			b.append(i.nextElement().getCML());
-		b.append("</"+CMLConstants.CMD_DESCRIPTIONS_TAG+">\n");
-		try {
-			return XMLhelper.createDocument(b.toString());
-		} catch (ParserConfigurationException e) {
-			logger.error("Parser error");
-			throw new ConfigurationException();
-		}
+				
+		return new CMLDescriptions(cmls.get(k));
 	}
 	
 	/**
@@ -124,7 +115,7 @@ public abstract class AbstractStore {
 	 * @return the cid associated with this command
 	 * @throws ConfigurationException if the command cant be created
 	 */
-	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, ArgTypes[] argTypes, String[] names, ReturnType returnType) throws ConfigurationException{
+	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, List<ArgumentType> argTypes, List<String> names, ReturnType returnType) throws ConfigurationException{
 		//computes the CID
 		Integer cid = priv_cid.get(k);
 		if(cid==null)
@@ -149,17 +140,15 @@ public abstract class AbstractStore {
 		//computes the CID
 		Integer c;
 		CMLDescription cml;
+		List<ArgumentType> t = new Vector<ArgumentType>();
+		List<String> s = new Vector<String>();
 		logger.debug("Adding generic CML for key "+k+", alias: "+aliasName);
 		if(aliasName.equals(GENERIC_ENABLE)){
 			c = new Integer(GENERIC_ENABLE_CID);
-			ArgTypes[] t = new ArgTypes[0];
-			String[] s = new String[0];
 			addCML(k, new CMLDescription(null, c, GENERIC_ENABLE, "Enables the sensor", t, s, new ReturnType(CMLConstants.RET_TYPE_VOID)));
 			return c.intValue();
 		} else if(aliasName.equals(GENERIC_DISABLE)){
 			c = new Integer(GENERIC_DISABLE_CID);
-			ArgTypes[] t = new ArgTypes[0];
-			String[] s = new String[0];
 			addCML(k, new CMLDescription(null, c, GENERIC_DISABLE, "Disables the sensor", t, s, new ReturnType(CMLConstants.RET_TYPE_VOID)));
 			return c.intValue();
 		} else if(aliasName.equals(GENERIC_GETREADING)){
@@ -177,9 +166,9 @@ public abstract class AbstractStore {
 			throw new ConfigurationException();
 		}
 		
-		Hashtable<Integer, CMLDescription> t = cmls.get(k);
-		if(t != null) {
-			cml = t.get(new Integer(cid));
+		Hashtable<Integer, CMLDescription> table = cmls.get(k);
+		if(table != null) {
+			cml = table.get(new Integer(cid));
 			if(cml==null){
 				logger.error("Cant find any pre-existing command "+cid+" to create the alias");
 				throw new ConfigurationException();				

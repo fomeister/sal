@@ -13,7 +13,7 @@ import java.util.Vector;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.Command;
+import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.components.EndPoints.FSEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
@@ -59,7 +59,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	 * Construct the OSDataProtocol object
 	 */
 	public OSDataProtocol(ProtocolID i, Hashtable<String,String> c, Node d){
-		super(i,OSDataConstants.OSDATAPROTOCOL_TYPE,c,d);
+		super(i,OSDataConstants.PROTOCOL_TYPE,c,d);
 		Slog.setupLogger(logger);
 		
 		//Add to the list of supported sensors
@@ -73,8 +73,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 		supportedSensors.put(OSDataConstants.LoadAvg15,new OSdata("/proc/loadavg", null, 3, null, false));
 		
 		lastValues = new Hashtable<String,String>();
-		autodetect = true;
-		AUTODETECT_INTERVAL = -1; //run only once
+		autoDetectionInterval = -1; //run only once
 //		Add to the list of supported EndPoint IDs
 		supportedEndPointTypes.add(FSEndPoint.FSENDPOINT_TYPE);
 		multipleInstances=false;
