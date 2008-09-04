@@ -26,13 +26,13 @@ import jcu.sal.common.RMICommandFactory.RMICommand;
 import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.CMLDescription;
+import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.RMIStreamCallback;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.events.RMIEventHandler;
-import jcu.sal.utils.XMLhelper;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
+import jcu.sal.common.sml.SMLDescription;
+import jcu.sal.common.sml.SMLDescriptions;
 
 public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	
@@ -140,30 +140,31 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	}
 	
 	public void doActionSensor(int sid) throws Exception{
-		Document d;
 		String str, str2;
 		RMICommandFactory cf;
 		RMICommand c = null;
 		Response res;
 		ArgumentType t;
+		CMLDescription tmp;
+		CMLDescriptions cmls;
 		int j;
 		
+		cmls = new CMLDescriptions(agent.getCML(String.valueOf(sid)));
 		System.out.println("\n\nHere is the CML document for this sensor:");
-		d = XMLhelper.createDocument(agent.getCML(String.valueOf(sid)));
-		System.out.println(XMLhelper.toString(d));
+		System.out.println(cmls.getCMLString());
 		System.out.println("Print human-readable form ?(Y/n)");
 		if(!b.readLine().equals("n")){
-			NodeList nl = XMLhelper.getNodeList("/commandDescriptions/CommandDescription", XMLhelper.createDocument(agent.getCML(String.valueOf(sid))));
-			for (int i = 0; i < nl.getLength(); i++) {
-				str = XMLhelper.getAttributeFromName("cid", nl.item(i));
-				System.out.print("CID: "+str);
-				System.out.println(" - "+XMLhelper.getTextValue("//CommandDescription[@cid=\""+str+"\"]/ShortDescription", nl.item(i).getOwnerDocument()));
+			Iterator<CMLDescription> i = cmls.getDescriptions().iterator();
+			while(i.hasNext()){
+				tmp = i.next();
+				System.out.print("CID: "+tmp.getCID());
+				System.out.println(" - "+tmp.getDesc());
 			}
 		}
 		System.out.println("Enter a command id:");
 		j=Integer.parseInt(b.readLine());
 		
-		cf = new RMICommandFactory(d, j);
+		cf = new RMICommandFactory(cmls.getDescription(j));
 		boolean argOK=false, argsDone=false;
 		while(!argsDone) {
 			Iterator<String> e = cf.listMissingArgNames().iterator();
@@ -187,21 +188,11 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		}
 		
 		res = agent.execute(c, String.valueOf(sid));
-		String xpath=CMLConstants.XPATH_CMD_DESC+"[@"+CMLConstants.CID_ATTRIBUTE+"=\""+j+"\"]/"+CMLConstants.RETURN_TYPE_TAG;
-		try {
-			String type = XMLhelper.getAttributeFromName(xpath, CMLConstants.TYPE_ATTRIBUTE, d);
-			if(type.equals(CMLConstants.RET_TYPE_BYTE_ARRAY)) {
-				JpgMini v = new JpgMini(String.valueOf(sid));
-				v.setImage(res.getBytes());
-				v.setVisible();
-			} else {
-				System.out.println("Command returned: " + res.getString());
-			}
-		} catch (Exception e){
-			System.out.println("Cant find the return type");
-			System.out.println("XPATH: "+xpath);
-			e.printStackTrace();
-		}
+		
+		if(cmls.getDescription(j).getReturnType().equals(CMLConstants.RET_TYPE_BYTE_ARRAY))
+			new JpgMini(String.valueOf(sid)).setImage(res.getBytes());
+		else
+			System.out.println("Command returned: " + res.getString());				
 	}
 	
 	public void run(){
@@ -217,25 +208,27 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 				else if(sid==-2)
 					System.out.println(agent.listActiveSensors());
 				else if(sid==-3){
-					NodeList nl = XMLhelper.getNodeList("/SAL/SensorConfiguration/Sensor", XMLhelper.createDocument(agent.listActiveSensors()));
-					for (int i = 0; i < nl.getLength(); i++) {
-						str = XMLhelper.getAttributeFromName("sid", nl.item(i));
-						System.out.print("SID: "+str);
-						System.out.println(" - "+XMLhelper.getAttributeFromName("//Sensor[@sid=\""+str+"\"]/parameters/Param[@name=\"Address\"]", "value", nl.item(i)));
-					}					
+					SMLDescription tmp;
+					Iterator<SMLDescription> i = new SMLDescriptions(agent.listActiveSensors()).getDescriptions().iterator();
+					while(i.hasNext()) {
+						tmp = i.next();
+						System.out.print("SID: "+tmp.getSID());
+						System.out.print(" - "+tmp.getSensorAddress());
+						System.out.println(" - "+tmp.getProtocolName());
+					}
 				} else if(sid==-4) {
 					System.out.println("Enter the XML doc for the new procotol:");
 					sb.delete(0, sb.length());
 					while(!(str=b.readLine()).equals(""))
 						sb.append(str);
-					System.out.println("Load associated sensors from config file ? (yes-no)");
+					System.out.println("Load associated sensors from config file ? (yes-NO)");
 					str2=b.readLine();
 					agent.addProtocol(sb.toString(), (str2.equals("yes"))?true:false);
 					sb.delete(0, sb.length());
 				}else if(sid==-5) {
 					System.out.println("Enter the ID of the protocol to be removed:");
 					str=b.readLine();
-					System.out.println("Remove associated sensors from config file ? (yes-no)");
+					System.out.println("Remove associated sensors from config file ? (yes-NO)");
 					str2=b.readLine();
 					agent.removeProtocol(str, (str2.equals("yes"))?true:false);
 				} else if(sid==-6) {
@@ -252,11 +245,13 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 				} else if(sid==-8)
 					System.out.println(agent.listSensors());
 				else if(sid==-9) {
-					NodeList nl = XMLhelper.getNodeList("/SAL/SensorConfiguration/Sensor", XMLhelper.createDocument(agent.listSensors()));
-					for (int i = 0; i < nl.getLength(); i++) {
-						str = XMLhelper.getAttributeFromName("sid", nl.item(i));
-						System.out.print("SID: "+str);
-						System.out.println(" - "+XMLhelper.getAttributeFromName("//Sensor[@sid=\""+str+"\"]/parameters/Param[@name=\"Address\"]", "value", nl.item(i)));
+					SMLDescription tmp;
+					Iterator<SMLDescription> i = new SMLDescriptions(agent.listSensors()).getDescriptions().iterator();
+					while(i.hasNext()) {
+						tmp = i.next();
+						System.out.print("SID: "+tmp.getSID());
+						System.out.print(" - "+tmp.getSensorAddress());
+						System.out.println(" - "+tmp.getProtocolName());
 					}
 				}
 			} catch (Exception e) {

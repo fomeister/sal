@@ -19,6 +19,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.EndPoints.DeviceListener;
@@ -468,7 +469,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 */
 	private final boolean isSensorSupported(Sensor s) {
 		try {
-			if(s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG).equals(id.getName())) {
+			if(s.getConfig(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE).equals(id.getName())) {
 				return internal_isSensorSupported(s);
 			}
 		} catch (BadAttributeValueExpException e) {

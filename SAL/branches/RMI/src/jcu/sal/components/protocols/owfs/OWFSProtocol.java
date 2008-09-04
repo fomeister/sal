@@ -202,7 +202,7 @@ public class OWFSProtocol extends AbstractProtocol{
 							try { Thread.sleep(100); } catch (InterruptedException e) {}
 							startOWFS();
 							startAutodetectThread();
-							logger.error("Done restarting OWFS");
+							logger.debug("Done restarting OWFS");
 							maxAdaptersSeen=n;
 						} catch (ConfigurationException e) {
 							logger.error("Unable to run owfs: "+e.getClass()+" - "+e.getMessage());

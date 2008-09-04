@@ -7,6 +7,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.protocols.ProtocolID;
@@ -23,11 +24,6 @@ public class Sensor extends AbstractComponent<SensorID> {
 	
 	private Logger logger = Logger.getLogger(Sensor.class);
 	private SensorState state;
-	public static final String SENSOR_TAG= "Sensor";
-	public static final String SENSORSECTION_TAG= "SensorConfiguration";
-	public static final String SENSORID_TAG= "sid";
-	public static final String SENSORADDRESSATTRIBUTE_TAG= "Address";
-	public static final String PROTOCOLATTRIBUTE_TAG = "ProtocolName";
 	public static final String SENSOR_TYPE = "Sensor";
 	
 	/**
@@ -47,12 +43,12 @@ public class Sensor extends AbstractComponent<SensorID> {
 	}
 
 	public void setPid(ProtocolID pid) {
-		assert(pid.getName().equals(config.get(PROTOCOLATTRIBUTE_TAG)));
+		assert(pid.getName().equals(config.get(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE)));
 		id.setPid(pid);
 	}
 	
 	public String getNativeAddress() {
-		return config.get(SENSORADDRESSATTRIBUTE_TAG);
+		return config.get(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);
 	}
 		
 	/*

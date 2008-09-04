@@ -24,6 +24,20 @@ import jcu.sal.utils.XMLhelper;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
+/**
+ * CommandFactory objects are used to create correct Command objects which can then be given to SAL for execution.
+ * To construct a Command object, you create a CommandFactory object with a CML document and a command ID. (The CML
+ * document for a sensor can be retrieved using the <code>SALAgent.getCML()</code> method.). In order to produce a properly
+ * formatted command, all the required command arguments must be supplied (as specified in the CML document). For that,
+ * you iterate over a list of names of arguments which are still missing a value (the iterator is returned by 
+ * <code>listMissingArgNames()</code>). For each name, you find out about the type of the missing value using
+ * <code>getArgType(name)</code>. You can then supply the value using one of the 
+ * <code>addArgumentValue{Int,String,Callback,Float}()</code> methods. You can also use <code>addArgumentValue()</code> and let
+ * the CommandFactory do the type conversion for you. If you do, make sure you handle any returned exception.<br>
+ * Once all arguments have been given a value, you can get an instance of a Command object by invoking <code>getCommand()</code>
+ * @author gilles
+ *
+ */
 public class CommandFactory {
 	private static Logger logger = Logger.getLogger(CommandFactory.class);
 	static {
@@ -35,8 +49,9 @@ public class CommandFactory {
 	private List<String> missingArgs;
 	private Map<String,StreamCallback> callback;
 	
+	
 	/**
-	 * Create a empty command template based on the CML descriptions document 
+	 * This constructor creates an empty command template based on the CML descriptions document 
 	 * and the given command id
 	 * @param desc the command description document
 	 * @param cid the command id
@@ -50,7 +65,7 @@ public class CommandFactory {
 	}
 	
 	/**
-	 * Create a command template and set the command arguments to the values in the command instance document.
+	 * This constructor creates an command template and set the command arguments to the values in the command instance document.
 	 * The command ID used is the one specified in the command instance document.
 	 * @param desc the CML descriptions document
 	 * @param inst the command instance document
@@ -60,25 +75,24 @@ public class CommandFactory {
 		this(desc, getCIDFromInstance(inst));
 		parseArgumentValues(inst);
 	}
+//	
+//	/**
+//	 * This constructor creates a command template and set the command arguments to the values in the command instance document.
+//	 * The command ID used is the one specified in the command instance document.
+//	 * @param desc the CML descriptions document
+//	 * @param inst the command instance document
+//	 * @return whether or not some arguments are missing
+//	 */
+//	CommandFactory(CMLDescription desc, Document inst)  throws ConfigurationException{
+//		this(desc);
+//		parseArgumentValues(inst);
+//	}
 	
 	/**
-	 * Create a command template and set the command arguments to the values in the command instance document.
-	 * The command ID used is the one specified in the command instance document.
-	 * @param desc the CML descriptions document
-	 * @param inst the command instance document
-	 * @return whether or not some arguments are missing
-	 */
-	CommandFactory(CMLDescription desc, Document inst)  throws ConfigurationException{
-		this(desc);
-		parseArgumentValues(inst);
-	}
-	
-	/**
-	 * Create a empty command template based on the CML description document object
-	 * and the given command id
+	 * This constructor creates a empty command template based on the CML description document object
 	 * @param desc the command description document
 	 */
-	CommandFactory(CMLDescription desc) throws ConfigurationException {
+	public CommandFactory(CMLDescription desc){
 		argValues = new Hashtable<String, String>();
 		missingArgs = new Vector<String>();
 		callback = new Hashtable<String, StreamCallback>();
@@ -281,6 +295,7 @@ public class CommandFactory {
 		}
 	}
 	
+	
 	public static Command getCommand(RMICommand c, Map<String,StreamCallback> cb) {
 		return new Command(c.getCommand(), cb);
 	}
@@ -309,12 +324,11 @@ public class CommandFactory {
 		}
 		
 		private Command(Command cmd, Map<String,StreamCallback> c){
-			this(cmd.cid, cmd.parameters, null);
-			streamc = c;
+			this(cmd.cid, cmd.parameters, c);
 		}
 
 		/**
-		 * @deprecated do not use this constructor. Use CommandFactory instead.
+		 * @deprecated Do not use this constructor. It will be removed soon. Use CommandFactory instead.
 		 * @param cid
 		 * @param key
 		 * @param value

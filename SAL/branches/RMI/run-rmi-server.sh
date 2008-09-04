@@ -6,7 +6,7 @@ if [ $# -ne 1 ]; then
 fi
 
 PLATFORM_CONFIG=conf/platformConfig-empty.xml
-SENSORS_CONFIG=conf/sensors-empty.xml
+SENSORS_CONFIG=conf/sensorsConfig-empty.xml
 SAL_DIR=$(dirname $0)
 SAL_BIN=${SAL_DIR}/classes
 SAL_LIB=${SAL_DIR}/lib

@@ -16,6 +16,7 @@ import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -302,7 +303,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		AbstractProtocol p = null;
 		String pname = null;
 		try {
-			pname = sensor.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG);
+			pname = sensor.getConfig(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
 			if((p = getComponent(new ProtocolID(pname)))!=null) {
 					p.associateSensor(sensor);
 			} else {
@@ -328,7 +329,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 		AbstractProtocol p = null;
 		String pname = null;
 		try {
-			pname = s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG);
+			pname = s.getConfig(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
 			if((p = getComponent(new ProtocolID(pname)))!=null)
 				p.unassociateSensor(s.getID());
 			else

@@ -2,6 +2,7 @@ package jcu.sal.client;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.channels.ClosedChannelException;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
@@ -19,13 +20,13 @@ import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
+import jcu.sal.common.cml.CMLDescription;
+import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
-import jcu.sal.utils.XMLhelper;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
+import jcu.sal.common.sml.SMLDescription;
+import jcu.sal.common.sml.SMLDescriptions;
 
 public class SALClientTest implements EventHandler, StreamCallback{
 	private static final long serialVersionUID = -8376295971546676596L;
@@ -81,7 +82,6 @@ public class SALClientTest implements EventHandler, StreamCallback{
 			agent.registerEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
 		} catch (ConfigurationException e2) {
-			// TODO Auto-generated catch block
 			e2.printStackTrace();
 		}
 		agent.start(pc, sc);
@@ -106,30 +106,31 @@ public class SALClientTest implements EventHandler, StreamCallback{
 	}
 	
 	public void doActionSensor(int sid) throws Exception{
-		Document d;
 		String str, str2;
 		CommandFactory cf;
 		Command c = null;
 		Response res;
 		ArgumentType t;
+		CMLDescription tmp;
+		CMLDescriptions cmls;
 		int j;
 		
+		cmls = new CMLDescriptions(agent.getCML(String.valueOf(sid)));
 		System.out.println("\n\nHere is the CML document for this sensor:");
-		d = XMLhelper.createDocument(agent.getCML(String.valueOf(sid)));
-		System.out.println(XMLhelper.toString(d));
+		System.out.println(cmls.getCMLString());
 		System.out.println("Print human-readable form ?(Y/n)");
 		if(!b.readLine().equals("n")){
-			NodeList nl = XMLhelper.getNodeList("/commandDescriptions/CommandDescription", XMLhelper.createDocument(agent.getCML(String.valueOf(sid))));
-			for (int i = 0; i < nl.getLength(); i++) {
-				str = XMLhelper.getAttributeFromName("cid", nl.item(i));
-				System.out.print("CID: "+str);
-				System.out.println(" - "+XMLhelper.getTextValue("//CommandDescription[@cid=\""+str+"\"]/ShortDescription", nl.item(i).getOwnerDocument()));
+			Iterator<CMLDescription> i = cmls.getDescriptions().iterator();
+			while(i.hasNext()){
+				tmp = i.next();
+				System.out.print("CID: "+tmp.getCID());
+				System.out.println(" - "+tmp.getDesc());
 			}
 		}
 		System.out.println("Enter a command id:");
 		j=Integer.parseInt(b.readLine());
 		
-		cf = new CommandFactory(d, j);
+		cf = new CommandFactory(cmls.getDescription(j));
 		boolean argOK=false, argsDone=false;
 		while(!argsDone) {
 			Iterator<String> e = cf.listMissingArgNames().iterator();
@@ -145,8 +146,8 @@ public class SALClientTest implements EventHandler, StreamCallback{
 					}
 				} else {
 					cf.addArgumentCallback(str, this);
-					//JpgMini jpg = new JpgMini(String.valueOf(sid));
-					//viewers.put(String.valueOf(sid), jpg);	
+					JpgMini jpg = new JpgMini(String.valueOf(sid));
+					viewers.put(String.valueOf(sid), jpg);	
 				}
 			}
 			try {c = cf.getCommand(); argsDone=true;}
@@ -154,23 +155,11 @@ public class SALClientTest implements EventHandler, StreamCallback{
 		}
 		
 		res = agent.execute(c, String.valueOf(sid));
-		String xpath=CMLConstants.XPATH_CMD_DESC+"[@"+CMLConstants.CID_ATTRIBUTE+"=\""+j+"\"]/"+CMLConstants.RETURN_TYPE_TAG;
-		try {
-			String type = XMLhelper.getAttributeFromName(xpath, CMLConstants.TYPE_ATTRIBUTE, d);
-			if(type.equals(CMLConstants.RET_TYPE_BYTE_ARRAY)) {
-				JpgMini v = new JpgMini(String.valueOf(sid));
-				v.setImage(res.getBytes());
-				v.setVisible();
-			} else {
-				System.out.println("Command returned: " + res.getString());
-			}
-		} catch (Exception e){
-			System.out.println("Cant find the return type");
-			System.out.println("XPATH: "+xpath);
-			e.printStackTrace();
-		}
 		
-							
+		if(cmls.getDescription(j).getReturnType().equals(CMLConstants.RET_TYPE_BYTE_ARRAY))
+			new JpgMini(String.valueOf(sid)).setImage(res.getBytes());
+		else
+			System.out.println("Command returned: " + res.getString());						
 	}
 	
 	public void run(){
@@ -185,12 +174,14 @@ public class SALClientTest implements EventHandler, StreamCallback{
 				else if(sid==-2)
 					System.out.println(agent.listActiveSensors());
 				else if(sid==-3){
-					NodeList nl = XMLhelper.getNodeList("/SAL/SensorConfiguration/Sensor", XMLhelper.createDocument(agent.listActiveSensors()));
-					for (int i = 0; i < nl.getLength(); i++) {
-						str = XMLhelper.getAttributeFromName("sid", nl.item(i));
-						System.out.print("SID: "+str);
-						System.out.println(" - "+XMLhelper.getAttributeFromName("//Sensor[@sid=\""+str+"\"]/parameters/Param[@name=\"Address\"]", "value", nl.item(i)));
-					}					
+					SMLDescription tmp;
+					Iterator<SMLDescription> i = new SMLDescriptions(agent.listActiveSensors()).getDescriptions().iterator();
+					while(i.hasNext()) {
+						tmp = i.next();
+						System.out.print("SID: "+tmp.getSID());
+						System.out.print(" - "+tmp.getSensorAddress());
+						System.out.println(" - "+tmp.getProtocolName());
+					}
 				} else if (sid==-4)	{
 					System.out.println("Enter the XML doc for the new procotol:");
 					sb.delete(0, sb.length());
@@ -220,15 +211,16 @@ public class SALClientTest implements EventHandler, StreamCallback{
 				} else if(sid==-8)
 					System.out.println(agent.listSensors());
 				else if(sid==-9) {
-					NodeList nl = XMLhelper.getNodeList("/SAL/SensorConfiguration/Sensor", XMLhelper.createDocument(agent.listSensors()));
-					for (int i = 0; i < nl.getLength(); i++) {
-						str = XMLhelper.getAttributeFromName("sid", nl.item(i));
-						System.out.print("SID: "+str);
-						System.out.println(" - "+XMLhelper.getAttributeFromName("//Sensor[@sid=\""+str+"\"]/parameters/Param[@name=\"Address\"]", "value", nl.item(i)));
+					SMLDescription tmp;
+					Iterator<SMLDescription> i = new SMLDescriptions(agent.listSensors()).getDescriptions().iterator();
+					while(i.hasNext()) {
+						tmp = i.next();
+						System.out.print("SID: "+tmp.getSID());
+						System.out.print(" - "+tmp.getSensorAddress());
+						System.out.println(" - "+tmp.getProtocolName());
 					}
 				}
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -241,7 +233,6 @@ public class SALClientTest implements EventHandler, StreamCallback{
 			agent.unregisterEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
 		} catch (ConfigurationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		System.out.println("Main exiting");
@@ -254,7 +245,6 @@ public class SALClientTest implements EventHandler, StreamCallback{
 			c.start(args[0], args[1]);
 			c.run();
 		} catch (ConfigurationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
 			c.stop();
@@ -281,15 +271,14 @@ public class SALClientTest implements EventHandler, StreamCallback{
 			n=0;
 		} else
 			n++;
-//		try {
-//				viewers.get(r.getSID()).setImage(r.getBytes());
-//			} catch (ConfigurationException e) {
-//				System.out.println("Stream from sensor "+r.getSID()+" returned an error");
-//				viewers.remove(r.getSID()).close();
-//			} catch (ClosedChannelException e) {
-//				System.out.println("Stream from sensor "+r.getSID()+" completed");
-//				viewers.remove(r.getSID()).close();
-//		}
+		try {
+				viewers.get(r.getSID()).setImage(r.getBytes());
+			} catch (ConfigurationException e) {
+				System.out.println("Stream from sensor "+r.getSID()+" returned an error");
+				viewers.remove(r.getSID()).close();
+			} catch (ClosedChannelException e) {
+				System.out.println("Stream from sensor "+r.getSID()+" completed");
+				viewers.remove(r.getSID()).close();
+		}
 	}
-
 }
