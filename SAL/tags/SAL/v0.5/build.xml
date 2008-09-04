@@ -1,0 +1,86 @@
+<project name="SAL" default="usage">
+	
+	<property file="build.properties"/>
+
+	<!-- define the HAL classpath for running -->
+	<path id="HAL.classpath">
+		<pathelement location="${HAL.bin}"/>
+		<fileset dir="${HAL.lib}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+	<!-- define the v4l4j classpath for running -->
+	<path id="v4l4j.classpath">
+		<pathelement location="${v4l4j.bin}"/>
+	</path>
+
+	<!-- define the SAL classpath for building -->
+	<path id="build.SAL.classpath">
+		<path refid="HAL.classpath"/>
+		<path refid="v4l4j.classpath"/>
+		<pathelement location="${project.src}"/>
+		<fileset dir="${project.lib}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+	
+	<!-- define the SAL classpath for running -->
+	<path id="run.SAL.classpath">
+		<path refid="HAL.classpath"/>
+		<path refid="v4l4j.classpath"/>
+		<pathelement location="${project.classes}" />
+		<fileset dir="${project.lib}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+	
+	<!-- default target that displays usage -->
+	<target name="usage">
+		<echo message=""/>
+		<echo message="Sensor Abstraction Layer"/>
+		<echo message=""/>
+		<echo message="Available targets :"/>
+		<echo message=""/>
+		<echo message=" all :         Compile and run SAL "/>
+		<echo message=" compile :     Compile SAL"/>
+		<echo message=" clean:        Remove all build generated files"/>
+		<echo message=""/>
+	</target>
+	
+	<target name="init">
+		<mkdir dir="${project.classes}"/>
+	</target>
+	
+	<target name="all" depends="compile"/>
+	
+	<target name="compile" depends="init">
+		<javac srcdir="${project.src}" destdir="${project.classes}" deprecation="on" source="${source}" debug="off">
+			<classpath refid="build.SAL.classpath"/>
+			<include name="**/*.java"/>
+		</javac>
+	</target>
+	
+<!--	<target name="run" depends="compile">
+			<java fork="true" failonerror="true" classname="${project.run.main.class}">
+				<arg value="${project.run.arg1}"/>
+				<arg value="${project.run.arg2}"/>
+				<jvmarg value="-Djava.library.path=${project.lib}:${HAL.lib}:${v4l4j.lib}"/>
+				<classpath refid="run.SAL.classpath" />
+			</java>
+	</target>
+	
+	<target name="stressTest" depends="compile">
+			<java fork="true" failonerror="true" classname="${project.run.stressTest.class}">
+				<arg value="${project.run.arg1}"/>
+				<arg value="${project.run.arg2}"/>
+				<jvmarg value="-Djava.library.path=${project.lib}:${HAL.lib}:${v4l4j.lib}"/>
+				<classpath refid="run.SAL.classpath" />
+			</java>
+	</target>-->
+	
+	<target name="clean">
+		<delete dir="${project.classes}"/>
+	</target>
+     </project>
