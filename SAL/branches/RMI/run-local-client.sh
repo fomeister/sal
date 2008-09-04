@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PLATFORM_CONFIG=conf/platformConfig-empty.xml
-SENSORS_CONFIG=conf/sensors-empty.xml
+SENSORS_CONFIG=conf/sensorsConfig-empty.xml
 
 rm ${PLATFORM_CONFIG}
 rm ${SENSORS_CONFIG}

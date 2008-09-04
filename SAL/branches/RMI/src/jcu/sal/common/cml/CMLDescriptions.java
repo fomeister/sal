@@ -18,7 +18,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 /**
- * This class encapsulate a CML descriptions document. This type of docuement contains of one or more CML descriptions.
+ * This class encapsulate multiple CML description objects (jcu.sal.common.cml.CMLDescription)
  * @author gilles
  *
  */
@@ -30,25 +30,19 @@ public class CMLDescriptions {
 	private Map<Integer,CMLDescription> cmls;
 	
 	/**
-	 * This constructor creates a deep-copy of the existing CML descriptions object <code>c</code>.
-	 * @param c the CML despcriptions document to copy
+	 * This constructor creates a new CML descriptions document from a CML descriptions XML document given as a string.
+	 * @param cml the CML descriptions XML document 
+	 * @throws ConfigurationException if the XML document is not a valid CML document
+	 * @throws ParserConfigurationException if the string is not a valid XML document
 	 */
-	public CMLDescriptions(CMLDescriptions c){
-		cmls = c.getDescriptions();
-	}
-	
-	/**
-	 * This constructor builds a new CML descriptions object from the given map
-	 * @param c the CML despcription objects to be groupped in a CML descriptions object
-	 */
-	public CMLDescriptions(Map<Integer,CMLDescription> m){
-		cmls = new Hashtable<Integer,CMLDescription>(m);
+	public CMLDescriptions(String cml) throws ConfigurationException, ParserConfigurationException {
+		this(XMLhelper.createDocument(cml));
 	}
 	
 	/**
 	 * This constructor builds a new CML descriptions object from an XML document
 	 * @param cmls the XML CML descriptions document
-	 * @throws ConfigurationException if the document isnt properly formatted
+	 * @throws ConfigurationException if the XML document is not a valid CML document
 	 */
 	public CMLDescriptions(Document cmls) throws ConfigurationException{
 		this.cmls = new Hashtable<Integer,CMLDescription>();
@@ -60,7 +54,7 @@ public class CMLDescriptions {
 			logger.error("Unable to parse the CML descriptions document:");
 			e.printStackTrace();
 			logger.error(XMLhelper.toString(cmls));
-			throw new ConfigurationException();
+			throw new ConfigurationException("Malformed CML descriptions document");
 		}
 		for (int i = 0; i < n.getLength(); i++) {
 			try {
@@ -70,25 +64,33 @@ public class CMLDescriptions {
 				logger.error("error creating a document from node");
 				e.printStackTrace();
 				logger.error(XMLhelper.toString(n.item(i)));
-				throw new ConfigurationException();
+				throw new ConfigurationException("individual CML description malformed");
 			}
 		}
 	}
-		
+	
 	/**
-	 * This method returns a copy of the map of cids and associated CML description documents
-	 * @return a copy of the map of cids and associated CML description documents
+	 * This constructor builds a new CML descriptions object from the given map
+	 * @param c the CML despcription objects to be groupped in a CML descriptions object
 	 */
-	public Map<Integer,CMLDescription> getDescriptions(){
-		return new Hashtable<Integer,CMLDescription>(cmls);
+	public CMLDescriptions(Map<Integer,CMLDescription> m){
+		cmls = new Hashtable<Integer,CMLDescription>(m);
 	}
 	
 	/**
 	 * This method returns a list of the command identifier present in this CML descriptions document
 	 * @return a list of the command identifier present in this CML descriptions document
 	 */
-	public List<Integer> getSIDs(){
+	public List<Integer> getCIDs(){
 		return new Vector<Integer>(cmls.keySet());
+	}
+	
+	/**
+	 * This method returns a list of individual CML description objects
+	 * @return a list of CML description objects
+	 */
+	public List<CMLDescription> getDescriptions(){
+		return new Vector<CMLDescription>(cmls.values());
 	}
 	
 	/**
@@ -100,7 +102,7 @@ public class CMLDescriptions {
 	public CMLDescription getDescription(int cid) throws ConfigurationException{
 		if(cmls.containsKey(new Integer(cid)))
 			return cmls.get(new Integer(cid));
-		throw new ConfigurationException();
+		throw new ConfigurationException("no such CID");
 	}
 
 	/**
@@ -108,11 +110,11 @@ public class CMLDescriptions {
 	 * @return the CML descriptions document as a string
 	 */
 	public String getCMLString(){
-		StringBuilder cmlString = new StringBuilder("<commandDescriptions>\n");
+		StringBuilder cmlString = new StringBuilder("<"+CMLConstants.CMD_DESCRIPTIONS_TAG+">\n");
 		Iterator<CMLDescription> i = cmls.values().iterator();
 		while(i.hasNext())
 			cmlString.append(i.next().getCMLString());
-		cmlString.append("</commandDescriptions>\n");
+		cmlString.append("</"+CMLConstants.CMD_DESCRIPTIONS_TAG+">\n");
 		return cmlString.toString();
 	}
 	

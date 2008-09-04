@@ -27,35 +27,45 @@ import org.w3c.dom.Document;
  *
  */
 public class RMICommandFactory {
-	private Logger logger = Logger.getLogger(RMICommandFactory.class);
+	private static Logger logger = Logger.getLogger(RMICommandFactory.class);
+	static {Slog.setupLogger(logger);}
 
 	private CommandFactory factory;
 	private Map<String, List<String>> callbackNames;
 	private CMLDescription cml;
 	
-	/**
-	 * Create a RMI command template and set the command arguments to the values in the command instance document.
-	 * The command ID used is the one specified in the command instance document.
-	 * @param desc the CML descriptions document
-	 * @param inst the command instance document
-	 * @return whether or not some arguments are missing
-	 */
-	public RMICommandFactory(Document desc, Document inst)  throws ConfigurationException{
-		Slog.setupLogger(logger);
-		cml = new CMLDescriptions(desc).getDescription(CommandFactory.getCIDFromInstance(inst));
-		factory = new CommandFactory(removeCallbacks(),inst);
-
-	}
+//	/**
+//	 * Create a RMI command template and set the command arguments to the values in the command instance document.
+//	 * The command ID used is the one specified in the command instance document.
+//	 * @param desc the CML descriptions document
+//	 * @param inst the command instance document
+//	 * @return whether or not some arguments are missing
+//	 */
+//	public RMICommandFactory(Document desc, Document inst)  throws ConfigurationException{
+//		Slog.setupLogger(logger);
+//		cml = new CMLDescriptions(desc).getDescription(CommandFactory.getCIDFromInstance(inst));
+//		factory = new CommandFactory(removeCallbacks(),inst);
+//
+//	}
 	
 	/**
 	 * Create a empty RMI command template based on the CML descriptions document 
 	 * and the given command id
 	 * @param desc the command descriptions document
 	 * @param cid the command id
+	 * @throws ConfigurationException if the given XML document is not a valid CML document
 	 */
 	public RMICommandFactory(Document desc, int cid) throws ConfigurationException{
-		Slog.setupLogger(logger);
-		cml = new CMLDescriptions(desc).getDescription(cid);
+		this(new CMLDescriptions(desc).getDescription(cid));
+	}
+	
+	/**
+	 * This constructor creates a empty RMI command template based on the CML description document object
+	 * @param c the command description object
+	 * @throws ConfigurationException if the given XML document is not a valid CML document
+	 */
+	public RMICommandFactory(CMLDescription c) throws ConfigurationException{
+		cml = c;
 		factory = new CommandFactory(removeCallbacks());
 	}
 	
@@ -63,22 +73,26 @@ public class RMICommandFactory {
 	 * This method checks our CML description object to see if there are any callback arguments. If there are, this method returns 
 	 * a copy of our CML description document in which all callback arguments have been removed.  
 	 * @return a copy of our CML description document in which callback arguments have been removed.
-	 * @throws ConfigurationException if the copy cant be created
 	 */
-	private CMLDescription removeCallbacks() throws ConfigurationException{
+	private CMLDescription removeCallbacks() {
 		callbackNames = new Hashtable<String, List<String>>();
 		
 		//Check if we have a callback function
 		List<ArgumentType> types = cml.getArgTypes();
-		if(types.contains(new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK))) {
-			List<String> names = cml.getArgNames();
-			for (int i = 0; i < types.size(); i++) {
-				if(types.get(i).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
-					types.remove(i);
-					callbackNames.put(names.remove(i), new Vector<String>(2));
+		try {
+			if(types.contains(new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK))) {
+				List<String> names = cml.getArgNames();
+				for (int i = 0; i < types.size(); i++) {
+					if(types.get(i).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+						types.remove(i);
+						callbackNames.put(names.remove(i), new Vector<String>(2));
+					}
 				}
+				return new CMLDescription("",cml.getCID(),cml.getName(),cml.getDesc(),types,names, cml.getReturnType());
 			}
-			return new CMLDescription("",cml.getCID(),cml.getName(),cml.getDesc(),types,names, cml.getReturnType());
+		}catch (ConfigurationException e) {
+			logger.error("We shoudnt be here !!");
+			e.printStackTrace();
 		}
 		
 		return cml;
