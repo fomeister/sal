@@ -53,7 +53,6 @@ public class XMLhelper {
     public static Document createEmptyDocument() throws ParserConfigurationException {
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document document = builder.newDocument();
-        document.createElement("root");
         return document;
         
     }

@@ -5,14 +5,18 @@ package jcu.sal.managers;
 
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
-import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
+import jcu.sal.common.Constants;
+import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLDescription;
+import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
@@ -33,20 +37,12 @@ import org.w3c.dom.Node;
  * 
  */
 public class SensorManager extends AbstractManager<Sensor> {
-	
-	/**
-	 * specifies (in seconds) how long disconnected sensors should remain before being
-	 * deleted
-	 */
-	public static long DISCONNECT_TIMEOUT = 20;
 	private FileConfigService conf;
 	
 	/**
 	 * specifies (in seconds) how often the sensor removal thread kick in
 	 */
 	public static int REMOVE_SENSOR_INTERVAL = 0;
-	
-	public static String PRODUCER_ID = "SensorManager";
 	
 	private static SensorManager s = new SensorManager();
 	private Logger logger = Logger.getLogger(SensorManager.class);
@@ -63,7 +59,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 		pm = ProtocolManager.getProcotolManager();
 		conf = FileConfigService.getService();
 		ev = EventDispatcher.getInstance();
-		ev.addProducer(PRODUCER_ID);
+		ev.addProducer(Constants.SENSOR_MANAGER_PRODUCER_ID);
 	}
 
 	/**
@@ -106,7 +102,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 		}
 		
 		try {
-			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_ADDED, i.getName(), PRODUCER_ID));
+			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_ADDED, i.getName(), Constants.SENSOR_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 		
 		return sensor;
@@ -123,8 +119,8 @@ public class SensorManager extends AbstractManager<Sensor> {
 		 */
 		Identifier id = null;
 		try {
-			//we first check to see if it exists in the sensor configuration file
-			id =conf.findSID(n);
+			//we first check to see if the sensor exists in the sensor configuration file
+			id =conf.findSensor(n);
 			logger.debug("Found the sid "+id.getName()+" in sensor config file");
 		} catch (Exception e) {
 			//we havent found a matching sensor in the sensor config file, so we are going to generate a new ID
@@ -135,10 +131,10 @@ public class SensorManager extends AbstractManager<Sensor> {
 		//Now we insert/update the newly created/found ID into the XML node n
 		try {
 			//try to set the value for the sid attribute...
-			XMLhelper.setAttributeFromName("//" + Sensor.SENSOR_TAG, Sensor.SENSORID_TAG, id.getName(), n);
+			XMLhelper.setAttributeFromName("//" + SMLConstants.SENSOR_TAG, SMLConstants.SENSOR_ID_ATTRIBUTE_NODE, id.getName(), n);
 		} catch (Exception e) {
 			//if we re here, there was no existing sid attribute so we have to create one
-			try {XMLhelper.addAttribute(XMLhelper.getNode("//"+Sensor.SENSOR_TAG, n, false), Sensor.SENSORID_TAG , id.getName());}
+			try {XMLhelper.addAttribute(XMLhelper.getNode("//"+SMLConstants.SENSOR_TAG, n, false), SMLConstants.SENSOR_ID_ATTRIBUTE_NODE , id.getName());}
 			catch (Exception e1) {logger.error("Error setting the SID in the sensor XML node");e1.printStackTrace();}
 		}
 
@@ -159,7 +155,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 		}
 		component.remove(this);
 		try {
-			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_REMOVED,component.getID().getName(),PRODUCER_ID));
+			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_REMOVED,component.getID().getName(),Constants.SENSOR_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 	}
 	
@@ -173,51 +169,52 @@ public class SensorManager extends AbstractManager<Sensor> {
 	}
 	
 	/**
-	 * Returns a sensor configuration document with all currently active
-	 * @return
+	 * This method returns an SMLDescriptions object for all currently-active sensors 
+	 * @return an SMLDescriptions object for all currently-active sensors
 	 */
-	public String listActiveSensors(){
+	public SMLDescriptions listActiveSensors(){
 		Sensor s;
-		Node parent;
-		Document empty = null, tmp;
+		Integer sid;
+		Map<Integer, SMLDescription> m = new Hashtable<Integer, SMLDescription>();
 		try {
-			empty = conf.createEmptySensorConfig();
-			parent = XMLhelper.getNode("//" + Sensor.SENSORSECTION_TAG, empty, false);
 			synchronized(ctable){
 				Iterator<Sensor> i = ctable.values().iterator();
 				while(i.hasNext()) {
 					s = i.next();
-					tmp = generateSensorConfig(s.getID().getName(),s.getNativeAddress(), new ProtocolID(s.getConfig(Sensor.PROTOCOLATTRIBUTE_TAG)));
-					XMLhelper.addChild(parent, tmp);
+					sid = new Integer(s.getID().getName());
+					if(!s.isDisconnected())
+						m.put(sid, new SMLDescription(sid, s.getConfig()));
 				}	
 			}
-	    } catch (XPathExpressionException e) {
-	    	logger.error("Error looking up the parent node in empty document");
-			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
-			logger.error("Looks like the sensor config document is malformed");
-			e.printStackTrace();
-		} catch (BadAttributeValueExpException e) {
-			logger.error("Cant find the protocol name from sensor configuration");
-			e.printStackTrace();
+	    } catch (ConfigurationException e) {
+	    	logger.error("we shouldnt be here !!");
+	    	e.printStackTrace();
 		}
-		return XMLhelper.toString(empty);
+		return new SMLDescriptions(m);
 	}
 	
 	/**
-	 * Returns a sensor configuration document with all known sensors
-	 * @return
+	 * This method returns an SMLDescriptions object for all  sensors 
+	 * @return an SMLDescriptions object for all sensors
 	 */
-	public String listSensors(){
-		Document d = null;
+	public SMLDescriptions listSensors(){
+		Sensor s;
+		Integer sid;
+		Map<Integer, SMLDescription> m = new Hashtable<Integer, SMLDescription>();
 		try {
-			d = conf.getSensorConfigFile();
-		} catch (ParserConfigurationException e) {
-			//FIXME
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			synchronized(ctable){
+				Iterator<Sensor> i = ctable.values().iterator();
+				while(i.hasNext()) {
+					s = i.next();
+					sid = new Integer(s.getID().getName());
+					m.put(sid, new SMLDescription(sid, s.getConfig()));
+				}	
+			}
+	    } catch (ConfigurationException e) {
+	    	logger.error("we shouldnt be here !!");
+	    	e.printStackTrace();
 		}
-		return XMLhelper.toString(d); 
+		return new SMLDescriptions(m);
 	}
 	
 	/**
@@ -251,9 +248,11 @@ public class SensorManager extends AbstractManager<Sensor> {
 	
 	/**
 	 * this method generates a partial SML doc using the newly detected sensor's
-	 * native address. The SML document is partial because it contains the 
-	 * placeholder 'SensorManager.SENSORID_MARKER' where the final sensor id will be.
-	 * @param the newly detected sensor's native addres
+	 * native address. The SML document is partial because it may or may not contains the 
+	 * sensor ID if sid is null(in which case the sid attribue is omitted from the Sensor tag).
+	 * @param sid the sensor id (can be null)
+	 * @param nativeAddress the newly detected sensor's native addres
+	 * @param pid the protocol id associated with this sensor
 	 * @return a string which is the SML doc for this new sensor  
 	 * @throws ParserConfigurationException If the document can not be created
 	 */
@@ -262,10 +261,10 @@ public class SensorManager extends AbstractManager<Sensor> {
 		if (sid==null)
 			xml.append("<Sensor>\n");
 		else
-			xml.append("<Sensor "+Sensor.SENSORID_TAG+"=\""+sid+"\">\n");
+			xml.append("<Sensor "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\""+sid+"\">\n");
 		xml.append("\t<parameters>\n");
-		xml.append("\t\t<Param name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" value=\""+pid.getName()+"\" />\n");
-		xml.append("\t\t<Param name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" value=\""+nativeAddress+"\" />\n");
+		xml.append("\t\t<Param name=\""+SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" value=\""+pid.getName()+"\" />\n");
+		xml.append("\t\t<Param name=\""+SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" value=\""+nativeAddress+"\" />\n");
 		xml.append("\t</parameters>\n");
 		xml.append("</Sensor>\n");
 			

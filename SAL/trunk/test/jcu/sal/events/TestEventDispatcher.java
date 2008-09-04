@@ -2,6 +2,9 @@ package jcu.sal.events;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.events.Event;
+import jcu.sal.common.events.EventHandler;
+
 import junit.framework.TestCase;
 
 import org.junit.After;
@@ -9,8 +12,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class TestEventDispatcher extends TestCase implements EventHandler {
-	
+
+	private static final long serialVersionUID = 46189746241295582L;
+
 	private class TestEvent extends Event {
+
+		private static final long serialVersionUID = -3204866425549264529L;
 
 		public TestEvent(int t, String sid, String p) throws ConfigurationException {
 			super(t, sid, p);

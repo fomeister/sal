@@ -5,6 +5,7 @@ package jcu.sal.components.sensors;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Constants;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.SensorStateEvent;
@@ -22,17 +23,7 @@ public class SensorState {
 	private componentRemovalListener l;
 	private SensorID i;
 
-	public static final int UNASSOCIATED=0;
-	public static final int IDLE=1;
-	public static final int DISABLED=2;
-	public static final int INUSE=3;
-	public static final int DISCONNECTED=4;
-	public static final int STOPPED=5;
-	public static final int REMOVED=6;
 	private static final EventDispatcher ev = EventDispatcher.getInstance();
-	public static final String PRODUCER_ID = "SensorState";
-
-	
 	private int state;
 	/*
 	 * disconnect_timestamp is the timestamp at which the disconnect method has been called.
@@ -40,7 +31,7 @@ public class SensorState {
 	private long disconnect_timestamp;
 
 	public SensorState(SensorID i) { 
-		state=UNASSOCIATED;
+		state=SensorConstants.UNASSOCIATED;
 		disconnect_timestamp=-1;
 		this.i = i;
 		Slog.setupLogger(logger);
@@ -51,60 +42,60 @@ public class SensorState {
 	}
 	
 	public boolean isStarted() {
-		return (state!=UNASSOCIATED);
+		return (state!=SensorConstants.UNASSOCIATED);
 	}
 	
 	public boolean isDisconnectedDisabled() {
-		return (state==DISCONNECTED || state==DISABLED);
+		return (state==SensorConstants.DISCONNECTED || state==SensorConstants.DISABLED);
 	}
 	
 	public boolean remove(componentRemovalListener c){
 		synchronized (this) {
-			if(state==INUSE) { state=STOPPED; l =c;} 
-			else { state=REMOVED; c.componentRemovable(i);}
+			if(state==SensorConstants.INUSE) { state=SensorConstants.STOPPED; l =c;} 
+			else { state=SensorConstants.REMOVED; c.componentRemovable(i);}
 			return true;
 		}
 	}
 	
 	public boolean runCommand(){
 		synchronized (this) {
-			if(state==IDLE) { state=INUSE; return true; }
+			if(state==SensorConstants.IDLE) { state=SensorConstants.INUSE; return true; }
 			else return false;	
 		}
 	}
 	
 	public boolean doneCommand(){
 		synchronized (this) {
-			if(state==INUSE) { state=IDLE; return true; }
-			else if(state==DISABLED) { logger.debug(i.toString()+" has been disabled while we were reading it "); return true; }
-			else if(state==STOPPED) { state=REMOVED; l.componentRemovable(i); return true;}
+			if(state==SensorConstants.INUSE) { state=SensorConstants.IDLE; return true; }
+			else if(state==SensorConstants.DISABLED) { logger.debug(i.toString()+" has been disabled while we were reading it "); return true; }
+			else if(state==SensorConstants.STOPPED) { state=SensorConstants.REMOVED; l.componentRemovable(i); return true;}
 			else { logger.error("trying to finish running a command on a non INUSE/DISABLED sensor"); dumpState(); return false; }	
 		}
 	}
 
 	public boolean disable(){
 		synchronized (this) {
-			if(state==INUSE) {
+			if(state==SensorConstants.INUSE) {
 				logger.error("###############################################################################################");
 				logger.error("###############################################################################################");
 				logger.error("trying to disable an INUSE sensor"); dumpState();
 				logger.error("###############################################################################################");
 				logger.error("###############################################################################################");
 				return false; 
-			} else if(state==IDLE || state==DISCONNECTED || state==DISABLED) { state=DISABLED; return true; }
+			} else if(state==SensorConstants.IDLE || state==SensorConstants.DISCONNECTED || state==SensorConstants.DISABLED) { state=SensorConstants.DISABLED; return true; }
 			else { logger.error("trying to disable a non IDLE/INUSE/DISCONNECTED sensor"); dumpState(); return false; }
 		}
 	}
 	
 	public boolean enable(){
 		synchronized (this) {
-			if(state==DISABLED || state==UNASSOCIATED || state==IDLE) {
-				if(state!=UNASSOCIATED) {
+			if(state==SensorConstants.DISABLED || state==SensorConstants.UNASSOCIATED || state==SensorConstants.IDLE) {
+				if(state!=SensorConstants.UNASSOCIATED) {
 					try {
-						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),PRODUCER_ID));
+						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 					} catch (ConfigurationException e) {logger.error("Cant queue event");}
 				}
-				state=IDLE; return true;
+				state=SensorConstants.IDLE; return true;
 			}
 			else { logger.error("trying to enable a non DISABLED sensor"); dumpState(); return false; }
 		}
@@ -112,13 +103,13 @@ public class SensorState {
 	
 	public boolean disconnect(){
 		synchronized (this) {
-			if(state==IDLE || state==INUSE || state==DISCONNECTED || state==UNASSOCIATED) {
-				if(state!=DISCONNECTED) {
+			if(state==SensorConstants.IDLE || state==SensorConstants.INUSE || state==SensorConstants.DISCONNECTED || state==SensorConstants.UNASSOCIATED) {
+				if(state!=SensorConstants.DISCONNECTED) {
 					try {
-						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),PRODUCER_ID));
+						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 					} catch (ConfigurationException e) {logger.error("Cant queue event");}
 				}
-				state=DISCONNECTED;
+				state=SensorConstants.DISCONNECTED;
 				disconnect_timestamp = System.currentTimeMillis();
 /*				logger.error("Sensor has had "+(timeout+1)+ " disconnections");
 				if(++timeout>DISCONNECT_TIMEOUT) {
@@ -132,15 +123,15 @@ public class SensorState {
 
 	public boolean reconnect(){
 		synchronized (this) {
-			if(state==DISCONNECTED) { 
+			if(state==SensorConstants.DISCONNECTED) { 
 				disconnect_timestamp = -1;
-				state=IDLE;
+				state=SensorConstants.IDLE;
 				try {
-					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),PRODUCER_ID));
+					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 				} catch (ConfigurationException e) {logger.error("Cant queue event");}
 				return true; 
 			}
-			else if(state==IDLE || state==DISABLED || state==INUSE) {return true; }//already connected 
+			else if(state==SensorConstants.IDLE || state==SensorConstants.DISABLED || state==SensorConstants.INUSE) {return true; }//already connected 
 			else { logger.error("trying to reconnect a non-DISCONNECTED sensor"); dumpState(); return false; }
 		}
 	}
@@ -148,19 +139,19 @@ public class SensorState {
 	public String toString() {
 		synchronized(this) {
 			switch(state) {
-			case UNASSOCIATED:
+			case SensorConstants.UNASSOCIATED:
 				return "UNASSOCIATED";
-			case IDLE:
+			case SensorConstants.IDLE:
 				return "IDLE";
-			case DISABLED:
+			case SensorConstants.DISABLED:
 				return "DISABLED";
-			case INUSE:
+			case SensorConstants.INUSE:
 				return "INUSE";
-			case DISCONNECTED:
+			case SensorConstants.DISCONNECTED:
 				return "DISCONNECTED";
-			case STOPPED:
+			case SensorConstants.STOPPED:
 				return "STOPPED";
-			case REMOVED:
+			case SensorConstants.REMOVED:
 				return "REMOVED";
 			}
 		}

@@ -1,11 +1,13 @@
 package jcu.sal.common;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.util.Enumeration;
+import java.util.Iterator;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.utils.XMLhelper;
 
 import org.junit.After;
@@ -14,6 +16,10 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 
 public class CommandFactoryTest implements StreamCallback {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private String descStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 							+"<commandDescriptions>"
 							+"<CommandDescription cid=\"1000\">"
@@ -211,9 +217,9 @@ public class CommandFactoryTest implements StreamCallback {
 		String n;
 		try {
 			cf = new CommandFactory(desc, inst1);
-			Enumeration<String> e = cf.listMissingArgNames();
-			while(e.hasMoreElements()){
-				n=e.nextElement();
+			Iterator<String> e = cf.listMissingArgNames().iterator();
+			while(e.hasNext()){
+				n=e.next();
 				assertTrue(n.equals("varA") || n.equals("varB") || n.equals("varC"));  
 				i++;
 			}
@@ -221,9 +227,9 @@ public class CommandFactoryTest implements StreamCallback {
 			
 			cf = new CommandFactory(desc, inst4);
 			i=0;
-			e = cf.listMissingArgNames();
-			while(e.hasMoreElements()){
-				n=e.nextElement();
+			e = cf.listMissingArgNames().iterator();
+			while(e.hasNext()){
+				n=e.next();
 				assertTrue(n.equals("varA"));  
 				i++;
 			}
@@ -231,9 +237,9 @@ public class CommandFactoryTest implements StreamCallback {
 			
 			cf = new CommandFactory(desc, inst7);
 			i=0;
-			e = cf.listMissingArgNames();
-			while(e.hasMoreElements()){
-				n=e.nextElement();
+			e = cf.listMissingArgNames().iterator();
+			while(e.hasNext()){
+				n=e.next();
 				assertTrue(n.equals("cb"));  
 				i++;
 			}

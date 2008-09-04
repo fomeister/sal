@@ -49,11 +49,11 @@ public class EthernetEndPoint extends EndPoint {
 		String intName = null, ipAddress = null;
 		boolean found = false;
 		
-		this.logger.debug("check if we have the ethernet port.");
+		logger.debug("check if we have the ethernet port.");
 		try {
 			intName = getConfig(ETHDEVICEATTRIBUTE_TAG);
 			try {ipAddress = getConfig(IPADDRESSATTRIBUTE_TAG);} catch(BadAttributeValueExpException e) {ipAddress="";}
-			this.logger.debug( intName + "(" + ipAddress +")");
+			logger.debug( intName + "(" + ipAddress +")");
 			
 			/* Look for the ethernet if either by name or by IP address*/
 			if (ipAddress.length() == 0) {
@@ -79,23 +79,23 @@ public class EthernetEndPoint extends EndPoint {
 			}
 			
 			if(found) {
-				this.logger.debug("Found ethernet port: " + n.getDisplayName());
+				logger.debug("Found ethernet port: " + n.getDisplayName());
 				if (!n.isUp()) {
-					this.logger.error("The ethernet port is down");
+					logger.error("The ethernet port is down");
 					throw new ConfigurationException("The ethernet port is down");
 				}
-				this.configured = true;
-				this.logger.debug("The ethernet port was successfully configured");
+				configured = true;
+				logger.debug("The ethernet port was successfully configured");
 			} else {
-				this.logger.error("The ethernet port could not be found");
+				logger.error("The ethernet port could not be found");
 				throw new ConfigurationException("The ethernet port could not be found");
 			}
 		} catch (SocketException e) {
-			this.logger.error("Couldnt find the ethernet port...");
+			logger.error("Couldnt find the ethernet port...");
 			e.printStackTrace();
 			throw new ConfigurationException("Couldnt find the ethernet port...");
 		} catch (BadAttributeValueExpException e) {
-			this.logger.debug("Bad ethernet EndPoint XML config");
+			logger.debug("Bad ethernet EndPoint XML config");
 			e.printStackTrace();
 			throw new ConfigurationException("Couldnt initialise the ethernet port...");
 		} 

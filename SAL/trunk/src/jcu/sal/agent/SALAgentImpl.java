@@ -9,35 +9,35 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jcu.sal.common.Command;
 import jcu.sal.common.Response;
+import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.events.EventHandler;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.config.HwProbeService;
 import jcu.sal.events.EventDispatcher;
-import jcu.sal.events.EventHandler;
 import jcu.sal.managers.ProtocolManager;
 import jcu.sal.managers.SensorManager;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 
 /**
  * @author gilles
  *
  */
-public class SALAgent implements SALAgentInterface{
+public class SALAgentImpl implements SALAgent{
 	
-	private Logger logger = Logger.getLogger(SALAgent.class);
+	private Logger logger = Logger.getLogger(SALAgentImpl.class);
 	private ProtocolManager pm;
 	private SensorManager sm;
 	private EventDispatcher ev;
 	private HwProbeService hp;
 	
-	public SALAgent(){
+	public SALAgentImpl(){
 		Slog.setupLogger(logger);
 		ev = EventDispatcher.getInstance();
 		pm = ProtocolManager.getProcotolManager();
@@ -95,7 +95,7 @@ public class SALAgent implements SALAgentInterface{
 	 * @see jcu.sal.agent.SALAgentInterface#listActiveSensors()
 	 */
 	public String listActiveSensors() {
-		return sm.listActiveSensors();		
+		return sm.listActiveSensors().getSMLString();		
 	}
 	
 	/*
@@ -103,7 +103,7 @@ public class SALAgent implements SALAgentInterface{
 	 * @see jcu.sal.agent.SALAgentInterface#listSensors()
 	 */
 	public String listSensors() {
-		return sm.listSensors();
+		return sm.listSensors().getSMLString();
 	}
 
 	/*
@@ -118,8 +118,8 @@ public class SALAgent implements SALAgentInterface{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#getCML(java.lang.String)
 	 */
-	public Document getCML(String sid) throws ConfigurationException, NotActiveException {
-		return pm.getCML(new SensorID(sid));
+	public String  getCML(String sid) throws ConfigurationException, NotActiveException {
+		return pm.getCML(new SensorID(sid)).getCMLString();
 	}
 
 	/*

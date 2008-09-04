@@ -45,7 +45,6 @@
 		<echo message=""/>
 		<echo message=" all :         Compile and run SAL "/>
 		<echo message=" compile :     Compile SAL"/>
-		<echo message=" run:          Run SAL"/>
 		<echo message=" clean:        Remove all build generated files"/>
 		<echo message=""/>
 	</target>
@@ -54,7 +53,7 @@
 		<mkdir dir="${project.classes}"/>
 	</target>
 	
-	<target name="all" depends="compile,run"/>
+	<target name="all" depends="compile"/>
 	
 	<target name="compile" depends="init">
 		<javac srcdir="${project.src}" destdir="${project.classes}" deprecation="on" source="${source}" debug="off">
@@ -63,7 +62,7 @@
 		</javac>
 	</target>
 	
-	<target name="run" depends="compile">
+<!--	<target name="run" depends="compile">
 			<java fork="true" failonerror="true" classname="${project.run.main.class}">
 				<arg value="${project.run.arg1}"/>
 				<arg value="${project.run.arg2}"/>
@@ -79,7 +78,7 @@
 				<jvmarg value="-Djava.library.path=${project.lib}:${HAL.lib}:${v4l4j.lib}"/>
 				<classpath refid="run.SAL.classpath" />
 			</java>
-	</target>
+	</target>-->
 	
 	<target name="clean">
 		<delete dir="${project.classes}"/>

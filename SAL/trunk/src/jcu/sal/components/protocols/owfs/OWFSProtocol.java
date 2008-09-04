@@ -14,7 +14,7 @@ import java.util.Vector;
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.Command;
+import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.components.EndPoints.UsbEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
@@ -52,8 +52,7 @@ public class OWFSProtocol extends AbstractProtocol{
 		super(i,OWFSPROTOCOL_TYPE ,c,d);
 		Slog.setupLogger(logger);
 		epIds = new String[]{DS2490_USBID};
-		autodetect = true;
-		AUTODETECT_INTERVAL = 100;
+		autoDetectionInterval = 100;
 		multipleInstances = false;
 		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
 	}
@@ -63,7 +62,6 @@ public class OWFSProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		cmls = CMLDescriptionStore.getStore();
 		String mtpt, temp;
 		ProcessOutput c;
 
@@ -100,6 +98,7 @@ public class OWFSProtocol extends AbstractProtocol{
 			e.printStackTrace();
 			throw new ConfigurationException("Could not setup OWFS protocol");
 		}
+		cmls = CMLDescriptionStore.getStore();
 	}
 
 	/* (non-Javadoc)
@@ -203,7 +202,7 @@ public class OWFSProtocol extends AbstractProtocol{
 							try { Thread.sleep(100); } catch (InterruptedException e) {}
 							startOWFS();
 							startAutodetectThread();
-							logger.error("Done restarting OWFS");
+							logger.debug("Done restarting OWFS");
 							maxAdaptersSeen=n;
 						} catch (ConfigurationException e) {
 							logger.error("Unable to run owfs: "+e.getClass()+" - "+e.getMessage());
