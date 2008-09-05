@@ -301,17 +301,23 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 	 */
 	AbstractProtocol associateSensor(Sensor sensor) throws ConfigurationException{
 		AbstractProtocol p = null;
-		String pname = null;
+		String pname = null, ptype=null;
 		try {
 			pname = sensor.getConfig(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
+			ptype = sensor.getConfig(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE);
 			if((p = getComponent(new ProtocolID(pname)))!=null) {
+				if(ptype.equals(p.getType()))
 					p.associateSensor(sensor);
+				else {
+					logger.error("Specified protocol type "+ptype+" doesnt match protocol name "+pname+" 's type ("+p.getType()+")");
+					throw new ConfigurationException();
+				}
 			} else {
 				logger.error("Cant find protocol "+pname+"to associate the sensor with");
 				throw new ConfigurationException();				
 			}
 		} catch (BadAttributeValueExpException e) {
-			logger.error("Can not find the protocol name to associate the sensor with");
+			logger.error("Can not find the protocol name / type to associate the sensor with");
 			logger.error("Cant associate sensor " + sensor.getID().toString() + "(Cant find protocol " + pname+")");
 			throw new ConfigurationException("cant find protocol from sensor config");
 		}

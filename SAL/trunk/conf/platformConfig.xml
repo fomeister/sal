@@ -53,6 +53,7 @@
 					<Param name="CPUTempFile" value="/sys/class/hwmon/hwmon0/device/temp2_input" />
 					<Param name="NBTempFile" value="/sys/class/hwmon/hwmon0/device/temp1_input" />
 					<Param name="SBTempFile" value="/sys/class/hwmon/hwmon0/device/temp3_input" />
+					<Param name="AutoDetectSensors" value="0" />
 				</parameters>
 			</Protocol>
 		</protocols>
