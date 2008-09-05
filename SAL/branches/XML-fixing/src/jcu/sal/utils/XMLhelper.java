@@ -654,13 +654,16 @@ public class XMLhelper {
 //		}
 //		
 		String s = "<Sensor sid=\"15\">\t\t<parameters>      <Param name=\"ProtocolName\" value=\"osData\" />\t"
-				+"<Param name=\"Address\" value=\"NiceTime\" />\n"
+				+"<Param name=\"Address\" value=\"NiceTime\" >\n"
+				+"<subParam1>test</subParam1>"
+				+"<subParam2><subsubParam1/>test</subParam2></Param>"
 				+"<Param name=\"SamplingInterval\" value=\"30\" />"
 				+"</parameters></Sensor>";
 		
 		Document d = XMLhelper.createDocument(s);
 		System.out.println(XMLhelper.toString(d));
 		System.out.println("nb param tags: " + XMLhelper.getTextValue("count(//Param)", d));
+		System.out.println("param1: " + XMLhelper.getTextValue("/Sensor/parameters/Param[@name=\"Address\"]", d));
     	
 	}
 }
