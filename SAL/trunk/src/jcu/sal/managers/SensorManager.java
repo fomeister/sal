@@ -256,7 +256,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 	 * @return a string which is the SML doc for this new sensor  
 	 * @throws ParserConfigurationException If the document can not be created
 	 */
-	public Document generateSensorConfig(String sid, String nativeAddress, ProtocolID pid) throws ParserConfigurationException{
+	public Document generateSensorConfig(String sid, String nativeAddress, ProtocolID pid, String type) throws ParserConfigurationException{
 		StringBuffer xml = new StringBuffer();
 		if (sid==null)
 			xml.append("<Sensor>\n");
@@ -264,6 +264,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 			xml.append("<Sensor "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\""+sid+"\">\n");
 		xml.append("\t<parameters>\n");
 		xml.append("\t\t<Param name=\""+SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" value=\""+pid.getName()+"\" />\n");
+		xml.append("\t\t<Param name=\""+SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE+"\" value=\""+type+"\" />\n");
 		xml.append("\t\t<Param name=\""+SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" value=\""+nativeAddress+"\" />\n");
 		xml.append("\t</parameters>\n");
 		xml.append("</Sensor>\n");

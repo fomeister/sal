@@ -174,6 +174,14 @@ public class SMLDescription {
 	}
 	
 	/**
+	 * This method returns the type of the protocol associated with the sensor listed in this SML description
+	 * @return the type of the protocol associated with the sensor listed in this SML description
+	 */
+	public String getProtocolType(){
+		return parameters.get(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE);
+	}
+	
+	/**
 	 * This method returns the address of the sensor listed in this SML description
 	 * @return the address of the sensor listed in this SML description
 	 */

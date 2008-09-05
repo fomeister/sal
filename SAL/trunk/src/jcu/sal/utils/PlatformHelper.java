@@ -436,6 +436,15 @@ public class PlatformHelper {
 	}
 	
 	/**
+	 * Returns whether a file exists and is a file (not a directory)
+	 * @param f the full path to the file
+	 * @return whether the file exists
+	 */
+	public static boolean isFile(String f){
+		return new File(f).exists() && !isDir(f);
+	}
+	
+	/**
 	 * Returns whether a directory exists and is readable
 	 * @param d the full path to the directory
 	 * @return whether the file exists and is readable

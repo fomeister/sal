@@ -195,6 +195,18 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 			System.out.println("Command returned: " + res.getString());				
 	}
 	
+	public void printSensorList(SMLDescriptions smls){
+		SMLDescription tmp;
+		Iterator<SMLDescription> i = smls.getDescriptions().iterator();
+		while(i.hasNext()) {
+			tmp = i.next();
+			System.out.print("SID: "+tmp.getSID());
+			System.out.print(" - "+tmp.getSensorAddress());
+			System.out.print(" - "+tmp.getProtocolType());
+			System.out.println(" - "+tmp.getProtocolName());
+		}
+	}
+	
 	public void run(){
 		int sid=0;
 		String str, str2;
@@ -207,16 +219,9 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 					doActionSensor(sid);										
 				else if(sid==-2)
 					System.out.println(agent.listActiveSensors());
-				else if(sid==-3){
-					SMLDescription tmp;
-					Iterator<SMLDescription> i = new SMLDescriptions(agent.listActiveSensors()).getDescriptions().iterator();
-					while(i.hasNext()) {
-						tmp = i.next();
-						System.out.print("SID: "+tmp.getSID());
-						System.out.print(" - "+tmp.getSensorAddress());
-						System.out.println(" - "+tmp.getProtocolName());
-					}
-				} else if(sid==-4) {
+				else if(sid==-3)
+					printSensorList(new SMLDescriptions(agent.listActiveSensors()));
+				else if(sid==-4) {
 					System.out.println("Enter the XML doc for the new procotol:");
 					sb.delete(0, sb.length());
 					while(!(str=b.readLine()).equals(""))
@@ -244,16 +249,8 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 					agent.removeSensor(str);
 				} else if(sid==-8)
 					System.out.println(agent.listSensors());
-				else if(sid==-9) {
-					SMLDescription tmp;
-					Iterator<SMLDescription> i = new SMLDescriptions(agent.listSensors()).getDescriptions().iterator();
-					while(i.hasNext()) {
-						tmp = i.next();
-						System.out.print("SID: "+tmp.getSID());
-						System.out.print(" - "+tmp.getSensorAddress());
-						System.out.println(" - "+tmp.getProtocolName());
-					}
-				}
+				else if(sid==-9)
+					printSensorList(new SMLDescriptions(agent.listSensors()));
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
