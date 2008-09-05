@@ -71,9 +71,16 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 		supportedSensors.put(OSDataConstants.LoadAvg1,new OSdata("/proc/loadavg", null, 1, null, false));
 		supportedSensors.put(OSDataConstants.LoadAvg5,new OSdata("/proc/loadavg", null, 2, null, false));
 		supportedSensors.put(OSDataConstants.LoadAvg15,new OSdata("/proc/loadavg", null, 3, null, false));
+		supportedSensors.put(OSDataConstants.LoadAvg15,new OSdata("/proc/loadavg", null, 3, null, false));
+		supportedSensors.put(OSDataConstants.LoadAvg15,new OSdata("/proc/loadavg", null, 3, null, false));
+		supportedSensors.put(OSDataConstants.LoadAvg15,new OSdata("/proc/loadavg", null, 3, null, false));
+		supportedSensors.put(OSDataConstants.Temp1,new OSdata(OSDataConstants.DefaultTemp1File, null, 1, null, false));
+		supportedSensors.put(OSDataConstants.Temp2,new OSdata(OSDataConstants.DefaultTemp2File, null, 1, null, false));
+		supportedSensors.put(OSDataConstants.Temp3,new OSdata(OSDataConstants.DefaultTemp3File, null, 1, null, false));
 		
 		lastValues = new Hashtable<String,String>();
 		autoDetectionInterval = -1; //run only once
+		
 //		Add to the list of supported EndPoint IDs
 		supportedEndPointTypes.add(FSEndPoint.FSENDPOINT_TYPE);
 		multipleInstances=false;
@@ -86,18 +93,14 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	protected void internal_parseConfig() throws ConfigurationException {
 		cmls = CMLDescriptionStore.getStore();
 		try {
-			if(getConfig(OSDataConstants.CPUTempFile)!=null)
-				supportedSensors.put(OSDataConstants.CPUTemp,new OSdata(getConfig(OSDataConstants.CPUTempFile), null, 1, null, false));
+			supportedSensors.put(OSDataConstants.Temp1,new OSdata(getConfig(OSDataConstants.Temp1DataFile), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
 		try {
-			if(getConfig(OSDataConstants.NBTempFile)!=null)
-				supportedSensors.put(OSDataConstants.NBTemp,new OSdata(getConfig(OSDataConstants.NBTempFile), null, 1, null, false));
+			supportedSensors.put(OSDataConstants.Temp2,new OSdata(getConfig(OSDataConstants.Temp2DataFile), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
 		try {
-			if(getConfig(OSDataConstants.SBTempFile)!=null)
-				supportedSensors.put(OSDataConstants.SBTemp,new OSdata(getConfig(OSDataConstants.SBTempFile), null, 1, null, false));
+			supportedSensors.put(OSDataConstants.Temp3,new OSdata(getConfig(OSDataConstants.Temp3DataFile), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
-		
 		logger.debug("OSData protocol configured");
 	}
 
@@ -134,18 +137,25 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	protected boolean internal_probeSensor(Sensor s) {
 		OSdata d = supportedSensors.get(s.getNativeAddress());
 		if(d!=null) {
-			try {
-				if(PlatformHelper.isFileReadable(d.file)) {
-					logger.debug(s.toString()+" present");
-					s.enable();
-					return true;
+			if(PlatformHelper.isFile(d.file) && PlatformHelper.isFileReadable(d.file)) {
+				logger.debug(s.toString()+" present, using default file");
+				s.enable();
+				return true;
+			} else  {
+				try {
+					if(PlatformHelper.isFileReadable(s.getConfig(OSDataConstants.SMLDataFile))) {
+						logger.debug(s.toString()+" present, using supplied file");
+						s.enable();
+						return true;
+					} else
+						logger.debug("Supplied data file unreadable for sensor "+s.getNativeAddress());
+				} catch (BadAttributeValueExpException e) {
+					logger.debug("No data file supplied for sensor "+s.getNativeAddress());
 				}
-			} catch (Exception e) {
-				logger.error("couldnt probe sensor "+s.toString()+". Raised exception: "+e.getMessage());
 			}
-			logger.debug("Disconnecting sensor "+s.toString()+", couldnt find the matching file: "+d.file);
+			logger.debug("Disconnecting sensor "+s.toString());
 		} else 
-			logger.debug("Disconnecting sensor "+s.toString()+", couldnt find the matching file for "+s.getNativeAddress());
+			logger.debug("Disconnecting unsupported sensor sensor "+s.toString());
 		s.disconnect();
 		return false;
 	}
@@ -265,7 +275,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 				logger.error("couldnt get a reading for "+s.toString());
 				throw e;
 			}
-			if(s.getNativeAddress().equals(OSDataConstants.CPUTemp) || s.getNativeAddress().equals(OSDataConstants.NBTemp) || s.getNativeAddress().equals(OSDataConstants.SBTemp)){
+			if(s.getNativeAddress().equals(OSDataConstants.Temp1) || s.getNativeAddress().equals(OSDataConstants.Temp2) || s.getNativeAddress().equals(OSDataConstants.Temp3)){
 				ret = ret.substring(0, 2)+"."+ret.substring(2,4);
 			}
 		}

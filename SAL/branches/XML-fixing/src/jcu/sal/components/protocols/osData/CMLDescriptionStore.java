@@ -129,34 +129,34 @@ public class CMLDescriptionStore extends AbstractStore{
 		/* 
 		 * CPUTemp
 		 * */
-		key = OSDataConstants.CPUTemp;
+		key = OSDataConstants.Temp1;
 		mName = OSDataProtocol.GET_READING_METHOD;
-		name = "Get"+OSDataConstants.CPUTemp;
+		name = "Get"+OSDataConstants.Temp1;
 		desc = "Reads the CPU temperature";
 		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.CPUTemp, GENERIC_GETREADING, i);
+		addGenericCMLDesc(OSDataConstants.Temp1, GENERIC_GETREADING, i);
 		
 		/* 
 		 * NBTemp
 		 * */
-		key = OSDataConstants.NBTemp;
+		key = OSDataConstants.Temp2;
 		mName = OSDataProtocol.GET_READING_METHOD;
-		name = "Get"+OSDataConstants.NBTemp;
+		name = "Get"+OSDataConstants.Temp2;
 		desc = "Reads the north bridge temperature";
 		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.NBTemp, GENERIC_GETREADING, i);
+		addGenericCMLDesc(OSDataConstants.Temp2, GENERIC_GETREADING, i);
 	
 		/* 
 		 * SBTemp
 		 * */
-		key = OSDataConstants.SBTemp;
+		key = OSDataConstants.Temp3;
 		mName = OSDataProtocol.GET_READING_METHOD;
-		name = "Get"+OSDataConstants.SBTemp;
+		name = "Get"+OSDataConstants.Temp3;
 		desc = "Reads the south bridge temperature";
 		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.SBTemp, GENERIC_GETREADING, i);
+		addGenericCMLDesc(OSDataConstants.Temp3, GENERIC_GETREADING, i);
 	}
 }

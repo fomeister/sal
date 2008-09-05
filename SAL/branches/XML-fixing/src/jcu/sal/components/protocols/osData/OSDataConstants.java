@@ -7,22 +7,33 @@ public class OSDataConstants {
 	public static final String PROTOCOL_TYPE = "PlatformData";
 	
 	/**
-	 * The string used in the procol parameters section of PCML docs
-	 * which points to the file containing the CPU temperature 
+	 * The string used in the protocol parameters section of SML docs
+	 * which points to the file containing the required data
 	 */
-	public static String CPUTempFile = "CPUTempFile";
+	public static String SMLDataFile = "DataFile";
 	
 	/**
-	 * The string used in the procol parameters section of PCML docs
-	 * which points to the file containing the north bridge temperature 
+	 * The string used in the protocol parameters section of PCML docs
+	 * which points to the file containing the temp1 data
 	 */
-	public static String NBTempFile = "NBTempFile";
-
+	public static String Temp1DataFile = "Temp1DataFile";
+	
 	/**
-	 * The string used in the procol parameters section of PCML docs
-	 * which points to the file containing the south bridge temperature 
+	 * The string used in the protocol parameters section of PCML docs
+	 * which points to the file containing the temp1 data
 	 */
-	public static String SBTempFile = "SBTempFile";
+	public static String Temp2DataFile = "Temp2DataFile";
+	
+	/**
+	 * The string used in the protocol parameters section of PCML docs
+	 * which points to the file containing the temp1 data
+	 */
+	public static String Temp3DataFile = "Temp3DataFile";
+	
+	private static String HwMonPath = "/sys/class/hwmon/hwmon0/device/";
+	public static String DefaultTemp1File = HwMonPath + "temp1_input";
+	public static String DefaultTemp2File = HwMonPath + "temp2_input";
+	public static String DefaultTemp3File = HwMonPath + "temp3_input";
 	
 	/**
 	 * Name of Free Memory sensor
@@ -59,13 +70,13 @@ public class OSDataConstants {
 	/**
 	 * Name of CPU Temperature sensor
 	 */
-	public static String CPUTemp = "CPUTemp";
+	public static String Temp1 = "CPUTemp";
 	/**
 	 * Name of NB Temperature sensor
 	 */
-	public static String NBTemp = "NBTemp";
+	public static String Temp2 = "NBTemp";
 	/**
 	 * Name of SB Temperature sensor
 	 */
-	public static String SBTemp = "SBTemp";
+	public static String Temp3 = "SBTemp";
 }
