@@ -24,7 +24,6 @@ public class Sensor extends AbstractComponent<SensorID> {
 	
 	private Logger logger = Logger.getLogger(Sensor.class);
 	private SensorState state;
-	public static final String SENSOR_TYPE = "Sensor";
 	
 	/**
 	 * Sensor constructor

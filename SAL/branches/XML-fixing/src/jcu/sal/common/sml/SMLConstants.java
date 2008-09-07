@@ -6,7 +6,9 @@ import java.util.Vector;
 public class SMLConstants {
 
 	public static int SENSOR_ID_MAX = 65535;
-	public static int NB_PARAMETERS;
+	public static int NB_REQUIRED_PARAMETERS;
+	
+	public static final String SENSOR_TYPE = "Sensor";
 
 	public static final String SENSOR_CONF_NODE= "SensorConfiguration";
 	public static final String SENSOR_TAG= "Sensor";
@@ -24,7 +26,7 @@ public class SMLConstants {
 		PARAM_NAMES.add(PROTOCOL_NAME_ATTRIBUTE_NODE);
 		PARAM_NAMES.add(PROTOCOL_TYPE_ATTRIBUTE_NODE);
 		PARAM_NAMES.add(SENSOR_ADDRESS_ATTRIBUTE_NODE);
-		NB_PARAMETERS = PARAM_NAMES.size();
+		NB_REQUIRED_PARAMETERS = PARAM_NAMES.size();
 	}
 
 	

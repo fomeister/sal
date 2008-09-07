@@ -153,6 +153,19 @@ public class XMLhelper {
     	Document d = createEmptyDocument();
     	return d.appendChild(d.importNode(node,true));
     }
+    
+    /**
+     * Duplicates a node and put it in its own document
+     * @param node the XML node to be duplicated
+     * @return the node (in its new document)
+     * @throws ParserConfigurationException 
+     */   
+    public static Document isolateNode(Node node) 
+    	throws ParserConfigurationException {
+    	Document d = createEmptyDocument();
+    	d.appendChild(d.importNode(node,true));
+    	return d;
+    }
 
     /**
      * Adds a child to the parent node in the DOM document

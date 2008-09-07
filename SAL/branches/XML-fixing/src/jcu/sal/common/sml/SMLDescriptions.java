@@ -145,4 +145,29 @@ public class SMLDescriptions {
 		}
 		return null;
 	}
+
+	@Override
+	public int hashCode() {
+		final int PRIME = 31;
+		int result = 1;
+		result = PRIME * result + ((smls == null) ? 0 : smls.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final SMLDescriptions other = (SMLDescriptions) obj;
+		if (smls == null) {
+			if (other.smls != null)
+				return false;
+		} else if (!smls.equals(other.smls))
+			return false;
+		return true;
+	}
 }

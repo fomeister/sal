@@ -22,12 +22,14 @@ import org.apache.log4j.Logger;
  *
  */
 public abstract class EndPoint extends AbstractComponent<EndPointID> {
+	
+	private static Logger logger = Logger.getLogger(EndPoint.class);
+	static { Slog.setupLogger(logger); }
 
 	public static final String ENDPOINTTYPE_TAG = "type";
 	public static final String ENDPOINTNAME_TAG = "name";
 	public static final String ENPOINT_TAG="EndPoint";
 	
-	private Logger logger = Logger.getLogger(EndPoint.class);
 	
 	/**
 	 * The table containing the device change listeners and their associated usb IDs
@@ -45,7 +47,6 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 	 */
 	public EndPoint(EndPointID i, String t, Hashtable<String,String> c) {
 		super();
-		Slog.setupLogger(this.logger);
 		enabled=false;
 		configured=false;
 		id = i;
@@ -72,7 +73,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 				stop();
 			configured=false;
 			internal_remove();
-			this.logger.debug(type+" Endpoint removed");	
+			logger.debug(type+" Endpoint removed");	
 		}
 		c.componentRemovable(id);
 	}
@@ -84,7 +85,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 	public final void start() throws ConfigurationException{
 		synchronized (this) {
 			if(configured && !enabled) {
-				this.logger.debug("Starting "+type+" Endpoint.");
+				logger.debug("Starting "+type+" Endpoint.");
 				internal_start();
 				enabled=true;
 			}
@@ -98,7 +99,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 	public final void stop() {
 		synchronized (this) {
 			if(enabled) {
-				this.logger.debug("Stopping "+type+" Endpoint.");
+				logger.debug("Stopping "+type+" Endpoint.");
 				internal_stop();
 				enabled=false;
 			}

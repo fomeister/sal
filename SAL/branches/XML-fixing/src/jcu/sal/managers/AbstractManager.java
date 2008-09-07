@@ -13,85 +13,66 @@ import java.util.Map;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
+import jcu.sal.common.Parameters;
 import jcu.sal.components.HWComponent;
+import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 /**
  * Creates manager classes, which create, delete and manage components (Endpoints, AbstractProtocol, ...)
  * @author gilles
  *
  */
-public abstract class AbstractManager<T extends HWComponent> implements componentRemovalListener {
+public abstract class AbstractManager<T extends HWComponent, U extends HWComponentConfiguration> implements componentRemovalListener {
 	
 	public static String COMPONENTPARAM_TAG = "Param";
 	
-	private Logger logger = Logger.getLogger(AbstractManager.class);
+	private static Logger logger = Logger.getLogger(AbstractManager.class);
+	static { Slog.setupLogger(logger); }
 	protected Map<Identifier, T> ctable;
 	private Map<String, List<Identifier>> typeMap;
 	
 	public AbstractManager() {
-		Slog.setupLogger(this.logger);
 		ctable = new Hashtable<Identifier, T>();
 		typeMap = new Hashtable<String, List<Identifier>>();
 	}
 
 	/**
 	 * returns the configuration directives for this component
-	 * @param n the DOM document
-	 * @return the config directives in a hastable
+	 * @param c the configuration object for this component
+	 * @return the Parameters associated with this component
 	 */
-	protected Map<String, String> getComponentConfig(Node n){
-		List<String> xml = null;
-		Map<String, String> config = new Hashtable<String, String>();
-		String name = null, value = null;
-		
-		try {
-			xml = XMLhelper.getAttributeListFromElements("//" + COMPONENTPARAM_TAG, n);			
-			Iterator<String> iter = xml.iterator();
-			while(iter.hasNext()) {
-				iter.next();
-				name = iter.next();
-				iter.next();
-				value = iter.next();
-				config.put(name,value);
-			}
-		} catch (XPathExpressionException e) {
-			logger.error("Did not find any parameters for this Component");
-		}
-		return config;
+	protected Parameters getComponentConfig(U c){
+		return c.getParameters();
 	}
 	
 	/**
 	 * Create a new instance of a fully configured component from its DOM document
-	 * @param n the XML configuration node
+	 * @param c the configuration object for the component
 	 * @return an instance of the component
-	 * @throws ConfigurationException if the component's XML configuration is invalid and the component can not be created
+	 * @throws ConfigurationException if the component can not be created
 	 */
-	public T createComponent(Node n) throws ConfigurationException {
+	public T createComponent(U c) throws ConfigurationException {
 		T newc = null;
-		String t = null;
+		String type = c.getType();
 		Identifier id;
 		try {
 			synchronized(ctable) {
-				id = getComponentID(n);
-				t = getComponentType(n);
+				id = getComponentID(c);
 				if(!ctable.containsKey(id)) {
-					newc = build(n, id);
+					newc = build(c, id);
 					if(newc!=null) {
 							//store new component
 							ctable.put(newc.getID(), newc);
 							//store new type
-							if(typeMap.get(t)==null)
-								typeMap.put(t, new LinkedList<Identifier>());
-							typeMap.get(t).add(id);
+							if(typeMap.get(type)==null)
+								typeMap.put(type, new LinkedList<Identifier>());
+							typeMap.get(type).add(id);
 							
 							return newc;						
 					} else {
@@ -199,13 +180,13 @@ public abstract class AbstractManager<T extends HWComponent> implements componen
 	}
 	
 	/**
-	 * Creates the component from a DOM document
-	 * @param n the DOM document
+	 * Instanciates a component
+	 * @param c the configuration object
 	 * @param id the identifier for the new component
 	 * @return the component
 	 * @throws InstantiationException 
 	 */
-	protected abstract T build(Node n, Identifier id) throws InstantiationException;
+	protected abstract T build(U c, Identifier id) throws InstantiationException;
 	
 	/**
 	 * Deletes the component and give the subclass a chance to turn things off properly
@@ -214,17 +195,9 @@ public abstract class AbstractManager<T extends HWComponent> implements componen
 	protected abstract void remove(T component);
 	
 	/**
-	 * returns the name of a component from its DOM document
-	 * @param n the DOM document
+	 * returns the ID of a component from its configuration object
+	 * @param c the configuration object
 	 * @return the ID of the component
 	 */
-	protected abstract Identifier getComponentID(Node n) throws ParseException;
-	
-	/**
-	 * returns the type of a component from its DOM document
-	 * @param n the DOM document
-	 * @return the type of the component
-	 */
-	protected abstract String getComponentType(Node n) throws ParseException;
-
+	protected abstract Identifier getComponentID(U c) throws ParseException;
 }

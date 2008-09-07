@@ -95,7 +95,7 @@ public class SALAgentImpl implements SALAgent{
 	 * @see jcu.sal.agent.SALAgentInterface#listActiveSensors()
 	 */
 	public String listActiveSensors() {
-		return sm.listActiveSensors().getSMLString();		
+		return sm.listSensors(true).getSMLString();		
 	}
 	
 	/*
@@ -103,7 +103,7 @@ public class SALAgentImpl implements SALAgent{
 	 * @see jcu.sal.agent.SALAgentInterface#listSensors()
 	 */
 	public String listSensors() {
-		return sm.listSensors().getSMLString();
+		return sm.listSensors(false).getSMLString();
 	}
 
 	/*

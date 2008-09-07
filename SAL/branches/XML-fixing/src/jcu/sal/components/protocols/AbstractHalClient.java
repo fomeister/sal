@@ -8,6 +8,7 @@ import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Parameters;
 import jcu.sal.components.Identifier;
 import jcu.sal.config.FileConfigService;
 import jcu.sal.managers.ProtocolManager;
@@ -52,8 +53,8 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	 * @param type the type of protocols
 	 * @return a Map of their configuration
 	 */
-	protected Map<Identifier, Map<String,String>> findRunningProtocolConfigFromType(String type){
-		Map<Identifier, Map<String,String>> ret = new Hashtable<Identifier, Map<String,String>>();
+	protected Map<Identifier, Parameters> findRunningProtocolConfigFromType(String type){
+		Map<Identifier, Parameters> ret = new Hashtable<Identifier, Parameters>();
 		try {
 			Iterator<Identifier> i = pm.getComponentsOfType(type).iterator();
 			Identifier id;
@@ -76,14 +77,14 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	 */
 	protected List<Identifier> findRunningProtocolNameFromConfig(String type, String param, String value){
 		List<Identifier> l = new Vector<Identifier>();
-		Map<Identifier, Map<String,String>> m = findRunningProtocolConfigFromType(type);
+		Map<Identifier, Parameters> m = findRunningProtocolConfigFromType(type);
 		Identifier id;
 		Iterator<Identifier> i = m.keySet().iterator();
 
 		while(i.hasNext()){
 			id = i.next();
 			try {
-				if(m.get(id).get(param).equals(value))
+				if(m.get(id).hasValue(param,value))
 					l.add(id);
 			} catch (Exception e){}				
 		}

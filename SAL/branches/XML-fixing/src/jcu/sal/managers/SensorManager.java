@@ -169,10 +169,13 @@ public class SensorManager extends AbstractManager<Sensor> {
 	}
 	
 	/**
-	 * This method returns an SMLDescriptions object for all currently-active sensors 
-	 * @return an SMLDescriptions object for all currently-active sensors
+	 * This method returns an SMLDescriptions object for all sensors (if <code>onlyActive</code> is false), or only for
+	 * currently-active sensors otherwise.
+	 * @param onlyActive if set, the returned SMLDescriptions will be limited to cuurently active sensors. Otherwise, all
+	 * known sensors will be included.   
+	 * @return an SMLDescriptions object for the selected set of sensors
 	 */
-	public SMLDescriptions listActiveSensors(){
+	public SMLDescriptions listSensors(boolean onlyActive){
 		Sensor s;
 		Integer sid;
 		Map<Integer, SMLDescription> m = new Hashtable<Integer, SMLDescription>();
@@ -182,32 +185,8 @@ public class SensorManager extends AbstractManager<Sensor> {
 				while(i.hasNext()) {
 					s = i.next();
 					sid = new Integer(s.getID().getName());
-					if(!s.isDisconnected())
+					if(!onlyActive || (onlyActive && !s.isDisconnected()))
 						m.put(sid, new SMLDescription(sid, s.getConfig()));
-				}	
-			}
-	    } catch (ConfigurationException e) {
-	    	logger.error("we shouldnt be here !!");
-	    	e.printStackTrace();
-		}
-		return new SMLDescriptions(m);
-	}
-	
-	/**
-	 * This method returns an SMLDescriptions object for all  sensors 
-	 * @return an SMLDescriptions object for all sensors
-	 */
-	public SMLDescriptions listSensors(){
-		Sensor s;
-		Integer sid;
-		Map<Integer, SMLDescription> m = new Hashtable<Integer, SMLDescription>();
-		try {
-			synchronized(ctable){
-				Iterator<Sensor> i = ctable.values().iterator();
-				while(i.hasNext()) {
-					s = i.next();
-					sid = new Integer(s.getID().getName());
-					m.put(sid, new SMLDescription(sid, s.getConfig()));
 				}	
 			}
 	    } catch (ConfigurationException e) {

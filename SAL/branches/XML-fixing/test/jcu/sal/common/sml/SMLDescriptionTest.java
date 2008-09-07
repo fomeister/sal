@@ -3,14 +3,19 @@
  */
 package jcu.sal.common.sml;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Set;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Parameters;
+import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.utils.XMLhelper;
 
 import org.junit.After;
@@ -23,7 +28,7 @@ import org.w3c.dom.Document;
  *
  */
 public class SMLDescriptionTest {
-	private Hashtable<String, String> p1, p2, p3;
+	private Parameters p1, p2, p3;
 	
 	//missing sid attribute
 	private String sml1 = "<"+SMLConstants.SENSOR_TAG+">\n" +
@@ -43,7 +48,7 @@ public class SMLDescriptionTest {
 							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MySensorAddress\" />\n"+
 							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+
-							"=\"shouldNOT\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"goTHROUGH\" />\n"+
+							"=\"should\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"goTHROUGH\" />\n"+
 							"</"+SMLConstants.PARAMETERS_NODE+">\n"+
 							"</"+SMLConstants.SENSOR_TAG+">";
 	
@@ -62,6 +67,8 @@ public class SMLDescriptionTest {
 							SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocol\" />\n"+
 							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MySensorAddress\" />\n"+
+							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocolType\" />\n"+
 							"</"+SMLConstants.PARAMETERS_NODE+">\n"+
 							"</"+SMLConstants.SENSOR_TAG+">";
 	
@@ -73,19 +80,26 @@ public class SMLDescriptionTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		p1 = new Hashtable<String, String>();
-		p2 = new Hashtable<String, String>();
-		p3 = new Hashtable<String, String>();
+		Vector<Parameter> v = new Vector<Parameter>();
+
+		//missing one required attribute
+		v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol"));
+		v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, "MyProtocolType"));
+		v.add(new Parameter("shoudNOT", "goTHROUGH"));
+		p1 = new Parameters(v);
 		
-		p1.put(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol");
-		p1.put(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, "MySensorAddress");
-		p1.put("shoudNOT", "goTHROUGH");
+		v.removeAllElements();
+		//missing two required attributes
+		v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol"));
+		v.add(new Parameter("shoudNOT", "goTHROUGH"));
+		p2 = new Parameters(v);
 		
-		p2.put(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol");
-		p2.put("shoudNOT", "goTHROUGH");
-		
-		p3.put(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol");
-		p3.put(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, "MySensorAddress");
+		v.removeAllElements();
+		//should be ok
+		v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol"));
+		v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, "MyProtocolType"));
+		v.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, "MySensorAddress"));
+		p3 = new Parameters(v);
 		
 		try {
 			d1 = XMLhelper.createDocument(sml1);
@@ -192,6 +206,7 @@ public class SMLDescriptionTest {
 		Set<String> set3 = new HashSet<String>();
 		set.add(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
 		set.add(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);
+		set.add(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE);
 		
 		set1.add(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
 		set1.add(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);

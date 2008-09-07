@@ -1,14 +1,16 @@
 package jcu.sal.common.sml;
 
-import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jcu.sal.common.Parameters;
+import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -20,48 +22,48 @@ import org.w3c.dom.Document;
  * @author gilles
  *
  */
-public class SMLDescription {
+public class SMLDescription implements HWComponentConfiguration{
 	private static Logger logger = Logger.getLogger(SMLDescription.class);
 	static {
 		Slog.setupLogger(logger);
 	}
 
 	private Integer sid;
-	private Map<String,String> parameters;
+	//private Map<String,String> parameters;
+	private Parameters parameters;
 	
 	private static String XPATH_SENSOR_DESC="/"+SMLConstants.SENSOR_TAG;
 	private static String XPATH_SENSOR_PARAMETER=XPATH_SENSOR_DESC+"/"+SMLConstants.PARAMETERS_NODE+"/"+SMLConstants.PARAMETER_NODE;
 	
 	/**
 	 * This method constructs a new SML description object given a sensor ID and a table of key,value pairs representing
-	 * the sensor parameters. These parameters will be checked to make sure all required parameters are there.
+	 * the sensor parameters. These parameters will be checked to make sure all required parameters are there. This constructor will
+	 * check that there are at least <code>SMLConstants.NB_REQUIRED_PARAMETERS</code> parameters whose names are in the
+	 * <code>SMLConstants.PARAM_NAMES</code> list. More parameters may exist though, but the required ones must be present.
 	 * @param s the sensor ID
 	 * @param p the parameter list
 	 * @throws ConfigurationException if either arguments are invalid
 	 */
-	public SMLDescription(Integer s, Map<String,String> p) throws ConfigurationException {
-		Set<String> l;
+	public SMLDescription(Integer s, Parameters p) throws ConfigurationException {
 		String tmp;
 		
 		//Check the args
-		if(s.intValue()<0 || s.intValue()>SMLConstants.SENSOR_ID_MAX || p.size() != SMLConstants.NB_PARAMETERS)
+		if(s.intValue()<0 || s.intValue()>SMLConstants.SENSOR_ID_MAX || p.getSize() < SMLConstants.NB_REQUIRED_PARAMETERS)
 			throw new ConfigurationException("Invalid sensor ID or parameter list");
 		sid = new Integer(s);
 		
 		//check the param list
 		Iterator<String> iter = SMLConstants.PARAM_NAMES.iterator();
-		l = p.keySet();
 		while(iter.hasNext()) {
 			tmp = iter.next();
-			if(!l.contains(tmp)) throw new ConfigurationException("Couldnt find required parameter '"+tmp+"'");
+			if(!p.hasParameter(tmp)) throw new ConfigurationException("Couldnt find required parameter '"+tmp+"'");
 		}
-		parameters = new Hashtable<String, String>(p);
+		parameters = p;
 	}
 	
 	public SMLDescription(Document doc) throws ConfigurationException {
 		checkDocument(doc);
 		parseSensorID(doc);
-		parameters = new Hashtable<String, String>();
 		parseParameters(doc);		
 	}
 	
@@ -87,9 +89,9 @@ public class SMLDescription {
 		
 		try {
 			nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_SENSOR_PARAMETER+")", d));
-			if(nb!=SMLConstants.NB_PARAMETERS){
+			if(nb!=SMLConstants.NB_REQUIRED_PARAMETERS){
 				logger.error("The number of parameters found in this document ("+nb+") is different from the required number ("+
-							SMLConstants.NB_PARAMETERS+")");
+							SMLConstants.NB_REQUIRED_PARAMETERS+")");
 				logger.error(XMLhelper.toString(d));
 				throw new ConfigurationException();
 			}
@@ -125,19 +127,21 @@ public class SMLDescription {
 	private void parseParameters(Document d) throws ConfigurationException {
 		String paramName, paramValue;
 		Iterator<String> i = SMLConstants.PARAM_NAMES.iterator();
+		List<Parameter> l = new Vector<Parameter>();
 		
 		while(i.hasNext()){
 			paramName = i.next();
 			try {
 				paramValue = XMLhelper.getAttributeFromName(XPATH_SENSOR_PARAMETER+"[@"+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+
 															"=\""+paramName+"\"]", SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE, d);
-				parameters.put(paramName, paramValue);
+				l.add(new Parameter(paramName, paramValue));
 			} catch (Exception e) {
 				e.printStackTrace();
 				logger.error("Cant find value for parameter '"+paramName+"' in SMLdescriptor XML doc");
 				throw new ConfigurationException();
 			}
 		}
+		parameters = new Parameters(l);
 	}
 	
 	/**
@@ -149,12 +153,28 @@ public class SMLDescription {
 	}
 	
 	/**
+	 * This method returns the sensor ID
+	 * @return the sensor ID
+	 */
+	public String getID() {
+		return sid.toString();
+	}
+	
+	/**
+	 * This method returns the type of the component
+	 */
+	public String getType() {
+		return SMLConstants.SENSOR_TYPE;
+	}
+	
+	/**
 	 * This method returns the value of a parameter given its name.
 	 * @param n the name of the parameter
 	 * @return the value of the parameter, which can be null if no parameter with this name is found
+	 * @throws ConfigurationException if there is no parameter matching the given name 
 	 */
-	public String getParameter(String n){
-		return parameters.get(n);
+	public String getParameter(String n) throws ConfigurationException{
+		return parameters.getParameter(n).getStringValue();
 	}
 	
 	/**
@@ -162,7 +182,15 @@ public class SMLDescription {
 	 * @return a set of parameter names
 	 */
 	public Set<String> getParameterNames(){
-		return new HashSet<String>(parameters.keySet());
+		return parameters.getNames();
+	}
+	
+	/**
+	 * This method returns the parameters associated with this sensor
+	 * @return the parameters associated with this sensor
+	 */
+	public Parameters getParameters(){
+		return parameters;
 	}
 	
 	/**
@@ -170,7 +198,13 @@ public class SMLDescription {
 	 * @return the name of the protocol associated with the sensor listed in this SML description
 	 */
 	public String getProtocolName(){
-		return parameters.get(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
+		try {
+			return parameters.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE).getStringValue();
+		} catch (ConfigurationException e) {
+			logger.error("we shouldnt be here. It seems the sensor has been created without a protocol name");
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	/**
@@ -178,7 +212,13 @@ public class SMLDescription {
 	 * @return the type of the protocol associated with the sensor listed in this SML description
 	 */
 	public String getProtocolType(){
-		return parameters.get(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE);
+		try {
+			return parameters.getParameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE).getStringValue();
+		} catch (ConfigurationException e) {
+			logger.error("we shouldnt be here. It seems the sensor has been created without a protocol type");
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	/**
@@ -186,7 +226,13 @@ public class SMLDescription {
 	 * @return the address of the sensor listed in this SML description
 	 */
 	public String getSensorAddress(){
-		return parameters.get(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);
+		try {
+			return parameters.getParameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE).getStringValue();
+		} catch (ConfigurationException e) {
+			logger.error("we shouldnt be here. It seems the sensor has been created without an address");
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	/**
@@ -194,7 +240,7 @@ public class SMLDescription {
 	 * @return the XML version of this SMLDescription object
 	 */
 	public String getSMLString() {
-		Iterator<String> i = parameters.keySet().iterator();
+		Iterator<String> i = parameters.getNames().iterator();
 		String n;
 		StringBuffer sb = new StringBuffer();
 		sb.append("<"+SMLConstants.SENSOR_TAG+" "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\""+sid.toString()+"\">\n"
@@ -202,8 +248,12 @@ public class SMLDescription {
 
 		while(i.hasNext()) {
 			n = i.next();
-			sb.append("\t\t<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+n+
-					"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\""+parameters.get(n)+"\" />\n");
+			try {
+				sb.append("\t\t<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+n+
+						"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\""+parameters.getParameter(n).getStringValue()+"\" />\n");
+			} catch (ConfigurationException e) {
+				logger.error("we shouldnt be here. looking for parameter name "+n+ " but cant find it");
+			}
 		}
 
 		sb.append("\t</"+SMLConstants.PARAMETERS_NODE+">\n</"+SMLConstants.SENSOR_TAG+">\n");
@@ -222,5 +272,35 @@ public class SMLDescription {
 		}
 		return null;
 	}
-	
+
+	@Override
+	public int hashCode() {
+		final int PRIME = 31;
+		int result = 1;
+		result = PRIME * result + ((parameters == null) ? 0 : parameters.hashCode());
+		result = PRIME * result + ((sid == null) ? 0 : sid.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final SMLDescription other = (SMLDescription) obj;
+		if (parameters == null) {
+			if (other.parameters != null)
+				return false;
+		} else if (!parameters.equals(other.parameters))
+			return false;
+		if (sid == null) {
+			if (other.sid != null)
+				return false;
+		} else if (!sid.equals(other.sid))
+			return false;
+		return true;
+	}	
 }
