@@ -148,11 +148,9 @@ public class OWFSProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected boolean internal_probeSensor(Sensor s) {
-		// TODO complete this method
-		String d = new String(config.get(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+s.getNativeAddress());
 		try {
 			logger.debug("Probing sensor " + s.getNativeAddress());
-			if(PlatformHelper.isDirReadable(d)) {
+			if(PlatformHelper.isDirReadable(getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+s.getNativeAddress())) {
 				s.enable();
 				logger.debug("Sensor " + s.getNativeAddress()+ " present");
 				return true;
@@ -258,7 +256,7 @@ public class OWFSProtocol extends AbstractProtocol{
 			}
 
 			while(++attempt<=OWFSSTART_MAX_ATTEMPTS && !started) {
-				c = PlatformHelper.captureOutputs(config.get(OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+config.get(OWFSProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
+				c = PlatformHelper.captureOutputs(getConfig(OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+getConfig(OWFSProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
 				BufferedReader r[] = c.getBuffers(); 
 				try {Thread.sleep(100);} catch (InterruptedException e) {}
 				//check stdout & stderr
@@ -290,6 +288,9 @@ public class OWFSProtocol extends AbstractProtocol{
 			
 		} catch (IOException e) {
 			logger.error("Coudlnt run the OWFS process");
+			throw new ConfigurationException();
+		} catch (BadAttributeValueExpException e) {
+			logger.error("Cant find the 1w mount point / OWFS bin location");
 			throw new ConfigurationException();
 		}
 	}

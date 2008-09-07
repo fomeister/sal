@@ -131,4 +131,29 @@ public class CMLDescriptions {
 			throw new ConfigurationException();
 		}		
 	}
+
+	@Override
+	public int hashCode() {
+		final int PRIME = 31;
+		int result = 1;
+		result = PRIME * result + ((cmls == null) ? 0 : cmls.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final CMLDescriptions other = (CMLDescriptions) obj;
+		if (cmls == null) {
+			if (other.cmls != null)
+				return false;
+		} else if (!cmls.equals(other.cmls))
+			return false;
+		return true;
+	}
 }

@@ -19,6 +19,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.pcml.PCMLConstants;
 import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
@@ -43,14 +44,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 
 	private static Logger logger = Logger.getLogger(AbstractProtocol.class);
 	static {	Slog.setupLogger(logger); }
-	
-	public static final String PROTOCOLTYPE_TAG = "type";
-	public static final String PROTOCOLNAME_TAG = "name";
-	public static final String PROTOCOL_TAG="Protocol";
-	public static final String PROTOCOLSECTION_TAG="protocols";
-	public static final String AUTODETECTSENSORS_TAG="AutoDetectSensors";
 
-	
 	/**
 	 * A list of endpoints types supported by this protocol
 	 */
@@ -138,7 +132,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	public final void parseConfig() throws ConfigurationException {
 		logger.debug("Parsing our configuration");
 		
-		try { autoDetectionInterval = Integer.parseInt(getConfig(AUTODETECTSENSORS_TAG));}
+		try { autoDetectionInterval = Integer.parseInt(getConfig(PCMLConstants.AUTODETECTSENSORS_TAG));}
 		catch (BadAttributeValueExpException e) {}//keep default value supplied hopefully by the Protocol subclass
 		
 		logger.debug("Build the EndPoint");

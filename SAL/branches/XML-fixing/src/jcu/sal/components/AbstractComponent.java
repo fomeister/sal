@@ -3,13 +3,12 @@
  */
 package jcu.sal.components;
 
-import java.util.Hashtable;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Parameters;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -20,36 +19,33 @@ import org.apache.log4j.Logger;
  *
  */
 public abstract class AbstractComponent<T extends Identifier> implements HWComponent {
+
+	private static Logger logger = Logger.getLogger(AbstractComponent.class);
+	static {Slog.setupLogger(logger);}
 	
-	protected Map<String, String> config;
-	private Logger logger = Logger.getLogger(AbstractComponent.class);
-//	protected boolean started = false;
+	protected Parameters params;
 	protected AtomicBoolean removed;
 	protected String type = null;
 	protected T id = null;
 	
-	public AbstractComponent() {
-		Slog.setupLogger(this.logger);
-		config = new Hashtable<String,String>();
-	}
+	public AbstractComponent() {}
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#getConfig()
 	 */
 	@Override
-	public Map<String, String> getConfig() { return config; }
+	public Parameters getConfig() { return params; }
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#getConfig(java.lang.String)
 	 */
 	@Override
 	public String getConfig(String directive) throws BadAttributeValueExpException {
-		String s = config.get(directive);
-		if (s==null) {
-			//logger.error("Unable to get a config directive with this name "+ directive);
+		try {
+			return params.getParameter(directive).getStringValue();
+		} catch (ConfigurationException e) {
 			throw new BadAttributeValueExpException("Unable to get a config directive with this name "+ directive);
-		}			
-		return s; 
+		}
 	}
 	
 	/* (non-Javadoc)

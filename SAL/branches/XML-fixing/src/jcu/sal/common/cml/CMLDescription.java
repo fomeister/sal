@@ -336,4 +336,59 @@ public class CMLDescription {
 			return argTypes.get(pos);
 		throw new ConfigurationException("Argument '"+name+"' not found");
 	}
+
+	@Override
+	public int hashCode() {
+		final int PRIME = 31;
+		int result = 1;
+		result = PRIME * result + ((argNames == null) ? 0 : argNames.hashCode());
+		result = PRIME * result + ((argTypes == null) ? 0 : argTypes.hashCode());
+		result = PRIME * result + ((cid == null) ? 0 : cid.hashCode());
+		result = PRIME * result + ((desc == null) ? 0 : desc.hashCode());
+		result = PRIME * result + ((name == null) ? 0 : name.hashCode());
+		result = PRIME * result + ((returnType == null) ? 0 : returnType.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final CMLDescription other = (CMLDescription) obj;
+		if (argNames == null) {
+			if (other.argNames != null)
+				return false;
+		} else if (!argNames.equals(other.argNames))
+			return false;
+		if (argTypes == null) {
+			if (other.argTypes != null)
+				return false;
+		} else if (!argTypes.equals(other.argTypes))
+			return false;
+		if (cid == null) {
+			if (other.cid != null)
+				return false;
+		} else if (!cid.equals(other.cid))
+			return false;
+		if (desc == null) {
+			if (other.desc != null)
+				return false;
+		} else if (!desc.equals(other.desc))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (returnType == null) {
+			if (other.returnType != null)
+				return false;
+		} else if (!returnType.equals(other.returnType))
+			return false;
+		return true;
+	}
 }

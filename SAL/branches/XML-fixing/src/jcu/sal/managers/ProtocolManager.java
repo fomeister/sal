@@ -16,6 +16,7 @@ import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
@@ -37,7 +38,7 @@ import org.w3c.dom.Node;
  * @author gilles
  * 
  */
-public class ProtocolManager extends AbstractManager<AbstractProtocol> {
+public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolConfiguration> {
 
 	private static ProtocolManager p = new ProtocolManager();
 	private Logger logger = Logger.getLogger(ProtocolManager.class);
@@ -69,37 +70,29 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 	 * @see jcu.sal.managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected AbstractProtocol build(Node config, Identifier id) throws InstantiationException {
+	protected AbstractProtocol build(ProtocolConfiguration config, Identifier id) throws InstantiationException {
 		AbstractProtocol p = null;
-		String type=null;
+		String type=config.getType();
 		ProtocolID i = (ProtocolID) id;
 		logger.debug("building protocol "+id.getName());
 		try {
-			type=getComponentType(config);
 
 			logger.debug("AbstractProtocol type: " + type);
 			String className = ProtocolModulesList.getProtocolClassName(type);
 
-			Class<?>[] params = {ProtocolID.class, Hashtable.class, Node.class};
+			Class<?>[] params = {ProtocolID.class, ProtocolConfiguration.class};
 			Constructor<?> c = Class.forName(className).getConstructor(params);
-			Object[] o = new Object[3];
+			Object[] o = new Object[2];
 			o[0] = i;
-			o[1] = getComponentConfig(config);
+			o[1] = config;
 			//logger.debug("AbstractProtocol config: " + XMLhelper.toString(config));
-			o[2] = XMLhelper.getNode("/" + AbstractProtocol.PROTOCOL_TAG + "/" + EndPoint.ENPOINT_TAG, config, true);
-			//logger.debug("EndPoint config: " + XMLhelper.toString((Node) o[2])); 
 			p = (AbstractProtocol) c.newInstance(o);
-			logger.debug("done building protocol "+p.toString());			
-		} catch (ParseException e) {
-			logger.error("Error while parsing the DOM document. XML doc:");
-			logger.error(XMLhelper.toString(config));
-			//e.printStackTrace();
-			throw new InstantiationException();
+			logger.debug("done building protocol "+p.toString());
 		} catch (Exception e) {
 			logger.error("Error in new protocol instanciation.");
 			e.printStackTrace();
 			logger.error("XML doc:\n");
-			logger.error(XMLhelper.toString(config));
+			logger.error(config.getXMLString());
 			throw new InstantiationException();
 		}
 		
@@ -137,29 +130,8 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol> {
 	 * @see jcu.sal.managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Identifier getComponentID(Node n) throws ParseException {
-		Identifier id = null;
-		try {
-			id = new ProtocolID(XMLhelper.getAttributeFromName("//" + AbstractProtocol.PROTOCOL_TAG, AbstractProtocol.PROTOCOLNAME_TAG, n));
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new ParseException("Couldnt find the protocol identifier", 0);
-		}
-		return id;
-	}
-	
-	/* (non-Javadoc)
-	 * @see jcu.sal.managers.ManagerFactory#getComponentType(org.w3c.dom.Document)
-	 */
-	@Override
-	protected String getComponentType(Node n) throws ParseException {
-		String type = null;
-		try {
-			type = XMLhelper.getAttributeFromName("//" + AbstractProtocol.PROTOCOL_TAG, AbstractProtocol.PROTOCOLTYPE_TAG, n);
-		} catch (Exception e) {
-			throw new ParseException("Couldnt find the protocol type", 0);
-		}
-		return type;
+	protected Identifier getComponentID(ProtocolConfiguration n) throws ParseException {
+		return new ProtocolID(n.getID());
 	}
 	
 	/* (non-Javadoc)

@@ -3,16 +3,16 @@
  */
 package jcu.sal.components;
 
-import java.util.Map;
-
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
+
+import jcu.sal.common.Parameters;
 
 
 
 /**
  * This interface specifies the basic methods required by Components 
- * (LogicalPorts, EndPoints, Sensors and Procotol)
+ * (EndPoints, Sensors and Procotol)
  * @author gilles
  *
  */
@@ -36,7 +36,7 @@ public interface HWComponent {
 	 * @param config the component's configuration
 	 *
 	 */
-	public Map<String, String> getConfig();
+	public Parameters getConfig();
 	
 	/**
 	 * Retrieves a single configuration directive from theis component
