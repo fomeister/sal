@@ -1,10 +1,10 @@
 package jcu.sal.common.cml;
 
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Vector;
+import java.util.Set;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -59,7 +59,10 @@ public class CMLDescriptions {
 		for (int i = 0; i < n.getLength(); i++) {
 			try {
 				d = new CMLDescription(XMLhelper.createDocument(n.item(i)));
-				this.cmls.put(d.getCID(), d);
+				if(this.cmls.put(d.getCID(), d)!=null) {
+					logger.error("The CML descriptions document contains command with the same name");
+					throw new ConfigurationException("2 or more individual CML descriptions share the same name '"+d.getCID()+"'");
+				}
 			} catch (ParserConfigurationException e) {
 				logger.error("error creating a document from node");
 				e.printStackTrace();
@@ -78,19 +81,19 @@ public class CMLDescriptions {
 	}
 	
 	/**
-	 * This method returns a list of the command identifier present in this CML descriptions document
-	 * @return a list of the command identifier present in this CML descriptions document
+	 * This method returns a set of the command identifier present in this CML descriptions document
+	 * @return a set of the command identifier present in this CML descriptions document
 	 */
-	public List<Integer> getCIDs(){
-		return new Vector<Integer>(cmls.keySet());
+	public Set<Integer> getCIDs(){
+		return new HashSet<Integer>(cmls.keySet());
 	}
 	
 	/**
-	 * This method returns a list of individual CML description objects
-	 * @return a list of CML description objects
+	 * This method returns a set of individual CML description objects
+	 * @return a set of CML description objects
 	 */
-	public List<CMLDescription> getDescriptions(){
-		return new Vector<CMLDescription>(cmls.values());
+	public Set<CMLDescription> getDescriptions(){
+		return new HashSet<CMLDescription>(cmls.values());
 	}
 	
 	/**

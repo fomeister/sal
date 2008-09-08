@@ -1,7 +1,6 @@
 package jcu.sal.components.protocols.simpleSNMP;
 
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -9,6 +8,7 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.EthernetEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
@@ -16,7 +16,6 @@ import jcu.sal.components.sensors.Sensor;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 import uk.co.westhawk.snmp.pdu.BlockPdu;
 import uk.co.westhawk.snmp.stack.AgentException;
@@ -30,6 +29,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 	 */
 	public static final String PROTOCOL_TYPE = "SSNMP";
 	private static Logger logger = Logger.getLogger(SSNMPProtocol.class);
+	static {Slog.setupLogger(logger);}
 	private static String OID_START = "1.3";
 	//Maximum number of OIDs to be detected automatically  
 	private static int MAX_AUTODETECTED_OIDS = 1000;
@@ -41,11 +41,10 @@ public class SSNMPProtocol extends AbstractProtocol{
 
 	/**
 	 * Construct the SSNMPProtocol object
+	 * @throws ConfigurationException 
 	 */
-	public SSNMPProtocol(ProtocolID i, Hashtable<String,String> c, Node d) {
-		super(i,PROTOCOL_TYPE,c,d);
-		Slog.setupLogger(logger);
-		
+	public SSNMPProtocol(ProtocolID i, ProtocolConfiguration c) throws ConfigurationException {
+		super(i,PROTOCOL_TYPE,c);		
 
 //		Add to the list of supported EndPoint IDs
 		supportedEndPointTypes.add(EthernetEndPoint.ETHERNETENDPOINT_TYPE);
@@ -58,16 +57,16 @@ public class SSNMPProtocol extends AbstractProtocol{
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
 		try {
-			agent = getConfig("AgentIP");
-			comm_string = getConfig("CommunityString");
+			agent = getParameter("AgentIP");
+			comm_string = getParameter("CommunityString");
 		} catch (BadAttributeValueExpException e) {
 			logger.error("Cant find 'AgentIP' / 'CommunityString' in AbstractProtocol config.");
 			throw new ConfigurationException("SSNMP 'AgentIP' / 'CommunityString' config directives missing");
 		}
 
-		try { timeout = Integer.parseInt(getConfig("Timeout")); }
+		try { timeout = Integer.parseInt(getParameter("Timeout")); }
 		catch (BadAttributeValueExpException e) { timeout=1500;}
-		try { autoDetectionInterval = (getConfig("AutodetectOIDs").equals("1") || getConfig("AutodetectOIDs").equalsIgnoreCase("true")) ? -1 : 0;}
+		try { autoDetectionInterval = (getParameter("AutodetectOIDs").equals("1") || getParameter("AutodetectOIDs").equalsIgnoreCase("true")) ? -1 : 0;}
 		catch (BadAttributeValueExpException e) {autoDetectionInterval=-1;}
 		
 		cmls = CMLDescriptionStore.getStore();

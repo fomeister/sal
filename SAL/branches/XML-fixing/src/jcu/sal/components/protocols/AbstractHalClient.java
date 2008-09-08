@@ -9,14 +9,13 @@ import java.util.Vector;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.Identifier;
 import jcu.sal.config.FileConfigService;
 import jcu.sal.managers.ProtocolManager;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 
 import au.edu.jcu.haldbus.AbstractDeviceDetection;
 
@@ -60,7 +59,7 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 			Identifier id;
 			while(i.hasNext()) {
 				id = i.next();
-				ret.put(id, pm.getComponent(id).getConfig());
+				ret.put(id, pm.getComponent(id).getParameters());
 			}
 		} catch (ConfigurationException e){}
 			
@@ -95,19 +94,19 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	 * this method checks the File config service to retreive the whole configuration document of a protocol
 	 * given part of it. Given a parameter name (ex: "device_file"), and the expected value (ex: "/dev/video0"),
 	 * the File config service will look for a protocol configuration containing this parameter and its value, and if
-	 * found, the entire protocl configuration will be returned.  
+	 * found, the protocol configuration object will be returned.  
 	 * @param param the parameter name
 	 * @param value the expected parameter value
-	 * @return the entire protocol configuration, if found 
+	 * @return the protocol configuration object , if found 
 	 * @throws ConfigurationException if not found
 	 */
-	protected Document findProtocolConfigFromFile(String param, String value) throws ConfigurationException {
+	protected ProtocolConfiguration findProtocolConfigFromFile(String param, String value) throws ConfigurationException {
 		return FileConfigService.getService().findProtocol(param, value);
 	}
 	
-	protected void createProtocol(Document d) throws ConfigurationException{
-		logger.debug("Creating new protocol with document: \n"+XMLhelper.toString(d));
-		try {pm.createComponent(d).start();}
+	protected void createProtocol(ProtocolConfiguration pc) throws ConfigurationException{
+		logger.debug("Creating new protocol with document: \n"+pc.getXMLString());
+		try {pm.createComponent(pc).start();}
 		catch (Throwable t){
 			logger.error("Cant instanciate protocol");
 			t.printStackTrace();

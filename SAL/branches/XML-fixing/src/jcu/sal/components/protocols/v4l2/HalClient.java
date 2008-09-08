@@ -3,17 +3,19 @@ package jcu.sal.components.protocols.v4l2;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
+import jcu.sal.common.Parameters;
+import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.pcml.EndPointConfiguration;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.protocols.AbstractHalClient;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 
 import au.edu.jcu.haldbus.exceptions.AddRemoveElemException;
 import au.edu.jcu.haldbus.exceptions.InvalidConstructorArgs;
@@ -25,21 +27,9 @@ import au.edu.jcu.haldbus.match.VectorMatch;
 
 public class HalClient extends AbstractHalClient {
 	private static Logger logger = Logger.getLogger(HalClient.class);
-
-	private final String defaultDoc = "<Protocol name=\"%NAME%\" type=\""+V4L2Protocol.PROTOCOL_TYPE+"\">"
-								+"<EndPoint name=\"%SUBSYSNAME%\" type=\"%SUBSYS%\"/>"
-								+"<parameters>"
-								+"<Param name=\"deviceFile\" value=\"%DEVICE%\"/>"
-								+"<Param name=\"channel\" value=\"0\"/>"
-								+"<Param name=\"standard\" value=\"0\"/>"
-								+"<Param name=\"width\" value=\"%WIDTH%\"/>"
-								+"<Param name=\"height\" value=\"%HEIGHT%\"/>"
-                    			+"</parameters></Protocol>";
-                    			
-
+	static {Slog.setupLogger(logger);}
 	
 	public HalClient() throws InvalidConstructorArgs, AddRemoveElemException{
-		Slog.setupLogger(logger);
 		
 		addMatch("1-capability", new VectorMatch<String>("info.capabilities", "video4linux"));
 		addMatch("2-category", new GenericMatch<String>("info.category", "video4linux"));
@@ -61,8 +51,7 @@ public class HalClient extends AbstractHalClient {
 	public void deviceAdded(Map<String,String> l) {
 		//logger.debug("Found "+l.get("8-info.product")+" - "+l.get("9-info.vendor")+ " on "+l.get("5-deviceFile"));
 		logger.debug("Found "+l.get("8-info.product")+"  on "+l.get("5-deviceFile"));
-		Document d = null;
-		String doc;
+		ProtocolConfiguration pc;
 		int width=640, height=480;
 
 		try {
@@ -74,40 +63,36 @@ public class HalClient extends AbstractHalClient {
 			}
 			
 			//the device is available. check if there is an existing config for it in the  PlatformConfig file
-			d = findProtocolConfigFromFile(V4L2Protocol.DEVICE_ATTRIBUTE_TAG, l.get("5-deviceFile"));
+			pc = findProtocolConfigFromFile(V4L2Protocol.DEVICE_ATTRIBUTE_TAG, l.get("5-deviceFile"));
 			logger.debug("Found config for "+l.get("5-deviceFile")+" in platformConfig file - reusing it");
 		} catch (ConfigurationException e) {
 			//if we re here, there is no pre exiting config for this device file, so we create a generic one
 			logger.debug("No existing configuration for V4L protocol with device "+l.get("5-deviceFile"));
-			//Add the name
-			doc = defaultDoc.replaceFirst("%NAME%", "v4l-"+l.get("5-deviceFile"));
-			//add the subsytem name
-			doc = doc.replaceFirst("%SUBSYSNAME%", l.get("7-linux.subsystem")+"-"+l.get("5-deviceFile"));
-			//add the subsytem name
-			doc = doc.replaceFirst("%SUBSYS%", l.get("7-linux.subsystem"));
-			//Add the device file
-			doc = doc.replaceFirst("%DEVICE%", l.get("5-deviceFile"));
-			//check width and height
-			if(l.get("7-linux.subsystem").equals("pci")){
-				//if pci capture card, limit the width and height, otherwise, bttv 
-				//returns a green or blue image is the resolution is too high...
-				width=640;
-				height=480;
-			}//leave width and height = 0 for usb webcams
-			doc = doc.replaceFirst("%WIDTH%", String.valueOf(width));
-			doc = doc.replaceFirst("%HEIGHT%", String.valueOf(height));
-				
-			try {
-				d = XMLhelper.createDocument(doc);
-				logger.debug(doc);
-			} catch (ParserConfigurationException e1) {
-				// shouldnt be here if defaultDoc is properly formed
-				e1.printStackTrace();
-				return;
-			}
+			
+			//QUIRKS:
+			//if pci capture card, limit the width and height, otherwise, bttv 
+			//returns a green or blue image is the resolution is too high...
+			//if usb webcam, limit the width and height to 640x480 because at higher resolution,
+			//the frame rate decreases
+			Vector<Parameter> v = new Vector<Parameter>();
+			v.add(new Parameter(V4L2Protocol.DEVICE_ATTRIBUTE_TAG, l.get("5-deviceFile")));
+			v.add(new Parameter(V4L2Protocol.CHANNEL_ATTRIBUTE_TAG, "0"));
+			v.add(new Parameter(V4L2Protocol.STANDARD_ATTRIBUTE_TAG, "0"));
+			v.add(new Parameter(V4L2Protocol.WIDTH_ATTRIBUTE_TAG, String.valueOf(width)));
+			v.add(new Parameter(V4L2Protocol.HEIGHT_ATTRIBUTE_TAG, String.valueOf(height)));
+			Parameters params = new Parameters(v);
+			
+			pc = new ProtocolConfiguration("v4l-"+l.get("5-deviceFile"),
+											V4L2Protocol.PROTOCOL_TYPE,
+											params,
+											new EndPointConfiguration(
+													l.get("7-linux.subsystem")+"-"+l.get("5-deviceFile"),
+													l.get("7-linux.subsystem")
+													)
+											);
 		}
 		try {
-			createProtocol(d);
+			createProtocol(pc);
 		} catch (ConfigurationException e) {
 			logger.error("Instancation failed");
 		}

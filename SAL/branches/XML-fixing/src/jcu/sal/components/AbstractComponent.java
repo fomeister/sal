@@ -18,31 +18,41 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public abstract class AbstractComponent<T extends Identifier> implements HWComponent {
+public abstract class AbstractComponent<T extends Identifier, U extends HWComponentConfiguration> implements HWComponent {
 
 	private static Logger logger = Logger.getLogger(AbstractComponent.class);
 	static {Slog.setupLogger(logger);}
 	
-	protected Parameters params;
+	protected U config;
 	protected AtomicBoolean removed;
-	protected String type = null;
 	protected T id = null;
 	
-	public AbstractComponent() {}
+	/**
+	 * This constructor creates an abstract component with the supplied configuration and ID objects
+	 * @param c the supplied configuration object
+	 * @param i the ID of the component
+	 */
+	public AbstractComponent(U c, T i) {config = c; id = i;}
+	
+	/**
+	 * This method returns the configuration obejct associated with this compoenent
+	 * @return the configuration obejct associated with this compoenent
+	 */
+	public U getConfig() { return config; }
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#getConfig()
 	 */
 	@Override
-	public Parameters getConfig() { return params; }
+	public Parameters getParameters() { return config.getParameters(); }
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#getConfig(java.lang.String)
 	 */
 	@Override
-	public String getConfig(String directive) throws BadAttributeValueExpException {
+	public String getParameter(String directive) throws BadAttributeValueExpException {
 		try {
-			return params.getParameter(directive).getStringValue();
+			return config.getParameters().getParameter(directive).getStringValue();
 		} catch (ConfigurationException e) {
 			throw new BadAttributeValueExpException("Unable to get a config directive with this name "+ directive);
 		}
@@ -71,7 +81,7 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	 */
 	@Override
 	public String getType() {
-		return this.type;
+		return config.getType();
 	}
 	
 	/**

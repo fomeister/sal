@@ -4,7 +4,6 @@
 package jcu.sal.components.protocols.dummy;
 
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -12,14 +11,11 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.FSEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
-import jcu.sal.utils.Slog;
-
-import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 /**
  * @author gilles
@@ -28,7 +24,6 @@ import org.w3c.dom.Node;
 public class DummyProtocol extends AbstractProtocol {
 	public static final String PROTOCOL_TYPE = "DUMMY";
 	public static final int NB_DUMMY_SENSORS=100;
-	private static Logger logger = Logger.getLogger(DummyProtocol.class);
 	private byte[] reading= new String("439041101").getBytes();
 
 	/**
@@ -36,11 +31,10 @@ public class DummyProtocol extends AbstractProtocol {
 	 * @param t 
 	 * @param c
 	 * @param d
+	 * @throws ConfigurationException 
 	 */
-	public DummyProtocol(ProtocolID i, Hashtable<String, String> c,	Node d) {
-		super(i, PROTOCOL_TYPE, c, d);
-		Slog.setupLogger(logger);
-		
+	public DummyProtocol(ProtocolID i, ProtocolConfiguration c) throws ConfigurationException {
+		super(i, PROTOCOL_TYPE, c);		
 
 		//Add to the list of supported EndPoint IDs
 		supportedEndPointTypes.add(FSEndPoint.FSENDPOINT_TYPE);
@@ -70,7 +64,7 @@ public class DummyProtocol extends AbstractProtocol {
 	 */
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		try { autoDetectionInterval = (getConfig("AutoDetect").equals("1") || getConfig("AutoDetect").equalsIgnoreCase("true")) ? -1 : 0;}
+		try { autoDetectionInterval = (getParameter("AutoDetect").equals("1") || getParameter("AutoDetect").equalsIgnoreCase("true")) ? -1 : 0;}
 		catch (BadAttributeValueExpException e) {autoDetectionInterval=0;}
 		cmls = CMLDescriptionStore.getStore();
 	}

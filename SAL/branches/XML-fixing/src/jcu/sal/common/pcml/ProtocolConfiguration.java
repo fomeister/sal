@@ -47,6 +47,20 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	 */
 	
 	/**
+	 * This constructor creates a configuration object for a protocol given its name, type, and the EndPointConfiguration object.
+	 * The list of parameters will be empty.
+	 * @param n the name of the protocol
+	 * @param t the type of the protocol
+	 * @param e the endpoint associated with this protocol 
+	 */
+	public ProtocolConfiguration(String n, String t, EndPointConfiguration e){
+		name = n;
+		type = t;
+		params = new Parameters();
+		epConfig = e;
+	}
+	
+	/**
 	 * This constructor creates a configuration object for a protocol given its name, type, parameters and the EndPointConfiguration object.
 	 * @param n the name of the protocol
 	 * @param t the type of the protocol
@@ -106,6 +120,7 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	 */
 	private void checkDocument(Document d) throws ConfigurationException{
 		int nb;
+		logger.debug("Checking document "+XMLhelper.toString(d));
 		try {
 			nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_PROTOCOL+")", d));
 			if(nb!=1){
@@ -150,10 +165,11 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	private void parseParameters(Document d) throws ConfigurationException{
 		try {
 			Node n;
-			if((n = XMLhelper.getNode(XPATH_PROTOCOL+"/"+Parameters.PARAMETERS_NODE, d, true))!=null)
+			if((n = XMLhelper.getNode(XPATH_PROTOCOL+"/"+Parameters.PARAMETERS_NODE, d, true))!=null){
 				params = new Parameters(n.getOwnerDocument());
-			else
+			} else{
 				params = new Parameters(new Vector<Parameter>());
+			}
 		} catch (Exception e) {
 			logger.error("Cant find the protocol parameters section in the protocol configuration doc");
 			logger.error(XMLhelper.toString(d));
@@ -169,16 +185,17 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	 * @throws ConfigurationException if the EndPointConfiguration cant be instanciated
 	 */
 	private void parseEndPointConfiguration(Document d) throws ConfigurationException{
-		Document ep = null;
+		Node n;
 		try {
-			ep = XMLhelper.getNode(XPATH_PROTOCOL+"/"+PCMLConstants.ENDPOINT_NODE, d, true).getOwnerDocument();
-		} catch (Exception e) {
-			logger.error("Cant find the endpoint configuration document in the protocol configuration doc");
-			logger.error(XMLhelper.toString(d));
-			e.printStackTrace();
-			throw new ConfigurationException("Cant extract the Endpoint config");
-		}
-		epConfig = new EndPointConfiguration(ep);
+			if((n = XMLhelper.getNode(XPATH_PROTOCOL+"/"+PCMLConstants.ENDPOINT_NODE, d, true))!=null) {
+				epConfig = new EndPointConfiguration(n.getOwnerDocument());
+				return;
+			}
+		} catch (Exception e) {e.printStackTrace();}
+		
+		logger.error("Cant find the endpoint configuration document in the protocol configuration doc");
+		logger.error(XMLhelper.toString(d));
+		throw new ConfigurationException("Cant extract the Endpoint config");		
 	}
 	
 	

@@ -9,6 +9,7 @@ import java.util.Iterator;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.protocols.ProtocolID;
@@ -21,15 +22,11 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public abstract class EndPoint extends AbstractComponent<EndPointID> {
+public abstract class EndPoint extends AbstractComponent<EndPointID, EndPointConfiguration> {
 	
 	private static Logger logger = Logger.getLogger(EndPoint.class);
 	static { Slog.setupLogger(logger); }
 
-	public static final String ENDPOINTTYPE_TAG = "type";
-	public static final String ENDPOINTNAME_TAG = "name";
-	public static final String ENPOINT_TAG="EndPoint";
-	
 	
 	/**
 	 * The table containing the device change listeners and their associated usb IDs
@@ -43,15 +40,19 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 
 	
 	/**
-	 * 
+	 * This constructor initialises the attributes in this abstract class, and checks that
+	 * the given EndPointConfiguration is of type 't'
+	 * @param i the EndPoint ID associated with this endpoint
+	 * @param t the type of this endpoint
+	 * @param c the EndPointConfiguration object associated with this EP
+	 * @throws ConfigurationException if the given configuration object isnt of type 't'
 	 */
-	public EndPoint(EndPointID i, String t, Hashtable<String,String> c) {
-		super();
+	public EndPoint(EndPointID i, String t, EndPointConfiguration c) throws ConfigurationException{
+		super(c,i);
+		if(!c.getType().equals(t))
+			throw new ConfigurationException("Configuration object is of type '"+c.getType()+"', expected "+t);
 		enabled=false;
 		configured=false;
-		id = i;
-		type = t;
-		config = c;
 	}
 	
 	/**
@@ -59,7 +60,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 	 * @return the textual representation of the Logical Port's instance
 	 */
 	public String toString() {
-		return "EndPoint "+id.getName()+"("+type+")";
+		return "EndPoint "+id.getName()+"("+config.getType()+")";
 	}
 	
 
@@ -73,7 +74,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 				stop();
 			configured=false;
 			internal_remove();
-			logger.debug(type+" Endpoint removed");	
+			logger.debug(config.getType()+" Endpoint removed");	
 		}
 		c.componentRemovable(id);
 	}
@@ -85,7 +86,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 	public final void start() throws ConfigurationException{
 		synchronized (this) {
 			if(configured && !enabled) {
-				logger.debug("Starting "+type+" Endpoint.");
+				logger.debug("Starting "+config.getType()+" Endpoint.");
 				internal_start();
 				enabled=true;
 			}
@@ -99,7 +100,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID> {
 	public final void stop() {
 		synchronized (this) {
 			if(enabled) {
-				logger.debug("Stopping "+type+" Endpoint.");
+				logger.debug("Stopping "+config.getType()+" Endpoint.");
 				internal_stop();
 				enabled=false;
 			}

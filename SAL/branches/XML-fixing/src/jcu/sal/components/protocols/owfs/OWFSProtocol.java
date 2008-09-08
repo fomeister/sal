@@ -7,7 +7,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -15,6 +14,7 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.UsbEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
@@ -24,7 +24,6 @@ import jcu.sal.utils.Slog;
 import jcu.sal.utils.PlatformHelper.ProcessOutput;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 /**
  * @author gilles
@@ -33,6 +32,7 @@ import org.w3c.dom.Node;
 public class OWFSProtocol extends AbstractProtocol{
 
 	private static Logger logger = Logger.getLogger(OWFSProtocol.class);
+	static {Slog.setupLogger(logger);}
 	private int adapterNb=0;
 	private int maxAdaptersSeen=0;
 
@@ -47,10 +47,10 @@ public class OWFSProtocol extends AbstractProtocol{
 	
 	/**
 	 * Construct the OSDataProtocol object.
+	 * @throws ConfigurationException 
 	 */
-	public OWFSProtocol(ProtocolID i, Hashtable<String,String> c, Node d){
-		super(i,OWFSPROTOCOL_TYPE ,c,d);
-		Slog.setupLogger(logger);
+	public OWFSProtocol(ProtocolID i, ProtocolConfiguration c) throws ConfigurationException{
+		super(i,OWFSPROTOCOL_TYPE ,c);
 		epIds = new String[]{DS2490_USBID};
 		autoDetectionInterval = 100;
 		multipleInstances = false;
@@ -66,7 +66,7 @@ public class OWFSProtocol extends AbstractProtocol{
 		ProcessOutput c;
 
 		try {
-			mtpt = getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG);
+			mtpt = getParameter(OWFSMOUNTPOINTATTRIBUTE_TAG);
 			if(mtpt.length()==0) throw new BadAttributeValueExpException("Empty mount point directive...");
 			if(!PlatformHelper.isDir(mtpt)) {
 				//try creating it
@@ -82,7 +82,7 @@ public class OWFSProtocol extends AbstractProtocol{
 			//Next, we check that OWFS is installed in the given directory
 			//and try to get the OWFS version 
 			logger.debug("Detecting OWFS version");
-			c = PlatformHelper.captureOutputs(getConfig(OWFSLOCATIONATTRIBUTE_TAG) + " --version", true);
+			c = PlatformHelper.captureOutputs(getParameter(OWFSLOCATIONATTRIBUTE_TAG) + " --version", true);
 			BufferedReader[] b = c.getBuffers();
 			while((temp = b[0].readLine()) != null) logger.debug(temp);
 			while((temp = b[1].readLine()) != null) logger.debug(temp);
@@ -150,7 +150,7 @@ public class OWFSProtocol extends AbstractProtocol{
 	protected boolean internal_probeSensor(Sensor s) {
 		try {
 			logger.debug("Probing sensor " + s.getNativeAddress());
-			if(PlatformHelper.isDirReadable(getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+s.getNativeAddress())) {
+			if(PlatformHelper.isDirReadable(getParameter(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+s.getNativeAddress())) {
 				s.enable();
 				logger.debug("Sensor " + s.getNativeAddress()+ " present");
 				return true;
@@ -256,7 +256,7 @@ public class OWFSProtocol extends AbstractProtocol{
 			}
 
 			while(++attempt<=OWFSSTART_MAX_ATTEMPTS && !started) {
-				c = PlatformHelper.captureOutputs(getConfig(OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+getConfig(OWFSProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
+				c = PlatformHelper.captureOutputs(getParameter(OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+getParameter(OWFSProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
 				BufferedReader r[] = c.getBuffers(); 
 				try {Thread.sleep(100);} catch (InterruptedException e) {}
 				//check stdout & stderr
@@ -304,7 +304,7 @@ public class OWFSProtocol extends AbstractProtocol{
 	protected List<String> detectConnectedSensors() {
 		List<String> v = new Vector<String>();
 		try {
-			File dir = new File(getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG));
+			File dir = new File(getParameter(OWFSMOUNTPOINTATTRIBUTE_TAG));
 		    String[] info = dir.list();
 		    if(info!=null) {
 			    for (int i = 0; i < info.length; i++) {
@@ -425,7 +425,7 @@ public class OWFSProtocol extends AbstractProtocol{
 	 */
 	private byte[] getRawReading(String f) throws IOException {
 		try {
-			return PlatformHelper.readFromFile(getConfig(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+f).getBytes();
+			return PlatformHelper.readFromFile(getParameter(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+f).getBytes();
 		} catch (BadAttributeValueExpException e) {
 			logger.error("Cant read from 1-wire sensor " +f);
 			logger.error("Most likely a wrong OWFS mount point in the OWFS XML config");

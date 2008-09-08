@@ -7,11 +7,11 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
-import java.util.Hashtable;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -27,15 +27,15 @@ public class EthernetEndPoint extends EndPoint {
 	public static final String IPADDRESSATTRIBUTE_TAG="IPAddress";
 	public static final String ETHERNETENDPOINT_TYPE="ethernet";
 	
-	private Logger logger = Logger.getLogger(EthernetEndPoint.class);
+	private static Logger logger = Logger.getLogger(EthernetEndPoint.class);
+	static {Slog.setupLogger(logger);}
 	
 	/**
 	 * @throws ConfigurationException 
 	 * 
 	 */
-	public EthernetEndPoint(EndPointID i, Hashtable<String,String> c) throws ConfigurationException {
+	public EthernetEndPoint(EndPointID i, EndPointConfiguration c) throws ConfigurationException {
 		super(i, ETHERNETENDPOINT_TYPE, c);
-		Slog.setupLogger(this.logger);
 		parseConfig();
 	}
 
@@ -51,8 +51,8 @@ public class EthernetEndPoint extends EndPoint {
 		
 		logger.debug("check if we have the ethernet port.");
 		try {
-			intName = getConfig(ETHDEVICEATTRIBUTE_TAG);
-			try {ipAddress = getConfig(IPADDRESSATTRIBUTE_TAG);} catch(BadAttributeValueExpException e) {ipAddress="";}
+			intName = getParameter(ETHDEVICEATTRIBUTE_TAG);
+			try {ipAddress = getParameter(IPADDRESSATTRIBUTE_TAG);} catch(BadAttributeValueExpException e) {ipAddress="";}
 			logger.debug( intName + "(" + ipAddress +")");
 			
 			/* Look for the ethernet if either by name or by IP address*/
@@ -99,13 +99,5 @@ public class EthernetEndPoint extends EndPoint {
 			e.printStackTrace();
 			throw new ConfigurationException("Couldnt initialise the ethernet port...");
 		} 
-	}
-	
-	public static void main(String[] args) throws ConfigurationException {
-		/* Tries building a new ethernet Endpoint*/
-		Hashtable<String,String> c = new Hashtable<String,String>();
-		c.put("EthernetDevice","eth0");
-		c.put("IPAddress","");
-		new EthernetEndPoint(new EndPointID("ethernet"), c);
 	}
 }

@@ -13,6 +13,8 @@ import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.pcml.ProtocolConfiguration;
+import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.SensorID;
@@ -21,7 +23,6 @@ import jcu.sal.events.EventDispatcher;
 import jcu.sal.managers.ProtocolManager;
 import jcu.sal.managers.SensorManager;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 
@@ -64,6 +65,7 @@ public class SALAgentImpl implements SALAgent{
 	public void stop(){
 		hp.stopAll();
 		pm.destroyAllComponents();
+		pm.stop();
 		ev.stop();
 	}
 	
@@ -76,7 +78,7 @@ public class SALAgentImpl implements SALAgent{
 	 * @see jcu.sal.agent.SALAgentInterface#addSensor(java.lang.String)
 	 */
 	public synchronized String addSensor(String xml) throws ConfigurationException, ParserConfigurationException {
-		return sm.createComponent(XMLhelper.createDocument(xml)).getID().getName();
+		return sm.createComponent(new SMLDescription(xml)).getID().getName();
 	}
 
 	/*
@@ -132,7 +134,7 @@ public class SALAgentImpl implements SALAgent{
 	 */
 	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserConfigurationException {
 		synchronized (this) {
-			AbstractProtocol p = pm.createComponent(XMLhelper.createDocument(xml));
+			AbstractProtocol p = pm.createComponent(new ProtocolConfiguration(xml));
 			if(loadSensors) sm.loadSensorsFromConfig(p.getID());
 			p.start();
 		}

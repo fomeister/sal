@@ -10,14 +10,21 @@ import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Parameters;
 import jcu.sal.common.RMICommandFactory;
+import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.RMICommandFactory.RMICommand;
 import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.events.RMIEventHandler;
+import jcu.sal.common.pcml.EndPointConfiguration;
+import jcu.sal.common.pcml.ProtocolConfiguration;
+import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLDescription;
+import jcu.sal.common.sml.SMLDescriptions;
+import jcu.sal.components.EndPoints.FSEndPoint;
+import jcu.sal.components.protocols.dummy.DummyProtocol;
 import jcu.sal.utils.XMLhelper;
-
-import org.w3c.dom.NodeList;
 
 public class RmiClientDummyStressTest implements RMIEventHandler{
 	public static int RUN_LENGTH=120*1000;
@@ -72,15 +79,14 @@ public class RmiClientDummyStressTest implements RMIEventHandler{
 	}	
 	
 	public void populateSensorList() throws ConfigurationException{
-		String sid;
-				
+		SMLDescriptions s;
+		int i=0;
 		try {
-		NodeList nl = XMLhelper.getNodeList("/SAL/SensorConfiguration/Sensor/parameters/Param[@value=\"DummyProtocol0\"]/parent::*/parent::*", XMLhelper.createDocument(agent.listActiveSensors()));
-			for (int i = 0; i < nl.getLength(); i++) {
-				sid = XMLhelper.getAttributeFromName("sid", nl.item(i));
-				//System.out.println("Found sensor SID: "+sid);
-				sids[i]=sid;
-			}
+			s = new SMLDescriptions(agent.listActiveSensors());
+			Iterator<SMLDescription> iter = s.getDescriptions().iterator();
+			while(iter.hasNext())
+				sids[i++] = iter.next().getID();
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new ConfigurationException();
@@ -88,31 +94,26 @@ public class RmiClientDummyStressTest implements RMIEventHandler{
 	}
 	
 	public void createDummySensors(){
-		String xml = "<Protocol name=\"DummyProtocol0\" type=\"DUMMY\">" +
-						"<EndPoint name=\"fs0\" type=\"fs\"> "+
-						"<parameters />" +
-						"</EndPoint>"+
-						"<parameters />"+
-						"</Protocol>";
+		Vector<Parameter> v = new Vector<Parameter>();
+		Integer id = new Integer(1);
+
+		ProtocolConfiguration p = new ProtocolConfiguration("dummy0", DummyProtocol.PROTOCOL_TYPE,
+															new EndPointConfiguration("fs",FSEndPoint.FSENDPOINT_TYPE));
 		try {
-			agent.addProtocol(xml, false);
+			agent.addProtocol(p.getXMLString(), false);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 
-		xml = "<Sensor sid=\"1\">"+
-				"<parameters>" +
-				"<Param name=\"ProtocolName\" value=\"DummyProtocol0\" /> "+
-				"<Param name=\"Address\" value=\"PLACE_HOLDER\" />"+
-				"</parameters>"+
-				"</Sensor>";
-		String t;
-
 		for(int i=0;i<NB_SENSORS; i++) {
-			t = xml.replaceFirst("PLACE_HOLDER", "DUMMY_"+i);
+			v.removeAllElements();
+			v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "dummy0"));
+			v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, DummyProtocol.PROTOCOL_TYPE));
+			v.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, "_"+i));
+			
 			try {
-				agent.addSensor(t);
+				agent.addSensor(new SMLDescription(id, new Parameters(v)).getSMLString());
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -183,7 +184,7 @@ public class RmiClientDummyStressTest implements RMIEventHandler{
 				System.out.println("Avg exe time: "+(sumAvgExe/NB_CLIENTS[i]));
 				sumCounts = sumAvgExe = 0;
 			}
-			agent.removeProtocol("DummyProtocol0", true);
+			agent.removeProtocol("dummy0", true);
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

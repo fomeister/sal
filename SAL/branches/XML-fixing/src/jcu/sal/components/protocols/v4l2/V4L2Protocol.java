@@ -15,6 +15,7 @@ import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.ReturnType;
 import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.PCIEndPoint;
 import jcu.sal.components.EndPoints.UsbEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -23,7 +24,6 @@ import jcu.sal.components.sensors.Sensor;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 import au.edu.jcu.v4l4j.Control;
 import au.edu.jcu.v4l4j.FrameGrabber;
@@ -32,6 +32,7 @@ import au.edu.jcu.v4l4j.exceptions.V4L4JException;
 public class V4L2Protocol extends AbstractProtocol {
 	
 	private static Logger logger = Logger.getLogger(V4L2Protocol.class);
+	static {Slog.setupLogger(logger);}
 	public final static String PROTOCOL_TYPE = "v4l2";
 	public final static String DEVICE_ATTRIBUTE_TAG= "deviceFile";
 	public final static String WIDTH_ATTRIBUTE_TAG= "width";
@@ -50,10 +51,8 @@ public class V4L2Protocol extends AbstractProtocol {
 	private StreamingThreadFake stf;
 	
 
-	public V4L2Protocol(ProtocolID i, Hashtable<String, String> c,
-			Node d){
-		super(i, PROTOCOL_TYPE , c, d);
-		Slog.setupLogger(logger);
+	public V4L2Protocol(ProtocolID i, ProtocolConfiguration c) throws ConfigurationException{
+		super(i, PROTOCOL_TYPE , c);
 		autoDetectionInterval = -1; //run only once
 		supportedEndPointTypes.add(PCIEndPoint.PCIENDPOINT_TYPE);
 		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
@@ -78,17 +77,17 @@ public class V4L2Protocol extends AbstractProtocol {
 		String dev;
 		int w=-1,h=-1,std=-1,ch=-1, cid;
 		try {
-			dev = getConfig(DEVICE_ATTRIBUTE_TAG);
+			dev = getParameter(DEVICE_ATTRIBUTE_TAG);
 		} catch (BadAttributeValueExpException e) {
 			logger.error("The device file parameter is missing, cant instanciate framegrabber");
 			throw new ConfigurationException();
 		}
 		
 		try {
-			ch = Integer.parseInt(getConfig(CHANNEL_ATTRIBUTE_TAG));
-			std = Integer.parseInt(getConfig(STANDARD_ATTRIBUTE_TAG));
-			w = Integer.parseInt(getConfig(WIDTH_ATTRIBUTE_TAG));
-			h = Integer.parseInt(getConfig(HEIGHT_ATTRIBUTE_TAG));
+			ch = Integer.parseInt(getParameter(CHANNEL_ATTRIBUTE_TAG));
+			std = Integer.parseInt(getParameter(STANDARD_ATTRIBUTE_TAG));
+			w = Integer.parseInt(getParameter(WIDTH_ATTRIBUTE_TAG));
+			h = Integer.parseInt(getParameter(HEIGHT_ATTRIBUTE_TAG));
 		} catch (Exception e1) {}
 		
 		

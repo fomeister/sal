@@ -13,6 +13,7 @@ import java.util.List;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.PlatformHelper.ProcessOutput;
@@ -27,6 +28,7 @@ import org.apache.log4j.Logger;
 public class UsbEndPoint extends EndPoint{
 
 	private static Logger logger = Logger.getLogger(EndPoint.class);
+	static {Slog.setupLogger(logger);}
 	public static String USBENDPOINT_TYPE="usb";
 	private static String LSUSBOUTPUT_KEY = "Bus";
 	
@@ -62,9 +64,8 @@ public class UsbEndPoint extends EndPoint{
 	 * @throws ConfigurationException 
 	 * 
 	 */
-	public UsbEndPoint(EndPointID i, Hashtable<String,String> c) throws ConfigurationException {
+	public UsbEndPoint(EndPointID i, EndPointConfiguration c) throws ConfigurationException {
 		super(i,USBENDPOINT_TYPE,c);
-		Slog.setupLogger(logger);
 		devices = new Hashtable<String, Integer>();
 		listeners = new Hashtable<String,ArrayList<DeviceListener>>();
 		autodetect = true;
@@ -294,18 +295,5 @@ public class UsbEndPoint extends EndPoint{
 			}
 		}
 		
-	}
-	
-	public static void main(String[] args) throws ConfigurationException, InterruptedException{
-		UsbEndPoint e = new UsbEndPoint(new EndPointID("usb"), new Hashtable<String, String>());
-		UsbEndPoint e1 = new UsbEndPoint(new EndPointID("usb"), new Hashtable<String, String>());
-		UsbEndPoint e2 = new UsbEndPoint(new EndPointID("usb"), new Hashtable<String, String>());
-		e.start();
-		e1.start();
-		e2.start();
-		Thread.sleep(6*1000);
-		e2.stop();
-		e1.stop();
-		e.stop();
 	}
 }

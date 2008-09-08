@@ -25,6 +25,17 @@ public class EndPointConfiguration implements HWComponentConfiguration{
 	private String name;
 	private String type;
 	private Parameters params;
+	
+	/**
+	 * This constructor creates a configuration object for an EndPoint with an empty parameter list
+	 * @param n the name of the EndPoint
+	 * @param t the type of the EndPoint
+	 */
+	public EndPointConfiguration(String n, String t){
+		name = n;
+		type = t;
+		params = new Parameters();
+	}
 
 	/**
 	 * This constructor creates a configuration object for an EndPoint.

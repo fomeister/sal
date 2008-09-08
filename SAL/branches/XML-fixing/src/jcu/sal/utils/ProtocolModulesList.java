@@ -18,7 +18,7 @@ import jcu.sal.config.deviceDetection.HalHelper;
 import org.apache.log4j.Logger;
 
 /**
- * FIXME: This class needs rework. The  
+ * FIXME: This class needs rework.   
  * @author gilles
  */
 public class ProtocolModulesList {
