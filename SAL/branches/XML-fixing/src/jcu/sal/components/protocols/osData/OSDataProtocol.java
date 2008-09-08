@@ -14,6 +14,7 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.FSEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
@@ -22,7 +23,6 @@ import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 /**
  * @author gilles
@@ -46,6 +46,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	}
 	
 	private static Logger logger = Logger.getLogger(OSDataProtocol.class);
+	static {Slog.setupLogger(logger);}
 	private Thread update_counters = null;
 	private Hashtable<String,String> lastValues;
 	private static Hashtable<String,OSdata> supportedSensors = new Hashtable<String,OSdata>();
@@ -57,10 +58,10 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	
 	/**
 	 * Construct the OSDataProtocol object
+	 * @throws ConfigurationException 
 	 */
-	public OSDataProtocol(ProtocolID i, Hashtable<String,String> c, Node d){
-		super(i,OSDataConstants.PROTOCOL_TYPE,c,d);
-		Slog.setupLogger(logger);
+	public OSDataProtocol(ProtocolID i, ProtocolConfiguration c) throws ConfigurationException{
+		super(i,OSDataConstants.PROTOCOL_TYPE,c);
 		
 		//Add to the list of supported sensors
 		supportedSensors.put(OSDataConstants.FreeMem,new OSdata("/proc/meminfo", "MemFree", 2, null, true));
@@ -93,13 +94,13 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	protected void internal_parseConfig() throws ConfigurationException {
 		cmls = CMLDescriptionStore.getStore();
 		try {
-			supportedSensors.put(OSDataConstants.Temp1,new OSdata(getConfig(OSDataConstants.Temp1DataFile), null, 1, null, false));
+			supportedSensors.put(OSDataConstants.Temp1,new OSdata(getParameter(OSDataConstants.Temp1DataFile), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
 		try {
-			supportedSensors.put(OSDataConstants.Temp2,new OSdata(getConfig(OSDataConstants.Temp2DataFile), null, 1, null, false));
+			supportedSensors.put(OSDataConstants.Temp2,new OSdata(getParameter(OSDataConstants.Temp2DataFile), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
 		try {
-			supportedSensors.put(OSDataConstants.Temp3,new OSdata(getConfig(OSDataConstants.Temp3DataFile), null, 1, null, false));
+			supportedSensors.put(OSDataConstants.Temp3,new OSdata(getParameter(OSDataConstants.Temp3DataFile), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
 		logger.debug("OSData protocol configured");
 	}
@@ -143,7 +144,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 				return true;
 			} else  {
 				try {
-					if(PlatformHelper.isFileReadable(s.getConfig(OSDataConstants.SMLDataFile))) {
+					if(PlatformHelper.isFileReadable(s.getParameter(OSDataConstants.SMLDataFile))) {
 						logger.debug(s.toString()+" present, using supplied file");
 						s.enable();
 						return true;

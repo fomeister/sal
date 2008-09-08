@@ -5,26 +5,25 @@ package jcu.sal.managers;
 
 import java.lang.reflect.Constructor;
 import java.text.ParseException;
-import java.util.Hashtable;
 
+import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
 import jcu.sal.components.EndPoints.EndPointID;
 import jcu.sal.utils.EndPointModulesList;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 /**
  * @author gilles
  * 
  */
-public class EndPointManager extends AbstractManager<EndPoint> {
+public class EndPointManager extends AbstractManager<EndPoint, EndPointConfiguration> {
 	
 	private static EndPointManager e = new EndPointManager();
-	private Logger logger = Logger.getLogger(EndPointManager.class);
+	private static Logger logger = Logger.getLogger(EndPointManager.class);
+	static {Slog.setupLogger(logger);}
 	
 	
 	/**
@@ -32,7 +31,6 @@ public class EndPointManager extends AbstractManager<EndPoint> {
 	 */
 	private EndPointManager() {
 		super();
-		Slog.setupLogger(this.logger);
 	}
 	
 	/**
@@ -47,40 +45,29 @@ public class EndPointManager extends AbstractManager<EndPoint> {
 	 * @see jcu.sal.managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected EndPoint build(Node config, Identifier id) throws InstantiationException {
+	protected EndPoint build(EndPointConfiguration config, Identifier id) throws InstantiationException {
 		EndPoint endPoint = null;
-		String type=null;
+		String type=config.getType();
 		EndPointID i = (EndPointID) id;
 		logger.debug("building EndPoint "+id.getName());
 		try {
-			type=getComponentType(config);
 			logger.debug("EndPoint type: " +type);
 			String className = EndPointModulesList.getClassName(type);
 			
 			Class<?>[] p = new Class<?>[2];
 			p[0] = EndPointID.class;
-			p[1] = Hashtable.class;
+			p[1] = EndPointConfiguration.class;
 			Constructor<?> c = Class.forName(className).getConstructor(p);
 			Object[] o = new Object[2];
 			o[0] = i;
-			o[1] = getComponentConfig(config);
+			o[1] = config;
 			endPoint = (EndPoint) c.newInstance(o);
 
 			logger.debug("Done building EndPoint " + endPoint.toString());
 			
-		} catch (RuntimeException e) {
-			logger.error("Error in new Endpoint configuration. XML doc:");
-			logger.error(XMLhelper.toString(config));
-			e.printStackTrace();
-			throw new InstantiationException();
-		} catch (ParseException e) {
-			logger.error("Error while parsing the DOM document. XML doc:");
-			logger.error(XMLhelper.toString(config));
-			e.printStackTrace();
-			throw new InstantiationException();
-		}catch (Exception e) {
+		} catch (Throwable e) {
 			logger.error("Error in new Endpoint instanciation. XML doc:");
-			logger.error(XMLhelper.toString(config));
+			logger.error(config.getXMLString());
 			e.printStackTrace();
 			throw new InstantiationException();
 		}
@@ -91,14 +78,8 @@ public class EndPointManager extends AbstractManager<EndPoint> {
 	 * @see jcu.sal.managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Identifier getComponentID(Node n) throws ParseException {
-		Identifier id = null;
-		try {
-			id = new EndPointID(XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTNAME_TAG, n));
-		} catch (Exception e) {
-			throw new ParseException("Couldnt find the EndPoint ID", 0);
-		}
-		return id;
+	protected Identifier getComponentID(EndPointConfiguration epc) throws ParseException {
+		return new EndPointID(epc.getID());
 	}
 	
 	/* (non-Javadoc)
@@ -109,32 +90,4 @@ public class EndPointManager extends AbstractManager<EndPoint> {
 		component.stop();
 		component.remove(this);
 	}
-
-	@Override
-	protected String getComponentType(Node n) throws ParseException {
-		String type = null;
-		try {
-			type = XMLhelper.getAttributeFromName("//" + EndPoint.ENPOINT_TAG, EndPoint.ENDPOINTTYPE_TAG, n);
-		} catch (Exception e) {
-			throw new ParseException("Couldnt find the EndPoint type", 0);
-		}
-		return type;
-	}
-	
-//	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, BadAttributeValueExpException, ConfigurationException {
-//		EndPointManager e = getEndPointManager();
-//		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb1' type='usb'><parameters><Param name='portNumber' value='1' /></parameters></EndPoint>"));
-//		e.createComponent(XMLhelper.createDocument("<EndPoint name='usb2' type='usb' />"));
-//		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
-//		e.createComponent(XMLhelper.createDocument("<EndPoint name='serial0' type='serial'><parameters><Param name='PortSpeed' value='9600' /><Param name='DataBits' value='8' /><Param name='Parity' value='0' /><Param name='StopBit' value='1' /><Param name='PortDeviceFile' value='/dev/ttyS0' /></parameters></EndPoint>"));
-//		e.createComponent(XMLhelper.createDocument("<EndPoint name='eth0' type='ethernet'><parameters><Param name='EthernetDevice' value='eth0' /><Param name='IPAddress' value='' /></parameters></EndPoint>"));
-//		e.createComponent(XMLhelper.createDocument("<EndPoint name='files' type='fs' />"));
-//		e.destroyComponent(new EndPointID("eth01"));
-//		e.destroyComponent(new EndPointID("usb1"));
-//		e.destroyComponent(new EndPointID("usb2"));
-//		e.destroyComponent(new EndPointID("serial0"));
-//		e.destroyComponent(new EndPointID("eth0"));
-//		e.destroyComponent(new EndPointID("files"));
-//	}
-
 }

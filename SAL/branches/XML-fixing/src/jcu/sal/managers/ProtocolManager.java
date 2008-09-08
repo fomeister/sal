@@ -6,7 +6,6 @@ package jcu.sal.managers;
 import java.io.NotActiveException;
 import java.lang.reflect.Constructor;
 import java.text.ParseException;
-import java.util.Hashtable;
 import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
@@ -18,8 +17,8 @@ import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.Identifier;
-import jcu.sal.components.EndPoints.EndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
@@ -29,10 +28,8 @@ import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.ProtocolListEvent;
 import jcu.sal.utils.ProtocolModulesList;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 /**
  * @author gilles
@@ -41,7 +38,8 @@ import org.w3c.dom.Node;
 public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolConfiguration> {
 
 	private static ProtocolManager p = new ProtocolManager();
-	private Logger logger = Logger.getLogger(ProtocolManager.class);
+	private static Logger logger = Logger.getLogger(ProtocolManager.class);
+	static {Slog.setupLogger(logger);}
 	private FileConfigService conf;
 	private EventDispatcher ev;
 	
@@ -51,7 +49,6 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 */
 	private ProtocolManager() {
 		super();
-		Slog.setupLogger(this.logger);
 		conf = FileConfigService.getService();
 		ev = EventDispatcher.getInstance();
 		ev.addProducer(Constants.PROTOCOL_MANAGER_PRODUCER_ID);
@@ -88,7 +85,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 			//logger.debug("AbstractProtocol config: " + XMLhelper.toString(config));
 			p = (AbstractProtocol) c.newInstance(o);
 			logger.debug("done building protocol "+p.toString());
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			logger.error("Error in new protocol instanciation.");
 			e.printStackTrace();
 			logger.error("XML doc:\n");
@@ -112,7 +109,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 			throw new InstantiationException();
 		}
 
-		logger.debug("saving its config");
+		//raise save protocol config flag
 		try {
 			conf.addProtocol(config);
 		} catch (ConfigurationException e) {
@@ -153,7 +150,26 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 * 
 	 *  START OF SALAgent API methods
 	 * 
+	 */	
+	
+	/**
+	 * This method removes the protocol configuration objbect from the platform configuration file.
+	 * @param pid the protocol ID to be removed 
+	 * @param removeSensors whether or not to remove the sensors configuraion associate with this protocol too
+	 * @throws ConfigurationException if the protocol is still active, ie it hasnt been removed first.
 	 */
+	public void removeProtocolConfig(ProtocolID pid, boolean removeSensors) throws ConfigurationException{
+		//Check if the protocol is still active
+		if(getComponent(pid)!=null) {
+			logger.error("Cant remove an active protocol configuration");
+			throw new ConfigurationException();
+		}
+		try { conf.removeProtocol(pid);}
+		catch (ConfigurationException e) { logger.error("error deleting the protocol config");}
+		if(removeSensors)
+			conf.removeSensors(pid);
+
+	}
 
 	/**
 	 * Creates all protocols, associated endpoints and sensors given SML and PCML
@@ -167,22 +183,30 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 			throw e;
 		} 
 		
-		Iterator<Node> iter = conf.getProtocols().iterator();
+		Iterator<ProtocolConfiguration> iter = conf.getProtocols().iterator();
 		while(iter.hasNext()) {
 			try {
 				createComponent(iter.next());
 			} catch (ConfigurationException e){}
 		}
 				
-		iter = conf.getSensors().iterator();
+		Iterator<SMLDescription> i = conf.getSensors().iterator();
 		while(iter.hasNext()) {
 			try {
-				SensorManager.getSensorManager().createComponent(iter.next());
+				SensorManager.getSensorManager().createComponent(i.next());
 			} catch (ConfigurationException e) {
 				logger.error("Could not create the sensor");
 			}
 		} 
 		logger.debug("Finished parsing the configuration files");
+	}
+	
+	/**
+	 * This method stops the Protocol Manager. It must be called it <code>init()</code> was successful.
+	 *
+	 */
+	public void stop() {
+		conf.stop();
 	}
 
 	/**
@@ -240,26 +264,6 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		return getProtocol(sid).getCML(sid);
 	}
 	
-	/**
-	 * This method removes the protocol XMl configuration from the platform configuration XML file.
-	 * @param pid the protocol ID to be removed 
-	 * @param removeSensors whether or not to remove the sensors configuraion associate with this protocol too
-	 * @throws ConfigurationException if the protocol is still active, ie it hasnt been removed first.
-	 */
-	public void removeProtocolConfig(ProtocolID pid, boolean removeSensors) throws ConfigurationException{
-		//Check if the sensor is still active
-		if(getComponent(pid)!=null) {
-			logger.error("Cant remove an active protocol configuration");
-			throw new ConfigurationException();
-		}
-		try { conf.removeProtocol(pid);}
-		catch (ConfigurationException e) { logger.error("error deleting the protocol config");}
-		if(removeSensors) {
-			try { conf.removeSensors(pid);}
-			catch (ConfigurationException e) { logger.error("error deleting the associated sensors' config");}
-		}
-	}
-	
 	/*
 	 * 
 	 * END OF SALAgent API METHODS
@@ -275,8 +279,8 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		AbstractProtocol p = null;
 		String pname = null, ptype=null;
 		try {
-			pname = sensor.getConfig(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
-			ptype = sensor.getConfig(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE);
+			pname = sensor.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
+			ptype = sensor.getParameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE);
 			if((p = getComponent(new ProtocolID(pname)))!=null) {
 				if(ptype.equals(p.getType()))
 					p.associateSensor(sensor);
@@ -307,7 +311,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		AbstractProtocol p = null;
 		String pname = null;
 		try {
-			pname = s.getConfig(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
+			pname = s.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
 			if((p = getComponent(new ProtocolID(pname)))!=null)
 				p.unassociateSensor(s.getID());
 			else

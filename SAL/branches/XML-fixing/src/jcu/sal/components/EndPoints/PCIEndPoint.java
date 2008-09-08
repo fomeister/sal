@@ -3,11 +3,11 @@
  */
 package jcu.sal.components.EndPoints;
 
-import java.util.Hashtable;
-
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.utils.Slog;
+
 import org.apache.log4j.Logger;
 
 
@@ -17,16 +17,16 @@ import org.apache.log4j.Logger;
  */
 public class PCIEndPoint extends EndPoint {
 
-	private Logger logger = Logger.getLogger(PCIEndPoint.class);
+	private static Logger logger = Logger.getLogger(PCIEndPoint.class);
+	static {Slog.setupLogger(logger);};
 	public static final String PCIENDPOINT_TYPE = "pci";
 	
 	/**
 	 * @throws ConfigurationException 
 	 * 
 	 */
-	public PCIEndPoint(EndPointID i, Hashtable<String,String> c) throws ConfigurationException {
+	public PCIEndPoint(EndPointID i, EndPointConfiguration c) throws ConfigurationException {
 		super(i,PCIENDPOINT_TYPE ,c);
-		Slog.setupLogger(this.logger);
 		parseConfig();
 	}
 

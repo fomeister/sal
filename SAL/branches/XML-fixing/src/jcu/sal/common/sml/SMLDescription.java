@@ -61,6 +61,23 @@ public class SMLDescription implements HWComponentConfiguration{
 		parameters = p;
 	}
 	
+	/**
+	 * This construcotr is identical to <code>SMLDescription(Document)</code> except that the XML document
+	 * is passed as a string here.
+	 * @param xml a string representation of a valid SML description of a sensor
+	 * @throws ConfigurationException if the given XML document is nto a valid SML description
+	 * @throws ParserConfigurationException if the given strin isnt a valid XML document
+	 */
+	public SMLDescription(String xml) throws ConfigurationException, ParserConfigurationException{
+		this(XMLhelper.createDocument(xml));
+	}
+	
+	/**
+	 * This constructor creates an SML description object from the supplied XML document containing a valid
+	 * SML description of a sensor
+	 * @param doc a XML document containing a valid SMl description of a sensor
+	 * @throws ConfigurationException the the given document is not a valid SML description
+	 */ 
 	public SMLDescription(Document doc) throws ConfigurationException {
 		checkDocument(doc);
 		parseSensorID(doc);
@@ -77,13 +94,13 @@ public class SMLDescription implements HWComponentConfiguration{
 		int nb;
 		try {
 			nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_SENSOR_DESC+")", d));
-			if(nb!=1){
-				logger.error("There is more than one SML description (found "+nb+") in this document");
-				logger.error(XMLhelper.toString(d));
-				throw new ConfigurationException();
-			}
 		} catch (Throwable t) {
 			logger.error("Cant check how many SML descriptions are in this document");
+			throw new ConfigurationException();
+		}
+		if(nb!=1){
+			logger.error("There is more than one SML description (found "+nb+") in this document");
+			logger.error(XMLhelper.toString(d));
 			throw new ConfigurationException();
 		}
 		
@@ -258,6 +275,16 @@ public class SMLDescription implements HWComponentConfiguration{
 
 		sb.append("\t</"+SMLConstants.PARAMETERS_NODE+">\n</"+SMLConstants.SENSOR_TAG+">\n");
 		return sb.toString();		
+	}
+	
+	/**
+	 * This method compares the given SMLDescription object with this one and returns whether they are semantically the same.
+	 * Two SML descriptions object are semantically the same if their parameters are the same.
+	 * @param s the SML description to be compared with this one
+	 * @return whether they are semantically the same.
+	 */
+	public boolean isSame(SMLDescription s){
+		return s.parameters.equals(parameters);
 	}
 	
 	/**

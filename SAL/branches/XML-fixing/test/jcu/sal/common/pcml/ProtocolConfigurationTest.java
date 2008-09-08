@@ -6,6 +6,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.utils.XMLhelper;
 
 import org.junit.Test;
 
@@ -141,30 +142,41 @@ public class ProtocolConfigurationTest {
 
 	@Test
 	public void testGetParameter() throws ConfigurationException, ParserConfigurationException {
-		String params = "<"+Parameters.PARAMETERS_NODE+">"
+		String params1 = "<"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
-		+"\"name1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value1\" />"
+		+"\"p1n1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"p1value1\" />"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
-		+"\"name2\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value2\" />"
+		+"\"p1n2\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"p1value2\" />"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name3\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value3\" />"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name4\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value4\" />"
 		+"</"+Parameters.PARAMETERS_NODE+">";
 		
-		Parameters pa = new Parameters(params);
+		String params2 = "<"+Parameters.PARAMETERS_NODE+">"
+		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
+		+"\"p2n1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"p2value1\" />"
+		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
+		+"\"p2n2\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"p2value2\" />"
+		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
+		+"\"p2n3\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"p2value3\" />"
+		+"</"+Parameters.PARAMETERS_NODE+">";
+		
+		Parameters pa1 = new Parameters(params1);
+		//Parameters pa2 = new Parameters(params2);
 		
 		//should pass
 		String ep = "<"+PCMLConstants.PROTOCOL_NODE+" "+PCMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"=\"testProtocol\" "
 			+PCMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE+"=\"testTypeProtocol\">"
-			+params
 			+"<"+PCMLConstants.ENDPOINT_NODE+" "+PCMLConstants.ENDPOINT_NAME_ATTRIBUTE_NODE+"=\"testEP\" "
 			+ PCMLConstants.ENDPOINT_TYPE_ATTRIBUTE_NODE+"=\"epType\" >"
-			+params + "</" + PCMLConstants.ENDPOINT_NODE+">"
+			+params2 + "</" + PCMLConstants.ENDPOINT_NODE+">"
+			+params1
 			+"</"+PCMLConstants.PROTOCOL_NODE+">";
-		System.out.println(ep);
+		System.out.println("GetParameters" + XMLhelper.toString(XMLhelper.createDocument(ep)));
 		ProtocolConfiguration pc = new ProtocolConfiguration(ep);
-		assertTrue(pc.getParameters().equals(pa));
+		System.out.println("done");
+		assertTrue(pc.getParameters().equals(pa1));
 	}
 
 	@Test
@@ -191,7 +203,7 @@ public class ProtocolConfigurationTest {
 			+eps
 			+"</"+PCMLConstants.PROTOCOL_NODE+">";
  
-		System.out.println(ep);
+
 		EndPointConfiguration epconf = new EndPointConfiguration(eps);
 		ProtocolConfiguration pc = new ProtocolConfiguration(ep);
 		assertTrue(pc.getEPConfig().equals(epconf));

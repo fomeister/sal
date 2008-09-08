@@ -2,10 +2,15 @@ package jcu.sal.components.protocols.owfs;
 
 
 import java.util.Map;
+import java.util.Vector;
 
+import jcu.sal.common.Parameters;
+import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.pcml.EndPointConfiguration;
+import jcu.sal.common.pcml.ProtocolConfiguration;
+import jcu.sal.components.EndPoints.UsbEndPoint;
 import jcu.sal.components.protocols.AbstractHalClient;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 
@@ -16,18 +21,11 @@ import au.edu.jcu.haldbus.match.GenericMatch;
 
 public class HalClient extends AbstractHalClient {
 	private static Logger logger = Logger.getLogger(HalClient.class);
-
-	private final String defaultDoc = "<Protocol name=\"1wirefs\" type=\""+OWFSProtocol.OWFSPROTOCOL_TYPE+"\">"
-								+"<EndPoint name=\"usb-ds9490\" type=\"usb\"/>"
-								+"<parameters>"
-								+"<Param name=\"Location\" value=\"/opt/owfs/bin/owfs\" />"
-								+"<Param name=\"MountPoint\" value=\"/mnt/w1\" />"
-                    			+"</parameters></Protocol>";
-                    			
+	static {Slog.setupLogger(logger);}
 
 	
 	public HalClient() throws InvalidConstructorArgs, AddRemoveElemException{
-		Slog.setupLogger(logger);
+
 		
 		//THe following rules have been commented out because on some machines, USB product and vendor descriptions
 		//are not up-to-date and instead of "DS1490F 2-in-1 Fob, 1-Wire adapter" & "Dallas Semiconductor", HAL reports
@@ -43,7 +41,15 @@ public class HalClient extends AbstractHalClient {
 		logger.debug("Found DS9490");
 		if(!isProtocolRunning(OWFSProtocol.OWFSPROTOCOL_TYPE)){
 			try {
-				createProtocol(XMLhelper.createDocument(defaultDoc));
+				Vector<Parameter> v = new Vector<Parameter>();
+				v.add(new Parameter("Location", "/opt/owfs/bin/owfs"));
+				v.add(new Parameter("MountPoint", "/mnt/w1"));
+				createProtocol(new ProtocolConfiguration(
+						"1wirefs",
+						OWFSProtocol.OWFSPROTOCOL_TYPE,
+						new Parameters(v),
+						new EndPointConfiguration("usb-ds9490", UsbEndPoint.USBENDPOINT_TYPE)
+						));
 			} catch (Exception e) {
 				logger.error("Instancation failed");
 			}

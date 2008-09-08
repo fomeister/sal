@@ -1,10 +1,9 @@
 package jcu.sal.common.sml;
 
-import java.util.Hashtable;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
+import java.util.Set;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -23,16 +22,32 @@ public class SMLDescriptions {
 		Slog.setupLogger(logger);
 	}
 	
-	private Map<Integer, SMLDescription> smls;
+	private HashSet<SMLDescription> smls;
 	
 	private static String XPATH_SENSORS_DESC = "/"+SMLConstants.SENSOR_CONF_NODE+"/"+SMLConstants.SENSOR_TAG;
+	
+	private SMLDescriptions() {
+		smls = new HashSet<SMLDescription>();
+	}
+	
+	/**
+	 * This constructor creates a SML descriptions object from a collection of SMLDescription objects
+	 * @param c the collection of SMLDescription objects
+	 * @throws ConfigurationException if two or more SMLDescription objects in the collection share the same ID
+	 */
+	public SMLDescriptions(Collection<SMLDescription> c) throws ConfigurationException{
+		this();
+		Iterator<SMLDescription> i = c.iterator();
+		while(i.hasNext())
+			addSMLDescription(i.next());
+	}
 	
 	/**
 	 * This constructor create an SMLDescriptions object from multiple SML description objects
 	 * @param sml a map of sensor IDs and associated SML description objects
 	 */
-	public SMLDescriptions(Map<Integer, SMLDescription> m){
-		smls = new Hashtable<Integer, SMLDescription>(m);
+	public SMLDescriptions(Set<SMLDescription> m){
+		smls = new HashSet<SMLDescription>(m);
 	}
 	
 	/**
@@ -51,9 +66,8 @@ public class SMLDescriptions {
 	 * @throws ConfigurationException if the document cant be parsed / is malformed
 	 */
 	public SMLDescriptions(Document d) throws ConfigurationException {
-		smls = new Hashtable<Integer,SMLDescription>();
+		this();
 		NodeList n;
-		SMLDescription s;
 		try {
 			n = XMLhelper.getNodeList(XPATH_SENSORS_DESC, d);
 		} catch (XPathExpressionException e) {
@@ -64,8 +78,7 @@ public class SMLDescriptions {
 		}
 		for (int i = 0; i < n.getLength(); i++) {
 			try {
-				s = new SMLDescription(XMLhelper.createDocument(n.item(i)));
-				smls.put(s.getSID(), s);
+				addSMLDescription(new SMLDescription(XMLhelper.createDocument(n.item(i))));
 			} catch (ParserConfigurationException e) {
 				logger.error("error creating a document from node");
 				e.printStackTrace();
@@ -75,20 +88,32 @@ public class SMLDescriptions {
 		}
 	}
 	
-	/**
-	 * This methods returns a list of sensor IDs present in this SML descriptions object
-	 * @return a list of sensor IDs present in this SML descriptions object
-	 */
-	public List<Integer> getSIDs(){
-		return new Vector<Integer>(smls.keySet());
+	private void addSMLDescription(SMLDescription s) throws ConfigurationException {
+		if(!smls.add(s)){
+			logger.error("found two sensor configuration objects with the same ID '"+s.getID()+"'");
+			throw new ConfigurationException("Two sensor configuration objects with the same ID '"+s.getID()+"'");
+		}		
 	}
 	
 	/**
-	 * This method returns a list of individual SML description objects
-	 * @return a list of SML description objects
+	 * This methods returns a set of sensor IDs present in this SML descriptions object
+	 * @return a set of sensor IDs present in this SML descriptions object
 	 */
-	public List<SMLDescription> getDescriptions(){
-		return new Vector<SMLDescription>(smls.values());
+	public Set<Integer> getSIDs(){
+		HashSet<Integer> h = new HashSet<Integer>();
+		Iterator<SMLDescription> iter = smls.iterator();
+		while(iter.hasNext())
+			h.add(new Integer(iter.next().getID()));
+
+		return h;
+	}
+	
+	/**
+	 * This method returns a set of individual SML description objects
+	 * @return a set of SML description objects
+	 */
+	public Set<SMLDescription> getDescriptions(){
+		return new HashSet<SMLDescription>(smls);
 	}
 	
 	/**
@@ -98,9 +123,15 @@ public class SMLDescriptions {
 	 * @throws ConfigurationException if the sensor ID cant be found
 	 */
 	public SMLDescription getDescription(int sid) throws ConfigurationException {
-		if(!smls.containsKey(sid))
-			throw new ConfigurationException("no such sensor ID");
-		return smls.get(sid);
+		SMLDescription s=null;
+		Iterator<SMLDescription> iter = smls.iterator();
+		while(iter.hasNext()) {
+			s = iter.next();
+			if(s.getID().equals(String.valueOf(sid)))
+				return s;
+		}
+			
+		throw new ConfigurationException("no such sensor ID");
 	}
 	
 	/**
@@ -109,7 +140,7 @@ public class SMLDescriptions {
 	 */
 	public String getSMLString() {
 		StringBuffer sb = new StringBuffer();
-		Iterator<SMLDescription> i = smls.values().iterator();
+		Iterator<SMLDescription> i = smls.iterator();
 		
 		sb.append("<"+SMLConstants.SENSOR_CONF_NODE+">");
 		while(i.hasNext())

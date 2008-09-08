@@ -3,18 +3,13 @@
  */
 package jcu.sal.managers;
 
-import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Hashtable;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Constants;
-import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.components.Identifier;
@@ -25,18 +20,15 @@ import jcu.sal.config.FileConfigService;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.SensorNodeEvent;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
 
 /**
  * @author gilles
  * 
  */
-public class SensorManager extends AbstractManager<Sensor> {
+public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	private FileConfigService conf;
 	
 	/**
@@ -74,21 +66,32 @@ public class SensorManager extends AbstractManager<Sensor> {
 	 * @see jcu.sal.managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Sensor build(Node n, Identifier id) throws InstantiationException {
+	protected Sensor build(SMLDescription s, Identifier id) throws InstantiationException {
 		SensorID i = (SensorID) id;
 		Sensor sensor = null;
 		logger.debug("building sensor: "+id.getName());
 		
+		//check if the ID is the same as in the config object
+		if(!id.getName().equals(s.getID())) {
+			try {
+				s = new SMLDescription(new Integer(id.getName()),s.getParameters());
+			} catch (Exception e1) {
+				logger.error("We shouldnt be here - error creating the new SMLDescription from the old one");
+				e1.printStackTrace();
+				s=null;
+			}
+		}
+		
 		//build the sensor
-		try { sensor = new Sensor(i, getComponentConfig(n)); }
+		try { sensor = new Sensor(i, s); }
 		catch (ConfigurationException e) {
 			logger.error("Couldnt instanciate the sensor: " + i.toString());
 			//e.printStackTrace();
 			throw new InstantiationException();
 		}
 		
-		//saves its config
-		try { conf.addSensor(n); }
+		//Raise save sensor config flag
+		try { conf.addSensor(s); }
 		catch (ConfigurationException e) {
 			logger.error("Couldnt saves the sensor's configuration ("+i.toString()+")");
 			throw new InstantiationException();
@@ -112,7 +115,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 	 * @see jcu.sal.managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Identifier getComponentID(Node n){
+	protected Identifier getComponentID(SMLDescription s){
 		/*
 		 * The order in which a sensor id is looked up:
 		 * first, the sensor config file is checked. if it isnt in the config file, a new one is generated
@@ -120,25 +123,14 @@ public class SensorManager extends AbstractManager<Sensor> {
 		Identifier id = null;
 		try {
 			//we first check to see if the sensor exists in the sensor configuration file
-			id =conf.findSensor(n);
+			id =conf.findSensor(s);
 			logger.debug("Found the sid "+id.getName()+" in sensor config file");
 		} catch (Exception e) {
 			//we havent found a matching sensor in the sensor config file, so we are going to generate a new ID
 			id = new SensorID(generateNewSensorID());
 			logger.debug("created a new sensor id "+id.getName());
 		}
-		
-		//Now we insert/update the newly created/found ID into the XML node n
-		try {
-			//try to set the value for the sid attribute...
-			XMLhelper.setAttributeFromName("//" + SMLConstants.SENSOR_TAG, SMLConstants.SENSOR_ID_ATTRIBUTE_NODE, id.getName(), n);
-		} catch (Exception e) {
-			//if we re here, there was no existing sid attribute so we have to create one
-			try {XMLhelper.addAttribute(XMLhelper.getNode("//"+SMLConstants.SENSOR_TAG, n, false), SMLConstants.SENSOR_ID_ATTRIBUTE_NODE , id.getName());}
-			catch (Exception e1) {logger.error("Error setting the SID in the sensor XML node");e1.printStackTrace();}
-		}
 
-		
 		return id;
 	}
 	
@@ -158,15 +150,7 @@ public class SensorManager extends AbstractManager<Sensor> {
 			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_REMOVED,component.getID().getName(),Constants.SENSOR_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 	}
-	
-	/*
-	 * (non-Javadoc)
-	 * @see jcu.sal.managers.ManagerFactory#getComponentType(org.w3c.dom.Node)
-	 */
-	@Override
-	protected String getComponentType(Node n) throws ParseException {
-		return Sensor.SENSOR_TYPE;
-	}
+
 	
 	/**
 	 * This method returns an SMLDescriptions object for all sensors (if <code>onlyActive</code> is false), or only for
@@ -177,21 +161,14 @@ public class SensorManager extends AbstractManager<Sensor> {
 	 */
 	public SMLDescriptions listSensors(boolean onlyActive){
 		Sensor s;
-		Integer sid;
-		Map<Integer, SMLDescription> m = new Hashtable<Integer, SMLDescription>();
-		try {
-			synchronized(ctable){
-				Iterator<Sensor> i = ctable.values().iterator();
-				while(i.hasNext()) {
-					s = i.next();
-					sid = new Integer(s.getID().getName());
-					if(!onlyActive || (onlyActive && !s.isDisconnected()))
-						m.put(sid, new SMLDescription(sid, s.getConfig()));
-				}	
-			}
-	    } catch (ConfigurationException e) {
-	    	logger.error("we shouldnt be here !!");
-	    	e.printStackTrace();
+		HashSet<SMLDescription> m = new HashSet<SMLDescription>();
+		synchronized(ctable){
+			Iterator<Sensor> i = ctable.values().iterator();
+			while(i.hasNext()) {
+				s = i.next();
+				if(!onlyActive || (onlyActive && !s.isDisconnected()))
+					m.add(s.getConfig());
+			}	
 		}
 		return new SMLDescriptions(m);
 	}
@@ -220,36 +197,11 @@ public class SensorManager extends AbstractManager<Sensor> {
 	 */
 	public void loadSensorsFromConfig(ProtocolID pid) throws ConfigurationException {
 		logger.debug("Loading sensors from config file associated with protocol "+pid.getName());
-		Node n;
-		Iterator<Node> iter = conf.listSensors(pid).iterator();
-		while(iter.hasNext()) { n = iter.next(); logger.debug("Creating sensor "+XMLhelper.toString(n));createComponent(n);};
+		SMLDescription s;
+		Iterator<SMLDescription> iter = conf.listSensors(pid).iterator();
+		while(iter.hasNext()) { s = iter.next(); logger.debug("Creating sensor "+s.getSMLString());createComponent(s);};
 	}
-	
-	/**
-	 * this method generates a partial SML doc using the newly detected sensor's
-	 * native address. The SML document is partial because it may or may not contains the 
-	 * sensor ID if sid is null(in which case the sid attribue is omitted from the Sensor tag).
-	 * @param sid the sensor id (can be null)
-	 * @param nativeAddress the newly detected sensor's native addres
-	 * @param pid the protocol id associated with this sensor
-	 * @return a string which is the SML doc for this new sensor  
-	 * @throws ParserConfigurationException If the document can not be created
-	 */
-	public Document generateSensorConfig(String sid, String nativeAddress, ProtocolID pid, String type) throws ParserConfigurationException{
-		StringBuffer xml = new StringBuffer();
-		if (sid==null)
-			xml.append("<Sensor>\n");
-		else
-			xml.append("<Sensor "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\""+sid+"\">\n");
-		xml.append("\t<parameters>\n");
-		xml.append("\t\t<Param name=\""+SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" value=\""+pid.getName()+"\" />\n");
-		xml.append("\t\t<Param name=\""+SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE+"\" value=\""+type+"\" />\n");
-		xml.append("\t\t<Param name=\""+SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" value=\""+nativeAddress+"\" />\n");
-		xml.append("\t</parameters>\n");
-		xml.append("</Sensor>\n");
-			
-		return XMLhelper.createDocument(xml.toString());
-	}
+
 	
 	/**
 	 * Returns the first available unused sensor ID
@@ -258,24 +210,10 @@ public class SensorManager extends AbstractManager<Sensor> {
 	 */
 	private String generateNewSensorID() {
 		//Get the SIDs existing in sensor config file
-		List<String> sids = conf.listSensorID();
-		
-		if(sids.size()==0)
-			return "1";
-		
-		int[] arr = new int[sids.size()];
-		Iterator<String> iter = sids.iterator();
-		int i=0;
-		while(iter.hasNext()){
-			arr[i++] = Integer.parseInt(iter.next());
-		}
-		Arrays.sort(arr);
-		if(arr[0]==1) {
-			for (i = 1; i < arr.length; i++)
-				if(arr[i]>(arr[i-1]+1))
-					break;
-			i=arr[i-1]+1;
-		} else i=1;
+		Set<String> sids = conf.listSensorID();
+
+		int i = 1;
+		while(sids.contains(String.valueOf(i))) i++;
 		
 		logger.debug("Created new sensor id:"+i);
 		

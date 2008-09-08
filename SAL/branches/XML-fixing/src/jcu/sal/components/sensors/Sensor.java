@@ -3,11 +3,10 @@
  */
 package jcu.sal.components.sensors;
 
-import java.util.Map;
-
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.protocols.ProtocolID;
@@ -20,9 +19,10 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public class Sensor extends AbstractComponent<SensorID> {
+public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 	
-	private Logger logger = Logger.getLogger(Sensor.class);
+	private static Logger logger = Logger.getLogger(Sensor.class);
+	static {Slog.setupLogger(logger);}
 	private SensorState state;
 	
 	/**
@@ -31,23 +31,27 @@ public class Sensor extends AbstractComponent<SensorID> {
 	 * @param c the configuration table
 	 * @throws ConfigurationException if the configuration is wrong
 	 */
-	public Sensor(SensorID i, Map<String,String> c) throws ConfigurationException {
-		super();
-		Slog.setupLogger(this.logger);
-		id = i;
-		type = SENSOR_TYPE;
-		config = c;
+	public Sensor(SensorID i, SMLDescription s) throws ConfigurationException {
+		super(s,i);
 		state = new SensorState(i);
-		parseConfig();
 	}
 
-	public void setPid(ProtocolID pid) {
-		assert(pid.getName().equals(config.get(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE)));
+	public void setPid(ProtocolID pid) throws ConfigurationException {
+		String p = config.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
+		if(!pid.getName().equals(p)) {
+			logger.error("Trying to associate with  protocol '"+pid.getName()+"' but sensor config expected '"+p+"'");
+			throw new ConfigurationException("cant associate with this protocol ("+pid.getName()+")");
+		}		
 		id.setPid(pid);
 	}
 	
 	public String getNativeAddress() {
-		return config.get(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);
+		try {
+			return config.getParameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);
+		} catch (ConfigurationException e) {
+			logger.error("Shouldnt be here, we have a sensor ("+id.toString()+") without a native address");
+			return null;
+		}
 	}
 		
 	/*

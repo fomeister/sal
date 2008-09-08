@@ -15,12 +15,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
+import jcu.sal.common.Parameters;
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.pcml.PCMLConstants;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.EndPoints.DeviceListener;
@@ -33,34 +36,33 @@ import jcu.sal.managers.SensorManager;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 
 /**
  * @author gilles
  *
  */
-public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  implements DeviceListener {
+public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, ProtocolConfiguration>
+										implements DeviceListener {
 
 	private static Logger logger = Logger.getLogger(AbstractProtocol.class);
 	static {	Slog.setupLogger(logger); }
 
 	/**
-	 * A list of endpoints types supported by this protocol
+	 * A list of endpoints types supported by this protocol. Must be filled in by subclass
 	 */
 	public final Vector<String> supportedEndPointTypes;
 	
 
 	/**
-	 * A table of sensors managed by this protocol
+	 * A table of sensors managed by this protocol and associated with it. 
 	 */
 	protected Hashtable<SensorID, Sensor> sensors;
 	
 	/**
-	 * The endpoint associated with this protocol
+	 * The endpoint associated with this protocol.
 	 */
 	protected EndPoint ep;
-	private Node epConfig;
 	
 	/**
 	 * Can there be multiple instances of this protocol at once ? Must be set by the subclass
@@ -68,7 +70,8 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	protected boolean multipleInstances;
 	
 	/**
-	 * The CML store associated with this protocol. This field must be instanciated by the subclass
+	 * The CML store associated with this protocol. This field must be instanciated by the
+	 *  subclass in <code>internal_parseConfig()</code>
 	 */
 	protected AbstractStore cmls=null;
 	
@@ -84,7 +87,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 * if this value is negative, then the autodetection thread is executed only once
 	 * if it is set to 0, the autodetection thread never starts
 	 * A positive value specifies how often (in milliseconds) the autodetect thread will try to detect
-	 * what s cuccrently connected
+	 * what s cuccrently connected. This value can be set by the subclass.
 	 */
 	protected int autoDetectionInterval = 0;
 	private Autodetection autodetectThread = null;
@@ -99,24 +102,22 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	protected AtomicBoolean removed;
 	
 	/**
-	 * Construct a new protocol gien its ID, type, configuration directives and an XML node
-	 * containing the associated endpoint configuration
+	 * Construct a new protocol gien its ID, configuration object and its type.
+	 * This constructor checks that the configuration obejct is of type 't'. If not, a ConfigurationException
+	 * is thrown
 	 * @param i the protocol identifier
-	 * @paran t the type of the protocol
-	 * @param c the configuration directives
-	 * @param d the XML node containing the associated endpoint configuration  
+	 * @param t the type of this protocol
+	 * @param p the protocol configuration object
+	 * @throw ConfigurationException if the configuration obejct is not of type 't'
 	 */
-	public AbstractProtocol(ProtocolID i, String t, Hashtable<String,String> c, Node d){
-		super();
+	public AbstractProtocol(ProtocolID i, String t, ProtocolConfiguration p) throws ConfigurationException{
+		super(p, i);
+		if(!p.getType().equals(t))
+			throw new ConfigurationException("Configuration object is of type '"+p.getType()+"', expected "+t);
 		started= new AtomicBoolean(false);
 		removed=new AtomicBoolean(false);
 
-		
-		/* init the rest of the fields */
-		id = i;
-		type = t;
-		config = c;
-		epConfig = d;
+
 		supportedEndPointTypes = new Vector<String>();
 		sensors = new Hashtable<SensorID, Sensor>();
 		multipleInstances = true;
@@ -132,8 +133,9 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	public final void parseConfig() throws ConfigurationException {
 		logger.debug("Parsing our configuration");
 		
-		try { autoDetectionInterval = Integer.parseInt(getConfig(PCMLConstants.AUTODETECTSENSORS_TAG));}
-		catch (BadAttributeValueExpException e) {}//keep default value supplied hopefully by the Protocol subclass
+		try { autoDetectionInterval = Integer.parseInt(getParameter(PCMLConstants.AUTODETECTSENSORS_TAG));}
+		catch (BadAttributeValueExpException e) {}
+		//keep default value supplied hopefully by the Protocol subclass
 		
 		logger.debug("Build the EndPoint");
 		/* check if we have already instancicated CMl store (we shouldnt, CML store instanciation msut be done in
@@ -141,26 +143,30 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 		 */
 		if(cmls!=null)
 			throw new ConfigurationException();
-		
-		/* construct the endpoint  */
-		ep = EndPointManager.getEndPointManager().createComponent(epConfig);
-		if(ep==null)
-			throw new ConfigurationException("Couldnt create the EndPoint");
-		
-		if(!isEPTypeSupported(ep.getType())) {
-			logger.error("This AbstractProtocol has been setup with the wrong enpoint: got endpoint type: " +ep.getType()+", expected: ");
+
+		/*
+		 * check if the endpoint type is one of the supported types
+		 */
+		if(!isEPTypeSupported(config.getEPConfig().getType())) {
+			logger.error("This AbstractProtocol has been setup with the wrong enpoint: got endpoint type: "
+							+config.getEPConfig().getType()+", expected: ");
 			Iterator<String> iter = supportedEndPointTypes.iterator();
 			while(iter.hasNext())
 				logger.error(iter.next());
-			EndPointManager.getEndPointManager().destroyComponent(ep.getID());
 			throw new ConfigurationException("Wrong Endpoint type");
-		}		
+		}
+
+		/* construct the endpoint  */
+		ep = EndPointManager.getEndPointManager().createComponent(config.getEPConfig());
+		if(ep==null)
+			throw new ConfigurationException("Couldnt create the EndPoint");
+		
 
 		/* Sets the PID field of the EndPointID */
 		ep.setPid(id);
 		
 		logger.debug("EndPoint OK");
-		logger.debug("Check " + type +" software");
+		logger.debug("Check " + config.getType() +" software");
 		
 		try { internal_parseConfig(); }
 		catch (ConfigurationException e) {
@@ -187,7 +193,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 					probeSensor(i.next());
 			}
 			
-			logger.debug("protocol "+type+" started");
+			logger.debug("protocol "+config.getType()+" started");
 			
 			/* if we need the endpoint to report device plugging / unplugging events
 			 * do it now
@@ -245,7 +251,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 			/* Stop EP */
 			ep.stop();
 			
-			logger.debug("protocol "+type+" stopped");
+			logger.debug("protocol "+config.getType()+" stopped");
 		}
 	}
 
@@ -263,7 +269,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 				
 				/* Unregisters with the EventHandler */
 				EventDispatcher.getInstance().removeProducer(id.getName());
-				logger.debug("protocol " + type +" removed");
+				logger.debug("protocol " + config.getType() +" removed");
 			}
 		}
 	}
@@ -355,7 +361,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 * @return the textual representation of the AbstractProtocol's instance
 	 */
 	public final String toString() {
-		return "protocol "+id.getName()+"("+type+")";
+		return "protocol "+id.getName()+"("+config.getType()+")";
 
 	}
 
@@ -473,7 +479,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 	 */
 	private final boolean isSensorSupported(Sensor s) {
 		try {
-			if(s.getConfig(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE).equals(id.getName())) {
+			if(s.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE).equals(id.getName())) {
 				return internal_isSensorSupported(s);
 			}
 		} catch (BadAttributeValueExpException e) {
@@ -666,15 +672,17 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID>  im
 					//now we re left with newly-connected sensors in detected and
 					//removed sensors in current
 					Iterator<String> it = detected.iterator();
+					Vector<Parameter> plist = new Vector<Parameter>();
 					while(it.hasNext()) {
+						plist.removeAllElements();
+						plist.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE,it.next()));
+						plist.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, id.getName()));
+						plist.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, config.getType()));
 							try {
-								if(sm.createComponent(sm.generateSensorConfig(null, it.next(), id, type))==null)
+								if(sm.createComponent(new SMLDescription(new Integer(1),new Parameters(plist)))==null)
 									logger.error("couldnt create the autodetected sensor from its autogenerated XML config: \n"+t);
 							} catch (ConfigurationException e) {
 								logger.error("couldnt instanciate component");
-								e.printStackTrace();
-							} catch (ParserConfigurationException e) {
-								logger.error("couldnt instanciate component - most likely an error in the XML doc");
 								e.printStackTrace();
 							}
 					}

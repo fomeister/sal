@@ -35,10 +35,17 @@ public class Parameters {
 	public static String VALUE_ATTRIBUTE_NODE = "value";
 	
 	private static String XPATH_PARAMS = "//"+PARAMETERS_NODE;
-	private static String XPATH_PARAM = "//"+PARAMETERS_NODE+"/"+PARAMETER_NODE;
+	private static String XPATH_PARAM = XPATH_PARAMS+"/"+PARAMETER_NODE;
 	
 	
 	private Map<String,Parameter> params;
+	
+	/**
+	 * This constructor creates a new empty Parameters object 
+	 */
+	public Parameters() {
+		params = new Hashtable<String,Parameter>();		
+	}
 	
 	/**
 	 * This constructor creates a new Parameters object with the list of Parameter objects given in argument
@@ -126,7 +133,8 @@ public class Parameters {
 
 		//creates individual parameter
 		try {
-			Iterator<String> iter = XMLhelper.getAttributeListFromElements(XPATH_PARAM, d).iterator();
+			List<String> l = XMLhelper.getAttributeListFromElements(XPATH_PARAM, d);
+			Iterator<String> iter = l.iterator();
 			while(iter.hasNext()) {
 				iter.next();
 				name = iter.next();
