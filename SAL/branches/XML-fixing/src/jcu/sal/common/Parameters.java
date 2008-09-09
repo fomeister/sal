@@ -158,7 +158,7 @@ public class Parameters {
 		if(params.containsKey(name))
 			return params.get(name);
 		
-		logger.debug("No parameter named "+name );
+		//logger.debug("No parameter named "+name );
 		throw new ConfigurationException();
 	}
 	

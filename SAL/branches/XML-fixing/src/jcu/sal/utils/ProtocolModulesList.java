@@ -49,11 +49,11 @@ public class ProtocolModulesList {
 		protocolTable.put(V4L2Protocol.PROTOCOL_TYPE, SALcomponentPackage + "v4l2.V4L2Protocol");
 		protocolTable.put(DummyProtocol.PROTOCOL_TYPE, SALcomponentPackage + "dummy.DummyProtocol");
 
-		if(filterTable.get(HalHelper.NAME)==null)
-			filterTable.put(HalHelper.NAME, new LinkedList<String>());
-		filterTable.get(HalHelper.NAME).add(SALcomponentPackage + "v4l2.HalClient");
-		filterTable.get(HalHelper.NAME).add(SALcomponentPackage + "owfs.HalClient");
-		filterTable.get(HalHelper.NAME).add(SALcomponentPackage + "osData.HalClient");
+//		if(filterTable.get(HalHelper.NAME)==null)
+//			filterTable.put(HalHelper.NAME, new LinkedList<String>());
+//		filterTable.get(HalHelper.NAME).add(SALcomponentPackage + "v4l2.HalClient");
+//		filterTable.get(HalHelper.NAME).add(SALcomponentPackage + "owfs.HalClient");
+//		filterTable.get(HalHelper.NAME).add(SALcomponentPackage + "osData.HalClient");
 	}
 	
 	public static String getProtocolClassName(String type) throws ClassNotFoundException {	

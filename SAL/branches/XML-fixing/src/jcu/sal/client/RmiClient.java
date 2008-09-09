@@ -239,7 +239,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 					str2=b.readLine();
 					agent.removeProtocol(str, (str2.equals("yes"))?true:false);
 				} else if(sid==-6)
-					System.out.println(XMLhelper.toString(XMLhelper.createDocument(agent.listProtocols())));				
+					System.out.println(XMLhelper.toString(agent.listProtocols()));				
 				else if(sid==-7) {
 					System.out.println("Enter the XML doc for the new sensor:");
 					sb.delete(0, sb.length());

@@ -1,0 +1,87 @@
+package jcu.sal.client.stressTest.actions;
+
+import java.rmi.RemoteException;
+import java.util.Random;
+import java.util.Vector;
+
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.ParserConfigurationException;
+
+import jcu.sal.common.Parameters;
+import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.common.pcml.ProtocolConfigurations;
+import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLDescription;
+import jcu.sal.common.sml.SMLDescriptions;
+import jcu.sal.components.protocols.dummy.DummyProtocol;
+import jcu.sal.utils.Slog;
+
+import org.apache.log4j.Logger;
+
+public class AddSensorAction implements Action {
+	private static Logger logger = Logger.getLogger(AddSensorAction.class);
+	static {
+		Slog.setupLogger(logger);
+	}
+	public static String name="Dummy_";
+	public static int MAX_SENSORS = 100;
+	
+	private RMISALAgent agent;
+	private Random r;
+	
+	public AddSensorAction(RMISALAgent a){
+		agent = a;
+		r = new Random();
+	}
+
+	public void execute() {
+		SMLDescriptions s;
+		try {
+			s = new SMLDescriptions(agent.listSensors());
+		} catch (Exception e1) {
+			logger.info("we shouldnt be here");
+			e1.printStackTrace();
+			return;
+		}
+
+		if(s.getSize()>MAX_SENSORS){
+			logger.info("cant create sensors, MAX reached");
+			return;
+		}
+		
+		ProtocolConfigurations p;
+		try {
+			p = new ProtocolConfigurations(agent.listProtocols());
+		} catch (Exception e1) {
+			logger.info("we shouldnt be here");
+			e1.printStackTrace();
+			return;
+		}
+
+		String n1= name+r.nextInt(p.getSize()), ret;
+
+			
+		
+		Vector<Parameter> v = new Vector<Parameter>();
+		v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, DummyProtocol.PROTOCOL_TYPE));
+		v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, n1));
+		v.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, String.valueOf(r.nextInt())));
+
+		try {
+			logger.info("creating sensor for protocol "+n1);
+			ret = agent.addSensor(new SMLDescription(new Integer(1), new Parameters(v)).getSMLString());
+			logger.info("sensor "+ret+" created");
+		} catch (ConfigurationException e) {
+			logger.info("sensor cant be created");
+			e.printStackTrace();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+}

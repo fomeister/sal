@@ -179,6 +179,14 @@ public class ProtocolConfigurations {
 	}
 	
 	/**
+	 * This method returns the number of Protocol configuration objects in this objects
+	 * @return number of Protocol configuration objects in this objects
+	 */
+	public int getSize(){
+		return configs.size();
+	}
+	
+	/**
 	 * This method returns the PCML document associated with this platform config object as a string
 	 * @return the PCML document associated with this object
 	 */

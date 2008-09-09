@@ -16,14 +16,15 @@ import org.apache.log4j.PatternLayout;
  */
 public class Slog {
 	
-	static String pattern="%c{1}.%M(%F:%L) %r - %m%n";
+	//static String pattern="%c{1}.%M(%F:%L) %r - %m%n";
+	static String pattern="%c{1}.%M(%F:%L) %r - [ %t ]: %m%n";
 	
 	public static void setupLogger(Logger l) {
 		if(!l.getAllAppenders().hasMoreElements() ) {
 			l.setAdditivity(false);
-			//l.setLevel(Level.ALL);
+			l.setLevel(Level.ALL);
 			//l.setLevel(Level.DEBUG);
-			l.setLevel(Level.ERROR);
+			//l.setLevel(Level.ERROR);
 			l.addAppender(new ConsoleAppender(new PatternLayout(pattern)));
 		}
 

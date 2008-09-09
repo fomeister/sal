@@ -1,0 +1,67 @@
+package jcu.sal.client.stressTest.actions;
+
+import java.rmi.RemoteException;
+import java.util.Random;
+
+import javax.naming.ConfigurationException;
+
+import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.common.sml.SMLDescriptions;
+import jcu.sal.utils.Slog;
+
+import org.apache.log4j.Logger;
+
+public class RemoveSensorAction implements Action {
+	private static Logger logger = Logger.getLogger(RemoveSensorAction.class);
+	static {
+		Slog.setupLogger(logger);
+	}
+	public static String name="Dummy_";
+	
+	private RMISALAgent agent;
+	private Random r;
+	
+	public RemoveSensorAction(RMISALAgent a){
+		agent = a;
+		r = new Random();
+	}
+
+	public void execute() {
+		SMLDescriptions p;
+		try {
+			p = new SMLDescriptions(agent.listActiveSensors());
+		} catch (Exception e1) {
+			logger.info("we shouldnt be here");
+			e1.printStackTrace();
+			return;
+		}
+
+		if(p.getSize()==0){
+			logger.info("no sensors yet");
+			return;
+		}
+		
+		Integer name=null;
+		int i = r.nextInt(p.getSize());
+		int j=0;
+		for(Integer n: p.getSIDs()){
+			if(j++==i) {
+				name = n;
+				break;
+			}
+		}
+
+		try {
+			logger.info("removing sensor "+name);
+			agent.removeSensor(name.toString());
+			logger.info("sensor "+name+" removed");
+		} catch (ConfigurationException e) {
+			logger.info("sensor "+name+" cant be removed");
+			e.printStackTrace();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+	}
+
+}
