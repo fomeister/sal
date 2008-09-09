@@ -186,10 +186,10 @@ public class ProtocolConfigurations {
 		StringBuffer sb = new StringBuffer();
 		Iterator<ProtocolConfiguration> i = configs.iterator();
 		
-		sb.append("<"+PCMLConstants.PLATFORM_CONFIGURATION_NODE+">");
+		sb.append("<"+PCMLConstants.PLATFORM_CONFIGURATION_NODE+">\n");
 		while(i.hasNext())
 			sb.append(i.next().getXMLString());
-		sb.append("</"+PCMLConstants.PLATFORM_CONFIGURATION_NODE+">");
+		sb.append("</"+PCMLConstants.PLATFORM_CONFIGURATION_NODE+">\n");
 		
 		return sb.toString();
 	}

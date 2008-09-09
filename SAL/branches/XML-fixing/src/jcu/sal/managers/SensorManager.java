@@ -160,17 +160,20 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	 * @return an SMLDescriptions object for the selected set of sensors
 	 */
 	public SMLDescriptions listSensors(boolean onlyActive){
-		Sensor s;
-		HashSet<SMLDescription> m = new HashSet<SMLDescription>();
-		synchronized(ctable){
-			Iterator<Sensor> i = ctable.values().iterator();
-			while(i.hasNext()) {
-				s = i.next();
-				if(!onlyActive || (onlyActive && !s.isDisconnected()))
-					m.add(s.getConfig());
-			}	
-		}
-		return new SMLDescriptions(m);
+		if(onlyActive){
+			Sensor s;
+			HashSet<SMLDescription> m = new HashSet<SMLDescription>();
+			synchronized(ctable){
+				Iterator<Sensor> i = ctable.values().iterator();
+				while(i.hasNext()) {
+					s = i.next();
+					if(!onlyActive || (onlyActive && !s.isDisconnected()))
+						m.add(s.getConfig());
+				}	
+			}
+			return new SMLDescriptions(m);
+		} else
+			return new SMLDescriptions(conf.getSensors());		
 	}
 	
 	/**

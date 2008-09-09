@@ -202,14 +202,17 @@ public class Parameters {
 	 * @return the XML document describing the parameters
 	 */
 	public String getXMLString(){
-		StringBuffer sb = new StringBuffer();
-		Iterator<Parameter> i = params.values().iterator();
-		sb.append("<"+PARAMETERS_NODE+">");
-		while(i.hasNext())
-			sb.append(i.next().getXMLString());
-		sb.append("</"+PARAMETERS_NODE+">");
-		
-		return sb.toString();
+		if(params.values().size()==0)
+			return "<"+PARAMETERS_NODE+" />\n";
+		else {
+			StringBuffer sb = new StringBuffer();
+			Iterator<Parameter> i = params.values().iterator();
+			sb.append("<"+PARAMETERS_NODE+">\n");
+			while(i.hasNext())
+				sb.append(i.next().getXMLString());
+			sb.append("</"+PARAMETERS_NODE+">\n");
+			return sb.toString();
+		}
 	}
 	
 	/**
@@ -261,7 +264,7 @@ public class Parameters {
 		}
 		
 		public String getXMLString() {
-			return "<"+PARAMETER_NODE+" "+NAME_ATTRIBUTE_NODE+"=\""+name+"\" "+VALUE_ATTRIBUTE_NODE+"=\""+value+"\" />";
+			return "\t<"+PARAMETER_NODE+" "+NAME_ATTRIBUTE_NODE+"=\""+name+"\" "+VALUE_ATTRIBUTE_NODE+"=\""+value+"\" />\n";
 		}
 
 		@Override

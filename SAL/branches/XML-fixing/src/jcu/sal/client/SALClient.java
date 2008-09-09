@@ -94,8 +94,9 @@ public class SALClient implements EventHandler, StreamCallback{
 		boolean ok=false;
 		System.out.println("Enter either :\n\ta sensor id to send a command\n\t-1 to quit\n\t-2 to see a list of active sensors (XML)");
 		System.out.println("\t-3 to see a list of active sensors (shorter, human readable listing)");
-		System.out.println("\t-4 to add a new protocol\n\t-5 to remove a protocol\n\t-6 to add a new sensor\n\t-7 to remove a sensor");
-		System.out.println("\t-8 to list all sensors (XML)\n\t-9 to list all sensors(shorter, human readable listing)");
+		System.out.println("\t-4 to add a new protocol\n\t-5 to remove a protocol\n\t-6 to list all protocols");
+		System.out.println("\t-7 to add a new sensor\n\t-8 to remove a sensor");
+		System.out.println("\t-9 to list all sensors (XML)\n\t-10 to list all sensors(shorter, human readable listing)");
 		while(!ok)
 			try {
 				sid = Integer.parseInt(b.readLine());
@@ -202,20 +203,22 @@ public class SALClient implements EventHandler, StreamCallback{
 					System.out.println("Remove associated sensors from config file ? (yes-no)");
 					str2=b.readLine();
 					agent.removeProtocol(str, (str2.equals("yes"))?true:false);
-				} else if(sid==-6) {
+				} else if(sid==-9)
+					System.out.println(agent.listProtocols()); 
+				else if(sid==-7) {
 					System.out.println("Enter the XML doc for the new sensor:");
 					sb.delete(0, sb.length());
 					while(!(str=b.readLine()).equals(""))
 						sb.append(str);
 					agent.addSensor(sb.toString());
 					sb.delete(0, sb.length());
-				} else if(sid==-7) {
+				} else if(sid==-8) {
 					System.out.println("Enter the ID of the Sensor to be removed:");
 					str=b.readLine();
 					agent.removeSensor(str);
-				} else if(sid==-8)
+				} else if(sid==-9)
 					System.out.println(agent.listSensors());
-				else if(sid==-9) 
+				else if(sid==-10) 
 					printSensorList(new SMLDescriptions(agent.listSensors()));
 			} catch (Exception e) {
 				e.printStackTrace();

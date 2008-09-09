@@ -179,6 +179,10 @@ public class RMIAgentImpl implements RMISALAgent {
 		agent.removeSensor(sid);
 	}
 	
+	public String listProtocols(){
+		return agent.listProtocols();
+	}
+	
 	public static void main (String args[]) throws ConfigurationException, IOException {
 		if(args.length!=3) {
 			System.out.println("We need three arguments:");

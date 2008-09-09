@@ -235,10 +235,10 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 		StringBuffer sb = new StringBuffer();
 		sb.append("<"+PCMLConstants.PROTOCOL_NODE+" "
 					+PCMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"=\""+name+"\" "
-					+PCMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE+"=\""+type+"\">"
+					+PCMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE+"=\""+type+"\">\n"
 					+params.getXMLString()
 					+epConfig.getXMLString()
-					+"</"+PCMLConstants.PROTOCOL_NODE+">");
+					+"</"+PCMLConstants.PROTOCOL_NODE+">\n");
 		return sb.toString();
 	}
 	

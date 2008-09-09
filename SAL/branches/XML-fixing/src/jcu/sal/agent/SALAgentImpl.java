@@ -153,6 +153,14 @@ public class SALAgentImpl implements SALAgent{
 	}
 	
 	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.agent.SALAgentInterface#listProtocol()
+	 */
+	public String listProtocols() {
+		return pm.listProtocols().getXMLString();
+	}
+	
+	/*
 	 * Event-related methods
 	 */
 	
@@ -163,7 +171,4 @@ public class SALAgentImpl implements SALAgent{
 	public void unregisterEventHandler(EventHandler eh, String producerID) throws ConfigurationException {
 		ev.unregisterEventHandler(eh, producerID);
 	}
-	
-
-
 }

@@ -112,6 +112,12 @@ public interface RMISALAgent extends Remote{
 	 */
 	public void removeProtocol(String pid, boolean removeSensors) throws ConfigurationException, RemoteException;
 	
+	/**
+	 * This method lists the configuration of all existing protocols
+	 * @return a PCML document listing the protocols configuration
+	 */
+	public String listProtocols() throws RemoteException;
+	
 	/*
 	 * Event-related methods 
 	 */

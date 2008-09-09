@@ -16,6 +16,7 @@ import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.pcml.ProtocolConfiguration;
+import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.Identifier;
@@ -207,6 +208,16 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 */
 	public void stop() {
 		conf.stop();
+	}
+	
+	/**
+	 * This method returns an PlatformConfiguration object listing all the protocol configuration
+	 * @param onlyActive if set, the returned SMLDescriptions will be limited to cuurently active sensors. Otherwise, all
+	 * known sensors will be included.   
+	 * @return an SMLDescriptions object for the selected set of sensors
+	 */
+	public ProtocolConfigurations listProtocols(){
+		return new ProtocolConfigurations(conf.getProtocols());
 	}
 
 	/**

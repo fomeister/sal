@@ -156,9 +156,9 @@ public class EndPointConfiguration implements HWComponentConfiguration{
 	public String getXMLString(){
 		StringBuffer sb = new StringBuffer();
 		sb.append("<"+PCMLConstants.ENDPOINT_NODE+" "+PCMLConstants.ENDPOINT_NAME_ATTRIBUTE_NODE+"=");
-		sb.append("\""+name+"\" "+PCMLConstants.ENDPOINT_TYPE_ATTRIBUTE_NODE+"=\""+type+"\">");
+		sb.append("\""+name+"\" "+PCMLConstants.ENDPOINT_TYPE_ATTRIBUTE_NODE+"=\""+type+"\">\n");
 		sb.append(params.getXMLString());
-		sb.append("</"+PCMLConstants.ENDPOINT_NODE+">");
+		sb.append("</"+PCMLConstants.ENDPOINT_NODE+">\n");
 		return sb.toString();
 	}
 
