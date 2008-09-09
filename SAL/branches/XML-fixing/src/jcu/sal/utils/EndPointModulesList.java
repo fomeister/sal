@@ -43,7 +43,7 @@ public class EndPointModulesList {
 			e.logger.error("Cant find the class name from EndPoint type: " + type);
 			throw new ClassNotFoundException("Cant find the class name from EndPoint type: " + type);
 		}
-		else e.logger.debug("Found class " + c + " for type " + type);
+		//else e.logger.debug("Found class " + c + " for type " + type);
 		
 		return c;
 	}

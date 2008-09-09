@@ -72,10 +72,9 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		AbstractProtocol p = null;
 		String type=config.getType();
 		ProtocolID i = (ProtocolID) id;
-		logger.debug("building protocol "+id.getName());
 		try {
 
-			logger.debug("AbstractProtocol type: " + type);
+			//logger.debug("building AbstractProtocol type: " + type);
 			String className = ProtocolModulesList.getProtocolClassName(type);
 
 			Class<?>[] params = {ProtocolID.class, ProtocolConfiguration.class};
@@ -85,7 +84,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 			o[1] = config;
 			//logger.debug("AbstractProtocol config: " + XMLhelper.toString(config));
 			p = (AbstractProtocol) c.newInstance(o);
-			logger.debug("done building protocol "+p.toString());
+			//logger.debug("done building protocol "+p.toString());
 		} catch (Throwable e) {
 			logger.error("Error in new protocol instanciation.");
 			e.printStackTrace();
@@ -138,7 +137,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	@Override
 	protected void remove(AbstractProtocol component) {
 		ProtocolID pid=component.getID();
-		logger.debug("Removing protocol " + pid.toString());
+		//logger.debug("Removing protocol " + pid.toString());
 		component.remove(this);
 		SensorManager.getSensorManager().destroyComponents(component.getSensors());
 		componentRemovable(pid);

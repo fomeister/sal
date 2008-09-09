@@ -13,8 +13,6 @@ public class SMLConstants {
 	public static final String SENSOR_CONF_NODE= "SensorConfiguration";
 	public static final String SENSOR_TAG= "Sensor";
 	public static final String SENSOR_ID_ATTRIBUTE_NODE= "sid";
-	public static final String PARAMETERS_NODE = "parameters";
-	public static final String PARAMETER_NODE = "Param";
 	public static final String PARAMETER_NAME_ATTRIBUTE_NODE = "name";
 	public static final String PARAMETER_VALUE_ATTRIBUTE_NODE= "value";
 	public static final String SENSOR_ADDRESS_ATTRIBUTE_NODE= "Address";

@@ -27,9 +27,9 @@ public class RmiClientDummyStressTest2 implements RMIEventHandler{
 		Slog.setupLogger(logger);
 	}
 	
-	public static int RUN_LENGTH=120*1000;
+	public static int RUN_LENGTH=10*1000;
 	public static int NB_CLIENTS = 1;
-	public static int SLEEP = 100;
+	public static int SLEEP = 1;
 	private Vector<Client> clients;
 	private RMISALAgent agent;
 	private Registry agentRegistry;
@@ -77,7 +77,7 @@ public class RmiClientDummyStressTest2 implements RMIEventHandler{
 			try {
 				Thread.sleep(r.nextInt(5)*1000);
 				while(!Thread.interrupted()){
-					if(r.nextInt(3)>2){
+					if(r.nextInt(3)==2){
 						a = actions[r.nextInt(4)];
 					} else {
 						a = actions[4];

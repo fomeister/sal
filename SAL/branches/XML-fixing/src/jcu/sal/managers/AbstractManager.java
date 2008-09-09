@@ -159,8 +159,8 @@ public abstract class AbstractManager<T extends HWComponent, U extends HWCompone
 		synchronized(ctable){
 			if(ctable.remove(i) == null)
 				logger.error("Cant remove element with key " + i.toString() +  ": No such element");
-			else
-				logger.debug("Element " + i.toString()+ " Removed");
+			//else
+				//logger.debug("Element " + i.toString()+ " Removed");
 		}
 	}
 	

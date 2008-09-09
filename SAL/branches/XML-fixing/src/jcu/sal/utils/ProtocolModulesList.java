@@ -13,7 +13,6 @@ import jcu.sal.components.protocols.osData.OSDataConstants;
 import jcu.sal.components.protocols.owfs.OWFSProtocol;
 import jcu.sal.components.protocols.simpleSNMP.SSNMPProtocol;
 import jcu.sal.components.protocols.v4l2.V4L2Protocol;
-import jcu.sal.config.deviceDetection.HalHelper;
 
 import org.apache.log4j.Logger;
 
@@ -62,7 +61,7 @@ public class ProtocolModulesList {
 			e.logger.error("Cant find the protocol class name from protocol type: " + type);
 			throw new ClassNotFoundException("Cant find the protocol class name from protocol type: " + type);
 		}
-		else e.logger.debug("Found protocol class " + c + " for type " + type);
+		//else e.logger.debug("Found protocol class " + c + " for type " + type);
 		
 		return c;
 	}

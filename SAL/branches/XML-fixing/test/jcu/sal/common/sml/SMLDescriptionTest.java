@@ -32,44 +32,44 @@ public class SMLDescriptionTest {
 	
 	//missing sid attribute
 	private String sml1 = "<"+SMLConstants.SENSOR_TAG+">\n" +
-							"<"+SMLConstants.PARAMETERS_NODE+">\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETERS_NODE+">\n"+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocol\" />\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MySensorAddress\" />\n"+
-							"</"+SMLConstants.PARAMETERS_NODE+">\n"+
+							"</"+Parameters.PARAMETERS_NODE+">\n"+
 							"</"+SMLConstants.SENSOR_TAG+">";
 	
 	//has an extra parameter
 	private String sml2 = "<"+SMLConstants.SENSOR_TAG+" "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\"10\">\n" +
-							"<"+SMLConstants.PARAMETERS_NODE+">\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETERS_NODE+">\n"+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocol\" />\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MySensorAddress\" />\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+
 							"=\"should\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"goTHROUGH\" />\n"+
-							"</"+SMLConstants.PARAMETERS_NODE+">\n"+
+							"</"+Parameters.PARAMETERS_NODE+">\n"+
 							"</"+SMLConstants.SENSOR_TAG+">";
 	
 	//missing one required parameter
 	private String sml3 = "<"+SMLConstants.SENSOR_TAG+" "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\"10\">\n" +
-							"<"+SMLConstants.PARAMETERS_NODE+">\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETERS_NODE+">\n"+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocol\" />\n"+
-							"</"+SMLConstants.PARAMETERS_NODE+">\n"+
+							"</"+Parameters.PARAMETERS_NODE+">\n"+
 							"</"+SMLConstants.SENSOR_TAG+">";
 	
 	//shoud be OK
 	private String sml4 = "<"+SMLConstants.SENSOR_TAG+" "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\"10\">\n" +
-							"<"+SMLConstants.PARAMETERS_NODE+">\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETERS_NODE+">\n"+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocol\" />\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MySensorAddress\" />\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocolType\" />\n"+
-							"</"+SMLConstants.PARAMETERS_NODE+">\n"+
+							"</"+Parameters.PARAMETERS_NODE+">\n"+
 							"</"+SMLConstants.SENSOR_TAG+">";
 	
 	

@@ -33,7 +33,7 @@ public class SMLDescription implements HWComponentConfiguration{
 	private Parameters parameters;
 	
 	private static String XPATH_SENSOR_DESC="/"+SMLConstants.SENSOR_TAG;
-	private static String XPATH_SENSOR_PARAMETER=XPATH_SENSOR_DESC+"/"+SMLConstants.PARAMETERS_NODE+"/"+SMLConstants.PARAMETER_NODE;
+	private static String XPATH_SENSOR_PARAMETER=XPATH_SENSOR_DESC+"/"+Parameters.PARAMETERS_NODE+"/"+Parameters.PARAMETER_NODE;
 	
 	/**
 	 * This method constructs a new SML description object given a sensor ID and a table of key,value pairs representing
@@ -261,19 +261,19 @@ public class SMLDescription implements HWComponentConfiguration{
 		String n;
 		StringBuffer sb = new StringBuffer();
 		sb.append("<"+SMLConstants.SENSOR_TAG+" "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\""+sid.toString()+"\">\n"
-			+"\t<"+SMLConstants.PARAMETERS_NODE+">\n");
+			+"\t<"+Parameters.PARAMETERS_NODE+">\n");
 
 		while(i.hasNext()) {
 			n = i.next();
 			try {
-				sb.append("\t\t<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+n+
+				sb.append("\t\t<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+n+
 						"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\""+parameters.getParameter(n).getStringValue()+"\" />\n");
 			} catch (ConfigurationException e) {
 				logger.error("we shouldnt be here. looking for parameter name "+n+ " but cant find it");
 			}
 		}
 
-		sb.append("\t</"+SMLConstants.PARAMETERS_NODE+">\n</"+SMLConstants.SENSOR_TAG+">\n");
+		sb.append("\t</"+Parameters.PARAMETERS_NODE+">\n</"+SMLConstants.SENSOR_TAG+">\n");
 		return sb.toString();		
 	}
 	
