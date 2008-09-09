@@ -103,6 +103,12 @@ public interface SALAgent {
 	 */
 	public void removeProtocol(String pid, boolean removeSensors) throws ConfigurationException;
 	
+	/**
+	 * This method lists the configuration of all existing protocols
+	 * @return a PCML document listing the protocols configuration
+	 */
+	public String listProtocols();
+	
 	/*
 	 * Event-related methods 
 	 */
