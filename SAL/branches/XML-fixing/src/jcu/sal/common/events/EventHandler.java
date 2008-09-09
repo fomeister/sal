@@ -1,6 +1,6 @@
 package jcu.sal.common.events;
 
 
-public interface EventHandler{
-	public void handle(Event e);
+public interface EventHandler<T extends Event>{
+	public void handle(T e);
 }

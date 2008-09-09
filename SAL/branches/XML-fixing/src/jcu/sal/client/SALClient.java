@@ -27,8 +27,9 @@ import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
+import jcu.sal.utils.XMLhelper;
 
-public class SALClient implements EventHandler, StreamCallback{
+public class SALClient implements EventHandler<Event>, StreamCallback{
 	private static final long serialVersionUID = -8376295971546676596L;
 	
 	public static class JpgMini {
@@ -203,8 +204,8 @@ public class SALClient implements EventHandler, StreamCallback{
 					System.out.println("Remove associated sensors from config file ? (yes-no)");
 					str2=b.readLine();
 					agent.removeProtocol(str, (str2.equals("yes"))?true:false);
-				} else if(sid==-9)
-					System.out.println(agent.listProtocols()); 
+				} else if(sid==-6)
+					System.out.println(XMLhelper.toString(agent.listProtocols())); 
 				else if(sid==-7) {
 					System.out.println("Enter the XML doc for the new sensor:");
 					sb.delete(0, sb.length());
@@ -258,6 +259,7 @@ public class SALClient implements EventHandler, StreamCallback{
 	public void handle(Event e) {
 		System.out.println("Received "+e.toString());
 	}
+
 
 	private int n;
 	private long ts;

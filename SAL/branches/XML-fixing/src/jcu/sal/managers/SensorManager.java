@@ -218,8 +218,6 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 		int i = 1;
 		while(sids.contains(String.valueOf(i))) i++;
 		
-		logger.debug("Created new sensor id:"+i);
-		
 		return String.valueOf(i);
 	}
 }

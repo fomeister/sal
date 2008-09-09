@@ -626,6 +626,23 @@ public class XMLhelper {
 			return "";
 		}
     }
+    
+    /**
+     * This method takes an XML document as a string and formats it nicely
+     * @param n the XML string
+     * @throws TransformerFactoryConfigurationError 
+     * @Returns a nicely formatted XML document as a string
+     */
+    public static String toString(String n) {
+    	if(n==null) return "";
+    	try {
+			return toString(createDocument(n));
+		} catch (ParserConfigurationException e) {
+			System.out.println("Cant toString() this DOM doc !");;
+			e.printStackTrace();		
+			return "";
+		}
+    }
 
     /**
      * This method is used to generate a result from a source.

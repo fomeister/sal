@@ -105,7 +105,7 @@ public class CMLDescriptions {
 	public CMLDescription getDescription(int cid) throws ConfigurationException{
 		if(cmls.containsKey(new Integer(cid)))
 			return cmls.get(new Integer(cid));
-		throw new ConfigurationException("no such CID");
+		throw new ConfigurationException("no such CID "+cid);
 	}
 
 	/**

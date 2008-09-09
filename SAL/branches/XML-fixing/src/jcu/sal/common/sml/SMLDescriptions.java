@@ -135,6 +135,14 @@ public class SMLDescriptions {
 	}
 	
 	/**
+	 * This method returns the number of SML description objects in this object
+	 * @return SML description objects in this object
+	 */
+	public int getSize(){
+		return smls.size();
+	}
+	
+	/**
 	 * This method returns the XML document associated with this SMLDescriptions object as a string
 	 * @return the XML document associated with this object
 	 */

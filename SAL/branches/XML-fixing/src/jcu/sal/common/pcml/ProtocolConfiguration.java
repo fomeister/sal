@@ -120,7 +120,6 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	 */
 	private void checkDocument(Document d) throws ConfigurationException{
 		int nb;
-		logger.debug("Checking document "+XMLhelper.toString(d));
 		try {
 			nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_PROTOCOL+")", d));
 			if(nb!=1){

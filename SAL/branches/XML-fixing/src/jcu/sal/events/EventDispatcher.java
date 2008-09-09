@@ -108,28 +108,31 @@ public class EventDispatcher implements Runnable{
 	public void run() {
 		logger.debug("Event dispatcher thread starting");
 		Event e;
-		List<EventHandler> l;
-		Iterator<EventHandler> iterh;
-		EventHandler ev;
 		try {
 			while(!Thread.interrupted()) {
 				e = eventQueue.take();
 				synchronized(eventHandlers) {
-					l = eventHandlers.get(e.getProducer());
-					if(l!=null) {
-						iterh = l.iterator();
-						while(iterh.hasNext()) {
-							ev = iterh.next();
-							logger.debug("Dispatching "+e.toString()+" to handler "+ev);
-							ev.handle(e);
-						}
-					}
+					sendEvent(e);
 				}
-				
-				
 			}
 		}
 		catch (InterruptedException e1) {}
 		logger.debug("Event dispatcher thread exiting");
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T extends Event> void sendEvent(T e) {
+		List<EventHandler> l;
+		Iterator<EventHandler> iterh;
+		EventHandler<T> ev;
+		l = eventHandlers.get(e.getProducer());
+		if(l!=null) {
+			iterh = l.iterator();
+			while(iterh.hasNext()) {
+				ev = iterh.next();
+				logger.debug("Dispatching "+e.toString()+" to handler "+ev);
+				ev.handle(e);
+			}
+		}
 	}
 }
