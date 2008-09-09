@@ -74,7 +74,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID, EndPointCon
 				stop();
 			configured=false;
 			internal_remove();
-			logger.debug(config.getType()+" Endpoint removed");	
+			//logger.debug(config.getType()+" Endpoint removed");	
 		}
 		c.componentRemovable(id);
 	}
@@ -86,7 +86,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID, EndPointCon
 	public final void start() throws ConfigurationException{
 		synchronized (this) {
 			if(configured && !enabled) {
-				logger.debug("Starting "+config.getType()+" Endpoint.");
+				//logger.debug("Starting "+config.getType()+" Endpoint.");
 				internal_start();
 				enabled=true;
 			}
@@ -100,7 +100,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID, EndPointCon
 	public final void stop() {
 		synchronized (this) {
 			if(enabled) {
-				logger.debug("Stopping "+config.getType()+" Endpoint.");
+				//logger.debug("Stopping "+config.getType()+" Endpoint.");
 				internal_stop();
 				enabled=false;
 			}
@@ -159,7 +159,7 @@ public abstract class EndPoint extends AbstractComponent<EndPointID, EndPointCon
 					listeners.put(ids[i], new ArrayList<DeviceListener>());
 				listeners.get(ids[i]).add(d);
 			}
-			logger.debug("Added device listener for ID: '"+ids[i]+"', "+listeners.containsKey(ids[i])+" - "+listeners.get(ids[i]));
+			//logger.debug("Added device listener for ID: '"+ids[i]+"', "+listeners.containsKey(ids[i])+" - "+listeners.get(ids[i]));
 		}
 	}
 	/**

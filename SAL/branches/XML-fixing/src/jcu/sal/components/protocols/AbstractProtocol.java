@@ -131,13 +131,12 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * @see jcu.sal.components.AbstractComponent#parseConfig()
 	 */
 	public final void parseConfig() throws ConfigurationException {
-		logger.debug("Parsing our configuration");
+		//logger.debug("Parsing our configuration");
 		
 		try { autoDetectionInterval = Integer.parseInt(getParameter(PCMLConstants.AUTODETECTSENSORS_TAG));}
 		catch (BadAttributeValueExpException e) {}
 		//keep default value supplied hopefully by the Protocol subclass
 		
-		logger.debug("Build the EndPoint");
 		/* check if we have already instancicated CMl store (we shouldnt, CML store instanciation msut be done in
 		 * (internal_)parse_config() 
 		 */
@@ -160,14 +159,10 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		ep = EndPointManager.getEndPointManager().createComponent(config.getEPConfig());
 		if(ep==null)
 			throw new ConfigurationException("Couldnt create the EndPoint");
-		
 
 		/* Sets the PID field of the EndPointID */
 		ep.setPid(id);
-		
-		logger.debug("EndPoint OK");
-		logger.debug("Check " + config.getType() +" software");
-		
+			
 		try { internal_parseConfig(); }
 		catch (ConfigurationException e) {
 			logger.error("Error configuring the protocol, destroying the endpoint");
@@ -186,14 +181,14 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			/* Start the ourselves */
 			internal_start();
 			/* Probe associted sensors */
-			logger.debug("Probing associated sensors for AbstractProtocol " + toString());
+			//logger.debug("Probing associated sensors for AbstractProtocol " + toString());
 			synchronized(sensors) {
 				Iterator<Sensor> i = sensors.values().iterator();
 				while(i.hasNext())
 					probeSensor(i.next());
 			}
 			
-			logger.debug("protocol "+config.getType()+" started");
+			//logger.debug("protocol "+config.getType()+" started");
 			
 			/* if we need the endpoint to report device plugging / unplugging events
 			 * do it now
@@ -251,7 +246,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			/* Stop EP */
 			ep.stop();
 			
-			logger.debug("protocol "+config.getType()+" stopped");
+			//logger.debug("protocol "+config.getType()+" stopped");
 		}
 	}
 
@@ -269,7 +264,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 				
 				/* Unregisters with the EventHandler */
 				EventDispatcher.getInstance().removeProducer(id.getName());
-				logger.debug("protocol " + config.getType() +" removed");
+				//logger.debug("protocol " + config.getType() +" removed");
 			}
 		}
 	}
@@ -302,7 +297,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 						s.setPid(id);
 						probeSensor(s);
 					}
-					logger.debug("Sensor associated (" + s.toString()+")");
+					//logger.debug("Sensor associated (" + s.toString()+")");
 				} else {
 					logger.error("Sensor "+s.toString()+" not supported by protocol "+id.toString());
 					throw new ConfigurationException("Sensor not supported");
@@ -345,7 +340,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 						logger.error("Cant unassociate sensor with key " + i.toString() +  ": No such element");
 						return false;
 					} else {
-						logger.debug("unassociated sensor with key " + i.toString() +  " from protocol "+toString());
+						//logger.debug("unassociated sensor with key " + i.toString() +  " from protocol "+toString());
 					}
 				}
 			}
@@ -394,7 +389,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 								Class<?>[] params = {Command.class,Sensor.class};
 								//logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()));
 								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params);
-								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
+								//logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
 								ret_val = (byte[]) m.invoke(this,c, s);
 							} catch (ConfigurationException e) {
 								logger.error("Cant find the method matching this command "+c.getCID());
@@ -486,7 +481,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			logger.error("Cant find the name of the protocol the sensor is to be associated with");
 			return false;
 		}
-		logger.debug("The protocol associated with this sensor doesnt match this protocol's name. Sensor not supported");
+		//logger.debug("The protocol associated with this sensor doesnt match this protocol's name. Sensor not supported");
 		return false;
 	}
 	
@@ -568,7 +563,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * and return a list of native address (strings) of currently connected/visible sensors 
 	 */
 	protected List<String> detectConnectedSensors() {
-		logger.debug(id.toString() + "Not configured for autodetection");
+		//logger.debug(id.toString() + "Not configured for autodetection");
 		return null;
 	}
 	
@@ -582,11 +577,11 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		if(autoDetectionInterval != 0 && (autodetectThread==null || !autodetectThread.isAlive())) {
 			//Start the sensor monitoring thread
 			autodetectThread = new Autodetection();
-			logger.debug("Starting autodetect thread");
+			//logger.debug("Starting autodetect thread");
 			autodetectThread.start();
 		} else {
-			logger.info("Autodetect interval set to 0 in the protocol config.");
-			logger.info("Disabling sensor autodetection");
+			//logger.info("Autodetect interval set to 0 in the protocol config.");
+			//logger.info("Disabling sensor autodetection");
 		}
 	}
 	
@@ -598,7 +593,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			catch (InterruptedException e) {
 				logger.error("interrupted while waiting for autodetect thread to finish");
 			}
-			logger.debug("autodetect thread stopped");
+			//logger.debug("autodetect thread stopped");
 		}
 	}
 	
@@ -642,7 +637,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			Iterator<Sensor> iter;
 			SensorManager sm = SensorManager.getSensorManager();
 			try {
-				logger.debug("Autodetect thread started ("+id.toString()+")");
+				//logger.debug("Autodetect thread started ("+id.toString()+")");
 				while(!Thread.interrupted() && (detected = detectConnectedSensors())!=null) {
 
 					//for each sensor in current
@@ -656,7 +651,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 							if(detected.contains(stmp.getNativeAddress())) {
 //								logger.debug("sensor "+stmp.toString()+" found in both current & detected");
 								if(stmp.isDisconnected()) {
-									logger.debug("reconnecting "+stmp.toString());
+									//logger.debug("reconnecting "+stmp.toString());
 									stmp.reconnect();
 								}
 								detected.remove(stmp.getNativeAddress());
@@ -690,7 +685,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 					iter = current.iterator();
 					while(iter.hasNext()) {
 							stmp = iter.next();
-							logger.debug("disconnecting "+stmp.toString());
+							//logger.debug("disconnecting "+stmp.toString());
 							stmp.disconnect();
 					}
 					if(autoDetectionInterval > 0)
@@ -699,7 +694,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 						interrupt();
 				}
 			} catch (InterruptedException e) {}
-			logger.debug("Autodetect thread exiting ("+id.toString()+")");
+			//logger.debug("Autodetect thread exiting ("+id.toString()+")");
 		}
 	}
 

@@ -107,7 +107,7 @@ public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 	 */
 	@Override
 	public void remove(componentRemovalListener c) {
-		logger.debug("Registering removal of sensor " + toString());
+		//logger.debug("Registering removal of sensor " + toString());
 		state.remove(c);
 	}
 	

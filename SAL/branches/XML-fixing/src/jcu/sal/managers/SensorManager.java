@@ -69,7 +69,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	protected Sensor build(SMLDescription s, Identifier id) throws InstantiationException {
 		SensorID i = (SensorID) id;
 		Sensor sensor = null;
-		logger.debug("building sensor: "+id.getName());
+		//logger.debug("building sensor: "+id.getName());
 		
 		//check if the ID is the same as in the config object
 		if(!id.getName().equals(s.getID())) {
@@ -124,11 +124,11 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 		try {
 			//we first check to see if the sensor exists in the sensor configuration file
 			id =conf.findSensor(s);
-			logger.debug("Found the sid "+id.getName()+" in sensor config file");
+			//logger.debug("Found the sid "+id.getName()+" in sensor config file");
 		} catch (Exception e) {
 			//we havent found a matching sensor in the sensor config file, so we are going to generate a new ID
 			id = new SensorID(generateNewSensorID());
-			logger.debug("created a new sensor id "+id.getName());
+			//logger.debug("created a new sensor id "+id.getName());
 		}
 
 		return id;
@@ -199,7 +199,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	 * @throws ConfigurationException if the sensor is still active or the config info cant be deleted
 	 */
 	public void loadSensorsFromConfig(ProtocolID pid) throws ConfigurationException {
-		logger.debug("Loading sensors from config file associated with protocol "+pid.getName());
+		//logger.debug("Loading sensors from config file associated with protocol "+pid.getName());
 		SMLDescription s;
 		Iterator<SMLDescription> iter = conf.listSensors(pid).iterator();
 		while(iter.hasNext()) { s = iter.next(); logger.debug("Creating sensor "+s.getSMLString());createComponent(s);};

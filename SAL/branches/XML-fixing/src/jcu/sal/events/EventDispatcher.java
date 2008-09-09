@@ -51,12 +51,12 @@ public class EventDispatcher implements Runnable{
 	}
 	
 	public boolean addProducer(String p) {
-		logger.debug("Adding producer "+p);
+		//logger.debug("Adding producer "+p);
 		synchronized(producers) { return producers.add(p); }
 	}
 	
 	public boolean removeProducer(String p) {
-		logger.debug("Removing producer "+p);
+		//logger.debug("Removing producer "+p);
 		synchronized(producers) { 
 			synchronized(eventHandlers) { eventHandlers.remove(p); }
 			return producers.remove(p);
@@ -71,7 +71,7 @@ public class EventDispatcher implements Runnable{
 						eventHandlers.put(producer, new Vector<EventHandler>());
 					eventHandlers.get(producer).add(e);
 				}
-				logger.debug("Registered event handler "+e+" with producer: "+producer);
+				//logger.debug("Registered event handler "+e+" with producer: "+producer);
 			} else {
 				logger.error("No registered event producer with this name: "+producer);
 				throw new ConfigurationException();
@@ -87,8 +87,8 @@ public class EventDispatcher implements Runnable{
 						logger.error("Unregistering event handler "+e+" from producer: "+producer+" failed");
 						throw new ConfigurationException("No such event handler");
 					}
-					else
-						logger.debug("Unregistered event handler "+e+" from producer: "+producer);
+					//else
+						//logger.debug("Unregistered event handler "+e+" from producer: "+producer);
 				}				
 			} else {
 				logger.error("No registered event producer with this name: "+producer);
@@ -102,11 +102,11 @@ public class EventDispatcher implements Runnable{
 				logger.error("Cant queue event, queue full");
 				throw new ConfigurationException();
 			}
-			logger.debug("Queued "+e);
+			//logger.debug("Queued "+e);
 	}
 	
 	public void run() {
-		logger.debug("Event dispatcher thread starting");
+		//logger.debug("Event dispatcher thread starting");
 		Event e;
 		try {
 			while(!Thread.interrupted()) {
@@ -117,7 +117,7 @@ public class EventDispatcher implements Runnable{
 			}
 		}
 		catch (InterruptedException e1) {}
-		logger.debug("Event dispatcher thread exiting");
+		//logger.debug("Event dispatcher thread exiting");
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -130,7 +130,7 @@ public class EventDispatcher implements Runnable{
 			iterh = l.iterator();
 			while(iterh.hasNext()) {
 				ev = iterh.next();
-				logger.debug("Dispatching "+e.toString()+" to handler "+ev);
+				//logger.debug("Dispatching "+e.toString()+" to handler "+ev);
 				ev.handle(e);
 			}
 		}

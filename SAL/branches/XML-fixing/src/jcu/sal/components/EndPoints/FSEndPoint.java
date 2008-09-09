@@ -36,7 +36,7 @@ public class FSEndPoint extends EndPoint {
 	@Override
 	public void parseConfig() throws ConfigurationException {
 		// Not much to do here 
-		logger.debug("Found filesystem");
+		//logger.debug("Found filesystem");
 		configured = true;
 	}
 }

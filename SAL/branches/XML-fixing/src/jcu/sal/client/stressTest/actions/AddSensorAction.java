@@ -58,8 +58,12 @@ public class AddSensorAction implements Action {
 			e1.printStackTrace();
 			return;
 		}
-
-		String n1= name+r.nextInt(p.getSize()), ret;
+		
+		String n1, ret;
+		if(p.getSize()==0)
+			n1 = name+"0";
+		else
+			n1= name+r.nextInt(p.getSize());
 
 			
 		

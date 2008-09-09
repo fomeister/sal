@@ -121,7 +121,7 @@ public abstract class AbstractStore {
 		if(cid==null)
 			cid = new Integer(PRIVATE_CID_START);
 		//builds the CML desc doc
-		logger.debug("Adding private CML for key "+k+", method: "+mName+", CID: "+cid.intValue());
+		//logger.debug("Adding private CML for key "+k+", method: "+mName+", CID: "+cid.intValue());
 		addCML(k, new CMLDescription(mName,cid, name, desc, argTypes, names, returnType));
 		priv_cid.put(k, new Integer(cid.intValue()+1));
 				
@@ -142,7 +142,7 @@ public abstract class AbstractStore {
 		CMLDescription cml;
 		List<ArgumentType> t = new Vector<ArgumentType>();
 		List<String> s = new Vector<String>();
-		logger.debug("Adding generic CML for key "+k+", alias: "+aliasName);
+		//logger.debug("Adding generic CML for key "+k+", alias: "+aliasName);
 		if(aliasName.equals(GENERIC_ENABLE)){
 			c = new Integer(GENERIC_ENABLE_CID);
 			addCML(k, new CMLDescription(null, c, GENERIC_ENABLE, "Enables the sensor", t, s, new ReturnType(CMLConstants.RET_TYPE_VOID)));

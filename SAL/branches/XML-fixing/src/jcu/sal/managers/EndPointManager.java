@@ -49,9 +49,8 @@ public class EndPointManager extends AbstractManager<EndPoint, EndPointConfigura
 		EndPoint endPoint = null;
 		String type=config.getType();
 		EndPointID i = (EndPointID) id;
-		logger.debug("building EndPoint "+id.getName());
 		try {
-			logger.debug("EndPoint type: " +type);
+			//logger.debug("Building EndPoint type: " +type);
 			String className = EndPointModulesList.getClassName(type);
 			
 			Class<?>[] p = new Class<?>[2];
@@ -63,7 +62,7 @@ public class EndPointManager extends AbstractManager<EndPoint, EndPointConfigura
 			o[1] = config;
 			endPoint = (EndPoint) c.newInstance(o);
 
-			logger.debug("Done building EndPoint " + endPoint.toString());
+			//logger.debug("Done building EndPoint " + endPoint.toString());
 			
 		} catch (Throwable e) {
 			logger.error("Error in new Endpoint instanciation. XML doc:");
