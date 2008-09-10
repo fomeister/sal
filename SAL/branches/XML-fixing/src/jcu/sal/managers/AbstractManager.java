@@ -3,7 +3,6 @@
  */
 package jcu.sal.managers;
 
-import java.text.ParseException;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -88,11 +87,7 @@ public abstract class AbstractManager<T extends HWComponent, U extends HWCompone
 			logger.error("A component '"+type+"' named " + id.toString()+" is already present");
 			throw new ConfigurationException();
 		} catch (InstantiationException e) {
-			logger.error("Couldnt instanciate component from XML doc");
-			throw new ConfigurationException();
-		} catch (ParseException e) {
-			logger.error("Couldnt retrieve the component ID from XML doc");
-			e.printStackTrace();
+			logger.error("Couldnt instanciate component '"+type+"' named " + c.getID()+" from XML doc");
 			throw new ConfigurationException();
 		}
 	}
@@ -203,5 +198,5 @@ public abstract class AbstractManager<T extends HWComponent, U extends HWCompone
 	 * @param c the configuration object
 	 * @return the ID of the component
 	 */
-	protected abstract Identifier getComponentID(U c) throws ParseException;
+	protected abstract Identifier getComponentID(U c);
 }

@@ -6,6 +6,7 @@ package jcu.sal.components.protocols.osData;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -163,14 +164,16 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	@Override
 	protected List<String> detectConnectedSensors() {
 		//check that all our supported sensors are here, if not remove them from supportedSensors
+		String s;
 		List<String> v = new Vector<String>();
 		OSdata d;
 
-		for(String s: supportedSensors.keySet()) {
+		for(Iterator<String> i = supportedSensors.keySet().iterator(); i.hasNext();) {
+			s = i.next();
 			d = supportedSensors.get(s);
 			if(!PlatformHelper.isFileReadable(d.file)) {
 				logger.error("Cant find file "+d.file);
-				supportedSensors.remove(s);
+				i.remove();
 			} else
 				v.add(s);
 		}
