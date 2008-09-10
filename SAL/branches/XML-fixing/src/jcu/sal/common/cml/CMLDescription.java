@@ -23,9 +23,7 @@ import org.w3c.dom.Document;
  */
 public class CMLDescription {
 	private static Logger logger = Logger.getLogger(CMLDescription.class);
-	static {
-		Slog.setupLogger(logger);
-	}
+	static {Slog.setupLogger(logger);}
 	
 	private static String XPATH_CMD_DESC = "//"+CMLConstants.CMD_DESCRIPTION_TAG;
 	private static String XPATH_CMD_DESC_SHORT_DESC = XPATH_CMD_DESC+"/"+CMLConstants.SHORT_DESCRIPTION_TAG;
@@ -230,9 +228,9 @@ public class CMLDescription {
 	
 	/**
 	 * This method returns this CML description's document as a String
-	 * @return the CML descripor document as a String
+	 * @return the CML descripon document as a String
 	 */
-	public String getCMLString(){
+	public String getXMLString(){
 		String cml = "<"+CMLConstants.CMD_DESCRIPTION_TAG+" "+CMLConstants.CID_ATTRIBUTE+"=\""+cid.toString()+"\">\n"
 				+"\t<"+CMLConstants.NAME_TAG+">"+name+"</"+CMLConstants.NAME_TAG+">\n"
 				+"\t<"+CMLConstants.SHORT_DESCRIPTION_TAG+">"+desc+"</"+CMLConstants.SHORT_DESCRIPTION_TAG+">\n"
@@ -251,9 +249,9 @@ public class CMLDescription {
 	 * This method returns this CML description's document
 	 * @return the CML descripor document
 	 */
-	public Document getCML(){
+	public Document getXML(){
 		try {
-			return XMLhelper.createDocument(getCMLString());
+			return XMLhelper.createDocument(getXMLString());
 		} catch (ParserConfigurationException e) {
 			logger.error("error creating XML CML doc");
 		}
@@ -261,7 +259,7 @@ public class CMLDescription {
 	}
 	
 	/**
-	 * This method returns this CML description's CID
+	 * This method returns this CML description's command identifer
 	 * @return this CML description's CID
 	 */
 	public Integer getCID(){
@@ -269,7 +267,7 @@ public class CMLDescription {
 	}
 	
 	/**
-	 * This method returns this CML description's name
+	 * This method returns this CML description's name, ie the name of the command
 	 * @return this CML description's name
 	 */
 	public String getName(){

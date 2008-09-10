@@ -38,7 +38,7 @@ public class HalClient extends AbstractHalClient {
 
 	@Override
 	public void deviceAdded(Map<String,String> l) {
-		logger.debug("Found DS9490");
+		logger.debug("Found DS9490 1-wire adapter");
 		if(!isProtocolRunning(OWFSProtocol.OWFSPROTOCOL_TYPE)){
 			try {
 				Vector<Parameter> v = new Vector<Parameter>();
@@ -48,7 +48,7 @@ public class HalClient extends AbstractHalClient {
 						"1wirefs",
 						OWFSProtocol.OWFSPROTOCOL_TYPE,
 						new Parameters(v),
-						new EndPointConfiguration("usb-ds9490", UsbEndPoint.USBENDPOINT_TYPE)
+						new EndPointConfiguration("usb-ds9490", UsbEndPoint.ENDPOINT_TYPE)
 						));
 			} catch (Exception e) {
 				logger.error("Instancation failed");

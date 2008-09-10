@@ -44,16 +44,23 @@ public class ExecuteSensorAction implements Action {
 		}
 		
 		if(p.getSize()==0){
-			logger.info("no sensors yet");
+			//logger.info("no sensors yet");
 			return;
 		}
 
 		Integer name=null;
+		String protocol=null;
 		int i = r.nextInt(p.getSize());
 		int j=0;
 		for(Integer n: p.getSIDs()){
 			if(j++==i) {
 				name = n;
+				try {
+					protocol = p.getDescription(name.intValue()).getProtocolName();
+				} catch (ConfigurationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				break;
 			}
 		}
@@ -70,19 +77,22 @@ public class ExecuteSensorAction implements Action {
 		}
 
 		try {
-			logger.info("executing command on sensor "+name);
+			//logger.info("executing command on sensor "+name+" ("+protocol+")");
 			agent.execute(cmd, name.toString());
-			logger.info("command executed by sensor "+name);
+			//logger.info("command executed by sensor "+name);
 		} catch (ConfigurationException e) {
-			logger.info("command NOT executed by sensor "+name);
+			logger.info("command NOT executed by sensor "+name+" "+protocol);
 			e.printStackTrace();
 		} catch (RemoteException e) {
+			logger.info("sensor "+name+" cant be removed");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NotActiveException e) {
+			logger.info("sensor "+name+" cant be removed");
 			// TODO Auto-generated catch block
 			e.printStackTrace();			
 		} catch (BadAttributeValueExpException e) {
+			logger.info("sensor "+name+" cant be removed");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 

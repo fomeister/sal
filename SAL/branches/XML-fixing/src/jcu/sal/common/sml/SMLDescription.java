@@ -1,6 +1,5 @@
 package jcu.sal.common.sml;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -45,19 +44,15 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * @throws ConfigurationException if either arguments are invalid
 	 */
 	public SMLDescription(Integer s, Parameters p) throws ConfigurationException {
-		String tmp;
-		
-		//Check the args
+		//Check the nb of args
 		if(s.intValue()<0 || s.intValue()>SMLConstants.SENSOR_ID_MAX || p.getSize() < SMLConstants.NB_REQUIRED_PARAMETERS)
 			throw new ConfigurationException("Invalid sensor ID or parameter list");
 		sid = new Integer(s);
 		
 		//check the param list
-		Iterator<String> iter = SMLConstants.PARAM_NAMES.iterator();
-		while(iter.hasNext()) {
-			tmp = iter.next();
+		for(String tmp: SMLConstants.PARAM_NAMES)
 			if(!p.hasParameter(tmp)) throw new ConfigurationException("Couldnt find required parameter '"+tmp+"'");
-		}
+
 		parameters = p;
 	}
 	
@@ -142,12 +137,10 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * @throws ConfigurationException if there is an error finding the required arguments or parsing their values
 	 */
 	private void parseParameters(Document d) throws ConfigurationException {
-		String paramName, paramValue;
-		Iterator<String> i = SMLConstants.PARAM_NAMES.iterator();
 		List<Parameter> l = new Vector<Parameter>();
+		String paramValue;
 		
-		while(i.hasNext()){
-			paramName = i.next();
+		for(String paramName: SMLConstants.PARAM_NAMES){
 			try {
 				paramValue = XMLhelper.getAttributeFromName(XPATH_SENSOR_PARAMETER+"[@"+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+
 															"=\""+paramName+"\"]", SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE, d);
@@ -257,14 +250,12 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * @return the XML version of this SMLDescription object
 	 */
 	public String getSMLString() {
-		Iterator<String> i = parameters.getNames().iterator();
-		String n;
 		StringBuffer sb = new StringBuffer();
+		
 		sb.append("<"+SMLConstants.SENSOR_TAG+" "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\""+sid.toString()+"\">\n"
 			+"\t<"+Parameters.PARAMETERS_NODE+">\n");
 
-		while(i.hasNext()) {
-			n = i.next();
+		for(String n: parameters.getNames()){
 			try {
 				sb.append("\t\t<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+n+
 						"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\""+parameters.getParameter(n).getStringValue()+"\" />\n");

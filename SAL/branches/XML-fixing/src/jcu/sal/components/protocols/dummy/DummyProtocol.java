@@ -37,7 +37,7 @@ public class DummyProtocol extends AbstractProtocol {
 		super(i, PROTOCOL_TYPE, c);		
 
 		//Add to the list of supported EndPoint IDs
-		supportedEndPointTypes.add(FSEndPoint.FSENDPOINT_TYPE);
+		supportedEndPointTypes.add(FSEndPoint.ENDPOINT_TYPE);
 		//runs auto detect thread only once if it is going to run
 		autoDetectionInterval = -1;
 	}

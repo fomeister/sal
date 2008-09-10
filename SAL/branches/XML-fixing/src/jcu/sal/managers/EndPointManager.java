@@ -20,11 +20,10 @@ import org.apache.log4j.Logger;
  * 
  */
 public class EndPointManager extends AbstractManager<EndPoint, EndPointConfiguration> {
-	
-	private static EndPointManager e = new EndPointManager();
 	private static Logger logger = Logger.getLogger(EndPointManager.class);
 	static {Slog.setupLogger(logger);}
 	
+	private static EndPointManager e = new EndPointManager();	
 	
 	/**
 	 * Private constructor
@@ -70,6 +69,7 @@ public class EndPointManager extends AbstractManager<EndPoint, EndPointConfigura
 			e.printStackTrace();
 			throw new InstantiationException();
 		}
+		logger.debug("Created endPoint '"+i.getName()+"' - type: " +type);
 		return endPoint;
 	}
 	
@@ -88,5 +88,6 @@ public class EndPointManager extends AbstractManager<EndPoint, EndPointConfigura
 	protected void remove(EndPoint component) {
 		component.stop();
 		component.remove(this);
+		logger.debug("Removed endPoint '"+component.getID().getName()+"' - type: " +component.getType());
 	}
 }

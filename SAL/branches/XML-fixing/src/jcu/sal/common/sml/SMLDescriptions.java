@@ -2,7 +2,6 @@ package jcu.sal.common.sml;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import javax.naming.ConfigurationException;
@@ -37,9 +36,8 @@ public class SMLDescriptions {
 	 */
 	public SMLDescriptions(Collection<SMLDescription> c) throws ConfigurationException{
 		this();
-		Iterator<SMLDescription> i = c.iterator();
-		while(i.hasNext())
-			addSMLDescription(i.next());
+		for(SMLDescription s: c)
+			addSMLDescription(s);
 	}
 	
 	/**
@@ -101,9 +99,9 @@ public class SMLDescriptions {
 	 */
 	public Set<Integer> getSIDs(){
 		HashSet<Integer> h = new HashSet<Integer>();
-		Iterator<SMLDescription> iter = smls.iterator();
-		while(iter.hasNext())
-			h.add(new Integer(iter.next().getID()));
+		
+		for(SMLDescription s: smls)
+			h.add(new Integer(s.getID()));
 
 		return h;
 	}
@@ -123,13 +121,9 @@ public class SMLDescriptions {
 	 * @throws ConfigurationException if the sensor ID cant be found
 	 */
 	public SMLDescription getDescription(int sid) throws ConfigurationException {
-		SMLDescription s=null;
-		Iterator<SMLDescription> iter = smls.iterator();
-		while(iter.hasNext()) {
-			s = iter.next();
+		for(SMLDescription s: smls)
 			if(s.getID().equals(String.valueOf(sid)))
 				return s;
-		}
 			
 		throw new ConfigurationException("no such sensor ID");
 	}
@@ -148,11 +142,10 @@ public class SMLDescriptions {
 	 */
 	public String getSMLString() {
 		StringBuffer sb = new StringBuffer();
-		Iterator<SMLDescription> i = smls.iterator();
-		
+				
 		sb.append("<"+SMLConstants.SENSOR_CONF_NODE+">");
-		while(i.hasNext())
-			sb.append(i.next().getSMLString());
+		for(SMLDescription s: smls)
+			sb.append(s.getSMLString());
 		sb.append("</"+SMLConstants.SENSOR_CONF_NODE+">");
 		
 		return sb.toString();

@@ -54,8 +54,8 @@ public class V4L2Protocol extends AbstractProtocol {
 	public V4L2Protocol(ProtocolID i, ProtocolConfiguration c) throws ConfigurationException{
 		super(i, PROTOCOL_TYPE , c);
 		autoDetectionInterval = -1; //run only once
-		supportedEndPointTypes.add(PCIEndPoint.PCIENDPOINT_TYPE);
-		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
+		supportedEndPointTypes.add(PCIEndPoint.ENDPOINT_TYPE);
+		supportedEndPointTypes.add(UsbEndPoint.ENDPOINT_TYPE);
 		streaming = false;
 	}
 

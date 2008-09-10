@@ -11,7 +11,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -142,23 +141,20 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	}
 	
 	public void doActionSensor(int sid) throws Exception{
-		String str, str2;
+		String str2;
 		RMICommandFactory cf;
 		RMICommand c = null;
 		Response res;
 		ArgumentType t;
-		CMLDescription tmp;
 		CMLDescriptions cmls;
 		int j;
 		
 		cmls = new CMLDescriptions(agent.getCML(String.valueOf(sid)));
 		System.out.println("\n\nHere is the CML document for this sensor:");
-		System.out.println(cmls.getCMLString());
+		System.out.println(cmls.getXMLString());
 		System.out.println("Print human-readable form ?(Y/n)");
 		if(!b.readLine().equals("n")){
-			Iterator<CMLDescription> i = cmls.getDescriptions().iterator();
-			while(i.hasNext()){
-				tmp = i.next();
+			for(CMLDescription tmp : cmls.getDescriptions()){
 				System.out.print("CID: "+tmp.getCID());
 				System.out.println(" - "+tmp.getDesc());
 			}
@@ -169,9 +165,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		cf = new RMICommandFactory(cmls.getDescription(j));
 		boolean argOK=false, argsDone=false;
 		while(!argsDone) {
-			Iterator<String> e = cf.listMissingArgNames().iterator();
-			while(e.hasNext()){
-				str = e.next();
+			for(String str: cf.listMissingArgNames()){
 				t = cf.getArgType(str);
 				if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
 					while(!argOK) {
@@ -198,10 +192,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	}
 	
 	public void printSensorList(SMLDescriptions smls){
-		SMLDescription tmp;
-		Iterator<SMLDescription> i = smls.getDescriptions().iterator();
-		while(i.hasNext()) {
-			tmp = i.next();
+		for(SMLDescription tmp: smls.getDescriptions()){
 			System.out.print("SID: "+tmp.getSID());
 			System.out.print(" - "+tmp.getSensorAddress());
 			System.out.print(" - "+tmp.getProtocolType());

@@ -2,7 +2,6 @@ package jcu.sal.common.pcml;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import javax.naming.ConfigurationException;
@@ -44,9 +43,8 @@ public class ProtocolConfigurations {
 	 */
 	public ProtocolConfigurations(Collection<ProtocolConfiguration> c) throws ConfigurationException {
 		this();
-		Iterator<ProtocolConfiguration> i = c.iterator();
-		while(i.hasNext())
-			addProtocolConfiguration(i.next());
+		for(ProtocolConfiguration p: c)
+			addProtocolConfiguration(p);
 	}
 	
 	/**
@@ -145,9 +143,9 @@ public class ProtocolConfigurations {
 	 */
 	public Set<String> getPIDs(){
 		HashSet<String> h = new HashSet<String>();
-		Iterator<ProtocolConfiguration> iter = configs.iterator();
-		while(iter.hasNext())
-			h.add(iter.next().getID());
+		
+		for(ProtocolConfiguration p: configs)
+			h.add(p.getID());
 		
 		return h;
 	}
@@ -167,13 +165,9 @@ public class ProtocolConfigurations {
 	 * @throws ConfigurationException if the protocol ID cant be found
 	 */
 	public ProtocolConfiguration getDescription(String pid) throws ConfigurationException {
-		ProtocolConfiguration s=null;
-		Iterator<ProtocolConfiguration> iter = configs.iterator();
-		while(iter.hasNext()) {
-			s = iter.next();
-			if(s.getID().equals(pid))
-				return s;
-		}
+		for(ProtocolConfiguration p: configs)
+			if(p.getID().equals(pid))
+				return p;
 			
 		throw new ConfigurationException("no such protocol ID");
 	}
@@ -192,11 +186,10 @@ public class ProtocolConfigurations {
 	 */
 	public String getXMLString() {
 		StringBuffer sb = new StringBuffer();
-		Iterator<ProtocolConfiguration> i = configs.iterator();
 		
 		sb.append("<"+PCMLConstants.PLATFORM_CONFIGURATION_NODE+">\n");
-		while(i.hasNext())
-			sb.append(i.next().getXMLString());
+		for(ProtocolConfiguration p: configs)
+			sb.append(p.getXMLString());
 		sb.append("</"+PCMLConstants.PLATFORM_CONFIGURATION_NODE+">\n");
 		
 		return sb.toString();
@@ -212,6 +205,7 @@ public class ProtocolConfigurations {
 		} catch (ParserConfigurationException e) {
 			e.printStackTrace();
 			logger.error("We shouldnt be here - error creating PCML doc");
+			logger.error(getXMLString());
 		}
 		return null;
 	}

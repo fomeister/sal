@@ -1,9 +1,7 @@
 package jcu.sal.common;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -217,11 +215,9 @@ public class CommandFactory {
 	 */
 	public Command getCommand() throws ConfigurationException{
 		//Make sure we have all the args and their values
-		String name;
 		ArgumentType t;
-		Iterator<String> e = cml.getArgNames().iterator();
-		while(e.hasNext()) {
-			name = e.next();
+
+		for(String name: cml.getArgNames()){
 			t = cml.getArgType(name); 
 			if(t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK) && callback==null) {
 				logger.error("We are missing the callback object to create the command");
@@ -276,11 +272,9 @@ public class CommandFactory {
 	 * @throws ConfigurationException if the document cant be parsed
 	 */
 	private void parseArgumentValues(Document d) throws ConfigurationException {
-		String val = null, name;
+		String val = null;
 		ArgumentType t;
-		Iterator<String> e = cml.getArgNames().iterator();
-		while(e.hasNext()) {
-			name = e.next();
+		for(String name: cml.getArgNames()){
 			t = cml.getArgType(name);
 			if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
 				try {
@@ -358,15 +352,6 @@ public class CommandFactory {
 		
 		public int getCID(){
 			return cid; 
-		}
-		
-		public void dumpCommand() {
-			logger.debug("Command '"+cid+"' parameters:");
-			Iterator<String> keys = parameters.keySet().iterator();
-			Collection<String> values= parameters.values();
-			Iterator<String> iter = values.iterator();
-			while ( keys.hasNext() &&  iter.hasNext())
-			   logger.debug("key: " + keys.next().toString() + " - "+iter.next().toString());
 		}
 
 		public String getValue(String name){

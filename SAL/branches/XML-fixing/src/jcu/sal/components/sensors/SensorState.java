@@ -19,7 +19,9 @@ import org.apache.log4j.Logger;
  */
 public class SensorState {
 	
-	private Logger logger = Logger.getLogger(SensorState.class);
+	private static Logger logger = Logger.getLogger(SensorState.class);
+	static {Slog.setupLogger(logger);}
+	
 	private componentRemovalListener l;
 	private SensorID i;
 
@@ -34,7 +36,6 @@ public class SensorState {
 		state=SensorConstants.UNASSOCIATED;
 		disconnect_timestamp=-1;
 		this.i = i;
-		Slog.setupLogger(logger);
 	}
 	
 	public long getDisconnectTimestamp() {

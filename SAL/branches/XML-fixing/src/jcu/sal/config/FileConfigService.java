@@ -90,7 +90,7 @@ public class FileConfigService{
 		    if (!p.canWrite())
 		    	throw new ConfigurationException("File cannot be written: " + p);
 		} else {
-			logger.debug("Platform config file " + p.getName() +" does not exist - creating one");
+			logger.error("Platform config file " + p.getName() +" does not exist - creating one");
 			try {writeDocumentToFile(p, ProtocolConfigurations.createEmptyXML());}
 			catch (IOException e) {
 				logger.error("Cant write an empty platform config file - " +e.getMessage());
@@ -110,7 +110,7 @@ public class FileConfigService{
 		    	throw new ConfigurationException("File cannot be written: " + s);
 			
 		} else {
-			logger.debug("Sensor config file " + s.getName() +" does not exist - creating one");
+			logger.error("Sensor config file " + s.getName() +" does not exist - creating one");
 			try {writeDocumentToFile(s, SMLDescriptions.createEmptySML());}
 			catch (Exception e) {
 				logger.error("Cant write an empty sensor config file - " +e.getMessage());
@@ -193,14 +193,10 @@ public class FileConfigService{
 	 * @throws ConfigurationException if not found 
 	 */
 	public ProtocolConfiguration findProtocol(String param, String value) throws ConfigurationException{
-		ProtocolConfiguration p;
 		synchronized(platformConfig){
-			Iterator<ProtocolConfiguration> i = platformConfig.iterator();
-			while(i.hasNext()){
-				p = i.next();
+			for(ProtocolConfiguration p: platformConfig)
 				if(p.getParameters().hasValue(param, value))
 					return p;
-			}
 		}
 		throw new ConfigurationException("No protocol with matching configuration found");
 	}
@@ -212,13 +208,14 @@ public class FileConfigService{
 	 */
 	public void removeProtocol(ProtocolID pid) throws ConfigurationException{
 		synchronized(platformConfig){
-			Iterator<ProtocolConfiguration> i = platformConfig.iterator();
-			while(i.hasNext())
+			for(Iterator<ProtocolConfiguration> i = platformConfig.iterator();i.hasNext();){
 				if(i.next().getID().equals(pid.getName())) {
 					i.remove();
 					pcChanged.set(true);
+					logger.debug("removed configuration for protocol '"+pid.getName()+"'");
 					return;
 				}
+			}
 		}
 		throw new ConfigurationException("Protocol configuration for ID '"+pid.getName()+"' not found");
 	}
@@ -243,14 +240,12 @@ public class FileConfigService{
 	 * @throws ConfigurationException if the sensor doesnt exist in the current config file
 	 */
 	public void removeSensor(SensorID sid) throws ConfigurationException{
-		SMLDescription s;
 		synchronized(sensorConfig){
-			Iterator<SMLDescription> i = sensorConfig.iterator();
-			while(i.hasNext()){
-				s = i.next();
-				if(s.getID().equals(sid.getName())) {
+			for(Iterator<SMLDescription>i = sensorConfig.iterator(); i.hasNext();){
+				if(i.next().getID().equals(sid.getName())) {
 					i.remove();
 					scChanged.set(true);
+					logger.debug("removed configuration for sensor '"+sid.getName()+"'");
 					return;
 				}
 			}
@@ -264,15 +259,11 @@ public class FileConfigService{
 	 * @return a set of SML description for sensors associated with the protocol with the given PID
 	 */
 	public Set<SMLDescription> listSensors(ProtocolID pid){
-		SMLDescription s;
 		HashSet<SMLDescription> v = new HashSet<SMLDescription>();
 		synchronized(sensorConfig){
-			Iterator<SMLDescription> i = sensorConfig.iterator();
-			while(i.hasNext()){
-				s = i.next();
+			for(SMLDescription s: sensorConfig)
 				if(s.getProtocolName().equals(pid.getName()))
 					v.add(s);
-			}
 		}
 	    return v;
 	}
@@ -282,13 +273,17 @@ public class FileConfigService{
 	 * @param pid the ProtocolID of the protocol whose sensors are to be removed
 	 */
 	public void removeSensors(ProtocolID pid){
+		SMLDescription s;
 		synchronized(sensorConfig){
-			Iterator<SMLDescription> i = sensorConfig.iterator();
-			while(i.hasNext())
-				if(i.next().getProtocolName().equals(pid.getName())) 
+			for(Iterator<SMLDescription> i = sensorConfig.iterator(); i.hasNext();) {
+				s = i.next();
+				if(s.getProtocolName().equals(pid.getName())) {
 					i.remove();
+					scChanged.set(true);
+					logger.debug("removed configuration for sensor '"+s.getID()+"'");
+				}
+			}		
 		}
-		scChanged.set(true);
 	}	
 	
 	/**
@@ -300,14 +295,10 @@ public class FileConfigService{
 	 * @throws ConfigurationException if the sensor Id cant be found
 	 */
 	public SensorID findSensor(SMLDescription s) throws ConfigurationException{
-		SMLDescription t;
 		synchronized(sensorConfig){
-			Iterator<SMLDescription> i = sensorConfig.iterator();
-			while(i.hasNext()) {
-				t = i.next();
+			for(SMLDescription t: sensorConfig)
 				if(t.isSame(s))
 					return new SensorID(t.getID());
-			}
 		}
 		throw new ConfigurationException("SML description not found");
 	}
@@ -337,13 +328,12 @@ public class FileConfigService{
 	 * @return a set of Sensor IDs currently found in the sensor config file
 	 */
 	public synchronized Set<String> listSensorID(){
-		HashSet<String> s = new HashSet<String>();
+		HashSet<String> sids = new HashSet<String>();
 		synchronized(sensorConfig){
-			Iterator<SMLDescription> i = sensorConfig.iterator();
-			while(i.hasNext())
-				s.add(i.next().getID());			
+			for(SMLDescription s: sensorConfig)
+				sids.add(s.getID());
 		}
-		return s;
+		return sids;
 	}
 
 	private void writeDocumentToFile(File f, Document d) throws IOException{
@@ -357,7 +347,7 @@ public class FileConfigService{
 		synchronized(platformConfig){
 			pc = new ProtocolConfigurations(platformConfig);
 		}
-		logger.debug("writing PC file");
+		//logger.debug("writing PC file");
 		writeDocumentToFile(platformConfigFile, pc.getXML());		
 	}
 	
@@ -366,7 +356,7 @@ public class FileConfigService{
 		synchronized(sensorConfig){
 			sc = new SMLDescriptions (sensorConfig);
 		}
-		logger.debug("writing SC file");
+		//logger.debug("writing SC file");
 		writeDocumentToFile(sensorConfigFile, sc.getSML());		
 	}
 	
@@ -390,11 +380,11 @@ public class FileConfigService{
 			try {
 				t.join();
 			} catch (InterruptedException e) {}
-			logger.debug("Watch thread joined");
+			//logger.debug("Watch thread joined");
 		}
 		
 		public void run() {
-			logger.debug("Watch thread started");
+			//logger.debug("Watch thread started");
 			try {
 				while(!Thread.interrupted()){
 					if(pcChanged.compareAndSet(true, false)) {
@@ -411,7 +401,7 @@ public class FileConfigService{
 					Thread.sleep(platformConfigWriteInterval);
 				}				
 			} catch (InterruptedException e) {}
-			logger.debug("Watch thread exited");
+			//logger.debug("Watch thread exited");
 		}
 	}
 	
@@ -435,11 +425,11 @@ public class FileConfigService{
 			try {
 				t.join();
 			} catch (InterruptedException e) {}
-			logger.debug("Watch thread joined");
+			//logger.debug("Watch thread joined");
 		}
 		
 		public void run() {
-			logger.debug("Watch thread started");
+			//logger.debug("Watch thread started");
 			try {
 				while(!Thread.interrupted()){
 					if(scChanged.compareAndSet(true, false))
@@ -455,7 +445,7 @@ public class FileConfigService{
 					Thread.sleep(sensorConfigWriteInterval);
 				}				
 			} catch (InterruptedException e) {}
-			logger.debug("Watch thread exited");
+			//logger.debug("Watch thread exited");
 		}
 	}
 }

@@ -26,7 +26,8 @@ import org.apache.log4j.Logger;
  */
 public abstract class AbstractStore {
 	
-	private Logger logger = Logger.getLogger(AbstractStore.class);
+	private static Logger logger = Logger.getLogger(AbstractStore.class);
+	static{Slog.setupLogger(logger);}
 	
 
 	public static String GENERIC_ENABLE="Enable";			//10
@@ -63,7 +64,6 @@ public abstract class AbstractStore {
 	 * No arg constructor
 	 */
 	protected AbstractStore() {
-		Slog.setupLogger(logger);
 		cmls = new Hashtable<String, Hashtable<Integer, CMLDescription>>();
 		priv_cid = new Hashtable<String, Integer>();
 	}
@@ -80,7 +80,7 @@ public abstract class AbstractStore {
 			throw new ConfigurationException();
 		}
 				
-		return new CMLDescriptions(cmls.get(k));
+		return new CMLDescriptions(cmls.get(k).values());
 	}
 	
 	/**

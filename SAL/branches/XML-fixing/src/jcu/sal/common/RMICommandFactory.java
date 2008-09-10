@@ -2,7 +2,6 @@ package jcu.sal.common;
 
 import java.io.Serializable;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -125,9 +124,8 @@ public class RMICommandFactory {
 	 */
 	public List<String> listMissingArgNames() {
 		List<String> l = factory.listMissingArgNames();
-		Iterator<String> i = callbackNames.keySet().iterator();
-		while(i.hasNext())
-			l.add(i.next());
+		for(String s: callbackNames.keySet())
+			l.add(s);
 		return l;
 	}
 	
@@ -202,13 +200,10 @@ public class RMICommandFactory {
 	 */
 	public RMICommand getCommand() throws ConfigurationException{
 		//Make sure we have all the callbacks
-		Iterator<String> i = callbackNames.keySet().iterator();
-		String n;
-		while(i.hasNext()){
-			n = i.next();
+		for(String n: callbackNames.keySet()){
 			List<String> names = callbackNames.get(n);
 			if(names.size()!=2) {
-				logger.debug("Callback "+n+" doesnt have values" );
+				logger.error("Callback "+n+" doesnt have appropriate values" );
 				throw new ConfigurationException();
 			}				
 		}
@@ -254,10 +249,6 @@ public class RMICommandFactory {
 		
 		public int getCID(){
 			return c.getCID();
-		}
-		
-		public void dumpCommand() {
-			c.dumpCommand();
 		}
 
 		public String getValue(String name){

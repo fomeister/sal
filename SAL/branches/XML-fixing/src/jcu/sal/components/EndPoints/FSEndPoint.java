@@ -19,14 +19,14 @@ public class FSEndPoint extends EndPoint {
 
 	private static Logger logger = Logger.getLogger(FSEndPoint.class);
 	static {Slog.setupLogger(logger);}
-	public static final String FSENDPOINT_TYPE = "fs";
+	public static final String ENDPOINT_TYPE = "fs";
 	
 	/**
 	 * @throws ConfigurationException 
 	 * 
 	 */
 	public FSEndPoint(EndPointID i, EndPointConfiguration c) throws ConfigurationException {
-		super(i,FSENDPOINT_TYPE, c);
+		super(i,ENDPOINT_TYPE, c);
 		parseConfig();
 	}
 

@@ -53,20 +53,22 @@ public class AddProtocolAction implements Action {
 			}			
 		}
 		if(n1==null){
-			logger.info("cant create more protocols, MAX reached");
+			//logger.info("cant create more protocols, MAX reached");
 			return;
 		}
 		
 		try {
-			logger.info("creating protocol "+n1);
-			agent.addProtocol(new ProtocolConfiguration(n1, type, new EndPointConfiguration("fs_"+i, FSEndPoint.FSENDPOINT_TYPE)).getXMLString(),false);
-			logger.info("protocol "+n1+" created");
+			//logger.info("creating protocol "+n1);
+			agent.addProtocol(new ProtocolConfiguration(n1, type, new EndPointConfiguration("fs_"+i, FSEndPoint.ENDPOINT_TYPE)).getXMLString(),false);
+			//logger.info("protocol "+n1+" created");
 		} catch (ConfigurationException e) {
 			logger.info("protocol "+n1+" already exists");
 		} catch (RemoteException e) {
+			logger.info("Cant create protocol "+n1);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ParserConfigurationException e) {
+			logger.info("Cant create protocol "+n1);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

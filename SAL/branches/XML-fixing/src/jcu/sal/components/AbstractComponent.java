@@ -9,9 +9,6 @@ import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Parameters;
-import jcu.sal.utils.Slog;
-
-import org.apache.log4j.Logger;
 
 /**
  * This class does something
@@ -19,9 +16,6 @@ import org.apache.log4j.Logger;
  *
  */
 public abstract class AbstractComponent<T extends Identifier, U extends HWComponentConfiguration> implements HWComponent {
-
-	private static Logger logger = Logger.getLogger(AbstractComponent.class);
-	static {Slog.setupLogger(logger);}
 	
 	protected U config;
 	protected AtomicBoolean removed;

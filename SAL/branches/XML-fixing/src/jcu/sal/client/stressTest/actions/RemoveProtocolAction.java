@@ -37,7 +37,7 @@ public class RemoveProtocolAction implements Action {
 		}
 		
 		if(p.getSize()==0){
-			logger.info("no protocols yet");
+			//logger.info("no protocols yet");
 			return;
 		}
 
@@ -52,12 +52,13 @@ public class RemoveProtocolAction implements Action {
 		}
 
 		try {
-			logger.info("removing protocol "+name);
+			//logger.info("removing protocol "+name);
 			agent.removeProtocol(name,false);
-			logger.info("protocol "+name+" removed");
+			//logger.info("protocol "+name+" removed");
 		} catch (ConfigurationException e) {
 			logger.info("protocol "+name+" doesnt exist");
 		} catch (RemoteException e) {
+			logger.info("Cant remove protocol "+name);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

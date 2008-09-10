@@ -4,9 +4,7 @@
 package jcu.sal.managers;
 
 import java.text.ParseException;
-import java.util.Collection;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +27,17 @@ import org.apache.log4j.Logger;
  *
  */
 public abstract class AbstractManager<T extends HWComponent, U extends HWComponentConfiguration> implements componentRemovalListener {
-	
-	public static String COMPONENTPARAM_TAG = "Param";
-	
 	private static Logger logger = Logger.getLogger(AbstractManager.class);
 	static { Slog.setupLogger(logger); }
+	
+	/**
+	 * This table stores mappings of Identifiers and associated components
+	 */
 	protected Map<Identifier, T> ctable;
+	
+	/**
+	 * This table stores mappings between component types and identifiers
+	 */
 	private Map<String, List<Identifier>> typeMap;
 	
 	public AbstractManager() {
@@ -82,7 +85,7 @@ public abstract class AbstractManager<T extends HWComponent, U extends HWCompone
 				}
 			}
 			//if we re here the table already has a component with this name 
-			logger.error("There is already a component named " + id.toString());
+			logger.error("A component '"+type+"' named " + id.toString()+" is already present");
 			throw new ConfigurationException();
 		} catch (InstantiationException e) {
 			logger.error("Couldnt instanciate component from XML doc");
@@ -117,12 +120,11 @@ public abstract class AbstractManager<T extends HWComponent, U extends HWCompone
 	 */
 	public void destroyComponents(List<T> l){
 		synchronized(ctable) {
-			for (int i = 0; i < l.size(); i++) {
-				try{destroyComponent(l.get(i).getID());}
+			for(T t: l)
+				try{destroyComponent(t.getID());}
 				catch (ConfigurationException e) {
-					logger.error("Cant destroy "+l.get(i).toString());
+					logger.error("Cant destroy "+t.toString());
 				}
-			}
 		}
 	}
 	
@@ -132,12 +134,13 @@ public abstract class AbstractManager<T extends HWComponent, U extends HWCompone
 	 */
 	public void destroyAllComponents() {
 		synchronized(ctable){
-			Collection<T>  c = new Vector<T>(ctable.values()); 
-			Iterator<T> e = c.iterator();
-			while (e.hasNext()) {
-				try { destroyComponent(e.next().getID());}
+			/**
+			 * the copy of ctable is required here since calling destroyComponent() will remove the component from the table
+			 * and this iterator wont like it...
+			 */
+			for(T t: new Vector<T>(ctable.values()))
+				try { destroyComponent(t.getID());}
 				catch (ConfigurationException e1) {}
-			}
 		}
 	}
 	
@@ -175,6 +178,7 @@ public abstract class AbstractManager<T extends HWComponent, U extends HWCompone
 		synchronized(ctable){
 			if((l=typeMap.get(t))==null)
 				throw new ConfigurationException();
+
 			return new LinkedList<Identifier>(l);
 		}
 	}

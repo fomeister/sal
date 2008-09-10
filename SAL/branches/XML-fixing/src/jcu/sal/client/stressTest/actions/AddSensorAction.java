@@ -46,7 +46,7 @@ public class AddSensorAction implements Action {
 		}
 
 		if(s.getSize()>MAX_SENSORS){
-			logger.info("cant create sensors, MAX reached");
+			//logger.info("cant create sensors, MAX reached");
 			return;
 		}
 		
@@ -59,10 +59,11 @@ public class AddSensorAction implements Action {
 			return;
 		}
 		
-		String n1, ret;
-		if(p.getSize()==0)
-			n1 = name+"0";
-		else
+		String n1, ret=null;
+		if(p.getSize()==0) {
+			//logger.info("Cant add sensor - no protocols setup yet");
+			return;
+		} else
 			n1= name+r.nextInt(p.getSize());
 
 			
@@ -73,16 +74,18 @@ public class AddSensorAction implements Action {
 		v.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, String.valueOf(r.nextInt())));
 
 		try {
-			logger.info("creating sensor for protocol "+n1);
+			//logger.info("creating sensor for protocol "+n1);
 			ret = agent.addSensor(new SMLDescription(new Integer(1), new Parameters(v)).getSMLString());
-			logger.info("sensor "+ret+" created");
+			//logger.info("sensor "+ret+" created");
 		} catch (ConfigurationException e) {
-			logger.info("sensor cant be created");
+			logger.info("sensor cant be created "+ret);
 			e.printStackTrace();
 		} catch (RemoteException e) {
+			logger.info("sensor cant be created");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ParserConfigurationException e) {
+			logger.info("sensor cant be created");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

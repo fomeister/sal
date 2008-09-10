@@ -149,9 +149,8 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		if(!isEPTypeSupported(config.getEPConfig().getType())) {
 			logger.error("This AbstractProtocol has been setup with the wrong enpoint: got endpoint type: "
 							+config.getEPConfig().getType()+", expected: ");
-			Iterator<String> iter = supportedEndPointTypes.iterator();
-			while(iter.hasNext())
-				logger.error(iter.next());
+			for(String s: supportedEndPointTypes)
+				logger.error(s);
 			throw new ConfigurationException("Wrong Endpoint type");
 		}
 
@@ -183,9 +182,8 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			/* Probe associted sensors */
 			//logger.debug("Probing associated sensors for AbstractProtocol " + toString());
 			synchronized(sensors) {
-				Iterator<Sensor> i = sensors.values().iterator();
-				while(i.hasNext())
-					probeSensor(i.next());
+				for(Sensor s: sensors.values())
+					probeSensor(s);
 			}
 			
 			//logger.debug("protocol "+config.getType()+" started");
@@ -205,7 +203,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 				}
 				/* Register ourselves with EndPoint for subsequent notifications */ 
 				try { ep.registerDeviceListener(this, epIds); }
-				catch (UnsupportedOperationException e) { logger.debug("Autodetect not supported by the EndPoint");}
+				catch (UnsupportedOperationException e) { logger.error("Autodetect not supported by the EndPoint");}
 			} else
 				/* Start Autodetect thread */
 				startAutodetectThread();
@@ -216,7 +214,6 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * @see jcu.sal.components.HWComponent#stop()
 	 */
 	public final void stop() {
-		Sensor s;
 		if(started.compareAndSet(true, false)) {
 			/* Unregister from EP */
 			if(epIds!=null) {
@@ -233,9 +230,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			 * IN BETWEEN commands (synchronized (s))
 			 */
 			synchronized(sensors) {
-				Iterator<Sensor> i = sensors.values().iterator();
-				while(i.hasNext()) {
-					s = i.next();
+				for(Sensor s: sensors.values()){
 					synchronized(s){s.disable();}
 				}
 			}
@@ -587,7 +582,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	
 	protected final synchronized void stopAutodetectThread() {
 		if(autodetectThread!=null && autodetectThread.isAlive()) {
-			logger.debug("stopping autodetect thread ...");
+			//logger.debug("stopping autodetect thread ...");
 			autodetectThread.interrupt();
 			try { autodetectThread.join();}
 			catch (InterruptedException e) {
@@ -632,9 +627,9 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		 */
 		public void run() {
 			List<String> detected;
-			Sensor stmp;
 			List<Sensor> current;
 			Iterator<Sensor> iter;
+			Sensor stmp;
 			SensorManager sm = SensorManager.getSensorManager();
 			try {
 				//logger.debug("Autodetect thread started ("+id.toString()+")");
@@ -644,12 +639,11 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 					synchronized(sensors) {
 						//logger.debug("Checking whats detected..."+detected.size());
 						current = new ArrayList<Sensor>(sensors.values());
-						iter = current.iterator();
-						while(iter.hasNext()) {
+						for(iter = current.iterator(); iter.hasNext();) {
 							//if that sensor is in detected also, we remove both
 							stmp = iter.next();
 							if(detected.contains(stmp.getNativeAddress())) {
-//								logger.debug("sensor "+stmp.toString()+" found in both current & detected");
+							//logger.debug("sensor "+stmp.toString()+" found in both current & detected");
 								if(stmp.isDisconnected()) {
 									//logger.debug("reconnecting "+stmp.toString());
 									stmp.reconnect();
@@ -657,20 +651,19 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 								detected.remove(stmp.getNativeAddress());
 								iter.remove();
 							} else if (stmp.isDisconnected()) {
-//								logger.debug("sensor "+stmp.toString()+" FOUND in current and NOT FOUND in detected and already DISCONNECTED");
+								//logger.debug("sensor "+stmp.toString()+" FOUND in current and NOT FOUND in detected and already DISCONNECTED");
 								detected.remove(stmp.getNativeAddress());
 								iter.remove();
-							} 
+							}
 						}
 					}
 
 					//now we re left with newly-connected sensors in detected and
 					//removed sensors in current
-					Iterator<String> it = detected.iterator();
 					Vector<Parameter> plist = new Vector<Parameter>();
-					while(it.hasNext()) {
+					for(String s: detected){
 						plist.removeAllElements();
-						plist.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE,it.next()));
+						plist.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE,s));
 						plist.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, id.getName()));
 						plist.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, config.getType()));
 							try {
@@ -682,12 +675,10 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 							}
 					}
 					
-					iter = current.iterator();
-					while(iter.hasNext()) {
-							stmp = iter.next();
-							//logger.debug("disconnecting "+stmp.toString());
-							stmp.disconnect();
-					}
+					for(Sensor s: current)
+							//logger.debug("disconnecting "+s.toString());
+							s.disconnect();
+					
 					if(autoDetectionInterval > 0)
 						Thread.sleep(Long.valueOf(autoDetectionInterval));
 					else 

@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.naming.ConfigurationException;
@@ -29,7 +28,7 @@ public class UsbEndPoint extends EndPoint{
 
 	private static Logger logger = Logger.getLogger(EndPoint.class);
 	static {Slog.setupLogger(logger);}
-	public static String USBENDPOINT_TYPE="usb";
+	public static String ENDPOINT_TYPE="usb";
 	private static String LSUSBOUTPUT_KEY = "Bus";
 	
 	/**
@@ -65,7 +64,7 @@ public class UsbEndPoint extends EndPoint{
 	 * 
 	 */
 	public UsbEndPoint(EndPointID i, EndPointConfiguration c) throws ConfigurationException {
-		super(i,USBENDPOINT_TYPE,c);
+		super(i,ENDPOINT_TYPE,c);
 		devices = new Hashtable<String, Integer>();
 		listeners = new Hashtable<String,ArrayList<DeviceListener>>();
 		autodetect = true;
@@ -78,7 +77,7 @@ public class UsbEndPoint extends EndPoint{
 	@Override
 	public void parseConfig() throws ConfigurationException {
 		// Check if we have any USB ports on this platform
-		logger.debug("check if we have USB ports.");
+		//logger.debug("check if we have USB ports.");
 		ProcessOutput c = null;
 		try {
 			c = PlatformHelper.captureOutputs("lsusb", true);
@@ -86,10 +85,10 @@ public class UsbEndPoint extends EndPoint{
 			if(!b[0].readLine().contains("Bus"))
 				throw new ConfigurationException("Did not detect USB ports");
 			configured = true;
-			logger.debug("Yes we have. USB EndPoint initialised");
+			//logger.debug("Yes we have. USB EndPoint initialised");
 		} catch (IOException e) {
 			e.printStackTrace();
-			logger.debug("Problem capturing output of lsusb");
+			logger.error("Problem capturing output of lsusb");
 			throw new ConfigurationException("Did not detect USB ports");
 		} finally {
 			if(c!=null) c.destroyProcess();
@@ -114,9 +113,8 @@ public class UsbEndPoint extends EndPoint{
 	public int getConnectedDeviceNum(String ids){
 		int nb = 0;
 		try {
-			Iterator<String> i = getConnectedDevices().iterator();
-			while(i.hasNext())
-				if(i.next().equals(ids))
+			for(String s: getConnectedDevices())
+				if(s.equals(ids))
 					nb++;
 		} catch (IOException e) {}		
 		return nb;
@@ -149,13 +147,13 @@ public class UsbEndPoint extends EndPoint{
 		if(ep_nb==0) {
 			deviceWatcher = new Autodetection("USB");
 			if(deviceWatchInterval!=0) {
-				logger.debug("Starting autodetect thread");
+				//logger.debug("Starting autodetect thread");
 				deviceWatcher.start();
 			} else if (deviceWatchInterval==0){
-				logger.info("Autodetect interval set to 0 in the endpoint config.");
-				logger.info("Disabling sensor autodetection");
+				//logger.info("Autodetect interval set to 0 in the endpoint config.");
+				//logger.info("Disabling sensor autodetection");
 			} else {
-				logger.debug("Sensor autodetection not supported");
+				//logger.debug("Sensor autodetection not supported");
 			}
 		}// else logger.debug("USB device watcher already started - ep_nb:"+ep_nb+" isalive?"+deviceWatcher.isAlive());
 		ep_nb++;
@@ -167,7 +165,7 @@ public class UsbEndPoint extends EndPoint{
 			try { deviceWatcher.join();}
 			catch (InterruptedException e) {}
 			deviceWatcher=null;
-			logger.debug("autodetect thread stopped");
+			//logger.debug("autodetect thread stopped");
 		}// else logger.debug("USB device watcher not stopped- ep_nb:"+ep_nb+" isalive?"+deviceWatcher.isAlive());
 		ep_nb--;
 	}
@@ -204,12 +202,9 @@ public class UsbEndPoint extends EndPoint{
 		}
 		
 		private void notifyListeners(HashSet<String> ids) {
-			Iterator<DeviceListener> idl;
 			List<DeviceListener> d = null;
-			String temp;
-			Iterator<String> i = ids.iterator();
-			while(i.hasNext()){
-				temp = i.next();
+
+			for(String temp: ids){
 				/* finds connected devices*/
 				synchronized(listeners) {
 					if(listeners.containsKey(temp))
@@ -218,16 +213,13 @@ public class UsbEndPoint extends EndPoint{
 						 * lock to avoid race conditions
 						 */
 						d = new ArrayList<DeviceListener>(listeners.get(temp));
-					else d = null;
 				}
 				
-				if(d!=null) {
-					idl = d.iterator();
-					while(idl.hasNext()) {
-						logger.debug("Notifying change on device(s) with ID: "+temp+", nb: "+devices.get(temp));
-						idl.next().adapterChange(devices.get(temp), temp);
-					}
-				}
+				if(d!=null)
+					for(DeviceListener i: d)
+						//logger.debug("Notifying change on device(s) with ID: "+temp+", nb: "+devices.get(temp));
+						i.adapterChange(devices.get(temp), temp);
+
 			}
 			ids.clear();
 		}
@@ -237,17 +229,14 @@ public class UsbEndPoint extends EndPoint{
 		 */
 		public void run(){
 			List<String> previousList, currentList, tempList;
-			String temp;
 			HashSet<String> changedList = new HashSet<String>();
 			
 			try {
 				previousList = getConnectedDevices();
-				Iterator<String> i = previousList.iterator();
-				while(i.hasNext()){
-					temp = i.next();
+				for(String temp: previousList){
 					devices.put(temp, (devices.get(temp)==null) ? 1 : devices.get(temp)+1);
 					changedList.add(temp);
-					logger.debug("device "+temp+" initially connected");
+					//logger.debug("device "+temp+" initially connected");
 				}
 				
 				/* notify the listeners of the connected devices */
@@ -261,25 +250,21 @@ public class UsbEndPoint extends EndPoint{
 					tempList = currentList = getConnectedDevices();
 					
 					/* parse it */
-					i = currentList.iterator();
-					while(i.hasNext()){
-						temp = i.next();
+					for(String temp: currentList){
 						
 						/* finds new plugged-in devices*/
 						if(!previousList.contains(temp)) {
-							logger.debug("Found newly connected device with ID: "+temp);
+							logger.debug("Found newly connected USB device with ID: "+temp);
 							devices.put(temp, (devices.get(temp)==null) ? 1 : devices.get(temp)+1);
 							changedList.add(temp);
 						} else 
 							previousList.remove(temp);
 					}
-					
-					i = previousList.iterator();
-					while(i.hasNext()){
-						temp = i.next();
+
+					for(String temp: previousList){
 						
 						/* finds unplugged devices*/
-						logger.debug("Found newly disconnected device with ID: "+temp);
+						logger.debug("Found newly disconnected USB device with ID: "+temp);
 						devices.put(temp, (devices.get(temp)==null) ? 0 : devices.get(temp)-1);
 						changedList.add(temp);
 					}
