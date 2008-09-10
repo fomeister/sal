@@ -1,9 +1,7 @@
 package jcu.sal.common.cml;
 
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 import javax.naming.ConfigurationException;
@@ -24,10 +22,13 @@ import org.w3c.dom.NodeList;
  */
 public class CMLDescriptions {
 	private static Logger logger = Logger.getLogger(CMLDescriptions.class);
-	static {
-		Slog.setupLogger(logger);
+	static {Slog.setupLogger(logger);}
+	
+	private Set<CMLDescription> cmls;
+	
+	private CMLDescriptions(){
+		cmls = new HashSet<CMLDescription>();	
 	}
-	private Map<Integer,CMLDescription> cmls;
 	
 	/**
 	 * This constructor creates a new CML descriptions document from a CML descriptions XML document given as a string.
@@ -41,28 +42,23 @@ public class CMLDescriptions {
 	
 	/**
 	 * This constructor builds a new CML descriptions object from an XML document
-	 * @param cmls the XML CML descriptions document
+	 * @param c the XML CML descriptions document
 	 * @throws ConfigurationException if the XML document is not a valid CML document
 	 */
-	public CMLDescriptions(Document cmls) throws ConfigurationException{
-		this.cmls = new Hashtable<Integer,CMLDescription>();
+	public CMLDescriptions(Document c) throws ConfigurationException{
+		this();
 		NodeList n;
-		CMLDescription d;
 		try {
-			n = XMLhelper.getNodeList(CMLConstants.XPATH_CMD_DESC, cmls);
+			n = XMLhelper.getNodeList(CMLConstants.XPATH_CMD_DESC, c);
 		} catch (XPathExpressionException e) {
 			logger.error("Unable to parse the CML descriptions document:");
 			e.printStackTrace();
-			logger.error(XMLhelper.toString(cmls));
+			logger.error(XMLhelper.toString(c));
 			throw new ConfigurationException("Malformed CML descriptions document");
 		}
 		for (int i = 0; i < n.getLength(); i++) {
 			try {
-				d = new CMLDescription(XMLhelper.createDocument(n.item(i)));
-				if(this.cmls.put(d.getCID(), d)!=null) {
-					logger.error("The CML descriptions document contains command with the same name");
-					throw new ConfigurationException("2 or more individual CML descriptions share the same name '"+d.getCID()+"'");
-				}
+				addCMLDescription(new CMLDescription(XMLhelper.createDocument(n.item(i))));
 			} catch (ParserConfigurationException e) {
 				logger.error("error creating a document from node");
 				e.printStackTrace();
@@ -73,11 +69,34 @@ public class CMLDescriptions {
 	}
 	
 	/**
-	 * This constructor builds a new CML descriptions object from the given map
-	 * @param c the CML despcription objects to be groupped in a CML descriptions object
+	 * This constructor builds a new CML descriptions object from the given set
+	 * @param c a set of CML despcription objects to be groupped in a CML descriptions object
 	 */
-	public CMLDescriptions(Map<Integer,CMLDescription> m){
-		cmls = new Hashtable<Integer,CMLDescription>(m);
+	public CMLDescriptions(Set<CMLDescription> c){
+		cmls = new HashSet<CMLDescription>(c);
+	}
+	
+	/**
+	 * This constructor builds a new CML descriptions object from the given set
+	 * @param c a set of CML despcription objects to be groupped in a CML descriptions object
+	 * @throws ConfigurationException if the collection contains duplicate CML descriptions
+	 */
+	public CMLDescriptions(Collection<CMLDescription> c) throws ConfigurationException{
+		this();
+		for(CMLDescription cd: c)
+			addCMLDescription(cd);		
+	}
+	
+	/**
+	 * This method adds a CMLdescription object to this object
+	 * @param c the CML description to be added
+	 * @throws ConfigurationException if this object already contains the supplied CML description
+	 */
+	private void addCMLDescription(CMLDescription c) throws ConfigurationException {
+		if(!cmls.add(c)) {
+			logger.error("The CML descriptions document contains command with the same name");
+			throw new ConfigurationException("2 or more individual CML descriptions share the same name '"+c.getCID()+"'");
+		}
 	}
 	
 	/**
@@ -85,7 +104,12 @@ public class CMLDescriptions {
 	 * @return a set of the command identifier present in this CML descriptions document
 	 */
 	public Set<Integer> getCIDs(){
-		return new HashSet<Integer>(cmls.keySet());
+		HashSet<Integer> h = new HashSet<Integer>();
+		
+		for(CMLDescription c: cmls)
+			h.add(c.getCID());
+		
+		return h;
 	}
 	
 	/**
@@ -93,7 +117,7 @@ public class CMLDescriptions {
 	 * @return a set of CML description objects
 	 */
 	public Set<CMLDescription> getDescriptions(){
-		return new HashSet<CMLDescription>(cmls.values());
+		return new HashSet<CMLDescription>(cmls);
 	}
 	
 	/**
@@ -103,8 +127,10 @@ public class CMLDescriptions {
 	 * @throws ConfigurationException the the CID is not found
 	 */
 	public CMLDescription getDescription(int cid) throws ConfigurationException{
-		if(cmls.containsKey(new Integer(cid)))
-			return cmls.get(new Integer(cid));
+		for(CMLDescription c: cmls)
+			if(c.getCID().intValue()==cid)
+				return c;
+		
 		throw new ConfigurationException("no such CID "+cid);
 	}
 
@@ -112,11 +138,12 @@ public class CMLDescriptions {
 	 * This method returns the CML descriptions document as a string
 	 * @return the CML descriptions document as a string
 	 */
-	public String getCMLString(){
+	public String getXMLString(){
 		StringBuilder cmlString = new StringBuilder("<"+CMLConstants.CMD_DESCRIPTIONS_TAG+">\n");
-		Iterator<CMLDescription> i = cmls.values().iterator();
-		while(i.hasNext())
-			cmlString.append(i.next().getCMLString());
+		
+		for(CMLDescription c: cmls)
+			cmlString.append(c.getXMLString());
+		
 		cmlString.append("</"+CMLConstants.CMD_DESCRIPTIONS_TAG+">\n");
 		return cmlString.toString();
 	}
@@ -126,9 +153,9 @@ public class CMLDescriptions {
 	 * @return the CML descriptions document as a DOM document
 	 * @throws ConfigurationException if the document cant be created
 	 */
-	public Document getCML() throws ConfigurationException{
+	public Document getXML() throws ConfigurationException{
 		try {
-			return XMLhelper.createDocument(getCMLString());
+			return XMLhelper.createDocument(getXMLString());
 		} catch (ParserConfigurationException e) {
 			logger.error("cant create CML descriptions document");
 			throw new ConfigurationException();

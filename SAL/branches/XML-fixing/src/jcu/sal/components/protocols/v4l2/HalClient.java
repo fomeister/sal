@@ -64,10 +64,10 @@ public class HalClient extends AbstractHalClient {
 			
 			//the device is available. check if there is an existing config for it in the  PlatformConfig file
 			pc = findProtocolConfigFromFile(V4L2Protocol.DEVICE_ATTRIBUTE_TAG, l.get("5-deviceFile"));
-			logger.debug("Found config for "+l.get("5-deviceFile")+" in platformConfig file - reusing it");
+			//logger.debug("Found config for "+l.get("5-deviceFile")+" in platformConfig file - reusing it");
 		} catch (ConfigurationException e) {
 			//if we re here, there is no pre exiting config for this device file, so we create a generic one
-			logger.debug("No existing configuration for V4L protocol with device "+l.get("5-deviceFile"));
+			//logger.debug("No existing configuration for V4L protocol with device "+l.get("5-deviceFile"));
 			
 			//QUIRKS:
 			//if pci capture card, limit the width and height, otherwise, bttv 
@@ -105,7 +105,7 @@ public class HalClient extends AbstractHalClient {
 			return;
 
 		if(ids.size()>1)
-			logger.debug("More than one protocol was handling device "+l.get("5-deviceFile")+" it seems. Removing  1st one" + ids.get(0).getName());
+			logger.error("More than one protocol was handling device "+l.get("5-deviceFile")+" it seems. Removing  1st one" + ids.get(0).getName());
 		try {
 			removeProtocol(ids.get(0));
 		} catch (ConfigurationException e) {

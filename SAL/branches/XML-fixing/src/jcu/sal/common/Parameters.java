@@ -2,7 +2,6 @@ package jcu.sal.common;
 
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,12 +52,8 @@ public class Parameters {
 	 */
 	public Parameters(List<Parameter> p) {
 		params = new Hashtable<String,Parameter>();
-		Parameter param;
-		Iterator<Parameter> i = p.iterator();
-		while(i.hasNext()){
-			param = i.next();
-			params.put(param.getName(), param);
-		}		
+		for(Parameter param: p)
+			params.put(param.getName(), param);		
 	}
 	
 	/**
@@ -114,7 +109,6 @@ public class Parameters {
 	private void parseParams(Document d) throws ConfigurationException{
 		//check that we have one and only one <parameters> tag
 		int nb;
-		String name, value;
 		try {
 			nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_PARAMS+")", d));
 		} catch (Throwable t) {
@@ -124,7 +118,7 @@ public class Parameters {
 			throw new ConfigurationException("Cant find/parse parameters section");
 		}
 		
-		if(nb>1){
+		if(nb!=1){
 			logger.error("There should be only one parameters section in this document, found "+nb+" ");
 			logger.error(XMLhelper.toString(d));
 			throw new ConfigurationException("Document doesnt have exactly one parameters section");
@@ -134,16 +128,10 @@ public class Parameters {
 		//creates individual parameter
 		try {
 			List<String> l = XMLhelper.getAttributeListFromElements(XPATH_PARAM, d);
-			Iterator<String> iter = l.iterator();
-			while(iter.hasNext()) {
-				iter.next();
-				name = iter.next();
-				iter.next();
-				value = iter.next();
-				params.put(name, new Parameter(name, value));
-			}
+			for(nb = 0; nb<l.size(); nb+=4)
+				params.put(l.get(nb+1), new Parameter(l.get(nb+1), l.get(nb+3)));
 		} catch (XPathExpressionException e) {
-			logger.error("cant find the parameter list");
+			logger.error("cant find/parse the parameter list");
 			throw new ConfigurationException("Cant find parameter list");
 		}		
 	}
@@ -205,11 +193,9 @@ public class Parameters {
 		if(params.values().size()==0)
 			return "<"+PARAMETERS_NODE+" />\n";
 		else {
-			StringBuffer sb = new StringBuffer();
-			Iterator<Parameter> i = params.values().iterator();
-			sb.append("<"+PARAMETERS_NODE+">\n");
-			while(i.hasNext())
-				sb.append(i.next().getXMLString());
+			StringBuffer sb = new StringBuffer("<"+PARAMETERS_NODE+">\n");
+			for(Parameter p: params.values())
+				sb.append(p.getXMLString());
 			sb.append("</"+PARAMETERS_NODE+">\n");
 			return sb.toString();
 		}

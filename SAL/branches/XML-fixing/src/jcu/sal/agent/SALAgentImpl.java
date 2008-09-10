@@ -121,7 +121,7 @@ public class SALAgentImpl implements SALAgent{
 	 * @see jcu.sal.agent.SALAgentInterface#getCML(java.lang.String)
 	 */
 	public String  getCML(String sid) throws ConfigurationException, NotActiveException {
-		return pm.getCML(new SensorID(sid)).getCMLString();
+		return pm.getCML(new SensorID(sid)).getXMLString();
 	}
 
 	/*

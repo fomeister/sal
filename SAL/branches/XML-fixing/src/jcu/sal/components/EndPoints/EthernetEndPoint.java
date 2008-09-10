@@ -25,7 +25,7 @@ public class EthernetEndPoint extends EndPoint {
 
 	public static final String ETHDEVICEATTRIBUTE_TAG="EthernetDevice";
 	public static final String IPADDRESSATTRIBUTE_TAG="IPAddress";
-	public static final String ETHERNETENDPOINT_TYPE="ethernet";
+	public static final String ENDPOINT_TYPE="ethernet";
 	
 	private static Logger logger = Logger.getLogger(EthernetEndPoint.class);
 	static {Slog.setupLogger(logger);}
@@ -35,7 +35,7 @@ public class EthernetEndPoint extends EndPoint {
 	 * 
 	 */
 	public EthernetEndPoint(EndPointID i, EndPointConfiguration c) throws ConfigurationException {
-		super(i, ETHERNETENDPOINT_TYPE, c);
+		super(i, ENDPOINT_TYPE, c);
 		parseConfig();
 	}
 
@@ -49,7 +49,7 @@ public class EthernetEndPoint extends EndPoint {
 		String intName = null, ipAddress = null;
 		boolean found = false;
 		
-		logger.debug("check if we have the ethernet port.");
+		//logger.debug("check if we have the ethernet port.");
 		try {
 			intName = getParameter(ETHDEVICEATTRIBUTE_TAG);
 			try {ipAddress = getParameter(IPADDRESSATTRIBUTE_TAG);} catch(BadAttributeValueExpException e) {ipAddress="";}
@@ -79,13 +79,13 @@ public class EthernetEndPoint extends EndPoint {
 			}
 			
 			if(found) {
-				logger.debug("Found ethernet port: " + n.getDisplayName());
+				//logger.debug("Found ethernet port: " + n.getDisplayName());
 				if (!n.isUp()) {
 					logger.error("The ethernet port is down");
 					throw new ConfigurationException("The ethernet port is down");
 				}
 				configured = true;
-				logger.debug("The ethernet port was successfully configured");
+				//logger.debug("The ethernet port was successfully configured");
 			} else {
 				logger.error("The ethernet port could not be found");
 				throw new ConfigurationException("The ethernet port could not be found");
@@ -95,7 +95,7 @@ public class EthernetEndPoint extends EndPoint {
 			e.printStackTrace();
 			throw new ConfigurationException("Couldnt find the ethernet port...");
 		} catch (BadAttributeValueExpException e) {
-			logger.debug("Bad ethernet EndPoint XML config");
+			logger.error("Bad ethernet EndPoint XML config");
 			e.printStackTrace();
 			throw new ConfigurationException("Couldnt initialise the ethernet port...");
 		} 

@@ -26,19 +26,19 @@ public class HalClient extends AbstractHalClient {
 
 	@Override
 	public void deviceAdded(Map<String,String> l) {
-		logger.debug("Found root filesystem");
+		logger.debug("Found Operating System data files");
 		if(!isProtocolRunning(OSDataConstants.PROTOCOL_TYPE)){
 			try {
 				createProtocol(new ProtocolConfiguration(
 						"osdata",
 						OSDataConstants.PROTOCOL_TYPE,
-						new EndPointConfiguration(FSEndPoint.FSENDPOINT_TYPE+"-osdata", FSEndPoint.FSENDPOINT_TYPE)
+						new EndPointConfiguration(FSEndPoint.ENDPOINT_TYPE+"-osdata", FSEndPoint.ENDPOINT_TYPE)
 						));
 			} catch (Exception e) {
 				logger.error("Instancation failed");
 			}
-		} else
-			logger.debug("OSdata already instanciated");
+		} //else
+			//logger.debug("OSdata already instanciated");
 	}
 	
 	@Override

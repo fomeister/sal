@@ -6,7 +6,6 @@ package jcu.sal.managers;
 import java.io.NotActiveException;
 import java.lang.reflect.Constructor;
 import java.text.ParseException;
-import java.util.Iterator;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
@@ -37,10 +36,11 @@ import org.apache.log4j.Logger;
  * 
  */
 public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolConfiguration> {
-
-	private static ProtocolManager p = new ProtocolManager();
 	private static Logger logger = Logger.getLogger(ProtocolManager.class);
 	static {Slog.setupLogger(logger);}
+	
+	private static ProtocolManager p = new ProtocolManager();
+
 	private FileConfigService conf;
 	private EventDispatcher ev;
 	
@@ -120,6 +120,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		try {
 			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), Constants.PROTOCOL_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
+		logger.debug("Created protocol '"+config.getID()+"' - type: " + type);
 		return p;
 	}
 	
@@ -139,11 +140,16 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		ProtocolID pid=component.getID();
 		//logger.debug("Removing protocol " + pid.toString());
 		component.remove(this);
+		/** the sensors associated with the protocol must be removed AFTER the protocol
+		 * otherwise the autodetectino could try and create them again between the moment we remove them
+		 * and the moment we remove the protocol
+		 */
 		SensorManager.getSensorManager().destroyComponents(component.getSensors());
 		componentRemovable(pid);
 		try {
 			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_REMOVED,component.getID().getName(),Constants.PROTOCOL_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
+		logger.debug("Removed protocol '"+component.getID().getName()+"' - type: " + component.getType());
 	}
 	
 	/*
@@ -181,24 +187,14 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		} catch (ConfigurationException e) {
 			logger.error("Could not read the configuration files");
 			throw e;
-		} 
-		
-		Iterator<ProtocolConfiguration> iter = conf.getProtocols().iterator();
-		while(iter.hasNext()) {
-			try {
-				createComponent(iter.next());
-			} catch (ConfigurationException e){}
 		}
-				
-		Iterator<SMLDescription> i = conf.getSensors().iterator();
-		while(iter.hasNext()) {
-			try {
-				SensorManager.getSensorManager().createComponent(i.next());
-			} catch (ConfigurationException e) {
-				logger.error("Could not create the sensor");
-			}
-		} 
-		logger.debug("Finished parsing the configuration files");
+		
+		for(ProtocolConfiguration p: conf.getProtocols())
+			try {createComponent(p);} catch (ConfigurationException e){} 
+		
+		for(SMLDescription s: conf.getSensors())
+			try {SensorManager.getSensorManager().createComponent(s);} catch (ConfigurationException e){} 
+
 	}
 	
 	/**
@@ -224,15 +220,11 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 */
 	public void startAll(){
 		synchronized(ctable){
-			Iterator<AbstractProtocol> iter = ctable.values().iterator();
-			while (iter.hasNext()) {
-				AbstractProtocol e = iter.next();
-				//logger.debug("Starting protocol" + e.toString());
-				try { e.start(); }
+			for(AbstractProtocol p: ctable.values())
+				try { p.start(); }
 				catch (ConfigurationException ex) { 
-					logger.error("Couldnt start protocol " + e.toString()+"...");
+					logger.error("Couldnt start protocol " + p.toString()+"...");
 				}
-			}
 		}
 	}
 	
@@ -241,12 +233,8 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 */
 	public void stopAll(){
 		synchronized(ctable){
-			Iterator<AbstractProtocol> iter = ctable.values().iterator();
-			while (iter.hasNext()) {
-				AbstractProtocol e = iter.next();
-				logger.debug("Stopping protocol" + e.toString());
-				e.stop();
-			}
+			for(AbstractProtocol p: ctable.values())
+				p.stop();
 		}
 	}
 	

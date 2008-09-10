@@ -19,8 +19,9 @@ import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
 
 public class EventDispatcher implements Runnable{
-
-	private static EventDispatcher ev = new EventDispatcher();
+	private static Logger logger = Logger.getLogger(EventDispatcher.class);
+	static {Slog.setupLogger(logger);}
+	private static EventDispatcher ev = new EventDispatcher();	
 
 	/**
 	 * This map associates an event producer name to a map of names and event handlers. 
@@ -29,7 +30,6 @@ public class EventDispatcher implements Runnable{
 	private Thread dispatcher;
 	private BlockingQueue<Event> eventQueue;
 	private Set<String> producers; 
-	private Logger logger = Logger.getLogger(EventDispatcher.class);
 	
 	private int QUEUE_SIZE = 500;
 	
@@ -38,7 +38,6 @@ public class EventDispatcher implements Runnable{
 		dispatcher = new Thread(this, "SALEventDispatcher");
 		eventQueue = new LinkedBlockingQueue<Event>(QUEUE_SIZE);
 		producers = new HashSet<String>();
-		Slog.setupLogger(logger);
 		dispatcher.start();
 	}
 	

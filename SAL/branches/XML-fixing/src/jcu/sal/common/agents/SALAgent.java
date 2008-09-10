@@ -42,7 +42,8 @@ public interface SALAgent {
 	public String addSensor(String xml) throws ConfigurationException, ParserConfigurationException;
 	
 	/**
-	 * This method removes a sensor given its identifier
+	 * This method removes a sensor with the given identifier. Its configuration information is also removed from the
+	 * configuration file.
 	 * @param sid the sensor identifier
 	 * @throws ConfigurationException if the ID cannot be found
 	 */

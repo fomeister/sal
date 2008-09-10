@@ -2,7 +2,6 @@ package jcu.sal.config;
 
 import java.lang.reflect.Constructor;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +20,8 @@ import org.apache.log4j.Logger;
  */
 public class HwProbeService implements ListChangeListener{
 	private static Logger logger = Logger.getLogger(HwProbeService.class);
+	static {Slog.setupLogger(logger);}
+	
 	private static HwProbeService d = new HwProbeService();
 	
 	/**
@@ -33,7 +34,6 @@ public class HwProbeService implements ListChangeListener{
 	 *
 	 */
 	private HwProbeService(){
-		Slog.setupLogger(logger);
 		helperMap = new Hashtable<String, HwProbeInterface>();
 	}
 	
@@ -51,34 +51,26 @@ public class HwProbeService implements ListChangeListener{
 	 */
 	public synchronized void loadAll() {
 		Map<String, HwProbeInterface> m = loadHelpers(); 
-		Iterator<String> iter = m.keySet().iterator();
 		HwProbeInterface h;
-		String name;
-		logger.debug("reloading all HwProbes");
-		while (iter.hasNext()) {
+		logger.debug("reloading all hardware detection probes");
+		for(String name: m.keySet()){
 			try {
-				name = iter.next();
 				h = m.get(name);
-				logger.debug("Starting "+name);
+				//logger.debug("Starting "+name);
 				h.start();
 				helperMap.put(name, h);
 			} catch (Exception e) {
 				logger.error("error starting helper");
 				e.printStackTrace();
-			}			
+			}	
 		}
 	}
 	
 	public synchronized void stopAll() {
-		Iterator<String> iter = helperMap.keySet().iterator();
-		HwProbeInterface h;
-		String name;
-		logger.debug("Removing all HwProbes");
-		while (iter.hasNext()) {
-			name = iter.next();
-			h = helperMap.get(name);
-			logger.debug("Stopping "+name);
-			h.stop();
+		logger.debug("Removing all hardware detection probes");
+		for(String name: helperMap.keySet()){
+			//logger.debug("Stopping "+name);
+			helperMap.get(name).stop();
 			helperMap.remove(name);
 		}
 	}

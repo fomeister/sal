@@ -22,10 +22,10 @@ import au.edu.jcu.haldbus.AbstractDeviceDetection;
 public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	private ProtocolManager pm;
 	private static Logger logger = Logger.getLogger(AbstractHalClient.class);
+	static {Slog.setupLogger(logger);}
 	
 	protected AbstractHalClient(int when){
 		super(when);
-		Slog.setupLogger(logger);
 		pm = ProtocolManager.getProcotolManager();
 	}
 	
@@ -105,7 +105,7 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	}
 	
 	protected void createProtocol(ProtocolConfiguration pc) throws ConfigurationException{
-		logger.debug("Creating new protocol with document: \n"+pc.getXMLString());
+		//logger.debug("Creating new protocol with document: \n"+pc.getXMLString());
 		try {pm.createComponent(pc).start();}
 		catch (Throwable t){
 			logger.error("Cant instanciate protocol");
@@ -115,7 +115,7 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	}
 	
 	protected void removeProtocol(Identifier i) throws ConfigurationException{
-		logger.debug("Removing existing protocol "+i.toString());
+		//logger.debug("Removing existing protocol "+i.toString());
 		pm.destroyComponent(i);
 		pm.removeProtocolConfig((ProtocolID) i, false);
 	}

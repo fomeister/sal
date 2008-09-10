@@ -54,7 +54,7 @@ public class OWFSProtocol extends AbstractProtocol{
 		epIds = new String[]{DS2490_USBID};
 		autoDetectionInterval = 100;
 		multipleInstances = false;
-		supportedEndPointTypes.add(UsbEndPoint.USBENDPOINT_TYPE);
+		supportedEndPointTypes.add(UsbEndPoint.ENDPOINT_TYPE);
 	}
 
 	/* (non-Javadoc)
@@ -62,7 +62,7 @@ public class OWFSProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		String mtpt, temp;
+		String mtpt;
 		ProcessOutput c;
 
 		try {
@@ -70,9 +70,9 @@ public class OWFSProtocol extends AbstractProtocol{
 			if(mtpt.length()==0) throw new BadAttributeValueExpException("Empty mount point directive...");
 			if(!PlatformHelper.isDir(mtpt)) {
 				//try creating it
-				logger.debug("OWFS Mount point doesnt exist, try creating it");
+				logger.error("OWFS Mount point doesnt exist, try creating it");
 				if (! new File(mtpt).mkdirs()) throw new BadAttributeValueExpException("Cant create mount point");
-				logger.debug("done");
+				logger.error("ok");
 			} else if(!PlatformHelper.isDirReadWrite(mtpt)) {
 				//it is unlikely we have rights to change the permissions
 				logger.error("OWFS Mount point not readable/writeable");
@@ -81,13 +81,13 @@ public class OWFSProtocol extends AbstractProtocol{
 
 			//Next, we check that OWFS is installed in the given directory
 			//and try to get the OWFS version 
-			logger.debug("Detecting OWFS version");
+			//logger.debug("Detecting OWFS version");
 			c = PlatformHelper.captureOutputs(getParameter(OWFSLOCATIONATTRIBUTE_TAG) + " --version", true);
-			BufferedReader[] b = c.getBuffers();
-			while((temp = b[0].readLine()) != null) logger.debug(temp);
-			while((temp = b[1].readLine()) != null) logger.debug(temp);
+			//BufferedReader[] b = c.getBuffers();
+			//while((temp = b[0].readLine()) != null) logger.debug(temp);
+			//while((temp = b[1].readLine()) != null) logger.debug(temp);
 			c.destroyProcess();
-			logger.debug("OWFS protocol configured");
+			//logger.debug("OWFS protocol configured");
 			
 		} catch (IOException e) {
 			logger.error("Could NOT run/read owfs");
@@ -149,15 +149,15 @@ public class OWFSProtocol extends AbstractProtocol{
 	@Override
 	protected boolean internal_probeSensor(Sensor s) {
 		try {
-			logger.debug("Probing sensor " + s.getNativeAddress());
+			//logger.debug("Probing sensor " + s.getNativeAddress());
 			if(PlatformHelper.isDirReadable(getParameter(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+s.getNativeAddress())) {
 				s.enable();
-				logger.debug("Sensor " + s.getNativeAddress()+ " present");
+				//logger.debug("Sensor " + s.getNativeAddress()+ " present");
 				return true;
 			}
 		} catch (Exception e) {
-			logger.error("couldnt probe sensor "+s.toString());
-			logger.error("Raised exception: "+e.getMessage());
+			//logger.error("couldnt probe sensor "+s.toString());
+			//logger.error("Raised exception: "+e.getMessage());
 		}
 		s.disconnect();
 		return false;
@@ -181,9 +181,9 @@ public class OWFSProtocol extends AbstractProtocol{
 		synchronized(removed){
 			if(!removed.get()){
 				if(n>adapterNb) {
-					logger.debug("new OWFS adapters have been plugged in, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
+					//logger.debug("new OWFS adapters have been plugged in, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
 					if(n>maxAdaptersSeen){
-						logger.debug("Restarting OWFS to detect new adapters");
+						//logger.debug("Restarting OWFS to detect new adapters");
 						try {
 							stopAutodetectThread();
 							synchronized(sensors) {
@@ -200,18 +200,18 @@ public class OWFSProtocol extends AbstractProtocol{
 							try { Thread.sleep(100); } catch (InterruptedException e) {}
 							startOWFS();
 							startAutodetectThread();
-							logger.debug("Done restarting OWFS");
+							//logger.debug("Done restarting OWFS");
 							maxAdaptersSeen=n;
 						} catch (ConfigurationException e) {
 							logger.error("Unable to run owfs: "+e.getClass()+" - "+e.getMessage());
 							if(e.getCause()!=null) logger.error("caused by: "+e.getCause().getClass()+" - "+e.getCause().getMessage());
 						} 
 					} else {
-						logger.debug("no need to restart OWFS to detect new adapter, max>adapternb");
+						//logger.debug("no need to restart OWFS to detect new adapter, max>adapternb");
 					}
 					adapterNb=n;
 				} else if (n<adapterNb) {
-					logger.debug("a new OWFS adapter has been unplugged, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
+					//logger.debug("a new OWFS adapter has been unplugged, adapterNB:"+adapterNb+" maxSeen:"+maxAdaptersSeen+" currently plugged:"+n);
 					//adapterNb=n;
 				} 
 				//may happen right after instanciation if endpoint reports device plugged in atfer Protocol.start() has already

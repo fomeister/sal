@@ -3,7 +3,6 @@ package jcu.sal.config.deviceDetection;
 
 import java.lang.reflect.Constructor;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +41,14 @@ import au.edu.jcu.haldbus.match.HalMatchInterface;
  *
  */
 public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, ListChangeListener{
-	public static String NAME = "HalHelper";
 	private static Logger logger = Logger.getLogger(HalHelper.class);
+	static {Slog.setupLogger(logger);}
+	
+	/**
+	 * The name of this helper
+	 */
+	public final static String NAME = "HalHelper";
+	
 	private Thread t;
 	private DBusConnection conn = null;
 	private BlockingQueue<Map<String,Variant<Object>>> properties;
@@ -60,7 +65,7 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 	 * Default constructor. It initialises the new object's members and creates the list of filters
 	 */
 	public HalHelper(){
-		Slog.setupLogger(logger);
+		
 		t = new Thread(this, "HalHelper thread");
 		properties = new LinkedBlockingQueue<Map<String,Variant<Object>>>();
 		clients = new LinkedList<HalFilterInterface>();
@@ -71,6 +76,7 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 	@Override
 	@SuppressWarnings("unchecked")
 	public synchronized void start() throws Exception{
+		logger.debug("'"+NAME+"' hardware probe starting ");
 		if(!t.isAlive()) {
 			try {
 				conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
@@ -91,6 +97,7 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 			join();
 			conn.disconnect();
 		}
+		logger.debug("'"+NAME+"' hardware probe stopped");
 	}
 	
 	public void addClient(HalFilterInterface f) throws AddRemoveElemException{
@@ -153,7 +160,6 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 	public void listChanged() {
 		List<HalFilterInterface> tmp;
 		HalFilterInterface h = null;
-		Iterator<HalFilterInterface> iter;
 
 		synchronized(clients) {
 			tmp = new LinkedList<HalFilterInterface>(clients);
@@ -167,11 +173,9 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 					tmp.remove(h);				
 				} catch (InstantiationException e) {} 
 				
-			if(tmp.size()>0){
-				iter = tmp.iterator();
-				while(iter.hasNext()) 
-					try { removeClient(iter.next());} catch (AddRemoveElemException e) {}			
-			}
+			if(tmp.size()>0)
+				for(HalFilterInterface f: tmp)
+					try { removeClient(f);} catch (AddRemoveElemException e) {}	
 		}
 	}
 	
@@ -227,27 +231,21 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 	private void checkProperties(Map<String,Variant<Object>> map, boolean initial){
 		Map<String,String> matches = new Hashtable<String,String>();
 		Map<String, HalMatchInterface> matchList;
-		Iterator<HalFilterInterface> iter;
-		Iterator<String> iter2;
-		HalFilterInterface c;
 		HalMatchInterface m;
-		String s, matchName;
+		String s;
 		int maxUnmatch, countUnmatch;
 		
 		synchronized(clients) {
-			iter = clients.iterator();
-			while(iter.hasNext()){	
+			for(HalFilterInterface c: clients){
 				//for each HAL client, get the match list
-				c = iter.next();
 				maxUnmatch = c.countMatches() - c.getMinMatches();
 				countUnmatch = 0;
 				//logger.debug("Checking client "+c.getName() + c.initialMatch() + c.subsequentMatch());
 
 				matchList = c.getMatchList(); 
-				iter2 = matchList.keySet().iterator();
-				while(iter2.hasNext()){
+
+				for(String matchName: matchList.keySet()){
 					//for each HALMatch object, check if there is a match
-					matchName = iter2.next();
 					m = matchList.get(matchName);
 					try {
 						s = match(map, m);

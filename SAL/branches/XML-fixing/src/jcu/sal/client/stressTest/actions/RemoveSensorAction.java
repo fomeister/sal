@@ -37,7 +37,7 @@ public class RemoveSensorAction implements Action {
 		}
 
 		if(p.getSize()==0){
-			logger.info("no sensors yet");
+			//logger.info("no sensors yet");
 			return;
 		}
 		
@@ -52,13 +52,14 @@ public class RemoveSensorAction implements Action {
 		}
 
 		try {
-			logger.info("removing sensor "+name);
+			//logger.info("removing sensor "+name);
 			agent.removeSensor(name.toString());
-			logger.info("sensor "+name+" removed");
+			//logger.info("sensor "+name+" removed");
 		} catch (ConfigurationException e) {
 			logger.info("sensor "+name+" cant be removed");
 			e.printStackTrace();
 		} catch (RemoteException e) {
+			logger.info("sensor "+name+" cant be removed");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 

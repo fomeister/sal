@@ -47,7 +47,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 		super(i,PROTOCOL_TYPE,c);		
 
 //		Add to the list of supported EndPoint IDs
-		supportedEndPointTypes.add(EthernetEndPoint.ETHERNETENDPOINT_TYPE);
+		supportedEndPointTypes.add(EthernetEndPoint.ENDPOINT_TYPE);
 	}
 
 	
@@ -66,11 +66,10 @@ public class SSNMPProtocol extends AbstractProtocol{
 
 		try { timeout = Integer.parseInt(getParameter("Timeout")); }
 		catch (BadAttributeValueExpException e) { timeout=1500;}
-		try { autoDetectionInterval = (getParameter("AutodetectOIDs").equals("1") || getParameter("AutodetectOIDs").equalsIgnoreCase("true")) ? -1 : 0;}
-		catch (BadAttributeValueExpException e) {autoDetectionInterval=-1;}
+
 		
 		cmls = CMLDescriptionStore.getStore();
-		logger.debug("SimpleSNMP protocol configured");
+		//logger.debug("SimpleSNMP protocol configured");
 	}
 
 	/* (non-Javadoc)
@@ -122,7 +121,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 	protected boolean internal_probeSensor(Sensor s) {
 		try {
 			getRawReading(s.getNativeAddress());
-			logger.debug(s.toString()+" present");
+			//logger.debug(s.toString()+" present");
 			s.enable();
 			return true;
 		} catch (Exception e) {
@@ -164,7 +163,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 				p.setRetryIntervals(new int[]{timeout});
 			}
 		} catch (Exception e) {
-			logger.debug("SNMP response timeout while retieving OIDs, could be the end of the SNMP walk");
+			logger.error("SNMP response timeout while retieving OIDs, could be the end of the SNMP walk");
 		}
 		return detected;
 	}

@@ -8,6 +8,9 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.ParserConfigurationException;
+
 import jcu.sal.client.stressTest.actions.Action;
 import jcu.sal.client.stressTest.actions.AddProtocolAction;
 import jcu.sal.client.stressTest.actions.AddSensorAction;
@@ -15,25 +18,41 @@ import jcu.sal.client.stressTest.actions.ExecuteSensorAction;
 import jcu.sal.client.stressTest.actions.RemoveProtocolAction;
 import jcu.sal.client.stressTest.actions.RemoveSensorAction;
 import jcu.sal.common.agents.RMISALAgent;
-import jcu.sal.common.events.Event;
-import jcu.sal.common.events.RMIEventHandler;
+import jcu.sal.common.pcml.ProtocolConfiguration;
+import jcu.sal.common.pcml.ProtocolConfigurations;
+import jcu.sal.common.sml.SMLDescription;
+import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 
-public class RmiClientDummyStressTest2 implements RMIEventHandler{
+public class RmiClientDummyStressTest2{
 	private static Logger logger = Logger.getLogger(RmiClientDummyStressTest2.class);
 	static {
 		Slog.setupLogger(logger);
 	}
 	
+	/**
+	 * how long do we run for
+	 */
 	public static int RUN_LENGTH=10*1000;
-	public static int NB_CLIENTS = 1;
-	public static int SLEEP = 1;
+	
+	/**
+	 * how many client threads do we want
+	 */
+	public static int NB_CLIENTS = 10;
+	
+	/**
+	 * how long to sleep between actions
+	 */
+	public static int SLEEP = 0;
+	
 	private Vector<Client> clients;
 	private RMISALAgent agent;
 	private Registry agentRegistry;
 	private AtomicBoolean setupFlag;
+	private ProtocolConfigurations protocolState;
+	private SMLDescriptions sensorState;
 	
 	private class Client implements Runnable{
 		private Action[] actions = new Action[10];
@@ -77,11 +96,11 @@ public class RmiClientDummyStressTest2 implements RMIEventHandler{
 			try {
 				Thread.sleep(r.nextInt(5)*1000);
 				while(!Thread.interrupted()){
-					if(r.nextInt(3)==2){
+					if(r.nextInt(3)==2)
 						a = actions[r.nextInt(4)];
-					} else {
+					else
 						a = actions[4];
-					}
+
 					a.execute();
 					Thread.sleep(SLEEP);
 				}
@@ -118,16 +137,55 @@ public class RmiClientDummyStressTest2 implements RMIEventHandler{
 			c.stop();
 	}
 	
+	public void saveState() throws ConfigurationException, RemoteException, ParserConfigurationException{
+		protocolState = new ProtocolConfigurations(agent.listProtocols());
+		sensorState = new SMLDescriptions(agent.listSensors());
+	}
+	
+	public void removeAllComponents() throws ConfigurationException, RemoteException{
+		for(String pid: protocolState.getPIDs())
+			agent.removeProtocol(pid, true);
+	}
+	
+	public void restoreState() throws ConfigurationException, RemoteException, ParserConfigurationException {
+		for(ProtocolConfiguration p: protocolState.getConfigurations())
+			agent.addProtocol(p.getXMLString(), false);
+		
+		for(SMLDescription s: sensorState.getDescriptions())
+			try { 
+				agent.addSensor(s.getSMLString());
+			} catch (ConfigurationException e){}
+	}
+	
 	public void run(){
+		try {
+			saveState();
+		} catch (Exception e1) {
+			logger.info("cant save the state of the agent. exiting");
+			e1.printStackTrace();
+			return;
+		} 
+		try {
+			removeAllComponents();
+		} catch (Exception e1) {
+			logger.info("cant remove existing components on the agent. exiting");
+			e1.printStackTrace();
+			return;
+		}
+		
 		createClients(NB_CLIENTS);
 		startClients();
 		try {
 			Thread.sleep(RUN_LENGTH);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+		} catch (InterruptedException e) {}
+		stopClients();
+		
+		try {
+			restoreState();
+		} catch (Exception e) {
+			logger.info("error restoring agent's state");
 			e.printStackTrace();
 		}
-		stopClients();
 	}
 	
 	public static void main(String [] args) throws RemoteException, NotBoundException{
@@ -140,10 +198,6 @@ public class RmiClientDummyStressTest2 implements RMIEventHandler{
 		new RmiClientDummyStressTest2(args[0], args[2], args[1]).run();
 		System.out.println("Main exiting");
 		System.exit(0);
-	}
-
-	public void handle(Event e) {
-		System.out.println("Received "+e.toString());
 	}
 }
 

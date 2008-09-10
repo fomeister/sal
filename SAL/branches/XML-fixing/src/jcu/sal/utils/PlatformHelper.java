@@ -51,8 +51,8 @@ public class PlatformHelper {
 			} finally {
 				if(p!=null) p.destroy();
 			}
-		} else
-			logger.debug("Module " + module + " not loaded, cant remove it...");
+		} //else
+			//logger.debug("Module " + module + " not loaded, cant remove it...");
 		return ok;
 	}
 	
@@ -100,8 +100,8 @@ public class PlatformHelper {
 			} finally {
 				if (p!=null) p.destroy();
 			}
-		} else
-			logger.debug("Module " + module + " already loaded");
+		} //else
+			//logger.debug("Module " + module + " already loaded");
 		return ok;
 	}
 	
@@ -231,10 +231,8 @@ public class PlatformHelper {
 				b =  new BufferedReader(new FileReader("/proc/" + String.valueOf(iter.next()) + "/cmdline"));
 				String[] t = b.readLine().split("\00");
 				String name = t[0] + "(instance " + String.valueOf(++instance) + ")";
-				for (int i = 1; i < t.length; i++) {
-					System.out.println("string " + String.valueOf(i) + " : "+t[i]);
+				for (int i = 1; i < t.length; i++) 
 					args.put(name, t[i]);
-				}
 			}
 
 		} catch (IOException e) {

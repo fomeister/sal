@@ -6,7 +6,6 @@ package jcu.sal.components.protocols.osData;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -83,7 +82,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 		autoDetectionInterval = -1; //run only once
 		
 //		Add to the list of supported EndPoint IDs
-		supportedEndPointTypes.add(FSEndPoint.FSENDPOINT_TYPE);
+		supportedEndPointTypes.add(FSEndPoint.ENDPOINT_TYPE);
 		multipleInstances=false;
 	}
 
@@ -102,7 +101,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 		try {
 			supportedSensors.put(OSDataConstants.Temp3,new OSdata(getParameter(OSDataConstants.Temp3DataFile), null, 1, null, false));
 		} catch (BadAttributeValueExpException e) {}
-		logger.debug("OSData protocol configured");
+		//logger.debug("OSData protocol configured");
 	}
 
 	/* (non-Javadoc)
@@ -139,13 +138,13 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 		OSdata d = supportedSensors.get(s.getNativeAddress());
 		if(d!=null) {
 			if(PlatformHelper.isFile(d.file) && PlatformHelper.isFileReadable(d.file)) {
-				logger.debug(s.toString()+" present, using default file");
+				//logger.debug(s.toString()+" present, using default file");
 				s.enable();
 				return true;
 			} else  {
 				try {
 					if(PlatformHelper.isFileReadable(s.getParameter(OSDataConstants.SMLDataFile))) {
-						logger.debug(s.toString()+" present, using supplied file");
+						//logger.debug(s.toString()+" present, using supplied file");
 						s.enable();
 						return true;
 					} else
@@ -154,29 +153,28 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 					logger.debug("No data file supplied for sensor "+s.getNativeAddress());
 				}
 			}
-			logger.debug("Disconnecting sensor "+s.toString());
-		} else 
-			logger.debug("Disconnecting unsupported sensor sensor "+s.toString());
+			//logger.debug("Disconnecting sensor "+s.toString());
+		} //else 
+			//logger.debug("Disconnecting unsupported sensor sensor "+s.toString());
 		s.disconnect();
 		return false;
 	}
 	
 	@Override
 	protected List<String> detectConnectedSensors() {
-		List<String> v = new Vector<String>();
 		//check that all our supported sensors are here, if not remove them from supportedSensors
-		Iterator<String> i = supportedSensors.keySet().iterator();
+		List<String> v = new Vector<String>();
 		OSdata d;
-		String s;
-		while(i.hasNext()) {
-			s = i.next();
+
+		for(String s: supportedSensors.keySet()) {
 			d = supportedSensors.get(s);
 			if(!PlatformHelper.isFileReadable(d.file)) {
 				logger.error("Cant find file "+d.file);
-				i.remove();
+				supportedSensors.remove(s);
 			} else
 				v.add(s);
 		}
+		
 		return v; 
 	}
 	
@@ -250,7 +248,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	
 			}// end while interrupted
 		} catch (InterruptedException e) {}
-		logger.debug("update counter thread exiting");
+		//logger.debug("update counter thread exiting");
 	}
 	
 	/*

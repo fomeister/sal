@@ -4,7 +4,6 @@
 package jcu.sal.managers;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import javax.naming.ConfigurationException;
@@ -29,7 +28,8 @@ import org.apache.log4j.Logger;
  * 
  */
 public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
-	private FileConfigService conf;
+	private static Logger logger = Logger.getLogger(SensorManager.class);
+	static {Slog.setupLogger(logger);}
 	
 	/**
 	 * specifies (in seconds) how often the sensor removal thread kick in
@@ -37,7 +37,8 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	public static int REMOVE_SENSOR_INTERVAL = 0;
 	
 	private static SensorManager s = new SensorManager();
-	private Logger logger = Logger.getLogger(SensorManager.class);
+
+	private FileConfigService conf;
 	private ProtocolManager pm;
 	private EventDispatcher ev;
 	
@@ -47,7 +48,6 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	 */
 	private SensorManager() {
 		super();
-		Slog.setupLogger(this.logger);
 		pm = ProtocolManager.getProcotolManager();
 		conf = FileConfigService.getService();
 		ev = EventDispatcher.getInstance();
@@ -90,17 +90,17 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 			throw new InstantiationException();
 		}
 		
-		//Raise save sensor config flag
+		//save sensor config
 		try { conf.addSensor(s); }
 		catch (ConfigurationException e) {
-			logger.error("Couldnt saves the sensor's configuration ("+i.toString()+")");
+			logger.error("We shouldnt be here");
 			throw new InstantiationException();
 		}
 
 		//associate it with its protocol
 		try { pm.associateSensor(sensor); }
 		catch (ConfigurationException e) {
-			logger.error("Couldnt associate the sensor with its protocol");
+			logger.error("Couldnt associate sensor '"+s.getID()+"' with protocol '"+s.getProtocolName()+"'");
 			throw new InstantiationException();
 		}
 		
@@ -108,6 +108,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_ADDED, i.getName(), Constants.SENSOR_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
 		
+		logger.debug("created sensor: "+id.getName());
 		return sensor;
 	}
 	
@@ -149,6 +150,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 		try {
 			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_REMOVED,component.getID().getName(),Constants.SENSOR_MANAGER_PRODUCER_ID));
 		} catch (ConfigurationException e) {logger.error("Cant queue event");}
+		logger.debug("removed sensor: "+component.getID().getName());
 	}
 
 	
@@ -161,15 +163,11 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	 */
 	public SMLDescriptions listSensors(boolean onlyActive){
 		if(onlyActive){
-			Sensor s;
 			HashSet<SMLDescription> m = new HashSet<SMLDescription>();
 			synchronized(ctable){
-				Iterator<Sensor> i = ctable.values().iterator();
-				while(i.hasNext()) {
-					s = i.next();
+				for(Sensor s: ctable.values())
 					if(!onlyActive || (onlyActive && !s.isDisconnected()))
 						m.add(s.getConfig());
-				}	
 			}
 			return new SMLDescriptions(m);
 		} else
@@ -200,9 +198,8 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	 */
 	public void loadSensorsFromConfig(ProtocolID pid) throws ConfigurationException {
 		//logger.debug("Loading sensors from config file associated with protocol "+pid.getName());
-		SMLDescription s;
-		Iterator<SMLDescription> iter = conf.listSensors(pid).iterator();
-		while(iter.hasNext()) { s = iter.next(); logger.debug("Creating sensor "+s.getSMLString());createComponent(s);};
+		for(SMLDescription s: conf.listSensors(pid))
+			createComponent(s);
 	}
 
 	

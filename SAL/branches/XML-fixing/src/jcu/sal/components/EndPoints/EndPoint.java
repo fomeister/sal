@@ -5,7 +5,6 @@ package jcu.sal.components.EndPoints;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Iterator;
 
 import javax.naming.ConfigurationException;
 
@@ -172,9 +171,8 @@ public abstract class EndPoint extends AbstractComponent<EndPointID, EndPointCon
 			throw new UnsupportedOperationException("Autodetection of sensor native controllers not supported by this Endpoint");
 		
 		synchronized (listeners) {
-			Iterator<ArrayList<DeviceListener>> i = listeners.values().iterator();
-			while(i.hasNext())
-				i.next().remove(d);	
+			for(ArrayList<DeviceListener> a: listeners.values())
+				a.remove(d);	
 		}
 	}
 
