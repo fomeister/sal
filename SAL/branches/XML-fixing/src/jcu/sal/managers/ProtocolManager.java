@@ -5,7 +5,6 @@ package jcu.sal.managers;
 
 import java.io.NotActiveException;
 import java.lang.reflect.Constructor;
-import java.text.ParseException;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
@@ -128,7 +127,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 * @see jcu.sal.managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Identifier getComponentID(ProtocolConfiguration n) throws ParseException {
+	protected Identifier getComponentID(ProtocolConfiguration n){
 		return new ProtocolID(n.getID());
 	}
 	

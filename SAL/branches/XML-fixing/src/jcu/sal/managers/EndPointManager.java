@@ -4,7 +4,6 @@
 package jcu.sal.managers;
 
 import java.lang.reflect.Constructor;
-import java.text.ParseException;
 
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.components.Identifier;
@@ -77,7 +76,7 @@ public class EndPointManager extends AbstractManager<EndPoint, EndPointConfigura
 	 * @see jcu.sal.managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Identifier getComponentID(EndPointConfiguration epc) throws ParseException {
+	protected Identifier getComponentID(EndPointConfiguration epc){
 		return new EndPointID(epc.getID());
 	}
 	
