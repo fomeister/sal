@@ -266,7 +266,7 @@ public class SALClient implements EventHandler<Event>, StreamCallback{
 			n++;
 		try {
 				viewers.get(r.getSID()).setImage(r.getBytes());
-			} catch (ConfigurationException e) {
+		} catch (ConfigurationException e) {
 				System.out.println("Stream from sensor "+r.getSID()+" returned an error");
 				viewers.remove(r.getSID()).close();
 			} catch (ClosedChannelException e) {

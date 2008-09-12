@@ -1,11 +1,12 @@
 package jcu.sal.common.pcml;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.utils.XMLhelper;
 
 import org.junit.Test;
@@ -13,7 +14,7 @@ import org.junit.Test;
 public class ProtocolConfigurationTest {
 
 	@Test
-	public void testProtocolConfigurationDocument() throws ConfigurationException, ParserConfigurationException {
+	public void testProtocolConfigurationDocument() throws ConfigurationException, ParserException {
 		String params = "<"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value1\" />"
@@ -89,7 +90,7 @@ public class ProtocolConfigurationTest {
 	}
 
 	@Test
-	public void testGetID() throws ConfigurationException, ParserConfigurationException {
+	public void testGetID() throws ConfigurationException, ParserException {
 		String params = "<"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value1\" />"
@@ -115,7 +116,7 @@ public class ProtocolConfigurationTest {
 	}
 
 	@Test
-	public void testGetType() throws ConfigurationException, ParserConfigurationException {
+	public void testGetType() throws ConfigurationException, ParserException {
 		String params = "<"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value1\" />"
@@ -141,7 +142,7 @@ public class ProtocolConfigurationTest {
 	}
 
 	@Test
-	public void testGetParameter() throws ConfigurationException, ParserConfigurationException {
+	public void testGetParameter() throws ConfigurationException, ParserException {
 		String params1 = "<"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"p1n1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"p1value1\" />"
@@ -180,7 +181,7 @@ public class ProtocolConfigurationTest {
 	}
 
 	@Test
-	public void testGetEPConfig() throws ConfigurationException, ParserConfigurationException {
+	public void testGetEPConfig() throws ConfigurationException, ParserException {
 		String params = "<"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value1\" />"
@@ -210,7 +211,7 @@ public class ProtocolConfigurationTest {
 	}
 
 	@Test
-	public void testEqualsObject() throws ConfigurationException, ParserConfigurationException {
+	public void testEqualsObject() throws ConfigurationException, ParserException {
 		String params = "<"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value1\" />"

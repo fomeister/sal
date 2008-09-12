@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -60,10 +60,10 @@ public class Parameters {
 	 * This constructor behaves eaxctly as <code>Parameters(Document d)</code> except that the DOM document is passed as a String
 	 * instead of a org.w3.DOM.Document object.
 	 * @param p the string representation of the DOM document
-	 * @throws ParserConfigurationException if the given string isnt a valid XML document
+	 * @throws ParserException if the given string isnt a valid XML document
 	 * @throws ConfigurationException if there isnt exactly one parameters section or if it is malformed
 	 */
-	public Parameters(String p) throws ParserConfigurationException, ConfigurationException{
+	public Parameters(String p) throws ParserException, ConfigurationException{
 		this(XMLhelper.createDocument(p));
 	}
 	
@@ -130,7 +130,7 @@ public class Parameters {
 			List<String> l = XMLhelper.getAttributeListFromElements(XPATH_PARAM, d);
 			for(nb = 0; nb<l.size(); nb+=4)
 				params.put(l.get(nb+1), new Parameter(l.get(nb+1), l.get(nb+3)));
-		} catch (XPathExpressionException e) {
+		} catch (NotFoundException e) {
 			logger.error("cant find/parse the parameter list");
 			throw new ConfigurationException("Cant find parameter list");
 		}		

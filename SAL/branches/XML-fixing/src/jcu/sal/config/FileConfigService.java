@@ -15,8 +15,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLDescription;
@@ -134,7 +134,7 @@ public class FileConfigService{
 			synchronized(platformConfig){
 				platformConfig = new ProtocolConfigurations(s.toString()).getConfigurations();
 			}
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			logger.error("Could not parse the XML platform configuration file");
 			e.printStackTrace();
 			throw new ConfigurationException("Platform configuration file malformed");
@@ -151,7 +151,7 @@ public class FileConfigService{
 			synchronized(sensorConfig){
 				sensorConfig = new SMLDescriptions(s.toString()).getDescriptions();
 			}
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			logger.error("Could not parse the XML sensor configuration file");
 			e.printStackTrace();
 			throw new ConfigurationException("Sensor configuration file malformed");

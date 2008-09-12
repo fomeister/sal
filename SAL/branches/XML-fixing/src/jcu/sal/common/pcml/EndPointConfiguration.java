@@ -1,9 +1,9 @@
 package jcu.sal.common.pcml;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -73,9 +73,9 @@ public class EndPointConfiguration implements HWComponentConfiguration{
 	 * is passed as a string.
 	 * @param xml the EndPoint configuration document
 	 * @throws ConfigurationException if the EndPoint configuration document isnt valid
-	 * @throws ParserConfigurationException if the supplied document isnt a valid XML document
+	 * @throws ParserException if the supplied document isnt a valid XML document
 	 */
-	public EndPointConfiguration(String xml) throws ConfigurationException, ParserConfigurationException{
+	public EndPointConfiguration(String xml) throws ConfigurationException, ParserException{
 		this(XMLhelper.createDocument(xml));
 	}
 	

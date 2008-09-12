@@ -1,6 +1,8 @@
 package jcu.sal.utils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -24,6 +26,11 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import jcu.sal.common.exceptions.DocumentHandlingException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.XpathException;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -32,7 +39,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import com.sun.org.apache.xml.internal.serialize.OutputFormat;
 import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
@@ -45,126 +51,93 @@ import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
 
 public class XMLhelper {
 	
+	private static XPath xpath = XPathFactory.newInstance().newXPath();
+	
 	/**
      * Creates an empty DOM document
      * @return the empty DOM document
-	 * @throws ParserConfigurationException 
+     * @throws DocumentHandlingException if the empty document cant be created
      */
-    public static Document createEmptyDocument() throws ParserConfigurationException {
-        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document document = builder.newDocument();
-        return document;
-        
+    public static Document createEmptyDocument(){
+		try {
+	        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+	        return builder.newDocument();
+		} catch (ParserConfigurationException e) {
+			System.err.println("Cant create an empty XML document !!!!");
+			e.printStackTrace();
+			throw new DocumentHandlingException("Can not create an empty XML document", e);
+		}        
     }
     
     /**
      * Creates a DOM document from an Input Stream
      * @param in the input stream
-     * @return 
      * @return the DOM document
-     * @throws ParserConfigurationException 
+     * @throws ParserException if the given stream isnt a valid XML document
      */
-    public static Document createDocument(InputStream in) 
-    	throws ParserConfigurationException {
-    	Document document = null;
+    public static Document createDocument(InputStream in) throws ParserException {
     	try {
 	        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-	        document = builder.parse(in);
+	        return builder.parse(in);
     	} catch (Exception e) {
-    		throw new ParserConfigurationException();
+    		throw new ParserException("Cant parse the input stream to an XML document");
     	}
-        return document;
     }
 
     /**
      * Creates a DOM document from a file
-     * @param f the file 
-     * @return 
+     * @param f the file
      * @return the DOM document
-     * @throws ParserConfigurationException 
-     * @throws IOException 
-     * @throws SAXException 
+     * @throws ParserException if the file cant be parsed to a valid XML document
      */
-    public static Document createDocument(File f) 
-    	throws ParserConfigurationException, IOException {
-    	Document document = null;
-    	DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+    public static Document createDocument(File f) throws ParserException{
     	try {
-			document = builder.parse(f);
-		} catch (SAXException e) {
-			throw new ParserConfigurationException();
+			return createDocument(new FileInputStream(f));
+		} catch (FileNotFoundException e) {
+			throw new ParserException("Cant parse file contents (file: '"+f.getName()+"')",e);
 		}
-        return document;
     }
     
     /**
      * Creates a DOM document from an XML string
-     * @param xmlstrthe XML string
+     * @param xmlstr the XML string
      * @return the DOM document
-     * @throws ParserConfigurationException  
+     * @throws ParserException If the string doesnt parse to a valid XML document
      */   
-    public static Document createDocument(String xmlstr) 
-    	throws ParserConfigurationException {
-        
-    	Document document = null;
+    public static Document createDocument(String xmlstr) throws ParserException {
     	try {
 	        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-	        document = builder.parse(new InputSource(new StringReader(xmlstr)));
+	        return builder.parse(new InputSource(new StringReader(xmlstr)));
     	} catch (Exception e) {
-    		throw new ParserConfigurationException();
+    		throw new ParserException("The string cant be parsed to a valid XMl document"	);
     	}
-        return document;
     }
     
     /**
      * Creates a DOM document from a Node
      * @param node the XML node
-     * @return the DOM document
-     * @throws ParserConfigurationException 
+     * @return the DOM document 
+     * @throws DocumentHandlingException if the document cant be created
      */   
-    public static Document createDocument(Node node) 
-    	throws ParserConfigurationException {
+    public static Document createDocument(Node node) {
     	Document d = XMLhelper.createEmptyDocument();
     	try { XMLhelper.transform(new DOMSource(node), new DOMResult(d)); }
-    	catch (Exception e) { throw new ParserConfigurationException(); }
+    	catch (Exception e) {
+    		System.err.println("Cant create a document from the node !!!!");
+    		e.printStackTrace();
+    		throw new DocumentHandlingException("Can not create a document from the node", e);
+    	}
         return d;
     }
     
     /**
-     * Duplicates a document and put it in its own document
-     * @param d the XML document to be duplicated
-     * @return the document in its new document
-     * @throws ParserConfigurationException 
-     */   
-    public static Document duplicateDocument(Document d) 
-    	throws ParserConfigurationException {
-    	Document tmp = createDocument(toString(d));
-    	return tmp;
-    }
-    
-    /**
      * Duplicates a node and put it in its own document
      * @param node the XML node to be duplicated
      * @return the node (in its new document)
-     * @throws ParserConfigurationException 
      */   
-    public static Node duplicateNode(Node node) 
-    	throws ParserConfigurationException {
+    public static Node duplicateNode(Node node){
     	Document d = createEmptyDocument();
     	return d.appendChild(d.importNode(node,true));
-    }
-    
-    /**
-     * Duplicates a node and put it in its own document
-     * @param node the XML node to be duplicated
-     * @return the node (in its new document)
-     * @throws ParserConfigurationException 
-     */   
-    public static Document isolateNode(Node node) 
-    	throws ParserConfigurationException {
-    	Document d = createEmptyDocument();
-    	d.appendChild(d.importNode(node,true));
-    	return d;
     }
 
     /**
@@ -206,10 +179,10 @@ public class XMLhelper {
      * and appended to the parent node 
      * @param parent the parent node
      * @param xml the child node
-     * @return the new appended node
-     * @throws ParserConfigurationException if the child node (the xml string) can not be parsed
+     * @return the new appended node 
+     * @throws ParserException if the child node (the xml string) can not be parsed
      */
-    public static Node addChild(Node parent, String xml) throws ParserConfigurationException {
+    public static Node addChild(Node parent, String xml) throws ParserException{
 		Document d = XMLhelper.createDocument(xml);
 		return addChild(parent, d.getFirstChild());
     }
@@ -258,93 +231,67 @@ public class XMLhelper {
     public static void deleteNode(Node n) {
     	n.getParentNode().removeChild(n);
     }
-
+    
     /**
-     * Returns the root element of the XML DOM.
-     * This method does not check if there are many root elements
-     * @param doc the DOM document
-     * @return the root element of the XML DOM.
+     * This method takes an XPATH query and either a document or a node and returns a node matching the query
+     * @param xp the xpath query
+     * @param o the document or node
+     * @return a node matching the query
+     * @throws XpathException if an xpath exception is caught
      */
-    public static Element getRootElement(Document doc) {
-        return doc.getDocumentElement();
+    private static Node getNode(String xp, Object o){
+        try {
+			return (Node) xpath.evaluate(xp, o, XPathConstants.NODE);
+		} catch (XPathExpressionException e) {
+			System.err.println("XPATH expression: "+ xpath);
+			e.printStackTrace();
+			throw new XpathException(e);
+		}
     }
 
     /**
-     * Returns the node corresponding to the given xpath expression or null if there is no
-     * such node.
+     * Returns the node corresponding to the given xpath expression.
+     * If more than one node matches the XPATH expression, only the first one is returned.
      * @param xpath_expression the XPATH expression
      * @param doc the DOM document
      * @param newdoc if set to true, the resulting node will be duplicated and put in its own document
-     * @return the node corresponding to the given xpath expression or null if there is no
-     * such node
-     * @throws XPathExpressionException 
-     * @throws ParserConfigurationException 
-     * @throws DOMException 
+     * @return the node corresponding to the given xpath expression
+     * @throws NotFoundException if nothing matches the XPATH query
+     * @throws XpathException if an XPATH exception is caught
      */
-    public static Node getNode(String xpath_expression, Document doc, boolean newdoc) throws XPathExpressionException, ParserConfigurationException {
-        Node node = null;
-
-        XPath xpath = XPathFactory.newInstance().newXPath();
-        node = (Node) xpath.evaluate(xpath_expression, doc, XPathConstants.NODE);
-        if(newdoc && node!=null)
-        	node = duplicateNode(node);
-
-        return node;
+    public static Node getNode(String xpath_expression, Document doc, boolean newdoc) throws NotFoundException {
+        return getNode(xpath_expression, (Node) doc, newdoc);
     }
     
     /**
-     * Returns the node corresponding to the given xpath expression or null if there is no
-     * such node.
+     * Returns the node corresponding to the given xpath expression
      * @param xpath_expression the XPATH expression
      * @param n the node to search
      * @param newdoc if set to true, the resulting node will be duplicated and put in its own document
-     * @return the node corresponding to the given xpath expression or null if there is no
-     * such node
-     * @throws XPathExpressionException 
-     * @throws ParserConfigurationException 
-     * @throws DOMException 
+     * @return the node corresponding to the given xpath expression
+     * @throws NotFoundException if nothing matches the XPATH expression
+     * @throws XpathException if an XPATH exception is caught
      */
-    public static Node getNode(String xpath_expression, Node n, boolean newdoc) throws XPathExpressionException, ParserConfigurationException {
-        Node node = null;
+    public static Node getNode(String xpath_expression, Node n, boolean newdoc) throws NotFoundException {
+        Node node = getNode(xpath_expression, n);
 
-        XPath xpath = XPathFactory.newInstance().newXPath();
-        node = (Node) xpath.evaluate(xpath_expression, n, XPathConstants.NODE);
+        if(node==null)
+        	throw new NotFoundException("Cant find matching nodes for XPATH expression '"+xpath_expression+"'");
+        
         if(newdoc && node!=null)
         	node = duplicateNode(node);
         return node;
     }
     
-    /**
-     * Returns a new document corresponding to the given xpath expression or null if there is no
-     * such node.
-     * @param xpath_expression the XPATH expression
-     * @param doc the DOM document
-     * @return the document corresponding to the given xpath expression or null if there is no
-     * such node
-     * @throws XPathExpressionException 
-     */
-    public static Document getSubDocument(String xpath_expression, Document doc) throws XPathExpressionException {
-        Node node = null;
-        XPath xpath = XPathFactory.newInstance().newXPath();
-        node = (Node) xpath.evaluate(xpath_expression, doc, XPathConstants.NODE);
-        Document d = null;
-		try {
-			if(node!=null)
-				d = createDocument(node);
-		} catch (ParserConfigurationException e) {
-			throw new XPathExpressionException("");
-		}
-        return d;
-    }
-
     /**
      * Returns the combined attributes of multiple elements retrieved from an XPATH query
      * @param xpath_expression the XPATH expression
      * @param doc the DOM document
      * @return the attributes and their values in a ArrayList: 0:1st Attr name, 1:1st attr value, 2:2nd attr name,3:2nd attr value...
-     * @throws XPathExpressionException 
+     * @throws NotFoundException if nothing matches the given xpath expression
+     * @throws XpathException if an XPATH exception is caught
      */
-    public static ArrayList<String> getAttributeListFromElements(String xpath_expression, Document doc) throws XPathExpressionException {
+    public static ArrayList<String> getAttributeListFromElements(String xpath_expression, Document doc) throws NotFoundException{
     	ArrayList<String> table = new ArrayList<String>();
     	
     	NodeList list = getNodeList(xpath_expression, doc);
@@ -365,9 +312,10 @@ public class XMLhelper {
      * @param xpath_expression the XPATH expression
      * @param n the node to be searched
      * @return the attributes and their values in a ArrayList: 0:1st Attr name, 1:1st attr value, 2:2nd attr name,3:2nd attr value...
-     * @throws XPathExpressionException 
+     * @throws NotFoundException if nothing matches the given xpath expression
+     * @throws XpathException if an XPATH exception is caught 
      */
-    public static List<String> getAttributeListFromElements(String xpath_expression, Node n) throws XPathExpressionException {
+    public static List<String> getAttributeListFromElements(String xpath_expression, Node n) throws NotFoundException {
     	ArrayList<String> table = new ArrayList<String>();
     	
     	NodeList list = getNodeList(xpath_expression, n);
@@ -387,12 +335,11 @@ public class XMLhelper {
      * Returns the attributes of a single element retrieved from an XPATH query
      * @param xpath_expression the XPATH expression
      * @param doc the DOM document
-     * @return the attributes and their values in a ArrayList: 0:1st Attr name, 1:1st attr value, 2:2nd attr name,3:2nd attr value...  
-     * @throws XPathExpressionException 
-     * @throws ParserConfigurationException 
-     * @throws DOMException 
+     * @return the attributes and their values in a ArrayList: 0:1st Attr name, 1:1st attr value, 2:2nd attr name,3:2nd attr value...   
+     * @throws NotFoundException if nothing matches the given xpath expression
+     * @throws XpathException if an XPATH exception is caught 
      */
-    public static List<String> getAttributeListFromElement(String xpath_expression, Document doc) throws XPathExpressionException, DOMException, ParserConfigurationException {
+    public static List<String> getAttributeListFromElement(String xpath_expression, Document doc) throws NotFoundException{
     	ArrayList<String> table = new ArrayList<String>();
     	
 		Node node = getNode(xpath_expression, doc, false);
@@ -410,11 +357,11 @@ public class XMLhelper {
      * Returns the attributes of a single element retrieved from an XPATH query
      * @param xpath_expression the XPATH expression
      * @param n the node to be search
-     * @return the attributes and their values in a ArrayList: 0:1st Attr name, 1:1st attr value, 2:2nd attr name,3:2nd attr value...  
-     * @throws XPathExpressionException 
-     * @throws ParserConfigurationException 
+     * @return the attributes and their values in a ArrayList: 0:1st Attr name, 1:1st attr value, 2:2nd attr name,3:2nd attr value...
+     * @throws NotFoundException if nothing matches the given xpath expression
+     * @throws XpathException if an XPATH exception is caught   
      */
-    public static ArrayList<String> getAttributeListFromElement(String xpath_expression, Node n) throws XPathExpressionException, ParserConfigurationException {
+    public static ArrayList<String> getAttributeListFromElement(String xpath_expression, Node n) throws NotFoundException {
     	ArrayList<String> table = new ArrayList<String>();
     	
 		Node node = getNode(xpath_expression, n, false);
@@ -429,41 +376,21 @@ public class XMLhelper {
     }
     
     /**
-     * Returns a node's attribute using its name
-     * @param attr_name the name of the attribute whose value is to be returned
-     * @param n the node
-     * @return the value from the attribute
-     * @throws XPathExpressionException if there is an error in the XPATH expression, or the attribute cannot be found
-     */
-    public static String getAttributeFromName(String attr_name, Node n) throws XPathExpressionException {
-    	NamedNodeMap nm;
-    	Node node;
-    	
-    	if((nm = n.getAttributes()) !=null)
-    		if((node = nm.getNamedItem(attr_name))!=null)
-    			return node.getNodeValue();
-    	
-    	throw new XPathExpressionException("Cannot find attribute "+attr_name);
-    }
-    
-    /**
      * Returns an element's attribute using an XPATH query and the attribute's name 
      * @param xpath_expression the XPATH expression
      * @param attr_name the name of the attribute whose value is to be returned
      * @param doc the DOM document
      * @return the value of the attribute
-     * @throws XPathExpressionException if there is an error in the XPATH expression, or the attribute cannot be found
-     * @throws ParserConfigurationException if there is an error in the XPATH expression
-     * @throws DOMException if there is an error in the XPATH expression
+     * @throws XpathException if an XPATH exception is caught
+     * @throws NotFoundException if nothing matches the given xpath expression
      */
-    public static String getAttributeFromName(String xpath_expression, String attr_name, Document doc) throws XPathExpressionException, DOMException, ParserConfigurationException {
-    	Node n1,n2;
+    public static String getAttributeFromName(String xpath_expression, String attr_name, Document doc) throws NotFoundException, XpathException {
+    	Node n;
     	NamedNodeMap nm;
-    	if((n1=getNode(xpath_expression, doc, false))!=null)
-    		if((nm=n1.getAttributes())!=null)
-    			if((n2=nm.getNamedItem(attr_name))!=null)
-    				return n2.getNodeValue();
-    	throw new XPathExpressionException("Cannot find attribute "+attr_name);
+    	if((nm=getNode(xpath_expression, doc, false).getAttributes())!=null)
+    		if((n=nm.getNamedItem(attr_name))!=null)
+    			return n.getNodeValue();
+    	throw new NotFoundException("Cannot find attribute "+attr_name);
     }
     
     /**
@@ -472,18 +399,16 @@ public class XMLhelper {
      * @param attr_name the name of the attribute whose value is to be returned
      * @param n the node
      * @return the value of the attribute
-     * @throws XPathExpressionException if there is an error in the XPATH expression, or the attribute cannot be found 
-     * @throws ParserConfigurationException if there is an error in the XPATH expression
-     * @throws DOMException if there is an error in the XPATH expression
+     * @throws XPathException if an xpath expression is caught 
+     * @throws NotFoundException if nothing matches the given xpath expression
      */
-    public static String getAttributeFromName(String xpath_expression, String attr_name, Node n) throws XPathExpressionException, DOMException, ParserConfigurationException {
-    	Node n1,n2;
+    public static String getAttributeFromName(String xpath_expression, String attr_name, Node n) throws XPathExpressionException, DOMException, ParserConfigurationException, NotFoundException {
+    	Node node;
     	NamedNodeMap nm;
-    	if((n1=getNode(xpath_expression, n, false))!=null)
-    		if((nm=n1.getAttributes())!=null)
-    			if((n2=nm.getNamedItem(attr_name))!=null)
-    				return n2.getNodeValue();
-    	throw new XPathExpressionException("Cannot find attribute "+attr_name);
+   		if((nm=getNode(xpath_expression, n, false).getAttributes())!=null)
+   			if((node=nm.getNamedItem(attr_name))!=null)
+   				return node.getNodeValue();
+    	throw new NotFoundException("Cannot find attribute "+attr_name);
     }
     
     /**
@@ -493,75 +418,80 @@ public class XMLhelper {
      * @param val the value to be set for this attribute
      * @param n the node
      * @return the value of the attribute
-     * @throws XPathExpressionException if there is an error in the XPATH expression, or the attribute cannot be found 
-     * @throws ParserConfigurationException if there is an error in the XPATH expression
-     * @throws DOMException if there is an error in the XPATH expression
+     * @throws NotFoundException if nothing matches the given xpath expression
+     * @throws XPathException if an xpath exceptino is caught
      */
-    public static void setAttributeFromName(String xpath_expression, String attr_name, String val, Node n) throws XPathExpressionException, DOMException, ParserConfigurationException {
-    	Node n1,n2;
+    public static void setAttributeFromName(String xpath_expression, String attr_name, String val, Node n) throws NotFoundException {
+    	Node node;
     	NamedNodeMap nm;
-    	if((n1=getNode(xpath_expression, n, false))!=null)
-    		if((nm=n1.getAttributes())!=null)
-    			if((n2=nm.getNamedItem(attr_name))!=null) {
-    				n2.setNodeValue(val);
-    				return;
-    			}
-    	throw new XPathExpressionException("Cannot find attribute "+attr_name);
+   		if((nm=getNode(xpath_expression, n, false).getAttributes())!=null)
+   			if((node=nm.getNamedItem(attr_name))!=null) {
+   				node.setNodeValue(val);
+   				return;
+   			}
+    	throw new NotFoundException("Cannot find attribute "+attr_name);
     }
     
     /**
-     * Returns the node set corresponding to the given xpath expression or null if there is no
-     * such node.
+     * Returns the node set corresponding to the given xpath expression. If nothing matches the given
+     * xpath expression, a <code>NotFoundException</code> is thrown.
      * @param xpath_expression the XPATH expression
-     * @param n the ndoe to be searched
-     * @return the node set corresponding to the given xpath expression or null if there is no
-     * such node
-     * @throws XPathExpressionException 
+     * @param n the node to be searched
+     * @return the node set corresponding to the given xpath expression
+     * @throws NotFoundException if nothing matches the given xpath expression
+     * @throws XpathException if an XPATH exception is caught
      */
-    public static NodeList getNodeList(String xpath_expression, Node n)
-    throws XPathExpressionException {
+    public static NodeList getNodeList(String xpath_expression, Node n) throws NotFoundException {
         NodeList nodelist = null;
-        XPath xpath = XPathFactory.newInstance().newXPath();
-
-        nodelist = (NodeList) xpath.evaluate(xpath_expression, n, XPathConstants.NODESET);
+        
+        try {
+			nodelist = (NodeList) xpath.evaluate(xpath_expression, n, XPathConstants.NODESET);
+			if(nodelist==null)
+				throw new NotFoundException("Nothing matches xpath query '"+xpath_expression+"'");
+		} catch (XPathExpressionException e) {
+			System.err.println("Xpath expression: "+xpath_expression);
+			System.err.println("Node: "+toString(n));
+			e.printStackTrace();
+			throw new XpathException(e);
+		}
 
         return nodelist;
     }
     
     /**
-     * Returns the node set corresponding to the given xpath expression or null if there is no
-     * such node.
+     * Returns the node set corresponding to the given xpath expression. If no nodes match the given
+     * xpath expression, a <code>NotFoundException</code> is thrown.
      * @param xpath_expression the XPATH expression
      * @param doc the DOM document
-     * @return the node set corresponding to the given xpath expression or null if there is no
-     * such node
-     * @throws XPathExpressionException 
+     * @return the node set corresponding to the given xpath expression
+     * @throws NotFoundException if nothing matches the given xpath expression
+     * @throws XpathException if an XPATH exception is caught
      */
-    public static NodeList getNodeList(String xpath_expression, Document doc)
-    throws XPathExpressionException {
-        NodeList nodelist = null;
-        XPath xpath = XPathFactory.newInstance().newXPath();
-
-        nodelist = (NodeList) xpath.evaluate(xpath_expression, doc, XPathConstants.NODESET);
-
-        return nodelist;
+    public static NodeList getNodeList(String xpath_expression, Document doc) throws NotFoundException {
+        return getNodeList(xpath_expression, (Node) doc);
     }
 
     /**
-     * Returns the value of the node corresponding to the given xpath expression or null if there is no
-     * such node.
+     * Returns the value of the node corresponding to the given xpath expression
      * @param xpath_expression the XPATH expression
      * @param doc the document
      * @return the value of the node corresponding to the given xpath expression or null if there is no
      * such node.
-     * @throws XPathExpressionException 
+     * @throws NotFoundException if nothing matches the given xpath expression
+     * @throws XPathException if an xpath exception is caught 
      */
-    public static String getTextValue(String xpath_expression, Document doc)
-    throws XPathExpressionException {
-        if(evaluate(xpath_expression, doc)==true)
-        	return (String) XPathFactory.newInstance().newXPath().evaluate(xpath_expression, doc, XPathConstants.STRING);
-        else
-        	throw new XPathExpressionException("The xpath expression doesnt resolve to anything");
+    public static String getTextValue(String xpath_expression, Document doc) throws NotFoundException {
+        try {
+			if(evaluate(xpath_expression, doc)==true)
+				return (String) xpath.evaluate(xpath_expression, doc, XPathConstants.STRING);
+			else
+				throw new NotFoundException("The xpath expression doesnt resolve to anything");
+		} catch (XPathExpressionException e) {
+			System.err.println("Xpath expression: "+xpath_expression);
+			System.err.println("Document: "+toString(doc));
+			e.printStackTrace();
+			throw new XpathException(e);
+		}
     }
 
     /**
@@ -573,7 +503,7 @@ public class XMLhelper {
      * @return true if the exression can be evaluated, false if not.
      * @throws XPathExpressionException 
      */
-    public static boolean evaluate(String xpath_expression, Document doc) 
+    private static boolean evaluate(String xpath_expression, Document doc) 
     	throws XPathExpressionException {
         XPathFactory factory = XPathFactory.newInstance();
         XPath xpath = factory.newXPath();
@@ -617,31 +547,18 @@ public class XMLhelper {
      * @Returns a String representation of the DOM
      */
     public static String toString(Node n) {
-    	if(n==null) return "";
-    	try {
-			return toString(createDocument(n));
-		} catch (ParserConfigurationException e) {
-			System.out.println("Cant toString() this DOM doc !");;
-			e.printStackTrace();		
-			return "";
-		}
+		return toString(createDocument(n));
     }
     
     /**
      * This method takes an XML document as a string and formats it nicely
      * @param n the XML string
+     * @throws ParserException if the given string cant be parsed to an XML document
      * @throws TransformerFactoryConfigurationError 
      * @Returns a nicely formatted XML document as a string
      */
-    public static String toString(String n) {
-    	if(n==null) return "";
-    	try {
-			return toString(createDocument(n));
-		} catch (ParserConfigurationException e) {
-			System.out.println("Cant toString() this DOM doc !");;
-			e.printStackTrace();		
-			return "";
-		}
+    public static String toString(String n) throws ParserException {
+    	return toString(createDocument(n));
     }
 
     /**
@@ -656,45 +573,5 @@ public class XMLhelper {
         Transformer xformer = TransformerFactory.newInstance().newTransformer();
         xformer.transform(source, result);
     }
-    
-    public static void main(String[] args) 
-	throws ParserConfigurationException, XPathExpressionException {
-//		Document d;
-//		String xpath = "//parameters[Param[@name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" and @value=\"10.1C5AC9000800\"] and "
-//		+"Param[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" and @value=\"1wtree\"]]/parent::*";
-//		//String xpath = "//Param[@name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" and @value=\"10.1C5AC9000800\"]/parent::*/parent::* and //Param[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" and @value=\"1wtree\"]/parent::*/parent::*";
-//		//String xpath = "//Param[@name=\""+Sensor.SENSORADDRESSATTRIBUTE_TAG+"\" and @value=\"10.1C5AC9000800\"]/parent::*/parent::* and //Param[@name=\""+Sensor.PROTOCOLATTRIBUTE_TAG+"\" and @value=\"1wtree\"]/parent::*/parent::*";
-//		try {
-//			d = XMLhelper.createDocument(new File("/home/gilles/workspace/SAL/src/sensors.xml"));
-//			System.out.println("Xpath: "+xpath);
-//			System.out.println("Result:");
-//			
-//			NodeList nl = XMLhelper.getNodeList(xpath, d);
-//			for (int i = 0; i < nl.getLength(); i++) {
-//				System.out.println(XMLhelper.toString(nl.item(i)));
-//			}
-//			Node n = XMLhelper.getNode("//Sensor[@sid=\"1\"]", d, false);
-//			XMLhelper.setAttributeFromName("//Sensor[@sid=\"1\"]", "sid", "ABCDEF", d);
-//			System.out.println(XMLhelper.toString(n));
-//			
-//		} catch (Exception e) {
-//			System.out.println(e.toString());
-//			e.printStackTrace();
-//			throw new ParserConfigurationException();
-//		}
-//		
-		String s = "<Sensor sid=\"15\">\t\t<parameters>      <Param name=\"ProtocolName\" value=\"osData\" />\t"
-				+"<Param name=\"Address\" value=\"NiceTime\" >test\n"
-				+"<subParam1>test</subParam1>"
-				+"<subParam2><subsubParam1/>test</subParam2></Param>"
-				+"<Param name=\"SamplingInterval\" value=\"30\" />"
-				+"</parameters></Sensor>";
-		
-		Document d = XMLhelper.createDocument(s);
-		System.out.println(XMLhelper.toString(d));
-		System.out.println("nb param tags: " + XMLhelper.getTextValue("count(//Param)", d));
-		System.out.println(XMLhelper.toString(XMLhelper.getNode("/Sensor/parameters/Param[@name=\"Address\"]/*", d, true)));
-		//System.out.println("param1: " + XMLhelper.getTextValue("/Sensor/parameters/Param[@name=\"Address\"]/*", d));
-    	
-	}
 }
+

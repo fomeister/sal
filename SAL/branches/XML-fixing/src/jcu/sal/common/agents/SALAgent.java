@@ -4,11 +4,11 @@ import java.io.NotActiveException;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.exceptions.ParserException;
 
 public interface SALAgent {
 	/**
@@ -36,10 +36,10 @@ public interface SALAgent {
 	 * with a new one (the returned value). 
 	 * @param xml the sensor's XML configuration document
 	 * @return a string representing the sensor identifier
-	 * @throws ParserConfigurationException if the XML document cannot be parsed
+	 * @throws ParserException if the XML document cannot be parsed
 	 * @throws ConfigurationException if the XML document is incorrect
 	 */
-	public String addSensor(String xml) throws ConfigurationException, ParserConfigurationException;
+	public String addSensor(String xml) throws ConfigurationException, ParserException;
 	
 	/**
 	 * This method removes a sensor with the given identifier. Its configuration information is also removed from the
@@ -92,10 +92,10 @@ public interface SALAgent {
 	 * @param xml the protocol's XML configuration document
 	 * @param loadSensors set to true if the sensor configuration file should be checked for sensors associated with 
 	 * this protocol and create them.
-	 * @throws ParserConfigurationException if the XML document cannot be parsed
+	 * @throws ParserException if the XML document cannot be parsed
 	 * @throws ConfigurationException if the XML document is incorrect
 	 */
-	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserConfigurationException;
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserException;
 	
 	/**
 	 * This method removes a protocol given its ID. The protocol is first stopped so commands are no further 

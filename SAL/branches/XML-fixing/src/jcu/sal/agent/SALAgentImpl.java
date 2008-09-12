@@ -7,12 +7,12 @@ import java.io.NotActiveException;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -77,7 +77,7 @@ public class SALAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#addSensor(java.lang.String)
 	 */
-	public synchronized String addSensor(String xml) throws ConfigurationException, ParserConfigurationException {
+	public synchronized String addSensor(String xml) throws ConfigurationException, ParserException {
 		return sm.createComponent(new SMLDescription(xml)).getID().getName();
 	}
 
@@ -132,7 +132,7 @@ public class SALAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#addProtocol(java.lang.String, boolean)
 	 */
-	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserConfigurationException {
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserException {
 		synchronized (this) {
 			AbstractProtocol p = pm.createComponent(new ProtocolConfiguration(xml));
 			if(loadSensors) sm.loadSensorsFromConfig(p.getID());

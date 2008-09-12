@@ -5,8 +5,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 
-import javax.xml.xpath.XPathExpressionException;
-
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.utils.XMLhelper;
 
 import org.junit.After;
@@ -144,7 +143,7 @@ public class XMLhelperTest {
 	}
 
 	@Test
-	public void testGetTextValueStringDocument() throws XPathExpressionException {
+	public void testGetTextValueStringDocument() throws NotFoundException {
 		assertEquals(XMLhelper.getTextValue("count(//AbstractProtocol)", d), "5");
 		assertEquals(XMLhelper.getTextValue("//Argument[@name=\"bearing\"]", d), "180");
 	}

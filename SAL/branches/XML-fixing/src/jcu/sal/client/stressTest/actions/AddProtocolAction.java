@@ -4,9 +4,9 @@ import java.rmi.RemoteException;
 import java.util.Set;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
@@ -67,7 +67,7 @@ public class AddProtocolAction implements Action {
 			logger.info("Cant create protocol "+n1);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			logger.info("Cant create protocol "+n1);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
