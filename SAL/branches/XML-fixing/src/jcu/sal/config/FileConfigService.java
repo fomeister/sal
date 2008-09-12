@@ -14,8 +14,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.AlreadyPresentException;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
@@ -75,7 +76,8 @@ public class FileConfigService{
 	 * configuration files exist and are readable/writeable. It then loads their content in memory.
 	 * @param pc the full path to the platform configuration file
 	 * @param sc the full path to the sensor configuration file
-	 * @throws ConfigurationException if either file is unreadable, unwritable  or both
+	 * @throws ConfigurationException if either file is unreadable, unwritable (or both) or if they cant be
+	 * parsed to valid configuration data
 	 */
 	public synchronized void init(String pc, String sc) throws ConfigurationException{
 		File p = new File(pc);
@@ -94,7 +96,7 @@ public class FileConfigService{
 			try {writeDocumentToFile(p, ProtocolConfigurations.createEmptyXML());}
 			catch (IOException e) {
 				logger.error("Cant write an empty platform config file - " +e.getMessage());
-				throw new ConfigurationException("Cant create platform config file");
+				throw new ConfigurationException("Cant write to platform config file", e);
 			}
 		}
 
@@ -115,7 +117,7 @@ public class FileConfigService{
 			catch (Exception e) {
 				logger.error("Cant write an empty sensor config file - " +e.getMessage());
 				e.printStackTrace();
-				throw new ConfigurationException("Cant create sensor config file");
+				throw new ConfigurationException("Cant write to sensor config file", e);
 			}
 		}
 
@@ -137,11 +139,11 @@ public class FileConfigService{
 		} catch (ParserException e) {
 			logger.error("Could not parse the XML platform configuration file");
 			e.printStackTrace();
-			throw new ConfigurationException("Platform configuration file malformed");
+			throw new ConfigurationException("Platform configuration file malformed", e);
 		} catch (IOException e) {
 			logger.error("Could not find platform configuration file: " + e.getMessage());
 			e.printStackTrace();
-			throw new ConfigurationException("Platform configuration file not found");
+			throw new ConfigurationException("Platform configuration file not found", e);
 		}
 		
 		try {			
@@ -154,11 +156,11 @@ public class FileConfigService{
 		} catch (ParserException e) {
 			logger.error("Could not parse the XML sensor configuration file");
 			e.printStackTrace();
-			throw new ConfigurationException("Sensor configuration file malformed");
+			throw new ConfigurationException("Sensor configuration file malformed", e);
 		} catch (IOException e) {
 			logger.error("Could not find sensor configuration file: " + e.getMessage());
 			e.printStackTrace();
-			throw new ConfigurationException("Sensor configuration file not found");
+			throw new ConfigurationException("Sensor configuration file not found", e);
 		}
 		
 	}
@@ -174,12 +176,12 @@ public class FileConfigService{
 	/**
 	 * This method adds the given protocol configuration object to the platform config file
 	 * @param c the protocol config to be added
-	 * @throws ConfigurationException if the protocol config is already present in the platform config file
+	 * @throws AlreadyPresentException if the protocol config is already present in the platform config file
 	 */
-	public void addProtocol(ProtocolConfiguration c) throws ConfigurationException{
+	public void addProtocol(ProtocolConfiguration c) throws AlreadyPresentException{
 		synchronized(platformConfig){
 			if(!platformConfig.add(c))
-				throw new ConfigurationException("Platform config already has this protocol '"+c.getXMLString()+"'");
+				throw new AlreadyPresentException("Platform config already has this protocol '"+c.getXMLString()+"'");
 		}
 		pcChanged.set(true);
 	}
@@ -190,23 +192,23 @@ public class FileConfigService{
 	 * @param param the name of the configuration parameter
 	 * @param value the value of the configuration parameter
 	 * @return the matching protocol's configuration object 
-	 * @throws ConfigurationException if not found 
+	 * @throws NotFoundException if not found 
 	 */
-	public ProtocolConfiguration findProtocol(String param, String value) throws ConfigurationException{
+	public ProtocolConfiguration findProtocol(String param, String value) throws NotFoundException{
 		synchronized(platformConfig){
 			for(ProtocolConfiguration p: platformConfig)
 				if(p.getParameters().hasValue(param, value))
 					return p;
 		}
-		throw new ConfigurationException("No protocol with matching configuration found");
+		throw new NotFoundException("No protocol with matching configuration found");
 	}
 	
 	/**
 	 * This method removes the given protocol configuration from the protocol config file
 	 * @param pid the Id of the protocol to be remvoed
-	 * @throws ConfigurationException if the protocol doesnt exist in the current config file
+	 * @throws NotFoundException if the protocol doesnt exist in the current config file
 	 */
-	public void removeProtocol(ProtocolID pid) throws ConfigurationException{
+	public void removeProtocol(ProtocolID pid) throws NotFoundException{
 		synchronized(platformConfig){
 			for(Iterator<ProtocolConfiguration> i = platformConfig.iterator();i.hasNext();){
 				if(i.next().getID().equals(pid.getName())) {
@@ -217,18 +219,18 @@ public class FileConfigService{
 				}
 			}
 		}
-		throw new ConfigurationException("Protocol configuration for ID '"+pid.getName()+"' not found");
+		throw new NotFoundException("Protocol configuration for ID '"+pid.getName()+"' not found");
 	}
 	
 	/**
 	 * This method adds an SML description to the sensor config
 	 * @param s the SMl description to be added
-	 * @throws ConfigurationException if the given description is already present in the sensor config
+	 * @throws AlreadyPresentException if the given description is already present in the sensor config
 	 */
-	public void addSensor(SMLDescription s) throws ConfigurationException{
+	public void addSensor(SMLDescription s) throws AlreadyPresentException{
 		synchronized(sensorConfig){
 			if(!sensorConfig.add(s))
-				throw new ConfigurationException("Sensor config already has this sensor '"+s.getSMLString()+"'");
+				throw new AlreadyPresentException("Sensor config already has this sensor '"+s.getSMLString()+"'");
 		}
 		scChanged.set(true);
 	}
@@ -237,9 +239,9 @@ public class FileConfigService{
 	/**
 	 * This method removes the SML description from the sensor config file
 	 * @param sid the ID of the sensor to be removed
-	 * @throws ConfigurationException if the sensor doesnt exist in the current config file
+	 * @throws NotFoundException if the sensor doesnt exist in the current config file
 	 */
-	public void removeSensor(SensorID sid) throws ConfigurationException{
+	public void removeSensor(SensorID sid) throws NotFoundException{
 		synchronized(sensorConfig){
 			for(Iterator<SMLDescription>i = sensorConfig.iterator(); i.hasNext();){
 				if(i.next().getID().equals(sid.getName())) {
@@ -250,7 +252,7 @@ public class FileConfigService{
 				}
 			}
 		}
-		throw new ConfigurationException("Sensor configuration for ID '"+sid.getName()+"'not found");
+		throw new NotFoundException("Sensor configuration for ID '"+sid.getName()+"'not found");
 	}
 	
 	/**
@@ -292,15 +294,15 @@ public class FileConfigService{
 	 * config file for that sensor is returned. 
 	 * @param s the SML description whose parameters will be looked for in the sensor configuration file
 	 * @return a new SensorID as found in the configuration document
-	 * @throws ConfigurationException if the sensor Id cant be found
+	 * @throws NotFoundException if the sensor description cant be found
 	 */
-	public SensorID findSensor(SMLDescription s) throws ConfigurationException{
+	public SensorID findSensor(SMLDescription s) throws NotFoundException{
 		synchronized(sensorConfig){
 			for(SMLDescription t: sensorConfig)
 				if(t.isSame(s))
 					return new SensorID(t.getID());
 		}
-		throw new ConfigurationException("SML description not found");
+		throw new NotFoundException("SML description not found");
 	}
 	
 	/**
@@ -342,7 +344,7 @@ public class FileConfigService{
         out.close();
 	}
 	
-	private void writePCConfig() throws ConfigurationException, IOException {
+	private void writePCConfig() throws IOException {
 		ProtocolConfigurations pc;
 		synchronized(platformConfig){
 			pc = new ProtocolConfigurations(platformConfig);
@@ -351,7 +353,7 @@ public class FileConfigService{
 		writeDocumentToFile(platformConfigFile, pc.getXML());		
 	}
 	
-	private void writeSCConfig() throws ConfigurationException, IOException {
+	private void writeSCConfig() throws IOException {
 		SMLDescriptions sc;
 		synchronized(sensorConfig){
 			sc = new SMLDescriptions (sensorConfig);
@@ -390,9 +392,6 @@ public class FileConfigService{
 					if(pcChanged.compareAndSet(true, false)) {
 						try {
 							writePCConfig();
-						} catch (ConfigurationException e) {
-							logger.error("Cant write platform config");
-							e.printStackTrace();
 						} catch (IOException e) {
 							logger.error("Cant write platform config");
 							e.printStackTrace();
@@ -435,9 +434,6 @@ public class FileConfigService{
 					if(scChanged.compareAndSet(true, false))
 						try {
 							writeSCConfig();
-						} catch (ConfigurationException e) {
-							logger.error("Cant write sensor config");
-							e.printStackTrace();
 						} catch (IOException e) {
 							logger.error("Cant write sensor config");
 							e.printStackTrace();
