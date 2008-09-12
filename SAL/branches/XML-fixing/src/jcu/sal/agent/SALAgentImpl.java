@@ -46,9 +46,10 @@ public class SALAgentImpl implements SALAgent{
 		hp = HwProbeService.getService();
 
 	}
+	
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.agent.SALAgentInterface#init(java.lang.String, java.lang.String)
+	 * @see jcu.sal.agent.SALAgent#start(java.lang.String, java.lang.String)
 	 */
 	public void start(String pc, String sc) throws ConfigurationException {
 		pm.init(sc, pc);
@@ -60,7 +61,7 @@ public class SALAgentImpl implements SALAgent{
 	
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.agent.SALAgentInterface#stop()
+	 * @see jcu.sal.agent.SALAgent#stop()
 	 */
 	public void stop(){
 		hp.stopAll();
@@ -75,7 +76,7 @@ public class SALAgentImpl implements SALAgent{
 	
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.agent.SALAgentInterface#addSensor(java.lang.String)
+	 * @see jcu.sal.agent.SALAgent#addSensor(java.lang.String)
 	 */
 	public synchronized String addSensor(String xml) throws ConfigurationException, ParserException {
 		return sm.createComponent(new SMLDescription(xml)).getID().getName();

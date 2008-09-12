@@ -21,7 +21,7 @@ public interface SALAgent {
 	public void start(String pc, String sc) throws ConfigurationException;
 	
 	/**
-	 * This method stops the SAL agent
+	 * This method stops the SAL agent. It must be called if a previous call to <code>start()</code> was successful.
 	 *
 	 */
 	public void stop();
