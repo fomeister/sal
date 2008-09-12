@@ -5,10 +5,10 @@ import java.util.Set;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -61,9 +61,9 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * is passed as a string here.
 	 * @param xml a string representation of a valid SML description of a sensor
 	 * @throws ConfigurationException if the given XML document is nto a valid SML description
-	 * @throws ParserConfigurationException if the given strin isnt a valid XML document
+	 * @throws ParserException if the given strin isnt a valid XML document
 	 */
-	public SMLDescription(String xml) throws ConfigurationException, ParserConfigurationException{
+	public SMLDescription(String xml) throws ConfigurationException, ParserException{
 		this(XMLhelper.createDocument(xml));
 	}
 	
@@ -285,7 +285,7 @@ public class SMLDescription implements HWComponentConfiguration{
 	public Document getSML(){
 		try {
 			return XMLhelper.createDocument(getSMLString());
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			logger.error("error creating XML SML doc");
 		}
 		return null;

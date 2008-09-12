@@ -3,10 +3,10 @@ package jcu.sal.common.pcml;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -107,9 +107,9 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	 * document is passed as a String
 	 * @param xml the protocol XML configuration document
 	 * @throws ConfigurationException if the supplied XML document is not a valid protocol XML configuration document
-	 * @throws ParserConfigurationException if the supplied string isnt a valid XML document
+	 * @throws ParserException if the supplied string isnt a valid XML document
 	 */
-	public ProtocolConfiguration(String xml) throws ConfigurationException, ParserConfigurationException{
+	public ProtocolConfiguration(String xml) throws ConfigurationException, ParserException{
 		this(XMLhelper.createDocument(xml));
 	}
 	
@@ -248,7 +248,7 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	public Document getXML() {
 		try {
 			return XMLhelper.createDocument(getXMLString());
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			logger.error("We shouldnt be here");
 			return null;
 		}

@@ -1,23 +1,24 @@
 package jcu.sal.common.pcml;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.ParserException;
 
 import org.junit.Test;
 
 public class EndPointConfigurationTest {
 
 	@Test
-	public void testEndPointConfigurationStringStringParameters() throws ConfigurationException, ParserConfigurationException {
+	public void testEndPointConfigurationStringStringParameters() throws ConfigurationException, ParserException {
 		new EndPointConfiguration("name1", "type1", new Parameters("<"+Parameters.PARAMETERS_NODE+" />"));
 	}
 
 	@Test
-	public void testEndPointConfigurationDocument() throws ConfigurationException, ParserConfigurationException {
+	public void testEndPointConfigurationDocument() throws ConfigurationException, ParserException {
 		
 		//should pass
 		String ep = "<"+PCMLConstants.ENDPOINT_NODE+" "+PCMLConstants.ENDPOINT_NAME_ATTRIBUTE_NODE+"=\"testEP\" "
@@ -66,7 +67,7 @@ public class EndPointConfigurationTest {
 	}
 
 	@Test
-	public void testGetName() throws ConfigurationException, ParserConfigurationException {
+	public void testGetName() throws ConfigurationException, ParserException {
 		//should pass
 		String ep = "<"+PCMLConstants.ENDPOINT_NODE+" "+PCMLConstants.ENDPOINT_NAME_ATTRIBUTE_NODE+"=\"testEP\" "
 			+ PCMLConstants.ENDPOINT_TYPE_ATTRIBUTE_NODE+"=\"epType\" >"
@@ -86,7 +87,7 @@ public class EndPointConfigurationTest {
 	}
 
 	@Test
-	public void testGetType() throws ConfigurationException, ParserConfigurationException {
+	public void testGetType() throws ConfigurationException, ParserException {
 //		should pass
 		String ep = "<"+PCMLConstants.ENDPOINT_NODE+" "+PCMLConstants.ENDPOINT_NAME_ATTRIBUTE_NODE+"=\"testEP\" "
 			+ PCMLConstants.ENDPOINT_TYPE_ATTRIBUTE_NODE+"=\"epType\" >"
@@ -106,7 +107,7 @@ public class EndPointConfigurationTest {
 	}
 
 	@Test
-	public void testGetParameter() throws ConfigurationException, ParserConfigurationException {
+	public void testGetParameter() throws ConfigurationException, ParserException {
 //		should pass
 		String params = "<"+Parameters.PARAMETERS_NODE+">"
 			+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="

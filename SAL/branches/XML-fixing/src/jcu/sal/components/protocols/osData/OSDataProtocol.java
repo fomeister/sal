@@ -172,7 +172,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 			s = i.next();
 			d = supportedSensors.get(s);
 			if(!PlatformHelper.isFileReadable(d.file)) {
-				logger.error("Cant find file "+d.file);
+				logger.error("Cant read file '"+d.file+"' for sensor '"+s+"'");
 				i.remove();
 			} else
 				v.add(s);

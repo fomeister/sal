@@ -9,7 +9,6 @@ import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.client.stressTest.actions.Action;
 import jcu.sal.client.stressTest.actions.AddProtocolAction;
@@ -18,6 +17,7 @@ import jcu.sal.client.stressTest.actions.ExecuteSensorAction;
 import jcu.sal.client.stressTest.actions.RemoveProtocolAction;
 import jcu.sal.client.stressTest.actions.RemoveSensorAction;
 import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLDescription;
@@ -137,7 +137,7 @@ public class RmiClientDummyStressTest2{
 			c.stop();
 	}
 	
-	public void saveState() throws ConfigurationException, RemoteException, ParserConfigurationException{
+	public void saveState() throws ConfigurationException, RemoteException, ParserException{
 		protocolState = new ProtocolConfigurations(agent.listProtocols());
 		sensorState = new SMLDescriptions(agent.listSensors());
 	}
@@ -147,7 +147,7 @@ public class RmiClientDummyStressTest2{
 			agent.removeProtocol(pid, true);
 	}
 	
-	public void restoreState() throws ConfigurationException, RemoteException, ParserConfigurationException {
+	public void restoreState() throws ConfigurationException, RemoteException, ParserException {
 		for(ProtocolConfiguration p: protocolState.getConfigurations())
 			agent.addProtocol(p.getXMLString(), false);
 		

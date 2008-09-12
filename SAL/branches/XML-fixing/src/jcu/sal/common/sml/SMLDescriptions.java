@@ -5,9 +5,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -52,9 +52,9 @@ public class SMLDescriptions {
 	 * This constructor create an SMLDescriptions object from an SML descriptions XML document given as a string.
 	 * @param sml an SML descriptions XML document
 	 * @throws ConfigurationException if the XML document is not a valid SML document
-	 * @throws ParserConfigurationException if the string is not a valid XML document
+	 * @throws ParserException if the string is not a valid XML document
 	 */
-	public SMLDescriptions(String sml) throws ConfigurationException, ParserConfigurationException{
+	public SMLDescriptions(String sml) throws ConfigurationException, ParserException{
 		this(XMLhelper.createDocument(sml));
 	}
 	
@@ -68,22 +68,13 @@ public class SMLDescriptions {
 		NodeList n;
 		try {
 			n = XMLhelper.getNodeList(XPATH_SENSORS_DESC, d);
-		} catch (XPathExpressionException e) {
-			logger.error("Unable to parse the SML descriptions document:");
-			e.printStackTrace();
+		} catch (NotFoundException e) {
+			logger.error("No individual sml descriptions in this SML descriptions document:");
 			logger.error(XMLhelper.toString(d));
 			throw new ConfigurationException("Malformed SML descriptions document");
 		}
-		for (int i = 0; i < n.getLength(); i++) {
-			try {
-				addSMLDescription(new SMLDescription(XMLhelper.createDocument(n.item(i))));
-			} catch (ParserConfigurationException e) {
-				logger.error("error creating a document from node");
-				e.printStackTrace();
-				logger.error(XMLhelper.toString(n.item(i)));
-				throw new ConfigurationException("individual SML description malformed");
-			}
-		}
+		for (int i = 0; i < n.getLength(); i++) 
+			addSMLDescription(new SMLDescription(XMLhelper.createDocument(n.item(i))));
 	}
 	
 	private void addSMLDescription(SMLDescription s) throws ConfigurationException {
@@ -158,7 +149,7 @@ public class SMLDescriptions {
 	public Document getSML() {
 		try {
 			return XMLhelper.createDocument(getSMLString());
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			logger.error("error creating XML SML doc");
 		}
 		return null;
@@ -172,7 +163,7 @@ public class SMLDescriptions {
 	public static Document createEmptySML(){
 	try {
 			return XMLhelper.createDocument("<"+SMLConstants.SENSOR_CONF_NODE+" />\n");
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			logger.error("We shouldnt be here - cant create CML descriptions document");
 		}
 		return null;

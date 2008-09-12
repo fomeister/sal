@@ -5,9 +5,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -34,9 +34,9 @@ public class CMLDescriptions {
 	 * This constructor creates a new CML descriptions document from a CML descriptions XML document given as a string.
 	 * @param cml the CML descriptions XML document 
 	 * @throws ConfigurationException if the XML document is not a valid CML document
-	 * @throws ParserConfigurationException if the string is not a valid XML document
+	 * @throws ParserException if the string is not a valid XML document
 	 */
-	public CMLDescriptions(String cml) throws ConfigurationException, ParserConfigurationException {
+	public CMLDescriptions(String cml) throws ConfigurationException, ParserException {
 		this(XMLhelper.createDocument(cml));
 	}
 	
@@ -50,22 +50,14 @@ public class CMLDescriptions {
 		NodeList n;
 		try {
 			n = XMLhelper.getNodeList(CMLConstants.XPATH_CMD_DESC, c);
-		} catch (XPathExpressionException e) {
-			logger.error("Unable to parse the CML descriptions document:");
-			e.printStackTrace();
+		} catch (NotFoundException e) {
+			logger.error("No commands were found in the CML descriptions document:");
 			logger.error(XMLhelper.toString(c));
+			e.printStackTrace();
 			throw new ConfigurationException("Malformed CML descriptions document");
 		}
-		for (int i = 0; i < n.getLength(); i++) {
-			try {
-				addCMLDescription(new CMLDescription(XMLhelper.createDocument(n.item(i))));
-			} catch (ParserConfigurationException e) {
-				logger.error("error creating a document from node");
-				e.printStackTrace();
-				logger.error(XMLhelper.toString(n.item(i)));
-				throw new ConfigurationException("individual CML description malformed");
-			}
-		}
+		for (int i = 0; i < n.getLength(); i++)
+			addCMLDescription(new CMLDescription(XMLhelper.createDocument(n.item(i))));
 	}
 	
 	/**
@@ -156,7 +148,7 @@ public class CMLDescriptions {
 	public Document getXML() throws ConfigurationException{
 		try {
 			return XMLhelper.createDocument(getXMLString());
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			logger.error("cant create CML descriptions document");
 			throw new ConfigurationException();
 		}		

@@ -5,11 +5,11 @@ import java.util.Random;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.common.sml.SMLDescription;
@@ -84,7 +84,7 @@ public class AddSensorAction implements Action {
 			logger.info("sensor cant be created");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			logger.info("sensor cant be created");
 			// TODO Auto-generated catch block
 			e.printStackTrace();

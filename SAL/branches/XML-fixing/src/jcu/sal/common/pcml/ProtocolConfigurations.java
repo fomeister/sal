@@ -5,9 +5,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -96,22 +96,13 @@ public class ProtocolConfigurations {
 		NodeList n;
 		try {
 			n = XMLhelper.getNodeList(XPATH_PROTOCOL_DESC, d);
-		} catch (XPathExpressionException e) {
-			logger.error("Unable to parse the platform config document:");
-			e.printStackTrace();
+		} catch (NotFoundException e) {
+			logger.error("No individual protocol configuration sections in this platform config document:");
 			logger.error(XMLhelper.toString(d));
 			throw new ConfigurationException("Malformed platform config document");
 		}
-		for (int i = 0; i < n.getLength(); i++) {
-			try {
-				addProtocolConfiguration(new ProtocolConfiguration(XMLhelper.createDocument(n.item(i))));
-			} catch (ParserConfigurationException e) {
-				logger.error("error creating a document from node");
-				e.printStackTrace();
-				logger.error(XMLhelper.toString(n.item(i)));
-				throw new ConfigurationException("individual protocol configuration section malformed");
-			}
-		}
+		for (int i = 0; i < n.getLength(); i++)
+			addProtocolConfiguration(new ProtocolConfiguration(XMLhelper.createDocument(n.item(i))));
 	}
 	
 	/**
@@ -131,9 +122,9 @@ public class ProtocolConfigurations {
 	 * is passed as a String.
 	 * @param xml a valid PCML platform configuration document
 	 * @throws ConfigurationException if the XML document is not a valid PCML document
-	 * @throws ParserConfigurationException if the supplied string isnt a valid XML document
+	 * @throws ParserException if the supplied string isnt a valid XML document
 	 */
-	public ProtocolConfigurations(String xml) throws ConfigurationException, ParserConfigurationException{
+	public ProtocolConfigurations(String xml) throws ConfigurationException, ParserException{
 		this(XMLhelper.createDocument(xml));
 	}
 	
@@ -202,7 +193,7 @@ public class ProtocolConfigurations {
 	public Document getXML() {
 		try {
 			return XMLhelper.createDocument(getXMLString());
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			e.printStackTrace();
 			logger.error("We shouldnt be here - error creating PCML doc");
 			logger.error(getXMLString());
@@ -218,7 +209,7 @@ public class ProtocolConfigurations {
 	public static Document createEmptyXML(){
 	try {
 			return XMLhelper.createDocument("<"+PCMLConstants.PLATFORM_CONFIGURATION_NODE+" />\n");
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			e.printStackTrace();
 			logger.error("We shouldnt be here - cant create PCML document");
 		}

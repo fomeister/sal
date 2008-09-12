@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -192,7 +192,7 @@ public class CMLDescription {
 		} catch (NumberFormatException e) {
 			logger.error("Cant count how many arguments are needed for this command");
 			throw new ConfigurationException("Arguments section malformed");
-		} catch (XPathExpressionException e) {
+		} catch (NotFoundException e) {
 			/*
 			 * The <arguments> section is not mandatory if there are no argument
 			 */
@@ -252,7 +252,7 @@ public class CMLDescription {
 	public Document getXML(){
 		try {
 			return XMLhelper.createDocument(getXMLString());
-		} catch (ParserConfigurationException e) {
+		} catch (ParserException e) {
 			logger.error("error creating XML CML doc");
 		}
 		return null;

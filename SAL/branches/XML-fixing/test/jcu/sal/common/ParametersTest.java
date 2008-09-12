@@ -1,14 +1,15 @@
 package jcu.sal.common;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.exceptions.ParserException;
 
 import org.junit.Test;
 
@@ -24,7 +25,7 @@ public class ParametersTest {
 	}
 
 	@Test(expected=ConfigurationException.class)
-	public void testParametersString() throws ConfigurationException, ParserConfigurationException {
+	public void testParametersString() throws ConfigurationException, ParserException {
 		String d = "<"+Parameters.PARAMETERS_NODE+"/>";
 		try {
 			new Parameters(d);
@@ -88,7 +89,7 @@ public class ParametersTest {
 	}
 
 	@Test
-	public void testGetParameter() throws ConfigurationException, ParserConfigurationException {
+	public void testGetParameter() throws ConfigurationException, ParserException {
 		String d = "<test><child><child2><"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value1\" />"
@@ -110,7 +111,7 @@ public class ParametersTest {
 	}
 	
 	@Test
-	public void testEquals() throws ConfigurationException, ParserConfigurationException {
+	public void testEquals() throws ConfigurationException, ParserException {
 		String d = "<test><child><child2><"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value1\" />"

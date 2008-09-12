@@ -7,9 +7,9 @@ import java.util.HashSet;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.ParserException;
 
 import org.junit.Test;
 
@@ -108,7 +108,7 @@ public class ProtocolConfigurationsTest {
 							+"</"+PCMLConstants.PLATFORM_CONFIGURATION_NODE+">";
 
 	@Test
-	public void testProtocolConfigurationsListOfProtocolConfiguration() throws ConfigurationException, ParserConfigurationException {
+	public void testProtocolConfigurationsListOfProtocolConfiguration() throws ConfigurationException, ParserException {
 		Vector<ProtocolConfiguration> l = new Vector<ProtocolConfiguration>();
 		l.add(new ProtocolConfiguration(ep1));
 		l.add(new ProtocolConfiguration(ep2));
@@ -126,7 +126,7 @@ public class ProtocolConfigurationsTest {
 	}
 
 	@Test
-	public void testProtocolConfigurationsString() throws ConfigurationException, ParserConfigurationException {
+	public void testProtocolConfigurationsString() throws ConfigurationException, ParserException {
 		new ProtocolConfigurations(pcml1);
 		try {
 			new ProtocolConfigurations(pcml2);
@@ -144,7 +144,7 @@ public class ProtocolConfigurationsTest {
 	}
 
 	@Test
-	public void testGetPIDs() throws ConfigurationException, ParserConfigurationException {
+	public void testGetPIDs() throws ConfigurationException, ParserException {
 		ProtocolConfigurations p = new ProtocolConfigurations(pcml1);
 		HashSet<String> v = new HashSet<String>();
 		v.add("testProtocol1");
@@ -159,7 +159,7 @@ public class ProtocolConfigurationsTest {
 	}
 
 	@Test
-	public void testGetConfigurations() throws ConfigurationException, ParserConfigurationException {
+	public void testGetConfigurations() throws ConfigurationException, ParserException {
 		ProtocolConfigurations p = new ProtocolConfigurations(pcml1);
 		HashSet<ProtocolConfiguration> v = new HashSet<ProtocolConfiguration>();
 		v.add(new ProtocolConfiguration(ep1));
@@ -174,7 +174,7 @@ public class ProtocolConfigurationsTest {
 	}
 
 	@Test()
-	public void testGetDescription() throws ConfigurationException, ParserConfigurationException {
+	public void testGetDescription() throws ConfigurationException, ParserException {
 		ProtocolConfigurations p = new ProtocolConfigurations(pcml1);
 		assertTrue(p.getDescription("testProtocol1").equals(new ProtocolConfiguration(ep1)));
 		assertTrue(p.getDescription("testProtocol2").equals(new ProtocolConfiguration(ep2)));

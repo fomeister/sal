@@ -166,7 +166,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 			HashSet<SMLDescription> m = new HashSet<SMLDescription>();
 			synchronized(ctable){
 				for(Sensor s: ctable.values())
-					if(!onlyActive || (onlyActive && !s.isDisconnected()))
+					if(!s.isDisconnected())
 						m.add(s.getConfig());
 			}
 			return new SMLDescriptions(m);

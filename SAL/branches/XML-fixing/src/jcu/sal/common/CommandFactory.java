@@ -8,7 +8,6 @@ import java.util.Vector;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
 import jcu.sal.common.RMICommandFactory.RMICommand;
 import jcu.sal.common.cml.ArgumentType;
@@ -16,6 +15,7 @@ import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -280,10 +280,11 @@ public class CommandFactory {
 				try {
 					val = XMLhelper.getTextValue(CMLConstants.XPATH_CMD_INST_ARGUMENT+"[@"+CMLConstants.NAME_ATTRIBUTE+"=\""+name+"\"]", d);
 					addArgumentValue(name, val);
-				} catch (XPathExpressionException e1) {
-					//logger.debug("Cant find the value for argument '"+name+"' in the command instance CML doc");
 				} catch (NumberFormatException e2) {
 					logger.error("The string '"+val+"'for argument '"+name+"' cant be parsed to a "+t.getArgType());
+				} catch (NotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 		}

@@ -14,7 +14,6 @@ import java.util.Map;
 
 import javax.management.BadAttributeValueExpException;
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Response;
@@ -25,6 +24,7 @@ import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
 import jcu.sal.common.events.RMIEventHandler;
+import jcu.sal.common.exceptions.ParserException;
 
 public class RMIAgentImpl implements RMISALAgent {
 	private static class SALClient {
@@ -70,11 +70,11 @@ public class RMIAgentImpl implements RMISALAgent {
 		agent.stop();
 	}
 
-	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserConfigurationException {
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserException {
 		agent.addProtocol(xml, loadSensors);
 	}
 
-	public String addSensor(String xml) throws ConfigurationException, ParserConfigurationException {
+	public String addSensor(String xml) throws ConfigurationException, ParserException {
 		return agent.addSensor(xml);
 	}
 
