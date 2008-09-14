@@ -123,7 +123,7 @@ public class V4L2Protocol extends AbstractProtocol {
 		
 		cmls = CMLDescriptionStore.getStore();
 		//get the V4L2 controls
-		Control[] v4l2c = fg.getControls();
+		List<Control> v4l2c = fg.getControls();
 		ctrls = new Hashtable<String, Control>();
 		String key = CMLDescriptionStore.CCD_KEY, name, ctrlName, desc;
 		List<String> argNamesEmpty = new Vector<String>();
@@ -136,8 +136,8 @@ public class V4L2Protocol extends AbstractProtocol {
 		
 		ReturnType retInt = new ReturnType(CMLConstants.RET_TYPE_INT);
 		ReturnType retVoid = new ReturnType(CMLConstants.RET_TYPE_VOID);
-		for (int id = 0; id < v4l2c.length; id++) {
-			ctrlName = v4l2c[id].getName();
+		for (Control c: v4l2c) {
+			ctrlName = c.getName();
 			//add two commands to the CCD sensor for this control
 			//(one to set its value, the other to get its value)
 			//getValue command
@@ -150,7 +150,7 @@ public class V4L2Protocol extends AbstractProtocol {
 				e.printStackTrace();
 				throw new SALRunTimeException("trying to insert a duplicate element in CML table",e);
 			}
-			ctrls.put(String.valueOf(cid), v4l2c[id]);
+			ctrls.put(String.valueOf(cid), c);
 			
 			//setValue command
 			name = "set"+ctrlName.replace(" ", "");
@@ -162,7 +162,7 @@ public class V4L2Protocol extends AbstractProtocol {
 				e.printStackTrace();
 				throw new SALRunTimeException("trying to insert a duplicate element in CML table",e);
 			}
-			ctrls.put(String.valueOf(cid), v4l2c[id]);
+			ctrls.put(String.valueOf(cid), c);
 		}
 	}
 

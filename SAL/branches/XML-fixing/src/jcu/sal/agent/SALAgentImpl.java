@@ -9,7 +9,6 @@ import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.events.EventHandler;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
@@ -77,7 +76,7 @@ public class SALAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgent#addSensor(java.lang.String)
 	 */
-	public synchronized String addSensor(String xml) throws ParserException, SALDocumentException, ConfigurationException {
+	public synchronized String addSensor(String xml) throws SALDocumentException, ConfigurationException {
 		return sm.createComponent(new SMLDescription(xml)).getID().getName();
 	}
 
@@ -136,7 +135,7 @@ public class SALAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#addProtocol(java.lang.String, boolean)
 	 */
-	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserException, SALDocumentException {
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, SALDocumentException {
 		synchronized (this) {
 			AbstractProtocol p = pm.createComponent(new ProtocolConfiguration(xml));
 			if(loadSensors) sm.loadSensorsFromConfig(p.getID());

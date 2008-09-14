@@ -5,7 +5,6 @@ import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.events.EventHandler;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
 
@@ -35,11 +34,10 @@ public interface SALAgent {
 	 * with a new one (the returned value). 
 	 * @param xml the sensor's XML configuration document
 	 * @return a string representing the sensor identifier
-	 * @throws ParserException if the XML document cannot be parsed
-	 * @throws SALDocumentException if the SML document is incorrect
+	 * @throws SALDocumentException if the SML document is malformed
 	 * @throws ConfigurationException if the sensor cant be instantiated because of invalid configuration information
 	 */
-	public String addSensor(String xml) throws SALDocumentException, ParserException, ConfigurationException;
+	public String addSensor(String xml) throws SALDocumentException,  ConfigurationException;
 	
 	/**
 	 * This method removes a sensor with the given identifier. Its configuration information is also removed from the
@@ -94,11 +92,10 @@ public interface SALAgent {
 	 * @param xml the protocol's PCML configuration document
 	 * @param loadSensors set to true if the sensor configuration file should be checked for sensors associated with 
 	 * this protocol and create them.
-	 * @throws ParserException if the given string isnt a valid XML document
 	 * @throws ConfigurationException if the protocol cant be instantiated because of invalid configuration information
-	 * @throws SALDocumentException if the given PCML is invalid  
+	 * @throws SALDocumentException if the given PCML is malformed  
 	 */
-	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserException, SALDocumentException;
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, SALDocumentException;
 	
 	/**
 	 * This method removes a protocol given its ID. The protocol is first stopped so commands are no further 

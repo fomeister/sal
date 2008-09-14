@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
@@ -137,11 +136,7 @@ public class FileConfigService{
 			synchronized(platformConfig){
 				platformConfig = new ProtocolConfigurations(s.toString()).getConfigurations();
 			}
-		} catch (ParserException e) {
-			logger.error("Could not parse the XML platform configuration file");
-			e.printStackTrace();
-			throw new ConfigurationException("Platform configuration file malformed", e);
-		} catch (IOException e) {
+		}catch (IOException e) {
 			logger.error("Could not find platform configuration file");
 			e.printStackTrace();
 			throw new ConfigurationException("Platform configuration file not found", e);
@@ -158,10 +153,6 @@ public class FileConfigService{
 			synchronized(sensorConfig){
 				sensorConfig = new SMLDescriptions(s.toString()).getDescriptions();
 			}
-		} catch (ParserException e) {
-			logger.error("Could not parse the XML sensor configuration file");
-			e.printStackTrace();
-			throw new ConfigurationException("Sensor configuration file malformed", e);
 		} catch (IOException e) {
 			logger.error("Could not find sensor configuration file: " + e.getMessage());
 			e.printStackTrace();

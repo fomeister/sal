@@ -5,10 +5,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jcu.sal.common.exceptions.AlreadyPresentException;
-import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -35,9 +34,8 @@ public class CMLDescriptions {
 	 * This constructor creates a new CML descriptions document from a CML descriptions XML document given as a string.
 	 * @param cml the CML descriptions XML document 
 	 * @throws SALDocumentException if the XML document is not a valid CML document
-	 * @throws ParserException if the string is not a valid XML document
 	 */
-	public CMLDescriptions(String cml) throws SALDocumentException, ParserException {
+	public CMLDescriptions(String cml) throws SALDocumentException {
 		this(XMLhelper.createDocument(cml));
 	}
 	
@@ -149,14 +147,13 @@ public class CMLDescriptions {
 	/**
 	 * This method returns the CML descriptions document as a DOM document
 	 * @return the CML descriptions document as a DOM document
-	 * @throws ConfigurationException if the document cant be created
 	 */
-	public Document getXML() throws ConfigurationException{
+	public Document getXML(){
 		try {
 			return XMLhelper.createDocument(getXMLString());
-		} catch (ParserException e) {
+		} catch (SALDocumentException e) {
 			logger.error("cant create CML descriptions document");
-			throw new ConfigurationException();
+			throw new SALRunTimeException("Cant create the cml descriptions document",e);
 		}		
 	}
 

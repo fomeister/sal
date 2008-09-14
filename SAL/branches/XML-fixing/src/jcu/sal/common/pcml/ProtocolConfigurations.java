@@ -6,8 +6,8 @@ import java.util.Set;
 
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -127,9 +127,8 @@ public class ProtocolConfigurations {
 	 * is passed as a String.
 	 * @param xml a valid PCML platform configuration document
 	 * @throws SALDocumentException if the XML document is not a valid PCML document
-	 * @throws ParserException if the supplied string isnt a valid XML document
 	 */
-	public ProtocolConfigurations(String xml) throws SALDocumentException, ParserException{
+	public ProtocolConfigurations(String xml) throws SALDocumentException{
 		this(XMLhelper.createDocument(xml));
 	}
 	
@@ -198,12 +197,11 @@ public class ProtocolConfigurations {
 	public Document getXML() {
 		try {
 			return XMLhelper.createDocument(getXMLString());
-		} catch (ParserException e) {
+		} catch (SALDocumentException e) {
 			e.printStackTrace();
 			logger.error("We shouldnt be here - error creating PCML doc");
-			logger.error(getXMLString());
+			throw new SALRunTimeException("Cant create PCML document",e); 
 		}
-		return null;
 	}
 	
 	
@@ -214,11 +212,11 @@ public class ProtocolConfigurations {
 	public static Document createEmptyXML(){
 	try {
 			return XMLhelper.createDocument("<"+PCMLConstants.PLATFORM_CONFIGURATION_NODE+" />\n");
-		} catch (ParserException e) {
+		} catch (SALDocumentException e) {
 			e.printStackTrace();
 			logger.error("We shouldnt be here - cant create PCML document");
+			throw new SALRunTimeException("Cant create PCML document",e);
 		}
-		return null;
 	}
 
 	@Override

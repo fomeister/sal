@@ -22,7 +22,6 @@ import jcu.sal.common.events.EventHandler;
 import jcu.sal.common.events.RMIEventHandler;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
 
@@ -70,11 +69,11 @@ public class RMIAgentImpl implements RMISALAgent {
 		agent.stop();
 	}
 
-	public void addProtocol(String xml, boolean loadSensors) throws ParserException, ConfigurationException, SALDocumentException {
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, SALDocumentException {
 		agent.addProtocol(xml, loadSensors);
 	}
 
-	public String addSensor(String xml) throws ConfigurationException, ParserException, SALDocumentException {
+	public String addSensor(String xml) throws ConfigurationException, SALDocumentException {
 		return agent.addSensor(xml);
 	}
 

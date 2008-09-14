@@ -8,7 +8,6 @@ import java.util.Vector;
 
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.utils.Slog;
@@ -253,10 +252,10 @@ public class CMLDescription {
 	public Document getXML(){
 		try {
 			return XMLhelper.createDocument(getXMLString());
-		} catch (ParserException e) {
+		} catch (SALDocumentException e) {
 			logger.error("error creating XML CML doc");
+			throw new SALRunTimeException("Cant creat the CML document",e);
 		}
-		return null;
 	}
 	
 	/**

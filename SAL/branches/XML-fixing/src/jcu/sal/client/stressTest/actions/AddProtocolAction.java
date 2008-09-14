@@ -5,7 +5,6 @@ import java.util.Set;
 
 import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.common.pcml.ProtocolConfiguration;
@@ -67,11 +66,7 @@ public class AddProtocolAction implements Action {
 			logger.info("Cant create protocol "+n1);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (ParserException e) {
-			logger.info("we shoulnt be here - Cant create protocol "+n1);
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SALDocumentException e) {
+		}  catch (SALDocumentException e) {
 			logger.info("we shoulnt be here - Cant create protocol "+n1);
 			// TODO Auto-generated catch block
 			e.printStackTrace();

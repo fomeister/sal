@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -59,10 +58,9 @@ public class Parameters {
 	 * This constructor behaves eaxctly as <code>Parameters(Document d)</code> except that the DOM document is passed as a String
 	 * instead of a org.w3.DOM.Document object.
 	 * @param p the string representation of the DOM document
-	 * @throws ParserException if the given string isnt a valid XML document
 	 * @throws SALDocumentException if there isnt exactly one parameters section or if it is malformed
 	 */
-	public Parameters(String p) throws ParserException, SALDocumentException{
+	public Parameters(String p) throws SALDocumentException{
 		this(XMLhelper.createDocument(p));
 	}
 	
