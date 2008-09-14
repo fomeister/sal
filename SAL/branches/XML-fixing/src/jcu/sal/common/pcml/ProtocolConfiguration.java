@@ -1,8 +1,8 @@
 package jcu.sal.common.pcml;
 
 import jcu.sal.common.Parameters;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -103,9 +103,8 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	 * document is passed as a String
 	 * @param xml the protocol XML configuration document
 	 * @throws SALDocumentException if the supplied XML document is not a valid protocol XML configuration document
-	 * @throws ParserException if the supplied string isnt a valid XML document
 	 */
-	public ProtocolConfiguration(String xml) throws SALDocumentException, ParserException{
+	public ProtocolConfiguration(String xml) throws SALDocumentException{
 		this(XMLhelper.createDocument(xml));
 	}
 	
@@ -244,9 +243,9 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	public Document getXML() {
 		try {
 			return XMLhelper.createDocument(getXMLString());
-		} catch (ParserException e) {
+		} catch (SALDocumentException e) {
 			logger.error("We shouldnt be here");
-			return null;
+			throw new SALRunTimeException("cant create the PCML document",e);
 		}
 	}
 

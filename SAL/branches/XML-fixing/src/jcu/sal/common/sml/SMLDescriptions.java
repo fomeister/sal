@@ -4,12 +4,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -54,9 +53,8 @@ public class SMLDescriptions {
 	 * This constructor create an SMLDescriptions object from an SML descriptions XML document given as a string.
 	 * @param sml an SML descriptions XML document
 	 * @throws SALDocumentException if the XML document is not a valid SML document
-	 * @throws ParserException if the string is not a valid XML document
 	 */
-	public SMLDescriptions(String sml) throws SALDocumentException, ParserException{
+	public SMLDescriptions(String sml) throws SALDocumentException{
 		this(XMLhelper.createDocument(sml));
 	}
 	
@@ -156,10 +154,10 @@ public class SMLDescriptions {
 	public Document getSML() {
 		try {
 			return XMLhelper.createDocument(getSMLString());
-		} catch (ParserException e) {
+		} catch (SALDocumentException e) {
 			logger.error("error creating XML SML doc");
+			throw new SALRunTimeException("Cant create the SML document",e);
 		}
-		return null;
 	}
 	
 	
@@ -170,10 +168,10 @@ public class SMLDescriptions {
 	public static Document createEmptySML(){
 	try {
 			return XMLhelper.createDocument("<"+SMLConstants.SENSOR_CONF_NODE+" />\n");
-		} catch (ParserException e) {
-			logger.error("We shouldnt be here - cant create CML descriptions document");
+		} catch (SALDocumentException e) {
+			logger.error("We shouldnt be here - cant create SML descriptions document");
+			throw new SALRunTimeException("Cant create SML document",e);
 		}
-		return null;
 	}
 
 	@Override

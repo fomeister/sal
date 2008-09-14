@@ -7,8 +7,8 @@ import java.util.Vector;
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -61,9 +61,8 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * is passed as a string here.
 	 * @param xml a string representation of a valid SML description of a sensor
 	 * @throws SALDocumentException if the given XML document is not a valid SML description
-	 * @throws ParserException if the given string isnt a valid XML document
 	 */
-	public SMLDescription(String xml) throws SALDocumentException, ParserException{
+	public SMLDescription(String xml) throws SALDocumentException{
 		this(XMLhelper.createDocument(xml));
 	}
 	
@@ -283,10 +282,10 @@ public class SMLDescription implements HWComponentConfiguration{
 	public Document getSML(){
 		try {
 			return XMLhelper.createDocument(getSMLString());
-		} catch (ParserException e) {
+		} catch (SALDocumentException e) {
 			logger.error("error creating XML SML doc");
+			throw new SALRunTimeException("Error creating SML document",e);
 		}
-		return null;
 	}
 
 	@Override

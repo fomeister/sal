@@ -28,7 +28,7 @@ import javax.xml.xpath.XPathFactory;
 
 import jcu.sal.common.exceptions.DocumentHandlingException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.XpathException;
 
 import org.w3c.dom.Attr;
@@ -73,14 +73,14 @@ public class XMLhelper {
      * Creates a DOM document from an Input Stream
      * @param in the input stream
      * @return the DOM document
-     * @throws ParserException if the given stream isnt a valid XML document
+     * @throws SALDocumentException if the given stream isnt a valid XML document
      */
-    public static Document createDocument(InputStream in) throws ParserException {
+    public static Document createDocument(InputStream in) throws SALDocumentException {
     	try {
 	        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 	        return builder.parse(in);
     	} catch (Exception e) {
-    		throw new ParserException("Cant parse the input stream to an XML document");
+    		throw new SALDocumentException("Cant parse the input stream to an XML document");
     	}
     }
 
@@ -88,13 +88,13 @@ public class XMLhelper {
      * Creates a DOM document from a file
      * @param f the file
      * @return the DOM document
-     * @throws ParserException if the file cant be parsed to a valid XML document
+     * @throws SALDocumentException if the file cant be parsed to a valid XML document
      */
-    public static Document createDocument(File f) throws ParserException{
+    public static Document createDocument(File f) throws SALDocumentException{
     	try {
 			return createDocument(new FileInputStream(f));
 		} catch (FileNotFoundException e) {
-			throw new ParserException("Cant parse file contents (file: '"+f.getName()+"')",e);
+			throw new SALDocumentException("Cant parse file contents (file: '"+f.getName()+"')",e);
 		}
     }
     
@@ -102,14 +102,14 @@ public class XMLhelper {
      * Creates a DOM document from an XML string
      * @param xmlstr the XML string
      * @return the DOM document
-     * @throws ParserException If the string doesnt parse to a valid XML document
+     * @throws SALDocumentException If the string doesnt parse to a valid XML document
      */   
-    public static Document createDocument(String xmlstr) throws ParserException {
+    public static Document createDocument(String xmlstr) throws SALDocumentException {
     	try {
 	        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 	        return builder.parse(new InputSource(new StringReader(xmlstr)));
     	} catch (Exception e) {
-    		throw new ParserException("The string cant be parsed to a valid XMl document"	);
+    		throw new SALDocumentException("The string cant be parsed to a valid XMl document"	);
     	}
     }
     
@@ -180,9 +180,9 @@ public class XMLhelper {
      * @param parent the parent node
      * @param xml the child node
      * @return the new appended node 
-     * @throws ParserException if the child node (the xml string) can not be parsed
+     * @throws SALDocumentException if the child node (the xml string) can not be parsed
      */
-    public static Node addChild(Node parent, String xml) throws ParserException{
+    public static Node addChild(Node parent, String xml) throws SALDocumentException{
 		Document d = XMLhelper.createDocument(xml);
 		return addChild(parent, d.getFirstChild());
     }
@@ -553,11 +553,10 @@ public class XMLhelper {
     /**
      * This method takes an XML document as a string and formats it nicely
      * @param n the XML string
-     * @throws ParserException if the given string cant be parsed to an XML document
-     * @throws TransformerFactoryConfigurationError 
      * @Returns a nicely formatted XML document as a string
+     * @throws SALDocumentException if the given string cant be parsed to an XML document
      */
-    public static String toString(String n) throws ParserException {
+    public static String toString(String n) throws SALDocumentException {
     	return toString(createDocument(n));
     }
 

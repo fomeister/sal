@@ -7,7 +7,6 @@ import jcu.sal.common.Response;
 import jcu.sal.common.RMICommandFactory.RMICommand;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
 
@@ -45,11 +44,10 @@ public interface RMISALAgent extends Remote{
 	 * with a new one (the returned value).
 	 * @param xml the sensor's SML configuration document
 	 * @return a string representing the sensor identifier
-	 * @throws ParserException if the given string isnt a valid XML document
-	 * @throw SALDocumentException if the given SML document isnt valid
+	 * @throw SALDocumentException if the given SML document is malformed
 	 * @throws ConfigurationException if the sensor cant be instantiated because of invalid configuration information
 	 */
-	public String addSensor(String xml) throws SALDocumentException, ParserException, ConfigurationException, RemoteException;
+	public String addSensor(String xml) throws SALDocumentException, ConfigurationException, RemoteException;
 	
 	/**
 	 * This method removes a sensor with the given identifier. Its configuration information is also removed from the
@@ -105,11 +103,10 @@ public interface RMISALAgent extends Remote{
 	 * @param xml the protocol's PCML configuration document
 	 * @param loadSensors set to true if the sensor configuration file should be checked for sensors associated with 
 	 * this protocol and create them.
-	 * @throws ParserException if the given string isnt a valid XML document
-	 * @throws SALDocumentException if the given PCML document is invalid
+	 * @throws SALDocumentException if the given PCML document is malformed
 	 * @throws ConfigurationException if the protocol cant be instantiated because of invalid configuration information
 	 */
-	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserException, SALDocumentException, RemoteException;
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, SALDocumentException, RemoteException;
 	
 	/**
 	 * This method removes a protocol given its ID. The protocol is first stopped so commands are no further 

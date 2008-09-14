@@ -4,12 +4,10 @@ import java.rmi.RemoteException;
 import java.util.Random;
 import java.util.Vector;
 
-
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLConstants;
@@ -85,11 +83,7 @@ public class AddSensorAction implements Action {
 			logger.info("sensor cant be created");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (ParserException e) {
-			logger.info("we shouldnt be here - sensor cant be created");
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SALDocumentException e) {
+		}catch (SALDocumentException e) {
 			logger.info("we shouldnt be here - sensor cant be created");
 			// TODO Auto-generated catch block
 			e.printStackTrace();

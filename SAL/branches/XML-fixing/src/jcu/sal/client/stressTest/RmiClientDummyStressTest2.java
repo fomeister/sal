@@ -7,6 +7,7 @@ import java.rmi.registry.Registry;
 import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import jcu.sal.client.stressTest.actions.Action;
 import jcu.sal.client.stressTest.actions.AddProtocolAction;
 import jcu.sal.client.stressTest.actions.AddSensorAction;
@@ -16,7 +17,6 @@ import jcu.sal.client.stressTest.actions.RemoveSensorAction;
 import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.common.exceptions.ParserException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
@@ -137,7 +137,7 @@ public class RmiClientDummyStressTest2{
 			c.stop();
 	}
 	
-	public void saveState() throws RemoteException, ParserException, SALDocumentException{
+	public void saveState() throws RemoteException, SALDocumentException{
 		protocolState = new ProtocolConfigurations(agent.listProtocols());
 		sensorState = new SMLDescriptions(agent.listSensors());
 	}
@@ -147,7 +147,7 @@ public class RmiClientDummyStressTest2{
 			agent.removeProtocol(pid, true);
 	}
 	
-	public void restoreState() throws RemoteException, ParserException, SALDocumentException, ConfigurationException {
+	public void restoreState() throws RemoteException, SALDocumentException, ConfigurationException {
 		for(ProtocolConfiguration p: protocolState.getConfigurations())
 			agent.addProtocol(p.getXMLString(), false);
 		
