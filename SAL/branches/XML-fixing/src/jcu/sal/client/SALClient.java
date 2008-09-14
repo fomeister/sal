@@ -2,11 +2,9 @@ package jcu.sal.client;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.nio.channels.ClosedChannelException;
 import java.util.Hashtable;
 import java.util.Map;
 
-import javax.naming.ConfigurationException;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -24,11 +22,14 @@ import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.utils.XMLhelper;
 
-public class SALClient implements EventHandler<Event>, StreamCallback{
+public class SALClient implements EventHandler, StreamCallback{
 	private static final long serialVersionUID = -8376295971546676596L;
 	
 	public static class JpgMini {
@@ -81,7 +82,7 @@ public class SALClient implements EventHandler<Event>, StreamCallback{
 			agent.registerEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
-		} catch (ConfigurationException e2) {
+		} catch (NotFoundException e2) {
 			e2.printStackTrace();
 		}
 		agent.start(pc, sc);
@@ -223,7 +224,7 @@ public class SALClient implements EventHandler<Event>, StreamCallback{
 			agent.unregisterEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			e.printStackTrace();
 		}
 		agent.stop();
@@ -265,13 +266,10 @@ public class SALClient implements EventHandler<Event>, StreamCallback{
 		} else
 			n++;
 		try {
-				viewers.get(r.getSID()).setImage(r.getBytes());
-		} catch (ConfigurationException e) {
-				System.out.println("Stream from sensor "+r.getSID()+" returned an error");
-				viewers.remove(r.getSID()).close();
-			} catch (ClosedChannelException e) {
-				System.out.println("Stream from sensor "+r.getSID()+" completed");
-				viewers.remove(r.getSID()).close();
+			viewers.get(r.getSID()).setImage(r.getBytes());
+		} catch (SensorControlException e) {
+			System.out.println("Stream from sensor "+r.getSID()+" returned an error");
+			viewers.remove(r.getSID()).close();
 		}
 	}
 

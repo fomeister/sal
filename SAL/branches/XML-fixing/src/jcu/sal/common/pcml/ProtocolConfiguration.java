@@ -1,12 +1,8 @@
 package jcu.sal.common.pcml;
 
-import java.util.Vector;
-
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.Parameters;
-import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -93,9 +89,9 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	 * </Protocol>
 	 * </pre>
 	 * @param d the XML document representing the protocol configuration
-	 * @throws ConfigurationException if the XML document isnt a valid protocol configuration document
+	 * @throws SALDocumentException if the XML document isnt a valid protocol configuration document
 	 */
-	public ProtocolConfiguration(Document d) throws ConfigurationException{
+	public ProtocolConfiguration(Document d) throws SALDocumentException{
 		checkDocument(d);
 		parseNameType(d);
 		parseParameters(d);
@@ -106,45 +102,45 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	 * This constructor is identical to <code>ProtocolConfiguration(Document)</code> except that the XML configuration
 	 * document is passed as a String
 	 * @param xml the protocol XML configuration document
-	 * @throws ConfigurationException if the supplied XML document is not a valid protocol XML configuration document
+	 * @throws SALDocumentException if the supplied XML document is not a valid protocol XML configuration document
 	 * @throws ParserException if the supplied string isnt a valid XML document
 	 */
-	public ProtocolConfiguration(String xml) throws ConfigurationException, ParserException{
+	public ProtocolConfiguration(String xml) throws SALDocumentException, ParserException{
 		this(XMLhelper.createDocument(xml));
 	}
 	
 	/**
 	 * This method checks the supplied document to make sure it contains only one protocol configuration section
 	 * @param d the document to check
-	 * @throws ConfigurationException if the document contains more than one protocol configuration section or none.
+	 * @throws SALDocumentException if the document contains more than one protocol configuration section or none.
 	 */
-	private void checkDocument(Document d) throws ConfigurationException{
+	private void checkDocument(Document d) throws SALDocumentException{
 		int nb;
 		try {
 			nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_PROTOCOL+")", d));
-			if(nb!=1){
-				logger.error("There is more than one Protocol configuration section (found "+nb+") in this document");
-				logger.error(XMLhelper.toString(d));
-				throw new ConfigurationException();
-			}
 		} catch (Throwable t) {
 			logger.error("Cant check how many Protocol configuration sections are in this document");
-			throw new ConfigurationException();
+			throw new SALDocumentException("Malformed protocol config", t);
+		}
+		if(nb!=1){
+			logger.error("There is more than one Protocol configuration section (found "+nb+") in this document");
+			logger.error(XMLhelper.toString(d));
+			throw new SALDocumentException("Invalid protocol config section - "+nb+" protocol sections found");
 		}
 	}
 
 	/**
 	 * This method parses the supplid protocol configuration document and extracts the protocol name and type.
 	 * @param d the protocol configuration document
-	 * @throws ConfigurationException if the name or type cant be extracted
+	 * @throws SALDocumentException if the name or type cant be extracted
 	 */
-	private void parseNameType(Document d) throws ConfigurationException{
+	private void parseNameType(Document d) throws SALDocumentException{
 		try {
 			name = XMLhelper.getAttributeFromName(XPATH_PROTOCOL, PCMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, d);
 		} catch (Exception e) {
 			logger.error("Cant find attr '"+PCMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"' in protocol config XML doc");
 			logger.error(XMLhelper.toString(d));
-			throw new ConfigurationException();
+			throw new SALDocumentException("Cant find the name of the protocol",e);
 		}
 		
 		try {
@@ -152,28 +148,28 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 		} catch (Exception e) {
 			logger.error("Cant find attr '"+PCMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE+"' in protocol config XML doc");
 			logger.error(XMLhelper.toString(d));
-			throw new ConfigurationException();
+			throw new SALDocumentException("cant find the type of the protocol",e);
 		}
 	}
 	
 	/**
 	 * This method parses the supplied protocol configuartion document and extracts the parameters
 	 * @param d the XML document
-	 * @throws ConfigurationException if the parameters cant be found
+	 * @throws SALDocumentException if the parameters cant be found
 	 */
-	private void parseParameters(Document d) throws ConfigurationException{
+	private void parseParameters(Document d) throws SALDocumentException{
 		try {
 			Node n;
 			if((n = XMLhelper.getNode(XPATH_PROTOCOL+"/"+Parameters.PARAMETERS_NODE, d, true))!=null){
 				params = new Parameters(n.getOwnerDocument());
 			} else{
-				params = new Parameters(new Vector<Parameter>());
+				params = new Parameters();
 			}
 		} catch (Exception e) {
 			logger.error("Cant find the protocol parameters section in the protocol configuration doc");
 			logger.error(XMLhelper.toString(d));
 			e.printStackTrace();
-			throw new ConfigurationException("Cant extract the protocol parameters section ");
+			throw new SALDocumentException("Cant extract the protocol parameters section", e);
 		}
 	}
 	
@@ -181,9 +177,9 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	 * This method extracts the endpoint configuration section from the given document and builds a new
 	 * EndPointConfiguration object from it
 	 * @param d the protocol configuration XML document
-	 * @throws ConfigurationException if the EndPointConfiguration cant be instanciated
+	 * @throws SALDocumentException if the EndPointConfiguration cant be instanciated
 	 */
-	private void parseEndPointConfiguration(Document d) throws ConfigurationException{
+	private void parseEndPointConfiguration(Document d) throws SALDocumentException{
 		Node n;
 		try {
 			if((n = XMLhelper.getNode(XPATH_PROTOCOL+"/"+PCMLConstants.ENDPOINT_NODE, d, true))!=null) {
@@ -194,7 +190,7 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 		
 		logger.error("Cant find the endpoint configuration document in the protocol configuration doc");
 		logger.error(XMLhelper.toString(d));
-		throw new ConfigurationException("Cant extract the Endpoint config");		
+		throw new SALDocumentException("Cant extract the Endpoint config");		
 	}
 	
 	

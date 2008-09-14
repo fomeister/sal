@@ -10,10 +10,9 @@ import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -62,7 +61,7 @@ public class EventDispatcher implements Runnable{
 		}
 	}
 	
-	public void registerEventHandler(EventHandler e, String producer) throws ConfigurationException{
+	public void registerEventHandler(EventHandler e, String producer) throws NotFoundException{
 		synchronized (producers) {
 			if(producers.contains(producer)) {
 				synchronized(eventHandlers) {
@@ -73,34 +72,32 @@ public class EventDispatcher implements Runnable{
 				//logger.debug("Registered event handler "+e+" with producer: "+producer);
 			} else {
 				logger.error("No registered event producer with this name: "+producer);
-				throw new ConfigurationException();
+				throw new NotFoundException("No registered event producer with this name: "+producer);
 			}
 		}
 	}
 	
-	public void unregisterEventHandler(EventHandler e, String producer) throws ConfigurationException{
+	public void unregisterEventHandler(EventHandler e, String producer) throws NotFoundException{
 		synchronized (producers) {
 			if(producers.contains(producer)) {
 				synchronized(eventHandlers) {
 					if(!eventHandlers.get(producer).remove(e)) {
 						logger.error("Unregistering event handler "+e+" from producer: "+producer+" failed");
-						throw new ConfigurationException("No such event handler");
+						throw new NotFoundException("Registered event hanlder not found");
 					}
 					//else
 						//logger.debug("Unregistered event handler "+e+" from producer: "+producer);
 				}				
 			} else {
 				logger.error("No registered event producer with this name: "+producer);
-				throw new ConfigurationException();
+				throw new NotFoundException("No registered event producer with this name: "+producer);
 			}
 		}
 	}
 	
-	public void queueEvent(Event e) throws ConfigurationException{
-			if(!eventQueue.offer(e)){
+	public void queueEvent(Event e){
+			if(!eventQueue.offer(e))
 				logger.error("Cant queue event, queue full");
-				throw new ConfigurationException();
-			}
 			//logger.debug("Queued "+e);
 	}
 	
@@ -119,11 +116,10 @@ public class EventDispatcher implements Runnable{
 		//logger.debug("Event dispatcher thread exiting");
 	}
 	
-	@SuppressWarnings("unchecked")
-	public <T extends Event> void sendEvent(T e) {
+	public void sendEvent(Event e) {
 		List<EventHandler> l;
 		Iterator<EventHandler> iterh;
-		EventHandler<T> ev;
+		EventHandler ev;
 		l = eventHandlers.get(e.getProducer());
 		if(l!=null) {
 			iterh = l.iterator();

@@ -5,6 +5,7 @@ package jcu.sal.managers;
 
 import java.lang.reflect.Constructor;
 
+import jcu.sal.common.exceptions.ComponentInstantiationException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
@@ -43,7 +44,7 @@ public class EndPointManager extends AbstractManager<EndPoint, EndPointConfigura
 	 * @see jcu.sal.managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected EndPoint build(EndPointConfiguration config, Identifier id) throws InstantiationException {
+	protected EndPoint build(EndPointConfiguration config, Identifier id) throws ComponentInstantiationException {
 		EndPoint endPoint = null;
 		String type=config.getType();
 		EndPointID i = (EndPointID) id;
@@ -66,7 +67,7 @@ public class EndPointManager extends AbstractManager<EndPoint, EndPointConfigura
 			logger.error("Error in new Endpoint instanciation. XML doc:");
 			logger.error(config.getXMLString());
 			e.printStackTrace();
-			throw new InstantiationException();
+			throw new ComponentInstantiationException("Unable to instantiate component",e);
 		}
 		logger.debug("Created endPoint '"+i.getName()+"' - type: " +type);
 		return endPoint;

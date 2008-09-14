@@ -3,10 +3,10 @@ package jcu.sal.client.stressTest.actions;
 import java.rmi.RemoteException;
 import java.util.Set;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
@@ -62,13 +62,17 @@ public class AddProtocolAction implements Action {
 			agent.addProtocol(new ProtocolConfiguration(n1, type, new EndPointConfiguration("fs_"+i, FSEndPoint.ENDPOINT_TYPE)).getXMLString(),false);
 			//logger.info("protocol "+n1+" created");
 		} catch (ConfigurationException e) {
-			logger.info("protocol "+n1+" already exists");
+			logger.info("cant instanciate protocol "+n1);
 		} catch (RemoteException e) {
 			logger.info("Cant create protocol "+n1);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ParserException e) {
-			logger.info("Cant create protocol "+n1);
+			logger.info("we shoulnt be here - Cant create protocol "+n1);
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SALDocumentException e) {
+			logger.info("we shoulnt be here - Cant create protocol "+n1);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

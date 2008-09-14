@@ -3,10 +3,10 @@
  */
 package jcu.sal.components;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
+import jcu.sal.common.exceptions.ConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.NotFoundException;
 
 
 
@@ -39,12 +39,12 @@ public interface HWComponent {
 	public Parameters getParameters();
 	
 	/**
-	 * Retrieves a single configuration directive from theis component
+	 * Retrieves a single configuration directive from this component
 	 * @param key the directive's name
-	 * @throws BadAttributeValueExpException
+	 * @throws NotFoundException if no directive matches the given name
 	 * 
 	 */
-	public String getParameter(String directive) throws BadAttributeValueExpException;
+	public String getParameter(String directive) throws NotFoundException;
 	
 	/**
 	 * Starts this component: puts the component in a state where it can be used

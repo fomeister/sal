@@ -7,10 +7,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Vector;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.FSEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -46,8 +45,7 @@ public class DummyProtocol extends AbstractProtocol {
 	 * @see jcu.sal.components.protocols.AbstractProtocol#internal_getCMLStoreKey(jcu.sal.components.sensors.Sensor)
 	 */
 	@Override
-	protected String internal_getCMLStoreKey(Sensor s)
-			throws ConfigurationException {
+	protected String internal_getCMLStoreKey(Sensor s){
 		return CMLDescriptionStore.DUMMY_KEY;
 	}
 
@@ -65,7 +63,7 @@ public class DummyProtocol extends AbstractProtocol {
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
 		try { autoDetectionInterval = (getParameter("AutoDetect").equals("1") || getParameter("AutoDetect").equalsIgnoreCase("true")) ? -1 : 0;}
-		catch (BadAttributeValueExpException e) {autoDetectionInterval=0;}
+		catch (NotFoundException e) {autoDetectionInterval=0;}
 		cmls = CMLDescriptionStore.getStore();
 	}
 

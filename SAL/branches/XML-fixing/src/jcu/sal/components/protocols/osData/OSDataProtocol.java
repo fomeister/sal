@@ -10,10 +10,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SensorControlException;
+import jcu.sal.common.exceptions.SensorIOException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.FSEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -91,17 +92,17 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.Protocol#internal_parseConfig()
 	 */
-	protected void internal_parseConfig() throws ConfigurationException {
+	protected void internal_parseConfig(){
 		cmls = CMLDescriptionStore.getStore();
 		try {
 			supportedSensors.put(OSDataConstants.Temp1,new OSdata(getParameter(OSDataConstants.Temp1DataFile), null, 1, null, false));
-		} catch (BadAttributeValueExpException e) {}
+		} catch (NotFoundException e) {}
 		try {
 			supportedSensors.put(OSDataConstants.Temp2,new OSdata(getParameter(OSDataConstants.Temp2DataFile), null, 1, null, false));
-		} catch (BadAttributeValueExpException e) {}
+		} catch (NotFoundException e) {}
 		try {
 			supportedSensors.put(OSDataConstants.Temp3,new OSdata(getParameter(OSDataConstants.Temp3DataFile), null, 1, null, false));
-		} catch (BadAttributeValueExpException e) {}
+		} catch (NotFoundException e) {}
 		//logger.debug("OSData protocol configured");
 	}
 
@@ -150,7 +151,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 						return true;
 					} else
 						logger.debug("Supplied data file unreadable for sensor "+s.getNativeAddress());
-				} catch (BadAttributeValueExpException e) {
+				} catch (NotFoundException e) {
 					logger.debug("No data file supplied for sensor "+s.getNativeAddress());
 				}
 			}
@@ -172,7 +173,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 			s = i.next();
 			d = supportedSensors.get(s);
 			if(!PlatformHelper.isFileReadable(d.file)) {
-				logger.error("Cant read file '"+d.file+"' for sensor '"+s+"'");
+				logger.debug("Cant read file '"+d.file+"' for sensor '"+s+"'");
 				i.remove();
 			} else
 				v.add(s);
@@ -260,7 +261,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 
 	// TODO create an exception class for this instead of Exception
 	public static String GET_READING_METHOD = "getReading";
-	public byte[] getReading(Command c, Sensor s) throws IOException{
+	public byte[] getReading(Command c, Sensor s) throws SensorControlException{
 		OSdata d;
 		String ret;
 		if(s.getNativeAddress().equals(OSDataConstants.UserTime) || s.getNativeAddress().equals(OSDataConstants.NiceTime) || s.getNativeAddress().equals(OSDataConstants.SystemTime)|| s.getNativeAddress().equals(OSDataConstants.IdleTime)) {
@@ -268,14 +269,14 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 			if(ret.equals("-1")) { 
 				logger.error("couldnt run the command to get readings for sensor "+ s.toString());
 				s.disable();
-				throw new IOException("can read " +s.getNativeAddress()); 
+				throw new SensorIOException("Error while reading from " +s.getNativeAddress()); 
 			}
 		} else {
 			d = supportedSensors.get(s.getNativeAddress());
 			try { ret = PlatformHelper.getFieldFromFile(d.file, d.pattern, d.field, d.delim, d.translate); }
 			catch (IOException e) {
-				logger.error("couldnt get a reading for "+s.toString());
-				throw e;
+				logger.error("couldnt read value from sensor "+s.toString());
+				throw new SensorIOException("Error while reading value from sensor "+s.toString(),e);
 			}
 			if(s.getNativeAddress().equals(OSDataConstants.Temp1) || s.getNativeAddress().equals(OSDataConstants.Temp2) || s.getNativeAddress().equals(OSDataConstants.Temp3)){
 				ret = ret.substring(0, 2)+"."+ret.substring(2,4);

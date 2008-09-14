@@ -9,7 +9,9 @@ import java.util.Vector;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 
 import org.junit.Test;
 
@@ -25,7 +27,7 @@ public class ParametersTest {
 	}
 
 	@Test(expected=ConfigurationException.class)
-	public void testParametersString() throws ConfigurationException, ParserException {
+	public void testParametersString() throws ConfigurationException, ParserException, SALDocumentException {
 		String d = "<"+Parameters.PARAMETERS_NODE+"/>";
 		try {
 			new Parameters(d);
@@ -89,7 +91,7 @@ public class ParametersTest {
 	}
 
 	@Test
-	public void testGetParameter() throws ConfigurationException, ParserException {
+	public void testGetParameter() throws ConfigurationException, ParserException, NotFoundException, SALDocumentException {
 		String d = "<test><child><child2><"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value1\" />"
@@ -111,7 +113,7 @@ public class ParametersTest {
 	}
 	
 	@Test
-	public void testEquals() throws ConfigurationException, ParserException {
+	public void testEquals() throws ConfigurationException, ParserException, SALDocumentException {
 		String d = "<test><child><child2><"+Parameters.PARAMETERS_NODE+">"
 		+"<"+Parameters.PARAMETER_NODE+" "+Parameters.NAME_ATTRIBUTE_NODE+"="
 		+"\"name1\" "+Parameters.VALUE_ATTRIBUTE_NODE+"=\"value1\" />"

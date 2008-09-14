@@ -4,6 +4,7 @@
 package jcu.sal.common.exceptions;
 
 /**
+ * Exceptions of this class are raised when trying to add a duplicate element to a set.
  * @author gilles
  *
  */

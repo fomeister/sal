@@ -6,8 +6,7 @@ package jcu.sal.components.EndPoints;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
@@ -117,19 +116,19 @@ public abstract class EndPoint extends AbstractComponent<EndPointID, EndPointCon
 	
 	/**
 	 * Stops the endpoint.
-	 * this method should be overriden by Endpoints if more things need to be done 
+	 * this method should be overridden by Endpoints if more things need to be done 
 	 */
 	protected void internal_stop() {}
 	
 	/**
 	 * Starts the endpoint.
-	 * this method should be overriden by Endpoints if more things need to be done 
+	 * this method should be overridden by Endpoints if more things need to be done 
 	 */
 	protected void internal_start() throws ConfigurationException {}
 	
 	/**
 	 * Prepare the subclass to be removed 
-	 * this method should be overriden by Endpoints if more things need to be done 
+	 * this method should be overridden by Endpoints if more things need to be done 
 	 */
 	protected void internal_remove() {}
 	

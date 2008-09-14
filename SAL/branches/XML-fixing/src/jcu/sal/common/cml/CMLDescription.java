@@ -6,10 +6,11 @@ package jcu.sal.common.cml;
 import java.util.List;
 import java.util.Vector;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -42,7 +43,7 @@ public class CMLDescription {
 	
 	
 	/**
-	 * This method constructs a CML descpriton object
+	 * This method constructs a CML description object
 	 * @param mName the name of the method which should be called when a command instance matching this description is received
 	 * @param id the command id
 	 * @param name the name of the command
@@ -50,9 +51,10 @@ public class CMLDescription {
 	 * @param argTypes an array containing the argument types
 	 * @param argNames an array containing the argNames of the arguments
 	 * @param returnType the type of the return result
-	 * @throws ConfigurationException if the three arrays have different lengths,   
+	 * @throws SALRunTimeException if the three arrays have different lengths,   
 	 */
-	public CMLDescription(String methodName, Integer id, String name, String desc, List<ArgumentType> argTypes,  List<String> argNames, ReturnType returnType) throws ConfigurationException{
+	public CMLDescription(String methodName, Integer id, String name, String desc, List<ArgumentType> argTypes,
+			List<String> argNames, ReturnType returnType){
 		cid=id;
 		this.name = name;
 		this.desc = desc;
@@ -63,30 +65,29 @@ public class CMLDescription {
 		
 		if(argTypes.size()!=argNames.size()) {
 			logger.error("Error creating the CML doc: arguments number unequals somewhere");
-			throw new ConfigurationException("number of argument types different from number of argument names");
+			throw new SALRunTimeException("number of argument types different from number of argument names");
 		}
 
 	}
 	
 	/**
-	 * This method creates a new a CML descpritor object re-using the same description, argument types & argNames and return type
+	 * This method creates a new a CML description object re-using the same description, argument types & argNames and return type
 	 * as an existing description.
 	 * @param id the command id of the new description
 	 * @param name the name of the new command
 	 * @param existing the existing description whose description, argument types & argNames and return type will be reused
-	 * @throws ConfigurationException 
 	 */
-	public CMLDescription(Integer id, String name, CMLDescription existing) throws ConfigurationException{
+	public CMLDescription(Integer id, String name, CMLDescription existing){
 		this(existing.getMethodName(), id, name,existing.getDesc(), existing.getArgTypes(), existing.getArgNames(), existing.getReturnType() );
 	}
 	
 	/**
-	 * This method creates a new a CML descpriton object based on a given CML description document.
+	 * This method creates a new a CML description object based on a given CML description document.
 	 * @param existing the existing description
-	 * @throws ConfigurationException if the existing document cant be parsed or contains more than one CML description, ie
+	 * @throws SALDocumentException if the existing document cant be parsed or contains more than one CML description, ie
 	 * it is a CML descriptions document
 	 */
-	public CMLDescription(Document existing) throws ConfigurationException{
+	public CMLDescription(Document existing) throws SALDocumentException{
 		
 		checkDocument(existing);
 		parseName(existing);
@@ -102,36 +103,36 @@ public class CMLDescription {
 	/**
 	 * This method checks that there is only one CML description in the provided document
 	 * @param d the document to be checked
-	 * @throws ConfigurationException if the number of CML descriptions is not 1
+	 * @throws SALDocumentException if the number of CML descriptions is not 1
 	 */
-	private void checkDocument(Document d) throws ConfigurationException{
+	private void checkDocument(Document d) throws SALDocumentException{
 		try {
 			int nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_CMD_DESC+")", d));
 			if(nb!=1){
 				logger.error("There are too many CML descriptions ("+nb+") in this document");
 				logger.error(XMLhelper.toString(d));
-				throw new ConfigurationException("Too many CML descriptions ("+nb+") in this document, expected 1 only");
+				throw new SALDocumentException("Too many CML descriptions ("+nb+") in this document, expected 1 only");
 			}
 		} catch (Throwable t) {
 			logger.error("Cant check how many CML descriptions are in this document");
-			throw new ConfigurationException();
+			throw new SALDocumentException("Unable to check the CML description sections in this document", t);
 		}
 	}
 	
 	/**
-	 * This method parses the given CML descripton document and extracts the CID
+	 * This method parses the given CML description document and extracts the CID
 	 * @param d the CML description document
-	 * @throws ConfigurationException if the document cant be parsed
+	 * @throws SALDocumentException if the CID cant be parsed
 	 */
-	private void parseCID(Document d) throws ConfigurationException {
+	private void parseCID(Document d) throws SALDocumentException {
 		try {
 			cid = Integer.parseInt(XMLhelper.getAttributeFromName(XPATH_CMD_DESC, CMLConstants.CID_ATTRIBUTE, d));
 		} catch (NumberFormatException e) {
 			logger.error("CID is not a number");
-			throw new ConfigurationException("CID is not a number");
+			throw new SALDocumentException("CID is not a number",e);
 		} catch (Exception e) {
 			logger.error("Cant find CID in CMLdescription XML doc");
-			throw new ConfigurationException("Cant find CID in  XML doc");
+			throw new SALDocumentException("Cant find CID in CML doc", e);
 		}
 		
 	}
@@ -139,14 +140,14 @@ public class CMLDescription {
 	/**
 	 * This method parses the given CML description document and extracts the description
 	 * @param d the CML description document
-	 * @throws ConfigurationException if the document cant be parsed
+	 * @throws ConfigurationException if the description cant be parsed
 	 */
-	private void parseShortDescription(Document d) throws ConfigurationException {
+	private void parseShortDescription(Document d) throws SALDocumentException {
 		try {
 			desc = XMLhelper.getTextValue(XPATH_CMD_DESC_SHORT_DESC, d);
 		} catch (Exception e) {
 			logger.error("Cant parse the descrption in CMLdescription XML doc");
-			throw new ConfigurationException("Cant parse the descrption in XML doc");
+			throw new SALDocumentException("Cant parse the descrption in CML doc", e);
 		}
 		
 	}
@@ -154,44 +155,44 @@ public class CMLDescription {
 	/**
 	 * This method parses the given CML description document and extracts the name
 	 * @param d the CML description document
-	 * @throws ConfigurationException if the document cant be parsed
+	 * @throws SALDocumentException if the name cant be parsed
 	 */
-	private void parseName(Document d) throws ConfigurationException {
+	private void parseName(Document d) throws SALDocumentException {
 		try {
 			name = XMLhelper.getTextValue(XPATH_CMD_DESC_NAME, d);
 		} catch (Exception e) {
 			logger.error("Cant parse the name in CMLdescription XML doc");
-			throw new ConfigurationException("Cant parse the name in XML doc");
+			throw new SALDocumentException("Cant parse the name in cML doc",e) ;
 		}
 	}
 	
 	/**
 	 * This method parses the given CML description document and extracts the return type
 	 * @param d the CML description document
-	 * @throws ConfigurationException if the document cant be parsed
+	 * @throws SALDocumentException if the return type cant be parsed
 	 */
-	private void parseReturnType(Document d) throws ConfigurationException {
+	private void parseReturnType(Document d) throws SALDocumentException {
 		try {
 			returnType = new ReturnType(XMLhelper.getAttributeFromName(XPATH_CMD_DESC_RETURN_TYPE,CMLConstants.TYPE_ATTRIBUTE,  d));
 		} catch (Exception e) {
 			logger.error("Cant parse the return type in CMLdescription XML doc");
-			throw new ConfigurationException("Cant parse the return type in XML doc");
+			throw new SALDocumentException("Cant parse the return type in CML doc",e);
 		}
 	}
 	
 	/**
 	 * This method parses the given CML description document and extracts the argument types and argNames
 	 * @param d the CML description document
-	 * @throws ConfigurationException if the document cant be parsed
+	 * @throws SALDocumentException if the arguments cant be parsed
 	 */
-	private void parseArguments(Document d) throws ConfigurationException {
+	private void parseArguments(Document d) throws SALDocumentException {
 		int nbArgs;
 		
 		try {
 			nbArgs = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_CMD_DESC_ARGUMENT+")", d));
 		} catch (NumberFormatException e) {
 			logger.error("Cant count how many arguments are needed for this command");
-			throw new ConfigurationException("Arguments section malformed");
+			throw new SALDocumentException("Arguments section malformed", e);
 		} catch (NotFoundException e) {
 			/*
 			 * The <arguments> section is not mandatory if there are no argument
@@ -210,7 +211,7 @@ public class CMLDescription {
 //				logger.error("XPATH: "+XPATH_CMD_DESC_ARGUMENT+"["+(i+1)+"]");
 //				logger.error("Document: "+XMLhelper.toString(d));
 //				e.printStackTrace();
-				throw new ConfigurationException("Cant parse the argument name for argument '"+i+"'");
+				throw new SALDocumentException("Cant parse the argument name for argument '"+i+"'",e);
 			}
 			
 			try {
@@ -220,7 +221,7 @@ public class CMLDescription {
 //				logger.error("XPATH: "+XPATH_CMD_DESC_ARGUMENT+"["+(i+1)+"]");
 //				logger.error("Document: "+XMLhelper.toString(d));
 //				e.printStackTrace();
-				throw new ConfigurationException("Cant parse the argument type (or invaid argument type) for argument '"+i+"'");
+				throw new SALDocumentException("Cant parse the argument type (or invalid argument type) for argument '"+i+"'",e);
 			}
 		}
 	}
@@ -228,7 +229,7 @@ public class CMLDescription {
 	
 	/**
 	 * This method returns this CML description's document as a String
-	 * @return the CML descripon document as a String
+	 * @return the CML description document as a String
 	 */
 	public String getXMLString(){
 		String cml = "<"+CMLConstants.CMD_DESCRIPTION_TAG+" "+CMLConstants.CID_ATTRIBUTE+"=\""+cid.toString()+"\">\n"
@@ -247,7 +248,7 @@ public class CMLDescription {
 	
 	/**
 	 * This method returns this CML description's document
-	 * @return the CML descripor document
+	 * @return the CML description document
 	 */
 	public Document getXML(){
 		try {
@@ -259,7 +260,7 @@ public class CMLDescription {
 	}
 	
 	/**
-	 * This method returns this CML description's command identifer
+	 * This method returns this CML description's command identifier
 	 * @return this CML description's CID
 	 */
 	public Integer getCID(){
@@ -275,7 +276,7 @@ public class CMLDescription {
 	}
 	
 	/**
-	 * This method returns the name of the method associated with this CML descpriptor
+	 * This method returns the name of the method associated with this CML description
 	 * @return the method associated with this CML description
 	 */
 	public String getMethodName(){
@@ -328,11 +329,11 @@ public class CMLDescription {
 	 * @return the argument type for a given argument.
 	 * @throws ConfigurationException if the argument <code>"name"</code> does not exist
 	 */
-	public ArgumentType getArgType(String name) throws ConfigurationException{
+	public ArgumentType getArgType(String name) throws NotFoundException{
 		int pos = argNames.indexOf(name);
 		if(pos>=0)
 			return argTypes.get(pos);
-		throw new ConfigurationException("Argument '"+name+"' not found");
+		throw new NotFoundException("Argument '"+name+"' not found");
 	}
 
 	@Override

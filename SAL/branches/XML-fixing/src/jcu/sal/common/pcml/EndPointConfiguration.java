@@ -1,9 +1,8 @@
 package jcu.sal.common.pcml;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.Parameters;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -60,9 +59,9 @@ public class EndPointConfiguration implements HWComponentConfiguration{
 	 * </EndPoint>
 	 * </pre>
 	 * @param d the XML document representing the EndPoint configuration
-	 * @throws ConfigurationException if the XML document isnt a valid EndPoint configuration document
+	 * @throws SALDocumentException if the XML document isnt a valid EndPoint configuration document
 	 */
-	public EndPointConfiguration(Document d) throws ConfigurationException{
+	public EndPointConfiguration(Document d) throws SALDocumentException{
 		checkDocument(d);
 		parseDocumentNameType(d);
 		parseParameters(d);
@@ -72,60 +71,60 @@ public class EndPointConfiguration implements HWComponentConfiguration{
 	 * This method is identical to <code>EndPointConfiguration(Document d)</code> except that the document
 	 * is passed as a string.
 	 * @param xml the EndPoint configuration document
-	 * @throws ConfigurationException if the EndPoint configuration document isnt valid
+	 * @throws SALDocumentException if the EndPoint configuration document isnt valid
 	 * @throws ParserException if the supplied document isnt a valid XML document
 	 */
-	public EndPointConfiguration(String xml) throws ConfigurationException, ParserException{
+	public EndPointConfiguration(String xml) throws SALDocumentException, ParserException{
 		this(XMLhelper.createDocument(xml));
 	}
 	
 	/**
 	 * This method checks the supplied XML document to see if it contains only one EndPoint configuration section
 	 * @param d the XML document to be checked
-	 * @throws ConfigurationException if the document isnt a valid EndPoint configuration document
+	 * @throws SALDocumentException if the document isnt a valid EndPoint configuration document
 	 */
-	private void checkDocument(Document d) throws ConfigurationException{
+	private void checkDocument(Document d) throws SALDocumentException{
 		int nb;
 		try {
 			nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_ENDPOINT+")", d));
-			if(nb!=1){
-				logger.error("There is more than one EndPoint configuration section (found "+nb+") in this document");
-				logger.error(XMLhelper.toString(d));
-				throw new ConfigurationException();
-			}
 		} catch (Throwable t) {
 			logger.error("Cant check how many EndPoint configuration sections are in this document");
-			throw new ConfigurationException();
+			throw new SALDocumentException("Malformed EndPoint config document",t);
+		}
+		if(nb!=1){
+			logger.error("There is more than one EndPoint configuration section (found "+nb+") in this document");
+			logger.error(XMLhelper.toString(d));
+			throw new SALDocumentException("Invalid EndPoint configuration - "+nb+" config sections found");
 		}
 	}
 	
 	/**
 	 * This method parses the supplied EndPoint configuration document and exctracts the name and type
 	 * @param d the XML document
-	 * @throws ConfigurationException if either the name or the type of the EndPoint cant be found
+	 * @throws SALDocumentException if either the name or the type of the EndPoint cant be found
 	 */
-	private void parseDocumentNameType(Document d) throws ConfigurationException{
+	private void parseDocumentNameType(Document d) throws SALDocumentException{
 		try {
 			name = XMLhelper.getAttributeFromName(XPATH_ENDPOINT, PCMLConstants.ENDPOINT_NAME_ATTRIBUTE_NODE, d);
 		} catch (Exception e) {
 			logger.error("Cant find attr '"+PCMLConstants.ENDPOINT_NAME_ATTRIBUTE_NODE+"' in EP config XML doc");
-			throw new ConfigurationException();
+			throw new SALDocumentException("Cant find the name of the EndPoint",e);
 		}
 		
 		try {
 			type = XMLhelper.getAttributeFromName(XPATH_ENDPOINT, PCMLConstants.ENDPOINT_TYPE_ATTRIBUTE_NODE, d);
 		} catch (Exception e) {
 			logger.error("Cant find attr '"+PCMLConstants.ENDPOINT_TYPE_ATTRIBUTE_NODE+"' in EP config XML doc");
-			throw new ConfigurationException();
+			throw new SALDocumentException("Cant find the type of the endpoint", e);
 		}
 	}
 	
 	/**
 	 * This method parses the supplied EndPoint configuartion document and extracts the parameters
 	 * @param d the XML document
-	 * @throws ConfigurationException if the parameters cant be found
+	 * @throws SALDocumentException if the parameters cant be found
 	 */
-	private void parseParameters(Document d) throws ConfigurationException{
+	private void parseParameters(Document d) throws SALDocumentException{
 		params = new Parameters(d);
 	}
 	

@@ -10,10 +10,12 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SensorControlException;
+import jcu.sal.common.exceptions.SensorDisconnectedException;
+import jcu.sal.common.exceptions.UnsupportedCommandException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.UsbEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -45,6 +47,8 @@ public class OWFSProtocol extends AbstractProtocol{
 	public static String DS_10_FAMILY = "10.";
 	public static String DS_26_FAMILY = "26.";
 	
+	private String w1MountPoint;
+	
 	/**
 	 * Construct the OSDataProtocol object.
 	 * @throws ConfigurationException 
@@ -62,21 +66,20 @@ public class OWFSProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		String mtpt;
 		ProcessOutput c;
 
 		try {
-			mtpt = getParameter(OWFSMOUNTPOINTATTRIBUTE_TAG);
-			if(mtpt.length()==0) throw new BadAttributeValueExpException("Empty mount point directive...");
-			if(!PlatformHelper.isDir(mtpt)) {
+			w1MountPoint = getParameter(OWFSMOUNTPOINTATTRIBUTE_TAG);
+			if(w1MountPoint.length()==0) throw new NotFoundException("Empty mount point directive...");
+			if(!PlatformHelper.isDir(w1MountPoint)) {
 				//try creating it
 				logger.error("OWFS Mount point doesnt exist, try creating it");
-				if (! new File(mtpt).mkdirs()) throw new BadAttributeValueExpException("Cant create mount point");
+				if (! new File(w1MountPoint).mkdirs()) throw new NotFoundException("Cant create mount point");
 				logger.error("ok");
-			} else if(!PlatformHelper.isDirReadWrite(mtpt)) {
+			} else if(!PlatformHelper.isDirReadWrite(w1MountPoint)) {
 				//it is unlikely we have rights to change the permissions
 				logger.error("OWFS Mount point not readable/writeable");
-				throw new BadAttributeValueExpException("OWFS Mount point not readable/writeable");
+				throw new NotFoundException("OWFS Mount point not readable/writeable");
 			}
 
 			//Next, we check that OWFS is installed in the given directory
@@ -92,11 +95,11 @@ public class OWFSProtocol extends AbstractProtocol{
 		} catch (IOException e) {
 			logger.error("Could NOT run/read owfs");
 			e.printStackTrace();
-			throw new ConfigurationException("Could NOT run/read owfs");
-		} catch (BadAttributeValueExpException e) {
+			throw new ConfigurationException("Could NOT run/read owfs",e);
+		} catch (NotFoundException e) {
 			logger.error("incorrect OWFS configuration directives...");
 			e.printStackTrace();
-			throw new ConfigurationException("Could not setup OWFS protocol");
+			throw new ConfigurationException("Could not setup OWFS protocol",e);
 		}
 		cmls = CMLDescriptionStore.getStore();
 	}
@@ -150,7 +153,7 @@ public class OWFSProtocol extends AbstractProtocol{
 	protected boolean internal_probeSensor(Sensor s) {
 		try {
 			//logger.debug("Probing sensor " + s.getNativeAddress());
-			if(PlatformHelper.isDirReadable(getParameter(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+s.getNativeAddress())) {
+			if(PlatformHelper.isDirReadable(w1MountPoint+"/"+s.getNativeAddress())) {
 				s.enable();
 				//logger.debug("Sensor " + s.getNativeAddress()+ " present");
 				return true;
@@ -204,7 +207,7 @@ public class OWFSProtocol extends AbstractProtocol{
 							maxAdaptersSeen=n;
 						} catch (ConfigurationException e) {
 							logger.error("Unable to run owfs: "+e.getClass()+" - "+e.getMessage());
-							if(e.getCause()!=null) logger.error("caused by: "+e.getCause().getClass()+" - "+e.getCause().getMessage());
+							e.printStackTrace();
 						} 
 					} else {
 						//logger.debug("no need to restart OWFS to detect new adapter, max>adapternb");
@@ -256,7 +259,7 @@ public class OWFSProtocol extends AbstractProtocol{
 			}
 
 			while(++attempt<=OWFSSTART_MAX_ATTEMPTS && !started) {
-				c = PlatformHelper.captureOutputs(getParameter(OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+getParameter(OWFSProtocol.OWFSMOUNTPOINTATTRIBUTE_TAG), false);
+				c = PlatformHelper.captureOutputs(getParameter(OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+w1MountPoint, false);
 				BufferedReader r[] = c.getBuffers(); 
 				try {Thread.sleep(100);} catch (InterruptedException e) {}
 				//check stdout & stderr
@@ -289,7 +292,7 @@ public class OWFSProtocol extends AbstractProtocol{
 		} catch (IOException e) {
 			logger.error("Coudlnt run the OWFS process");
 			throw new ConfigurationException();
-		} catch (BadAttributeValueExpException e) {
+		} catch (NotFoundException e) {
 			logger.error("Cant find the 1w mount point / OWFS bin location");
 			throw new ConfigurationException();
 		}
@@ -303,23 +306,18 @@ public class OWFSProtocol extends AbstractProtocol{
 	@Override
 	protected List<String> detectConnectedSensors() {
 		List<String> v = new Vector<String>();
-		try {
-			File dir = new File(getParameter(OWFSMOUNTPOINTATTRIBUTE_TAG));
-		    String[] info = dir.list();
-		    if(info!=null) {
-			    for (int i = 0; i < info.length; i++) {
-			      if (info[i].indexOf(".") != 2) { // name doesn't match
-			        continue;
-			      }
-			      try { Integer.parseInt(info[i].substring(0,2)); } catch (NumberFormatException e) { continue; } 
-	
-			      if(!info[i].substring(0, 2).equals("81"))
-				      v.add(info[i]);
-			    }
+		File dir = new File(w1MountPoint);
+		String[] info = dir.list();
+		if(info!=null) {
+		    for (int i = 0; i < info.length; i++) {
+		      if (info[i].indexOf(".") != 2) { // name doesn't match
+		        continue;
+		      }
+		      try { Integer.parseInt(info[i].substring(0,2)); } catch (NumberFormatException e) { continue; } 
+
+		      if(!info[i].substring(0, 2).equals("81"))
+			      v.add(info[i]);
 		    }
-		} catch (BadAttributeValueExpException e) {
-			logger.error("bad mount point value");
-			e.printStackTrace();
 		}
 		return v;
 	}
@@ -332,10 +330,8 @@ public class OWFSProtocol extends AbstractProtocol{
 	/*
 	 * Command handling methods
 	 */
-
-	// TODO create an exception class for this instead of Exception
 	public static String GET_READING_METHOD = "getReading";
-	public byte[] getReading(Command c, Sensor s) throws IOException{
+	public byte[] getReading(Command c, Sensor s) throws SensorControlException{
 		if(getFamily(s).equals("10.")) {
 			//temperature sensor, read from temperature file
 			return getTemperature(c, s);
@@ -344,77 +340,77 @@ public class OWFSProtocol extends AbstractProtocol{
 			return getHumidity(c, s);
 		}
 		logger.error("1-wire sensor family not yet supported");
-		throw new IOException("1-wire Family not supported yet");
+		throw new UnsupportedCommandException("1-wire Family not supported yet");
 	}
 	
 	public static String GET_TEMPERATURE_METHOD = "getTemperature";
-	public byte[] getTemperature(Command c, Sensor s) throws IOException{
+	public byte[] getTemperature(Command c, Sensor s) throws SensorControlException{
 		if(getFamily(s).equals("10.") || getFamily(s).equals("26.")) {
 			//temperature sensor, read from temperature file
 			return getRawReading(s.getNativeAddress()+ "/" + "temperature");
 		}
 		logger.error("1-wire sensor family doesnot support this command");
-		throw new IOException("sensor doesnt support this command");
+		throw new UnsupportedCommandException("sensor doesnt support this command");
 	}
 	
 	public static String GET_HUMIDITY_METHOD = "getHumidity";
-	public byte[] getHumidity(Command c, Sensor s) throws IOException{
+	public byte[] getHumidity(Command c, Sensor s) throws SensorControlException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "humidity");
 		}
 		logger.error("1-wire sensor family doesnot support this command");
-		throw new IOException("sensor doesnt support this command");
+		throw new UnsupportedCommandException("sensor doesnt support this command");
 	}
 	
 	public static String GET_HIH400_METHOD = "getHumidityHIH4000";
-	public byte[] getHumidityHIH4000(Command c, Sensor s) throws IOException{
+	public byte[] getHumidityHIH4000(Command c, Sensor s) throws SensorControlException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "HIH4000/humidity");
 		}
 		logger.error("1-wire sensor family doesnot support this command");
-		throw new IOException("sensor doesnt support this command");
+		throw new UnsupportedCommandException("sensor doesnt support this command");
 	}
 	
 	public static String GET_HTM1735_METHOD = "getHumidityHTM1735";
-	public byte[] getHumidityHTM1735(Command c, Sensor s) throws IOException{
+	public byte[] getHumidityHTM1735(Command c, Sensor s) throws SensorControlException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "HTM1735/humidity");
 		}
 		logger.error("1-wire sensor family doesnot support this command");
-		throw new IOException("sensor doesnt support this command");
+		throw new UnsupportedCommandException("sensor doesnt support this command");
 	}
 	
 	public static String GET_VAD_METHOD = "getVAD";
-	public byte[] getVAD(Command c, Sensor s) throws IOException{
+	public byte[] getVAD(Command c, Sensor s) throws SensorControlException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "VAD");
 		}
 		logger.error("1-wire sensor family doesnot support this command");
-		throw new IOException("sensor doesnt support this command");
+		throw new UnsupportedCommandException("sensor doesnt support this command");
 	}
 	
 	public static String GET_VDD_METHOD = "getVDD";
-	public byte[] getVDD(Command c, Sensor s) throws IOException{
+	public byte[] getVDD(Command c, Sensor s) throws SensorControlException{
 		if(getFamily(s).equals("26.")) {
 			//Humidity sensor, read from humidityfile
 			return getRawReading(s.getNativeAddress()+ "/" + "VDD");
 		}
 		logger.error("1-wire sensor family doesnot support this command");
-		throw new IOException("sensor doesnt support this command");
+		throw new UnsupportedCommandException("sensor doesnt support this command");
 	}
 	
 	public static String GET_VIS_METHOD = "getVIS";
-	public byte[] getVIS(Command c, Sensor s) throws IOException{
+	public byte[] getVIS(Command c, Sensor s) throws SensorControlException{
 		if(getFamily(s).equals("26.")) {
-			//Humidity sensor, read from humidityfile
+			//Humidity sensor, read from humidity file
 			return getRawReading(s.getNativeAddress()+ "/" + "vis");
 		}
 		logger.error("1-wire sensor family doesnot support this command");
-		throw new IOException("sensor doesnt support this command");
+		throw new UnsupportedCommandException("sensor doesnt support this command");
 	}
 	
 	/**
@@ -423,14 +419,12 @@ public class OWFSProtocol extends AbstractProtocol{
 	 * @return the reading
 	 * @throws IOException if something goes wrong
 	 */
-	private byte[] getRawReading(String f) throws IOException {
+	private byte[] getRawReading(String f) throws SensorControlException {
 		try {
-			return PlatformHelper.readFromFile(getParameter(OWFSMOUNTPOINTATTRIBUTE_TAG)+"/"+f).getBytes();
-		} catch (BadAttributeValueExpException e) {
-			logger.error("Cant read from 1-wire sensor " +f);
-			logger.error("Most likely a wrong OWFS mount point in the OWFS XML config");
-			logger.error("Returned exception: "+e.getClass()+" - "+e.getMessage());
-			throw new IOException("Cant read from 1-wire sensor " +f);
+			return PlatformHelper.readFromFile(w1MountPoint+"/"+f).getBytes();
+		} catch (IOException e) {
+			logger.error("Error reading from "+f);
+			throw new SensorDisconnectedException("Error reading from "+f,e);
 		} 
 	}
 }

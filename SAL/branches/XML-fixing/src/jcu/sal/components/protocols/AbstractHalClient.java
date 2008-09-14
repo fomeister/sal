@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.Identifier;
 import jcu.sal.config.FileConfigService;
@@ -34,14 +34,14 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	}
 	
 	/**
-	 * This method returns whether a protocol of a given type is already isntanciated
+	 * This method returns whether a protocol of a given type is already instantiated
 	 * @param type the type of protocols
-	 * @return whether a protocol of a given type is already isntanciated
+	 * @return whether a protocol of a given type is already instantiated
 	 */
 	protected boolean isProtocolRunning(String type){
 		try {
 			return pm.getComponentsOfType(type).size()!=0;
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			return false;
 		}
 	}
@@ -61,7 +61,7 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 				id = i.next();
 				ret.put(id, pm.getComponent(id).getParameters());
 			}
-		} catch (ConfigurationException e){}
+		} catch (NotFoundException e){}
 			
 		return ret;
 	}
@@ -98,9 +98,9 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	 * @param param the parameter name
 	 * @param value the expected parameter value
 	 * @return the protocol configuration object , if found 
-	 * @throws ConfigurationException if not found
+	 * @throws NotFoundException if nothing matches the given values 
 	 */
-	protected ProtocolConfiguration findProtocolConfigFromFile(String param, String value) throws ConfigurationException {
+	protected ProtocolConfiguration findProtocolConfigFromFile(String param, String value) throws NotFoundException {
 		return FileConfigService.getService().findProtocol(param, value);
 	}
 	
@@ -113,8 +113,13 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 			throw new ConfigurationException();
 		}
 	}
-	
-	protected void removeProtocol(Identifier i) throws ConfigurationException{
+	/**
+	 * This method removes a protocol and its configuration
+	 * @param i the protocol identifier
+	 * @throws ConfigurationException if there is an error removing the configuration
+	 * @throws NotFoundException if no protocol matches the given id
+	 */
+	protected void removeProtocol(Identifier i) throws ConfigurationException, NotFoundException{
 		//logger.debug("Removing existing protocol "+i.toString());
 		pm.destroyComponent(i);
 		pm.removeProtocolConfig((ProtocolID) i, false);

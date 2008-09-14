@@ -10,8 +10,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
@@ -89,23 +88,15 @@ public class UsbEndPoint extends EndPoint{
 		} catch (IOException e) {
 			e.printStackTrace();
 			logger.error("Problem capturing output of lsusb");
-			throw new ConfigurationException("Did not detect USB ports");
+			throw new ConfigurationException("Did not detect USB ports", e);
 		} finally {
 			if(c!=null) c.destroyProcess();
 		}
 	}
 	
-	/**
-	 * Stops the endpoint.
-	 * this method should be overriden by Endpoints if more things need to be done 
-	 */
 	@Override
 	protected void internal_stop() {stopAutoDectectThread();}
 	
-	/**
-	 * Starts the endpoint.
-	 * this method should be overriden by Endpoints if more things need to be done 
-	 */
 	@Override
 	protected void internal_start() throws ConfigurationException {startAutoDectectThread();}
 	

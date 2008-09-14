@@ -4,7 +4,7 @@ import javax.naming.ConfigurationException;
 
 import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
-
+import jcu.sal.common.exceptions.NotFoundException;
 import junit.framework.TestCase;
 
 import org.junit.After;
@@ -61,32 +61,28 @@ public class TestEventDispatcher extends TestCase implements EventHandler {
 	}
 	
 	@Test
-	public void testRegisterUnregisterEventHandler() {
-		try {
-			assertTrue(ev.addProducer(producer));
-			ev.registerEventHandler(this, producer);
-			ev.unregisterEventHandler(this, producer);
-			assertFalse(ev.addProducer(producer));
-			assertTrue(ev.removeProducer(producer));
-		} catch (ConfigurationException e) {
-			fail("Got exception");
-		}
+	public void testRegisterUnregisterEventHandler() throws NotFoundException {
+		assertTrue(ev.addProducer(producer));
+		ev.registerEventHandler(this, producer);
+		ev.unregisterEventHandler(this, producer);
+		assertFalse(ev.addProducer(producer));
+		assertTrue(ev.removeProducer(producer));
 		
 		try {
 			ev.registerEventHandler(this, producer);
 			fail("Didnt get exception");
-		} catch (ConfigurationException e) {}
+		} catch (NotFoundException e) {}
 		
 		try {
 			assertTrue(ev.addProducer(producer));
 			ev.registerEventHandler(this, producer);
 			ev.unregisterEventHandler(this, producer);
-		} catch (ConfigurationException e) {fail("Got exception");}
+		} catch (NotFoundException e) {fail("Got exception");}
 		
 		try {
 			ev.unregisterEventHandler(this, producer);
 			fail("Didnt get exception");
-		} catch (ConfigurationException e) {}
+		} catch (NotFoundException e) {}
 	}
 
 	@Test
@@ -94,7 +90,7 @@ public class TestEventDispatcher extends TestCase implements EventHandler {
 		try {
 			assertTrue(ev.addProducer(producer));
 			ev.registerEventHandler(this, producer);
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			fail("Got exception");
 		}
 		while(type++ < NB_EVENTS){

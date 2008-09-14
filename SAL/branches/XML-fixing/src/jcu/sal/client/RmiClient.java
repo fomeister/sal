@@ -2,7 +2,6 @@ package jcu.sal.client;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.nio.channels.ClosedChannelException;
 import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
@@ -13,7 +12,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Hashtable;
 import java.util.Map;
 
-import javax.naming.ConfigurationException;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -30,6 +28,9 @@ import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.RMIStreamCallback;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.events.RMIEventHandler;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.utils.XMLhelper;
@@ -120,6 +121,8 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		} catch (RemoteException e) {
 			e.printStackTrace();
 			throw new ConfigurationException();
+		} catch (NotFoundException e) {
+			//cant register for event, we can keep going
 		}
 	}
 	
@@ -258,9 +261,8 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 			agent.unregisterEventHandler(RMIname, RMIname, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(RMIname, RMIname, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(RMIname, RMIname, Constants.SENSOR_STATE_PRODUCER_ID);
-		} catch (ConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (NotFoundException e) {
+			//cant unregister our event handler, keep going
 		}
 		
 		try {
@@ -315,11 +317,8 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		
 		try {
 			viewers.get(r.getSID()).setImage(r.getBytes());
-		} catch (ConfigurationException e) {
+		} catch (SensorControlException e) {
 			System.out.println("Stream from sensor "+r.getSID()+" returned an error");
-			viewers.remove(r.getSID());
-		} catch (ClosedChannelException e) {
-			System.out.println("Stream from sensor "+r.getSID()+" completed");
 			viewers.remove(r.getSID());
 		}
 	}
