@@ -4,10 +4,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -39,9 +39,9 @@ public class ProtocolConfigurations {
 	/**
 	 * This constructor creates a platform configuration object from individual protocol configuration objects
 	 * @param c a collection of protocol configuration objects
-	 * @throws ConfigurationException if two or more protocol configuration object have the same ID
+	 * @throws AlreadyPresentException if two or more protocol configuration object have the same ID
 	 */
-	public ProtocolConfigurations(Collection<ProtocolConfiguration> c) throws ConfigurationException {
+	public ProtocolConfigurations(Collection<ProtocolConfiguration> c) throws AlreadyPresentException {
 		this();
 		for(ProtocolConfiguration p: c)
 			addProtocolConfiguration(p);
@@ -58,31 +58,35 @@ public class ProtocolConfigurations {
 	/**
 	 * This constructor creates a platform configuration object from a valid PCML document
 	 * @param d a valid PCML document
-	 * @throws ConfigurationException if the supplied document is not a valid PCML document
+	 * @throws SALDocumentException if the given pcml document isnt valid
 	 */
-	public ProtocolConfigurations(Document d) throws ConfigurationException{
+	public ProtocolConfigurations(Document d) throws SALDocumentException{
 		this();
 		checkDocument(d);
-		parseDocument(d);
+		try {
+			parseDocument(d);
+		} catch (AlreadyPresentException e) {
+			throw new SALDocumentException("Cant parse the given PCML document",e);
+		}
 	}
 	
 	/**
 	 * This method checks the given XML document to see if it is a valid PCML document
 	 * @param d the document to be checked
-	 * @throws ConfigurationException if the check fails
+	 * @throws SALDocumentException if the check fails
 	 */
-	private void checkDocument(Document d) throws ConfigurationException{
+	private void checkDocument(Document d) throws SALDocumentException{
 		int nb;
 		try {
 			nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_CONFIG+")", d));
 		} catch (Throwable t) {
 			logger.error("Cant check how many platform config section are in this document");
-			throw new ConfigurationException("Malformed PCML document");
+			throw new SALDocumentException("Malformed PCML document",t);
 		}
 		if(nb!=1){
 			logger.error("Found "+nb+" platform config section in this document, there should be 1");
 			logger.error(XMLhelper.toString(d));
-			throw new ConfigurationException("Malformed PCML document");
+			throw new SALDocumentException("Malformed PCML document - "+nb+" config sections");
 		}
 	}
 	
@@ -90,16 +94,17 @@ public class ProtocolConfigurations {
 	 * This method parses the given PCML document and exctracts the individual protocol configuration section
 	 * and creates the matching protocol configuration objects
 	 * @param d the PCML document
-	 * @throws ConfigurationException if the PCML document is malformed
+	 * @throws SALDocumentException if the PCML document is malformed
+	 * @throws AlreadyPresentException if there are duplicate protocol configuration sections 
 	 */
-	private void parseDocument(Document d) throws ConfigurationException{
+	private void parseDocument(Document d) throws SALDocumentException, AlreadyPresentException{
 		NodeList n;
 		try {
 			n = XMLhelper.getNodeList(XPATH_PROTOCOL_DESC, d);
 		} catch (NotFoundException e) {
 			logger.error("No individual protocol configuration sections in this platform config document:");
 			logger.error(XMLhelper.toString(d));
-			throw new ConfigurationException("Malformed platform config document");
+			throw new SALDocumentException("Malformed platform config document - no protocol config sections");
 		}
 		for (int i = 0; i < n.getLength(); i++)
 			addProtocolConfiguration(new ProtocolConfiguration(XMLhelper.createDocument(n.item(i))));
@@ -108,12 +113,12 @@ public class ProtocolConfigurations {
 	/**
 	 * This method adds a protocol configuration to this object 
 	 * @param p the protocol configuration to be added
-	 * @throw ConfigurationException if the element already exists
+	 * @throw AlreadyPresentException if the element already exists
 	 */
-	private void addProtocolConfiguration(ProtocolConfiguration p) throws ConfigurationException {
+	private void addProtocolConfiguration(ProtocolConfiguration p) throws AlreadyPresentException {
 		if(!configs.add(p)){
 			logger.error("The platform configuration document contains protocols with the same name '"+p.getID()+"'");
-			throw new ConfigurationException("2 or more individual protocols share the same name '"+p.getID()+"'");
+			throw new AlreadyPresentException("2 or more individual protocols share the same name '"+p.getID()+"'");
 		}
 	}
 	
@@ -121,10 +126,10 @@ public class ProtocolConfigurations {
 	 * This constructor is identical to <code>ProtocolConfigurations(Document)</code> except that the XML document
 	 * is passed as a String.
 	 * @param xml a valid PCML platform configuration document
-	 * @throws ConfigurationException if the XML document is not a valid PCML document
+	 * @throws SALDocumentException if the XML document is not a valid PCML document
 	 * @throws ParserException if the supplied string isnt a valid XML document
 	 */
-	public ProtocolConfigurations(String xml) throws ConfigurationException, ParserException{
+	public ProtocolConfigurations(String xml) throws SALDocumentException, ParserException{
 		this(XMLhelper.createDocument(xml));
 	}
 	
@@ -153,14 +158,14 @@ public class ProtocolConfigurations {
 	 * This method returns an protocol configuration object, given its protocol ID
 	 * @param pid the protcol ID
 	 * @return a ProtocolConfiguration object
-	 * @throws ConfigurationException if the protocol ID cant be found
+	 * @throws NotFoundException if the protocol ID cant be found
 	 */
-	public ProtocolConfiguration getDescription(String pid) throws ConfigurationException {
+	public ProtocolConfiguration getDescription(String pid) throws NotFoundException {
 		for(ProtocolConfiguration p: configs)
 			if(p.getID().equals(pid))
 				return p;
 			
-		throw new ConfigurationException("no such protocol ID");
+		throw new NotFoundException("no such protocol ID");
 	}
 	
 	/**

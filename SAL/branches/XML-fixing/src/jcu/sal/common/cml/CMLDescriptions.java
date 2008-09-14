@@ -4,10 +4,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.AlreadyPresentException;
+import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -33,19 +34,19 @@ public class CMLDescriptions {
 	/**
 	 * This constructor creates a new CML descriptions document from a CML descriptions XML document given as a string.
 	 * @param cml the CML descriptions XML document 
-	 * @throws ConfigurationException if the XML document is not a valid CML document
+	 * @throws SALDocumentException if the XML document is not a valid CML document
 	 * @throws ParserException if the string is not a valid XML document
 	 */
-	public CMLDescriptions(String cml) throws ConfigurationException, ParserException {
+	public CMLDescriptions(String cml) throws SALDocumentException, ParserException {
 		this(XMLhelper.createDocument(cml));
 	}
 	
 	/**
 	 * This constructor builds a new CML descriptions object from an XML document
 	 * @param c the XML CML descriptions document
-	 * @throws ConfigurationException if the XML document is not a valid CML document
+	 * @throws SALDocumentException if the XML document is not a valid CML document
 	 */
-	public CMLDescriptions(Document c) throws ConfigurationException{
+	public CMLDescriptions(Document c) throws SALDocumentException{
 		this();
 		NodeList n;
 		try {
@@ -54,15 +55,20 @@ public class CMLDescriptions {
 			logger.error("No commands were found in the CML descriptions document:");
 			logger.error(XMLhelper.toString(c));
 			e.printStackTrace();
-			throw new ConfigurationException("Malformed CML descriptions document");
+			throw new SALDocumentException("Malformed CML descriptions document",e);
 		}
 		for (int i = 0; i < n.getLength(); i++)
-			addCMLDescription(new CMLDescription(XMLhelper.createDocument(n.item(i))));
+			try {
+				addCMLDescription(new CMLDescription(XMLhelper.createDocument(n.item(i))));
+			} catch (AlreadyPresentException e) {
+				logger.error("Malformed CML descriptions document");
+				throw new SALDocumentException("Malformed CML descriptions document", e);
+			}
 	}
 	
 	/**
 	 * This constructor builds a new CML descriptions object from the given set
-	 * @param c a set of CML despcription objects to be groupped in a CML descriptions object
+	 * @param c a set of CML description objects to be grouped in a CML descriptions object
 	 */
 	public CMLDescriptions(Set<CMLDescription> c){
 		cmls = new HashSet<CMLDescription>(c);
@@ -70,10 +76,10 @@ public class CMLDescriptions {
 	
 	/**
 	 * This constructor builds a new CML descriptions object from the given set
-	 * @param c a set of CML despcription objects to be groupped in a CML descriptions object
-	 * @throws ConfigurationException if the collection contains duplicate CML descriptions
+	 * @param c a set of CML description objects to be grouped in a CML descriptions object
+	 * @throws AlreadyPresentException if there are duplicate CML descriptions in the collection
 	 */
-	public CMLDescriptions(Collection<CMLDescription> c) throws ConfigurationException{
+	public CMLDescriptions(Collection<CMLDescription> c) throws AlreadyPresentException{
 		this();
 		for(CMLDescription cd: c)
 			addCMLDescription(cd);		
@@ -82,12 +88,12 @@ public class CMLDescriptions {
 	/**
 	 * This method adds a CMLdescription object to this object
 	 * @param c the CML description to be added
-	 * @throws ConfigurationException if this object already contains the supplied CML description
+	 * @throws AlreadyPresentException if this object already contains the supplied CML description
 	 */
-	private void addCMLDescription(CMLDescription c) throws ConfigurationException {
+	private void addCMLDescription(CMLDescription c) throws AlreadyPresentException {
 		if(!cmls.add(c)) {
 			logger.error("The CML descriptions document contains command with the same name");
-			throw new ConfigurationException("2 or more individual CML descriptions share the same name '"+c.getCID()+"'");
+			throw new AlreadyPresentException("2 or more individual CML descriptions share the same name '"+c.getCID()+"'");
 		}
 	}
 	
@@ -116,14 +122,14 @@ public class CMLDescriptions {
 	 * This method return a CMLDescription object for a given CID
 	 * @param cid the command ID
 	 * @return the CML description associated with the given CID
-	 * @throws ConfigurationException the the CID is not found
+	 * @throws NotFoundException the the CID is not found
 	 */
-	public CMLDescription getDescription(int cid) throws ConfigurationException{
+	public CMLDescription getDescription(int cid) throws NotFoundException{
 		for(CMLDescription c: cmls)
 			if(c.getCID().intValue()==cid)
 				return c;
 		
-		throw new ConfigurationException("no such CID "+cid);
+		throw new NotFoundException("no such CID "+cid);
 	}
 
 	/**

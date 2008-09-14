@@ -3,16 +3,18 @@
  */
 package jcu.sal.managers;
 
-import java.io.NotActiveException;
 import java.lang.reflect.Constructor;
-
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.exceptions.AlreadyPresentException;
+import jcu.sal.common.exceptions.ComponentInstantiationException;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SALRunTimeException;
+import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLConstants;
@@ -67,7 +69,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 * @see jcu.sal.managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected AbstractProtocol build(ProtocolConfiguration config, Identifier id) throws InstantiationException {
+	protected AbstractProtocol build(ProtocolConfiguration config, Identifier id) throws ComponentInstantiationException  {
 		AbstractProtocol p = null;
 		String type=config.getType();
 		ProtocolID i = (ProtocolID) id;
@@ -89,36 +91,34 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 			e.printStackTrace();
 			logger.error("XML doc:\n");
 			logger.error(config.getXMLString());
-			throw new InstantiationException();
+			throw new ComponentInstantiationException("Unable to instantiate component",e);
 		}
 		
 		//check if there are other instances of the same type
 		try {
 			if(!p.supportsMultipleInstances() && getComponentsOfType(type).size()!=0) {
 				logger.debug("Found another instance of type '"+type+"' which doesnt support multiple instance, deleting this protocol");
-				throw new InstantiationException();
+				throw new ComponentInstantiationException("Found another instance of type '"+type+"' which doesnt support multiple instances");
 			}
-		} catch (ConfigurationException e) {} //no other instances
+		} catch (NotFoundException e) {} //no other instances
 		
 		//Parse the protocol's configuration
 		try {
 			p.parseConfig();
 		} catch (ConfigurationException e1) {
 			logger.error("Error in the protocol configuration");
-			throw new InstantiationException();
+			throw new ComponentInstantiationException();
 		}
 
 		//raise save protocol config flag
 		try {
 			conf.addProtocol(config);
-		} catch (ConfigurationException e) {
-			logger.error("Cant save the new protocol config");
-			throw new InstantiationException();
+		} catch (AlreadyPresentException e) {
+			logger.error("We shouldnt be here");
+			throw new ComponentInstantiationException("Cant save the protocol config",e);
 		}
 		
-		try {
-			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), Constants.PROTOCOL_MANAGER_PRODUCER_ID));
-		} catch (ConfigurationException e) {logger.error("Cant queue event");}
+		ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), Constants.PROTOCOL_MANAGER_PRODUCER_ID));
 		logger.debug("Created protocol '"+config.getID()+"' - type: " + type);
 		return p;
 	}
@@ -140,14 +140,12 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		//logger.debug("Removing protocol " + pid.toString());
 		component.remove(this);
 		/** the sensors associated with the protocol must be removed AFTER the protocol
-		 * otherwise the autodetectino could try and create them again between the moment we remove them
+		 * otherwise the autodetection could try and create them again between the moment we remove them
 		 * and the moment we remove the protocol
 		 */
 		SensorManager.getSensorManager().destroyComponents(component.getSensors());
 		componentRemovable(pid);
-		try {
-			ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_REMOVED,component.getID().getName(),Constants.PROTOCOL_MANAGER_PRODUCER_ID));
-		} catch (ConfigurationException e) {logger.error("Cant queue event");}
+		ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_REMOVED,component.getID().getName(),Constants.PROTOCOL_MANAGER_PRODUCER_ID));
 		logger.debug("Removed protocol '"+component.getID().getName()+"' - type: " + component.getType());
 	}
 	
@@ -162,15 +160,15 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 * @param pid the protocol ID to be removed 
 	 * @param removeSensors whether or not to remove the sensors configuraion associate with this protocol too
 	 * @throws ConfigurationException if the protocol is still active, ie it hasnt been removed first.
+	 * @throws NotFoundException if the protocol ID doesnt match any existing protocol
 	 */
-	public void removeProtocolConfig(ProtocolID pid, boolean removeSensors) throws ConfigurationException{
+	public void removeProtocolConfig(ProtocolID pid, boolean removeSensors) throws ConfigurationException, NotFoundException{
 		//Check if the protocol is still active
 		if(getComponent(pid)!=null) {
 			logger.error("Cant remove an active protocol configuration");
-			throw new ConfigurationException();
+			throw new ConfigurationException("Cant remove an active protocol");
 		}
-		try { conf.removeProtocol(pid);}
-		catch (ConfigurationException e) { logger.error("error deleting the protocol config");}
+		conf.removeProtocol(pid);
 		if(removeSensors)
 			conf.removeSensors(pid);
 
@@ -206,7 +204,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	
 	/**
 	 * This method returns an PlatformConfiguration object listing all the protocol configuration
-	 * @param onlyActive if set, the returned SMLDescriptions will be limited to cuurently active sensors. Otherwise, all
+	 * @param onlyActive if set, the returned SMLDescriptions will be limited to currently active sensors. Otherwise, all
 	 * known sensors will be included.   
 	 * @return an SMLDescriptions object for the selected set of sensors
 	 */
@@ -215,7 +213,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	}
 
 	/**
-	 * Starts all the protcols  at once
+	 * Starts all the protocols  at once
 	 */
 	public void startAll(){
 		synchronized(ctable){
@@ -228,7 +226,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	}
 	
 	/**
-	 * Stops all the protcols  at once
+	 * Stops all the protocols  at once
 	 */
 	public void stopAll(){
 		synchronized(ctable){
@@ -241,12 +239,11 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 * Sends a command to a sensor
 	 * @param c the command
 	 * @param sid the sensor
-	 * @return the result
-	 * @throws ConfigurationException if the sensor isnt associated with any protocol
-	 * @throws BadAttributeValueExpException if the command cannot be parsed/is incorrect
-	 * @throws NotActiveException if the sensor is not available to run commands
+	 * @return the result  
+	 * @throws SensorControlException if there is an error controlling the sensor
+	 * @throws NotFoundException if the given sensor id doesnt match any existing sensor
 	 */
-	public Response execute(Command c, SensorID sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
+	public Response execute(Command c, SensorID sid) throws SensorControlException, NotFoundException {
 		return new Response(getProtocol(sid).execute(c, sid), sid.getName());
 	}
 	
@@ -254,10 +251,10 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 * Retrieves the CML doc for a given sensor
 	 * @param sid the sensorID
 	 * @return the CML document
-	 * @throws ConfigurationException if the sensor isnt associated with a protocol
-	 * @throws NotActiveException
+	 * @throws NotFoundException if the specified sensor is not found
+	 * @throws SALRunTimeException if the associated protocol cant be located
 	 */
-	public CMLDescriptions  getCML(SensorID sid) throws ConfigurationException, NotActiveException {
+	public CMLDescriptions getCML(SensorID sid) throws NotFoundException {
 		return getProtocol(sid).getCML(sid);
 	}
 	
@@ -270,30 +267,33 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	/**
 	 * Adds a sensor to the appropriate protocol. Checks if this sensor is supported by the protocol
 	 * @return the protocol to which the sensor has been added 
-	 * @throws ConfigurationException if the sensor cannot be added (wrong ProtocolName field, or unsupported sensor)
+	 * @throws NotFoundException if the protocol specified in the sensor config does not exist
+	 * @throws ConfigurationException if the sensor config is invalid (no protocol name, or specified protocol not found)
 	 */
-	AbstractProtocol associateSensor(Sensor sensor) throws ConfigurationException{
+	AbstractProtocol associateSensor(Sensor sensor) throws ConfigurationException, NotFoundException{
 		AbstractProtocol p = null;
 		String pname = null, ptype=null;
 		try {
 			pname = sensor.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
 			ptype = sensor.getParameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE);
-			if((p = getComponent(new ProtocolID(pname)))!=null) {
-				if(ptype.equals(p.getType()))
-					p.associateSensor(sensor);
-				else {
-					logger.error("Specified protocol type "+ptype+" doesnt match protocol name "+pname+" 's type ("+p.getType()+")");
-					throw new ConfigurationException();
-				}
-			} else {
-				logger.error("Cant find protocol "+pname+"to associate the sensor with");
-				throw new ConfigurationException();				
-			}
-		} catch (BadAttributeValueExpException e) {
+		} catch (NotFoundException e) {
 			logger.error("Can not find the protocol name / type to associate the sensor with");
 			logger.error("Cant associate sensor " + sensor.getID().toString() + "(Cant find protocol " + pname+")");
-			throw new ConfigurationException("cant find protocol from sensor config");
+			throw new ConfigurationException("cant find the name of protocol to associate with from sensor config", e);
 		}
+		
+		if((p = getComponent(new ProtocolID(pname)))!=null) {
+			if(ptype.equals(p.getType()))
+				p.associateSensor(sensor);
+			else {
+				logger.error("Specified protocol type "+ptype+" doesnt match existing protocol name "+pname+" 's type ("+p.getType()+")");
+				throw new ConfigurationException("Specified protocol type "+ptype+" doesnt match existing protocol name "+pname+" 's type ("+p.getType()+")");
+			}
+		} else {
+			logger.error("Cant find protocol "+pname+" to associate the sensor with");
+			throw new NotFoundException("Cant find protocol '"+pname+"'");				
+		}
+		
 		return p;
 	}
 	
@@ -302,53 +302,53 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 * This method returns only when the sensor is unassociated, ie if a command is being run while this method is
 	 * called, it will block until the command finishes, then unassociated the sensor, thereby preventing it from 
 	 * being used again.
-	 * @throws ConfigurationException if the sensor cannot be unassociated (wrong ProtocolName field, or unsupported sensor)
+	 * @throws ConfigurationException if the protocol name cant be found in the sensor config, if the protocol name doesnt exist or
+	 * if the sensor isnt associated with the protocol anymore
 	 */
 	void unassociateSensor(Sensor s) throws ConfigurationException{
 		AbstractProtocol p = null;
 		String pname = null;
 		try {
 			pname = s.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
-			if((p = getComponent(new ProtocolID(pname)))!=null)
+		} catch (NotFoundException e) {
+			logger.error("Can not find the protocol name to unassociate the sensor from");
+			logger.error("Cant unassociate sensor " + s.getID().toString() + "(Cant find protocol " + pname+")");
+			throw new ConfigurationException("cant find protocol name in sensor config", e);
+		} 
+		if((p = getComponent(new ProtocolID(pname)))!=null)
+			try {
 				p.unassociateSensor(s.getID());
-			else
-				throw new ConfigurationException("Cant find "+pname);
-		} catch (BadAttributeValueExpException e) {
-			logger.error("Can not find the protocol name to unassociate the sensor from");
+			} catch (NotFoundException e) {
+				throw new ConfigurationException("Sensor not associated with protocol '"+pname+"'", e);
+			}
+		else {
 			logger.error("Cant unassociate sensor " + s.getID().toString() + "(Cant find protocol " + pname+")");
-			throw new ConfigurationException("cant find protocol from sensor config");
-		} catch (ConfigurationException e) {
-			logger.error("Can not find the protocol name to unassociate the sensor from");
-			logger.error("Cant unassociate sensor " + s.getID().toString() + "(Cant find protocol " + pname+")");
-			throw e;
+			throw new ConfigurationException("cant find protocol name '"+pname+"'");
 		}
+
 	}	
 	
 	/**
-	 * Returns the protcol associated with a SensorID (assuming the sensor owner is already associated with a protocol)
-	 * @throws ConfigurationException if the protocol can not be found
-	 * @throws NotActiveException if the sensor can not be foundx 
+	 * Returns the protocol associated with a SensorID (assuming the sensor owner is already associated with a protocol)
+	 * @throws NotFoundException if the sensor can not be found
+	 * @throws SALRunTimeException if the sensoor isnt associated with any protocol, or the protocol object cant be found (shouldnt happen, but...)
 	 */
-	AbstractProtocol getProtocol(SensorID sid) throws NotActiveException, ConfigurationException{
+	AbstractProtocol getProtocol(SensorID sid) throws NotFoundException{
 			AbstractProtocol p=null;
 			String pName = null;
 			Sensor s;
 
-			//TODO fix all the methods that should return an exception instead of a null pointer
-			//TODO so we can get rid of all the if statments and only have try/catch stuff.
-			//TODO fix the Identifier issue: with a sensor ID (a single int), to get the protocol associated
-			//TODO with it, we have to do the following 4 lines ... ugly !
 			if((s=SensorManager.getSensorManager().getComponent(sid))==null) {
 				//logger.error("Cannot find the any sensor with this sensorID: " + sid.toString());
-				throw new NotActiveException("No sensor with this sensorID");
+				throw new NotFoundException("No sensor with this sensorID");
 			}
 			if((pName = s.getID().getPIDName())==null){
 				logger.error("Cannot find the protocolID associated with this sensorID: " + sid.toString());
-				throw new ConfigurationException();
+				throw new SALRunTimeException("we shouldnt be here - sensor not associated with any protocol ??");
 			}
 			if((p=getComponent(new ProtocolID(pName)))==null){
 				logger.error("Cannot find the protocol associated with this sensorID: " + sid.toString());
-				throw new ConfigurationException();
+				throw new SALRunTimeException("We shouldnt be here - cant find the protocol the sensor is associated with");
 			}
 
 			return p;

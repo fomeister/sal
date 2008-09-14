@@ -4,10 +4,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Vector;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SensorControlException;
+import jcu.sal.common.exceptions.SensorIOException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.EthernetEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -59,13 +60,13 @@ public class SSNMPProtocol extends AbstractProtocol{
 		try {
 			agent = getParameter("AgentIP");
 			comm_string = getParameter("CommunityString");
-		} catch (BadAttributeValueExpException e) {
+		} catch (NotFoundException e) {
 			logger.error("Cant find 'AgentIP' / 'CommunityString' in AbstractProtocol config.");
-			throw new ConfigurationException("SSNMP 'AgentIP' / 'CommunityString' config directives missing");
+			throw new ConfigurationException("SSNMP 'AgentIP' / 'CommunityString' config directives missing",e);
 		}
 
 		try { timeout = Integer.parseInt(getParameter("Timeout")); }
-		catch (BadAttributeValueExpException e) { timeout=1500;}
+		catch (NotFoundException e) { timeout=1500;}
 
 		
 		cmls = CMLDescriptionStore.getStore();
@@ -90,7 +91,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 			s.setCommunity(comm_string);
 		} catch (IOException e) {
 			logger.error("Cant create SNMP context");
-			throw new ConfigurationException();
+			throw new ConfigurationException("Cant create SNMP context", e);
 		}
 	}
 
@@ -107,9 +108,6 @@ public class SSNMPProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected boolean internal_isSensorSupported(Sensor sensor){
-		//TODO improve me... maybe check that the OID exist and is valid
-		//TODO with a GET PDU... only problem: it requires the Agent to
-		//TODO be accessible...
 		return true;	
 	}
 
@@ -172,13 +170,12 @@ public class SSNMPProtocol extends AbstractProtocol{
 	/*
 	 * Command handling methods
 	 */
-	// TODO create an exception class for this instead of Exception
 	public static String GET_READING_METHOD = "getReading";
-	public  byte[] getReading(Command c, Sensor s) throws IOException{
+	public  byte[] getReading(Command c, Sensor s) throws SensorControlException{
 		return getRawReading(s.getNativeAddress());
 	}
 	
-	private byte[] getRawReading(String oid) throws IOException{
+	private byte[] getRawReading(String oid) throws SensorControlException{
 
 		varbind v=null;
 		String ret=null;
@@ -193,11 +190,13 @@ public class SSNMPProtocol extends AbstractProtocol{
 				ret = v.getValue().toString();
 		} catch (AgentException e) {
 			logger.error("SNMP response timeout while getting OID "+oid);
-
-			throw new IOException("SNMP response timeout");
+			throw new SensorIOException("SNMP response timeout",e);
 		} catch (PduException e) {
 			logger.error("PDU exception while getting OID "+oid);
-			throw new IOException("PDU exception");			
+			throw new SensorIOException("PDU exception",e);			
+		} catch (IOException e) {
+			logger.error("IOException while waiting for response");
+			throw new SensorIOException("IOException while waiting for response",e);
 		}
 
 		return ret.getBytes();

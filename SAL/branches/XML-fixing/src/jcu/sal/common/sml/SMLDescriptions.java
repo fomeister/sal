@@ -4,10 +4,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.naming.ConfigurationException;
 
+import jcu.sal.common.exceptions.AlreadyPresentException;
+import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -32,9 +34,9 @@ public class SMLDescriptions {
 	/**
 	 * This constructor creates a SML descriptions object from a collection of SMLDescription objects
 	 * @param c the collection of SMLDescription objects
-	 * @throws ConfigurationException if two or more SMLDescription objects in the collection share the same ID
+	 * @throws AlreadyPresentException if two or more SMLDescription objects in the collection share the same ID
 	 */
-	public SMLDescriptions(Collection<SMLDescription> c) throws ConfigurationException{
+	public SMLDescriptions(Collection<SMLDescription> c) throws AlreadyPresentException{
 		this();
 		for(SMLDescription s: c)
 			addSMLDescription(s);
@@ -51,19 +53,19 @@ public class SMLDescriptions {
 	/**
 	 * This constructor create an SMLDescriptions object from an SML descriptions XML document given as a string.
 	 * @param sml an SML descriptions XML document
-	 * @throws ConfigurationException if the XML document is not a valid SML document
+	 * @throws SALDocumentException if the XML document is not a valid SML document
 	 * @throws ParserException if the string is not a valid XML document
 	 */
-	public SMLDescriptions(String sml) throws ConfigurationException, ParserException{
+	public SMLDescriptions(String sml) throws SALDocumentException, ParserException{
 		this(XMLhelper.createDocument(sml));
 	}
 	
 	/**
 	 * This constructor creates an SMLDescriptions object from an SML descriptions XML document.
 	 * @param d the SML descriptions XML document
-	 * @throws ConfigurationException if the document cant be parsed / is malformed
+	 * @throws SALDocumentException if the document cant be parsed / is malformed
 	 */
-	public SMLDescriptions(Document d) throws ConfigurationException {
+	public SMLDescriptions(Document d) throws SALDocumentException {
 		this();
 		NodeList n;
 		try {
@@ -71,16 +73,21 @@ public class SMLDescriptions {
 		} catch (NotFoundException e) {
 			logger.error("No individual sml descriptions in this SML descriptions document:");
 			logger.error(XMLhelper.toString(d));
-			throw new ConfigurationException("Malformed SML descriptions document");
+			throw new SALDocumentException("Malformed SML descriptions document - no sensor config found");
 		}
-		for (int i = 0; i < n.getLength(); i++) 
-			addSMLDescription(new SMLDescription(XMLhelper.createDocument(n.item(i))));
+		for (int i = 0; i < n.getLength(); i++)
+			try {
+				addSMLDescription(new SMLDescription(XMLhelper.createDocument(n.item(i))));
+			} catch (AlreadyPresentException e) {
+				logger.error("Duplicate sensor config sections");
+				throw new SALDocumentException("Not a valid SML docuemnt", e);
+			}
 	}
 	
-	private void addSMLDescription(SMLDescription s) throws ConfigurationException {
+	private void addSMLDescription(SMLDescription s) throws AlreadyPresentException {
 		if(!smls.add(s)){
 			logger.error("found two sensor configuration objects with the same ID '"+s.getID()+"'");
-			throw new ConfigurationException("Two sensor configuration objects with the same ID '"+s.getID()+"'");
+			throw new AlreadyPresentException("Two sensor configuration objects with the same ID '"+s.getID()+"'");
 		}		
 	}
 	

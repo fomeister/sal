@@ -363,10 +363,13 @@ public class PlatformHelper {
 	 * @param delim the delimiter (if null, then a space is assumed)
 	 * @param translate whether to translate tabs to spaces
 	 * @return the field itself
-	 * @throws IOException
+	 * @throws IOException if the line number is set to 0, or is greater than the number of lines in the buffer
 	 */
 	public static String getFieldFromBuffer(BufferedReader b, int line, int field, String delim, boolean translate) throws IOException {
-		String result = "";
+		if(line<=0)
+			throw new IOException("Invalid line number");
+		
+		String result=null;
 		
 		/* find  line */
 		while( (line-- > 0) && ((result  = b.readLine())!= null) ); 
@@ -377,7 +380,7 @@ public class PlatformHelper {
 			return result;
 		}
 		else {
-			throw new IOException();
+			throw new IOException("Read past the end of buffer");
 		}
 	}
 	

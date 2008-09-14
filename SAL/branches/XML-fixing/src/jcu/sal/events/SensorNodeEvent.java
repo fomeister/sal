@@ -1,7 +1,5 @@
 package jcu.sal.events;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.events.Event;
 
 public class SensorNodeEvent extends Event {
@@ -14,11 +12,11 @@ public class SensorNodeEvent extends Event {
 		MAX_TYPE_VALUE = SENSOR_NODE_MASK;
 	}
 	
-	public SensorNodeEvent(int t, String sid, String p) throws ConfigurationException {
+	public SensorNodeEvent(int t, String sid, String p){
 		super(t, sid, p);
 	}
 
-	public SensorNodeEvent(int t, String sid, String doc, String p) throws ConfigurationException {
+	public SensorNodeEvent(int t, String sid, String doc, String p){
 		super(t, sid, doc, p);
 	}
 	

@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.Identifier;
@@ -65,7 +65,7 @@ public class HalClient extends AbstractHalClient {
 			//the device is available. check if there is an existing config for it in the  PlatformConfig file
 			pc = findProtocolConfigFromFile(V4L2Protocol.DEVICE_ATTRIBUTE_TAG, l.get("5-deviceFile"));
 			//logger.debug("Found config for "+l.get("5-deviceFile")+" in platformConfig file - reusing it");
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			//if we re here, there is no pre exiting config for this device file, so we create a generic one
 			//logger.debug("No existing configuration for V4L protocol with device "+l.get("5-deviceFile"));
 			
@@ -108,7 +108,7 @@ public class HalClient extends AbstractHalClient {
 			logger.error("More than one protocol was handling device "+l.get("5-deviceFile")+" it seems. Removing  1st one" + ids.get(0).getName());
 		try {
 			removeProtocol(ids.get(0));
-		} catch (ConfigurationException e) {
+		} catch (Exception e) {
 			logger.error("Couldnt remove protocol "+ids.get(0).getName());
 			e.printStackTrace();
 		}

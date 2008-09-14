@@ -40,6 +40,7 @@ import au.edu.jcu.haldbus.match.HalMatchInterface;
  * @author gilles
  *
  */
+@SuppressWarnings("unchecked")
 public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, ListChangeListener{
 	private static Logger logger = Logger.getLogger(HalHelper.class);
 	static {Slog.setupLogger(logger);}
@@ -74,7 +75,6 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public synchronized void start() throws Exception{
 		logger.debug("'"+NAME+"' hardware probe starting ");
 		if(!t.isAlive()) {

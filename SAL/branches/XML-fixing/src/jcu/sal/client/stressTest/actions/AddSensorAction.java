@@ -4,12 +4,13 @@ import java.rmi.RemoteException;
 import java.util.Random;
 import java.util.Vector;
 
-import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.common.sml.SMLDescription;
@@ -59,7 +60,7 @@ public class AddSensorAction implements Action {
 			return;
 		}
 		
-		String n1, ret=null;
+		String n1;
 		if(p.getSize()==0) {
 			//logger.info("Cant add sensor - no protocols setup yet");
 			return;
@@ -75,17 +76,21 @@ public class AddSensorAction implements Action {
 
 		try {
 			//logger.info("creating sensor for protocol "+n1);
-			ret = agent.addSensor(new SMLDescription(new Integer(1), new Parameters(v)).getSMLString());
+			agent.addSensor(new SMLDescription(new Integer(1), new Parameters(v)).getSMLString());
 			//logger.info("sensor "+ret+" created");
 		} catch (ConfigurationException e) {
-			logger.info("sensor cant be created "+ret);
+			logger.info("sensor cant be instanciated");
 			e.printStackTrace();
 		} catch (RemoteException e) {
 			logger.info("sensor cant be created");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ParserException e) {
-			logger.info("sensor cant be created");
+			logger.info("we shouldnt be here - sensor cant be created");
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SALDocumentException e) {
+			logger.info("we shouldnt be here - sensor cant be created");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

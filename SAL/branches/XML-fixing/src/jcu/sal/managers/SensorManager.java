@@ -6,9 +6,13 @@ package jcu.sal.managers;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.Constants;
+import jcu.sal.common.exceptions.AlreadyPresentException;
+import jcu.sal.common.exceptions.ComponentInstantiationException;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.components.Identifier;
@@ -66,7 +70,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	 * @see jcu.sal.managers.ManagerFactory#build(org.w3c.dom.Document)
 	 */
 	@Override
-	protected Sensor build(SMLDescription s, Identifier id) throws InstantiationException {
+	protected Sensor build(SMLDescription s, Identifier id) throws ComponentInstantiationException {
 		SensorID i = (SensorID) id;
 		Sensor sensor = null;
 		//logger.debug("building sensor: "+id.getName());
@@ -75,38 +79,35 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 		if(!id.getName().equals(s.getID())) {
 			try {
 				s = new SMLDescription(new Integer(id.getName()),s.getParameters());
-			} catch (Exception e1) {
+			} catch (SALDocumentException e1) {
 				logger.error("We shouldnt be here - error creating the new SMLDescription from the old one");
 				e1.printStackTrace();
-				s=null;
+				throw new SALRunTimeException("Cant create a new SMLDescription",e1);
 			}
 		}
 		
 		//build the sensor
-		try { sensor = new Sensor(i, s); }
-		catch (ConfigurationException e) {
-			logger.error("Couldnt instanciate the sensor: " + i.toString());
-			//e.printStackTrace();
-			throw new InstantiationException();
-		}
+		sensor = new Sensor(i, s);
+
 		
 		//save sensor config
 		try { conf.addSensor(s); }
-		catch (ConfigurationException e) {
-			logger.error("We shouldnt be here");
-			throw new InstantiationException();
+		catch (AlreadyPresentException e) {
+			logger.error("We shouldnt be here - cant save the sensor config");
+			throw new ComponentInstantiationException("cant save the sensor config", e);
 		}
 
 		//associate it with its protocol
 		try { pm.associateSensor(sensor); }
 		catch (ConfigurationException e) {
 			logger.error("Couldnt associate sensor '"+s.getID()+"' with protocol '"+s.getProtocolName()+"'");
-			throw new InstantiationException();
+			throw new ComponentInstantiationException();
+		} catch (NotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
-		try {
-			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_ADDED, i.getName(), Constants.SENSOR_MANAGER_PRODUCER_ID));
-		} catch (ConfigurationException e) {logger.error("Cant queue event");}
+		ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_ADDED, i.getName(), Constants.SENSOR_MANAGER_PRODUCER_ID));
 		
 		logger.debug("created sensor: "+id.getName());
 		return sensor;
@@ -126,7 +127,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 			//we first check to see if the sensor exists in the sensor configuration file
 			id =conf.findSensor(s);
 			//logger.debug("Found the sid "+id.getName()+" in sensor config file");
-		} catch (Exception e) {
+		} catch (NotFoundException e) {
 			//we havent found a matching sensor in the sensor config file, so we are going to generate a new ID
 			id = new SensorID(generateNewSensorID());
 			//logger.debug("created a new sensor id "+id.getName());
@@ -147,9 +148,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 			e.printStackTrace();
 		}
 		component.remove(this);
-		try {
-			ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_REMOVED,component.getID().getName(),Constants.SENSOR_MANAGER_PRODUCER_ID));
-		} catch (ConfigurationException e) {logger.error("Cant queue event");}
+		ev.queueEvent(new SensorNodeEvent(SensorNodeEvent.SENSOR_NODE_REMOVED,component.getID().getName(),Constants.SENSOR_MANAGER_PRODUCER_ID));
 		logger.debug("removed sensor: "+component.getID().getName());
 	}
 
@@ -178,16 +177,16 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	 * This method removes a sensor's XML config information from the sensor config file
 	 * @param sid the sensor ID for which the configuration information must be removed
 	 * @throws ConfigurationException if the sensor is still active or the config info cant be deleted
+	 * @throws NotFoundException if the sensor ID doesnt match any existing sensor
 	 */
-	public void removeSensorConfig(SensorID sid) throws ConfigurationException {
+	public void removeSensorConfig(SensorID sid) throws ConfigurationException, NotFoundException {
 		//Check if the sensor is still active
 		if(getComponent(sid)!=null) {
 			logger.error("Cant remove an active sensor configuration");
 			throw new ConfigurationException();
 		}
 
-		try { conf.removeSensor(sid);}
-		catch (ConfigurationException e) { logger.error("error deleting the sensor config");}
+		conf.removeSensor(sid);
 	}
 	
 	/**

@@ -9,7 +9,10 @@ import java.util.Vector;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.AlreadyPresentException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 
 import org.junit.Test;
 
@@ -108,7 +111,7 @@ public class ProtocolConfigurationsTest {
 							+"</"+PCMLConstants.PLATFORM_CONFIGURATION_NODE+">";
 
 	@Test
-	public void testProtocolConfigurationsListOfProtocolConfiguration() throws ConfigurationException, ParserException {
+	public void testProtocolConfigurationsListOfProtocolConfiguration() throws ConfigurationException, ParserException, SALDocumentException, AlreadyPresentException {
 		Vector<ProtocolConfiguration> l = new Vector<ProtocolConfiguration>();
 		l.add(new ProtocolConfiguration(ep1));
 		l.add(new ProtocolConfiguration(ep2));
@@ -126,7 +129,7 @@ public class ProtocolConfigurationsTest {
 	}
 
 	@Test
-	public void testProtocolConfigurationsString() throws ConfigurationException, ParserException {
+	public void testProtocolConfigurationsString() throws ConfigurationException, ParserException, SALDocumentException {
 		new ProtocolConfigurations(pcml1);
 		try {
 			new ProtocolConfigurations(pcml2);
@@ -144,7 +147,7 @@ public class ProtocolConfigurationsTest {
 	}
 
 	@Test
-	public void testGetPIDs() throws ConfigurationException, ParserException {
+	public void testGetPIDs() throws ConfigurationException, ParserException, SALDocumentException {
 		ProtocolConfigurations p = new ProtocolConfigurations(pcml1);
 		HashSet<String> v = new HashSet<String>();
 		v.add("testProtocol1");
@@ -159,7 +162,7 @@ public class ProtocolConfigurationsTest {
 	}
 
 	@Test
-	public void testGetConfigurations() throws ConfigurationException, ParserException {
+	public void testGetConfigurations() throws ConfigurationException, ParserException, SALDocumentException {
 		ProtocolConfigurations p = new ProtocolConfigurations(pcml1);
 		HashSet<ProtocolConfiguration> v = new HashSet<ProtocolConfiguration>();
 		v.add(new ProtocolConfiguration(ep1));
@@ -174,7 +177,7 @@ public class ProtocolConfigurationsTest {
 	}
 
 	@Test()
-	public void testGetDescription() throws ConfigurationException, ParserException {
+	public void testGetDescription() throws ConfigurationException, ParserException, SALDocumentException, NotFoundException {
 		ProtocolConfigurations p = new ProtocolConfigurations(pcml1);
 		assertTrue(p.getDescription("testProtocol1").equals(new ProtocolConfiguration(ep1)));
 		assertTrue(p.getDescription("testProtocol2").equals(new ProtocolConfiguration(ep2)));

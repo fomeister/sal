@@ -4,11 +4,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -41,17 +41,17 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * <code>SMLConstants.PARAM_NAMES</code> list. More parameters may exist though, but the required ones must be present.
 	 * @param s the sensor ID
 	 * @param p the parameter list
-	 * @throws ConfigurationException if either arguments are invalid
+	 * @throws SALDocumentException if either arguments are invalid
 	 */
-	public SMLDescription(Integer s, Parameters p) throws ConfigurationException {
+	public SMLDescription(Integer s, Parameters p) throws SALDocumentException {
 		//Check the nb of args
 		if(s.intValue()<0 || s.intValue()>SMLConstants.SENSOR_ID_MAX || p.getSize() < SMLConstants.NB_REQUIRED_PARAMETERS)
-			throw new ConfigurationException("Invalid sensor ID or parameter list");
+			throw new SALDocumentException("Invalid sensor ID or parameter list");
 		sid = new Integer(s);
 		
 		//check the param list
 		for(String tmp: SMLConstants.PARAM_NAMES)
-			if(!p.hasParameter(tmp)) throw new ConfigurationException("Couldnt find required parameter '"+tmp+"'");
+			if(!p.hasParameter(tmp)) throw new SALDocumentException("Couldnt find required parameter '"+tmp+"'");
 
 		parameters = p;
 	}
@@ -60,10 +60,10 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * This construcotr is identical to <code>SMLDescription(Document)</code> except that the XML document
 	 * is passed as a string here.
 	 * @param xml a string representation of a valid SML description of a sensor
-	 * @throws ConfigurationException if the given XML document is nto a valid SML description
-	 * @throws ParserException if the given strin isnt a valid XML document
+	 * @throws SALDocumentException if the given XML document is not a valid SML description
+	 * @throws ParserException if the given string isnt a valid XML document
 	 */
-	public SMLDescription(String xml) throws ConfigurationException, ParserException{
+	public SMLDescription(String xml) throws SALDocumentException, ParserException{
 		this(XMLhelper.createDocument(xml));
 	}
 	
@@ -71,9 +71,9 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * This constructor creates an SML description object from the supplied XML document containing a valid
 	 * SML description of a sensor
 	 * @param doc a XML document containing a valid SMl description of a sensor
-	 * @throws ConfigurationException the the given document is not a valid SML description
+	 * @throws SALDocumentException the the given document is not a valid SML description
 	 */ 
-	public SMLDescription(Document doc) throws ConfigurationException {
+	public SMLDescription(Document doc) throws SALDocumentException {
 		checkDocument(doc);
 		parseSensorID(doc);
 		parseParameters(doc);		
@@ -83,20 +83,20 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * This method checks that the given document is a valid SML description document.
 	 * It checks that there is only one SMLDescription instance, and that the required number of parameters are present.
 	 * @param d the SML description document to be validated
-	 * @throws ConfigurationException if the document is not a valid SMLdescription
+	 * @throws SALDocumentException if the document is not a valid SMLdescription
 	 */
-	private void checkDocument(Document d) throws ConfigurationException {
+	private void checkDocument(Document d) throws SALDocumentException {
 		int nb;
 		try {
 			nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_SENSOR_DESC+")", d));
 		} catch (Throwable t) {
 			logger.error("Cant check how many SML descriptions are in this document");
-			throw new ConfigurationException();
+			throw new SALDocumentException("Malformed SML document",t);
 		}
 		if(nb!=1){
 			logger.error("There is more than one SML description (found "+nb+") in this document");
 			logger.error(XMLhelper.toString(d));
-			throw new ConfigurationException();
+			throw new SALDocumentException(nb+" SML description sections found instead of 1");
 		}
 		
 		try {
@@ -105,28 +105,26 @@ public class SMLDescription implements HWComponentConfiguration{
 				logger.error("The number of parameters found in this document ("+nb+") is different from the required number ("+
 							SMLConstants.NB_REQUIRED_PARAMETERS+")");
 				logger.error(XMLhelper.toString(d));
-				throw new ConfigurationException();
+				throw new SALDocumentException("The number of parameters found in this document ("+nb+") is different from the required number ("+
+						SMLConstants.NB_REQUIRED_PARAMETERS+")");
 			}
 		} catch (Throwable t) {
 			logger.error("Cant check how many parameters there are in this document");
-			throw new ConfigurationException();
+			throw new SALDocumentException("Cant check how many parameters there are in this document", t);
 		}		
 	}
 	
 	/**
 	 * This method parses the given SML description document and extracts the sensorID
 	 * @param d the SML description document
-	 * @throws ConfigurationException if the sensor ID cant be found
+	 * @throws SALDocumentException if the sensor ID cant be found
 	 */
-	private void parseSensorID(Document d) throws ConfigurationException {
+	private void parseSensorID(Document d) throws SALDocumentException {
 		try {
 			sid = Integer.parseInt(XMLhelper.getAttributeFromName(XPATH_SENSOR_DESC, SMLConstants.SENSOR_ID_ATTRIBUTE_NODE, d));
-		} catch (NumberFormatException e) {
-			logger.error("SID is not a number");
-			throw new ConfigurationException();
 		} catch (Exception e) {
 			logger.error("Cant find attr '"+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"' in SMLdescriptor XML doc");
-			throw new ConfigurationException();
+			throw new SALDocumentException("Cant find the sensor ID", e);
 		}
 	}
 	
@@ -134,9 +132,9 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * This method parses the parameter list is the SML description document and extracts each of them. It assumes the SML
 	 * document contains all the required parameters and only those.
 	 * @param d the SML description document
-	 * @throws ConfigurationException if there is an error finding the required arguments or parsing their values
+	 * @throws SALDocumentException if there is an error finding the required arguments or parsing their values
 	 */
-	private void parseParameters(Document d) throws ConfigurationException {
+	private void parseParameters(Document d) throws SALDocumentException {
 		List<Parameter> l = new Vector<Parameter>();
 		String paramValue;
 		
@@ -148,7 +146,7 @@ public class SMLDescription implements HWComponentConfiguration{
 			} catch (Exception e) {
 				e.printStackTrace();
 				logger.error("Cant find value for parameter '"+paramName+"' in SMLdescriptor XML doc");
-				throw new ConfigurationException();
+				throw new SALDocumentException("Cant find value for parameter '"+paramName+"'", e);
 			}
 		}
 		parameters = new Parameters(l);
@@ -181,9 +179,9 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * This method returns the value of a parameter given its name.
 	 * @param n the name of the parameter
 	 * @return the value of the parameter, which can be null if no parameter with this name is found
-	 * @throws ConfigurationException if there is no parameter matching the given name 
+	 * @throws NotFoundException if there is no parameter matching the given name
 	 */
-	public String getParameter(String n) throws ConfigurationException{
+	public String getParameter(String n) throws NotFoundException{
 		return parameters.getParameter(n).getStringValue();
 	}
 	
@@ -210,7 +208,7 @@ public class SMLDescription implements HWComponentConfiguration{
 	public String getProtocolName(){
 		try {
 			return parameters.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE).getStringValue();
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			logger.error("we shouldnt be here. It seems the sensor has been created without a protocol name");
 			e.printStackTrace();
 			return null;
@@ -224,7 +222,7 @@ public class SMLDescription implements HWComponentConfiguration{
 	public String getProtocolType(){
 		try {
 			return parameters.getParameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE).getStringValue();
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			logger.error("we shouldnt be here. It seems the sensor has been created without a protocol type");
 			e.printStackTrace();
 			return null;
@@ -238,7 +236,7 @@ public class SMLDescription implements HWComponentConfiguration{
 	public String getSensorAddress(){
 		try {
 			return parameters.getParameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE).getStringValue();
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			logger.error("we shouldnt be here. It seems the sensor has been created without an address");
 			e.printStackTrace();
 			return null;
@@ -259,7 +257,7 @@ public class SMLDescription implements HWComponentConfiguration{
 			try {
 				sb.append("\t\t<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+n+
 						"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\""+parameters.getParameter(n).getStringValue()+"\" />\n");
-			} catch (ConfigurationException e) {
+			} catch (NotFoundException e) {
 				logger.error("we shouldnt be here. looking for parameter name "+n+ " but cant find it");
 			}
 		}

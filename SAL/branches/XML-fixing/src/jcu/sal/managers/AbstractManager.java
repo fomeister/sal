@@ -9,9 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.ComponentInstantiationException;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.components.HWComponent;
 import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.components.Identifier;
@@ -85,46 +86,47 @@ public abstract class AbstractManager<T extends HWComponent, U extends HWCompone
 			}
 			//if we re here the table already has a component with this name 
 			logger.error("A component '"+type+"' named " + id.toString()+" is already present");
-			throw new ConfigurationException();
-		} catch (InstantiationException e) {
+			throw new ConfigurationException("A identical component is already instanciated");
+		} catch (ComponentInstantiationException e) {
 			logger.error("Couldnt instanciate component '"+type+"' named " + c.getID()+" from XML doc");
-			throw new ConfigurationException();
+			throw new ConfigurationException("Error instanciating the component '"+type+"' named " + c.getID(),e );
 		}
 	}
 	
 	/** 
-	 * Removes a previoulsy creatd component
+	 * Removes a previously created component
 	 * @param type the component type
+	 * @throws NotFoundException if the identifier doesnt match any component
 	 */
-	public void destroyComponent(Identifier i) throws ConfigurationException {
+	public void destroyComponent(Identifier i) throws NotFoundException {
 		synchronized(ctable) {
 			T t = ctable.get(i);
 			if(t != null) {
 				typeMap.get(t.getType()).remove(i);
 				remove(t);
 			} else {
-				logger.error("Element " + i.toString()+ " doesnt exist and can NOT be removed");
-				throw new ConfigurationException();
+				logger.error("Component " + i.toString()+ " doesnt exist and can NOT be removed");
+				throw new NotFoundException("Component " + i.toString()+ " doesnt exist and can NOT be removed");
 			}
 		}
 	}
 	
 	/** 
-	 * Removes previoulsy created components
-	 * @param l the list of compoenents to be deleted
+	 * Removes previously created components
+	 * @param l the list of components to be deleted
 	 */
 	public void destroyComponents(List<T> l){
 		synchronized(ctable) {
 			for(T t: l)
 				try{destroyComponent(t.getID());}
-				catch (ConfigurationException e) {
+				catch (NotFoundException e) {
 					logger.error("Cant destroy "+t.toString());
 				}
 		}
 	}
 	
 	/** 
-	 * Removes all previoulsy creatd components
+	 * Removes all previously created components
 	 *
 	 */
 	public void destroyAllComponents() {
@@ -135,12 +137,12 @@ public abstract class AbstractManager<T extends HWComponent, U extends HWCompone
 			 */
 			for(T t: new Vector<T>(ctable.values()))
 				try { destroyComponent(t.getID());}
-				catch (ConfigurationException e1) {}
+				catch (NotFoundException e1) {}
 		}
 	}
 	
 	/** 
-	 * Get a component based on its identifer
+	 * Get a component based on its identifier
 	 * @param i the identifier
 	 * @return the component or null if the identifier does not map to anything
 	 *
@@ -166,26 +168,26 @@ public abstract class AbstractManager<T extends HWComponent, U extends HWCompone
 	 * This method returns a list of components Identifiers of the given type
 	 * @param t the type
 	 * @return the list of Identifiers
-	 * @throws ConfigurationException if the given type is not found
+	 * @throws NotFoundException if the given type is not found
 	 */
-	public List<Identifier> getComponentsOfType(String t) throws ConfigurationException{
+	public List<Identifier> getComponentsOfType(String t) throws NotFoundException{
 		List<Identifier> l;
 		synchronized(ctable){
 			if((l=typeMap.get(t))==null)
-				throw new ConfigurationException();
+				throw new NotFoundException("No components of type '"+t+"' found");
 
 			return new LinkedList<Identifier>(l);
 		}
 	}
 	
 	/**
-	 * Instanciates a component
+	 * Instantiates a component
 	 * @param c the configuration object
 	 * @param id the identifier for the new component
 	 * @return the component
-	 * @throws InstantiationException 
+	 * @throws ComponentInstantiationException 
 	 */
-	protected abstract T build(U c, Identifier id) throws InstantiationException;
+	protected abstract T build(U c, Identifier id) throws ComponentInstantiationException;
 	
 	/**
 	 * Deletes the component and give the subclass a chance to turn things off properly

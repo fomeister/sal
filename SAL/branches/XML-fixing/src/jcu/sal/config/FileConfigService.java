@@ -18,6 +18,7 @@ import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLDescription;
@@ -141,9 +142,13 @@ public class FileConfigService{
 			e.printStackTrace();
 			throw new ConfigurationException("Platform configuration file malformed", e);
 		} catch (IOException e) {
-			logger.error("Could not find platform configuration file: " + e.getMessage());
+			logger.error("Could not find platform configuration file");
 			e.printStackTrace();
 			throw new ConfigurationException("Platform configuration file not found", e);
+		} catch (SALDocumentException e) {
+			logger.error("Looks like platform configuration file isnt a valid PCML document");
+			throw new ConfigurationException("Invalid platform configuration file", e);
+
 		}
 		
 		try {			
@@ -161,6 +166,9 @@ public class FileConfigService{
 			logger.error("Could not find sensor configuration file: " + e.getMessage());
 			e.printStackTrace();
 			throw new ConfigurationException("Sensor configuration file not found", e);
+		} catch (SALDocumentException e) {
+			logger.error("Looks like sensor configuration file isnt a valid PCML document");
+			throw new ConfigurationException("Invalid platform configuration file", e);
 		}
 		
 	}

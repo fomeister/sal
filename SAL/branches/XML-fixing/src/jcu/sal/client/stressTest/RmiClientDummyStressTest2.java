@@ -7,9 +7,6 @@ import java.rmi.registry.Registry;
 import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.naming.ConfigurationException;
-
 import jcu.sal.client.stressTest.actions.Action;
 import jcu.sal.client.stressTest.actions.AddProtocolAction;
 import jcu.sal.client.stressTest.actions.AddSensorAction;
@@ -17,7 +14,10 @@ import jcu.sal.client.stressTest.actions.ExecuteSensorAction;
 import jcu.sal.client.stressTest.actions.RemoveProtocolAction;
 import jcu.sal.client.stressTest.actions.RemoveSensorAction;
 import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLDescription;
@@ -137,17 +137,17 @@ public class RmiClientDummyStressTest2{
 			c.stop();
 	}
 	
-	public void saveState() throws ConfigurationException, RemoteException, ParserException{
+	public void saveState() throws RemoteException, ParserException, SALDocumentException{
 		protocolState = new ProtocolConfigurations(agent.listProtocols());
 		sensorState = new SMLDescriptions(agent.listSensors());
 	}
 	
-	public void removeAllComponents() throws ConfigurationException, RemoteException{
+	public void removeAllComponents() throws RemoteException, NotFoundException{
 		for(String pid: protocolState.getPIDs())
 			agent.removeProtocol(pid, true);
 	}
 	
-	public void restoreState() throws ConfigurationException, RemoteException, ParserException {
+	public void restoreState() throws RemoteException, ParserException, SALDocumentException, ConfigurationException {
 		for(ProtocolConfiguration p: protocolState.getConfigurations())
 			agent.addProtocol(p.getXMLString(), false);
 		

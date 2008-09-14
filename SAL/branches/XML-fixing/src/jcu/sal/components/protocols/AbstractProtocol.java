@@ -3,7 +3,6 @@
  */
 package jcu.sal.components.protocols;
 
-import java.io.NotActiveException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -13,13 +12,17 @@ import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Parameters;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SALRunTimeException;
+import jcu.sal.common.exceptions.SensorControlException;
+import jcu.sal.common.exceptions.SensorDisconnectedException;
 import jcu.sal.common.pcml.PCMLConstants;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLConstants;
@@ -134,8 +137,8 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		//logger.debug("Parsing our configuration");
 		
 		try { autoDetectionInterval = Integer.parseInt(getParameter(PCMLConstants.AUTODETECTSENSORS_TAG));}
-		catch (BadAttributeValueExpException e) {}
-		//keep default value supplied hopefully by the Protocol subclass
+		catch (NotFoundException e) {}
+		//keep default value supplied by the Protocol subclass if not found in config
 		
 		/* check if we have already instancicated CMl store (we shouldnt, CML store instanciation msut be done in
 		 * (internal_)parse_config() 
@@ -165,7 +168,12 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		try { internal_parseConfig(); }
 		catch (ConfigurationException e) {
 			logger.error("Error configuring the protocol, destroying the endpoint");
-			EndPointManager.getEndPointManager().destroyComponent(ep.getID());
+			try {
+				EndPointManager.getEndPointManager().destroyComponent(ep.getID());
+			} catch (NotFoundException e1) {
+				logger.error("We shouldnt be here - cant destroy the endpoint");
+				throw new SALRunTimeException("cant destroy newly created endpoint",e1);
+			}
 			throw e;
 		} 
 	}
@@ -255,7 +263,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 				stop();
 				internal_remove();
 				try { EndPointManager.getEndPointManager().destroyComponent(ep.getID());}
-				catch (ConfigurationException e) { logger.error("Cant remove EndPoint...");	}
+				catch (NotFoundException e) { logger.error("Cant remove EndPoint...");	}
 				
 				/* Unregisters with the EventHandler */
 				EventDispatcher.getInstance().removeProducer(id.getName());
@@ -265,9 +273,9 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	}
 	
 	/**
-	 * This method specifies whether or not mulitple instances of this protocol
+	 * This method specifies whether or not multiple instances of this protocol
 	 * can exist at once.
-	 * @return whether or not mulitple instances of this protocol can exist at once.
+	 * @return whether or not multiple instances of this protocol can exist at once.
 	 */
 	public final boolean supportsMultipleInstances(){
 		return multipleInstances;
@@ -322,28 +330,23 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * called, it will block until the command finishes, then unassociated the sensor, thereby preventing it from 
 	 * being used again.
 	 * @param i the sensorID to be removed
+	 * @throws NotFoundException if the sensor isnt associated with this protocol
 	 */
-	public final boolean unassociateSensor(SensorID i) {
+	public final void unassociateSensor(SensorID i) throws NotFoundException {
 		Sensor s;
-		if(sensors.containsKey(i)) {
-			//prevent other changes to sensors
-			synchronized(sensors) {
+		//prevent other changes to sensors
+		synchronized(sensors) {
+			if(sensors.containsKey(i)) {
 				//make sure no command is being run on the sensor
 				s = sensors.get(i);
 				synchronized(s) {
-					if(sensors.remove(i) == null) {
-						logger.error("Cant unassociate sensor with key " + i.toString() +  ": No such element");
-						return false;
-					} else {
-						//logger.debug("unassociated sensor with key " + i.toString() +  " from protocol "+toString());
-					}
+					sensors.remove(i);
 				}
+			} else {
+				logger.error("Sensor " + i.toString()+ " doesnt exist and can NOT be unassociated");
+				throw new NotFoundException("no sensor named '"+i.toString()+"'");
 			}
-		} else {
-			logger.error("Sensor " + i.toString()+ " doesnt exist and can NOT be unassociated");
-			return false;
 		}
-		return true;
 	}
 	
 	/**
@@ -360,10 +363,11 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * @param c the command
 	 * @param sid the sensorID
 	 * @return the result
-	 * @throws BadAttributeValueExpException 
-	 * @throws NotActiveException 
+	 * @throws NotFoundException if the sensor ID doesnt match any existing sensor
+	 * @throws SensorControlException if anything went wrong 
+	 * @throws SALRunTimeException if a programming error occurs
 	 */
-	public final byte[] execute(Command c, SensorID sid) throws BadAttributeValueExpException, NotActiveException {
+	public final byte[] execute(Command c, SensorID sid) throws SensorControlException, NotFoundException{
 		byte[] ret_val = {};
 		Sensor s = sensors.get(sid);
 		if(started.get()) {
@@ -386,55 +390,50 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params);
 								//logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
 								ret_val = (byte[]) m.invoke(this,c, s);
-							} catch (ConfigurationException e) {
-								logger.error("Cant find the method matching this command "+c.getCID());
-								s.finishRunCmd();
-								throw new BadAttributeValueExpException("");
 							} catch (SecurityException e) {
 								logger.error("Not allowed to execute the method matching this command");
 								s.finishRunCmd();
-								throw new BadAttributeValueExpException("");
+								throw new SALRunTimeException("Programming error in the protocol subclass",e);
 							} catch (NoSuchMethodException e) {
 								logger.error("Could NOT find the method matching the command");
 								s.finishRunCmd();
-								throw new BadAttributeValueExpException("");
+								throw new SALRunTimeException("Programming error in the protocol subclass",e);
 							} catch (InvocationTargetException e) {
-								logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
-								if(e.getCause()!=null) logger.error("Caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
-								e.printStackTrace();
-								//FIXME: when exceptions are fixed, get subclasses to throw two different exceptions,
-								//FIXME: check which one is thrown here, and call either s.finishRunCmd(); or s.disconnect();  
-								s.finishRunCmd();
-								//s.disconnect();
-								throw new NotActiveException("");
+								//logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
+								//e.printStackTrace();
+								if(e.getCause() instanceof SensorDisconnectedException){
+									logger.debug("Disconnecting sensor '"+sid.getName()+"("+s.getNativeAddress()+")'");
+									s.disconnect();
+								} else 
+									s.finishRunCmd();
+
+								throw new SensorControlException("Sensor control error",e.getCause());
 							} catch (Exception e) {
 								logger.error("Could NOT run the command (error with invoke() )");
-								logger.error("exception:" + e.getClass() + " - " +e.getMessage());
-								if(e.getCause()!=null) logger.error("caused by:" + e.getCause().getClass() + " - "+e.getCause().getMessage());
 								e.printStackTrace();
 								s.finishRunCmd();
-								throw new BadAttributeValueExpException("");
+								throw new SALRunTimeException("Programming error in the protocol subclass",e);
 							}
 							s.finishRunCmd();
 						} else {
 							//logger.error("Sensor "+sid.getName()+" not available to run the command");
-							//TODO throw a better exception here
-							throw new NotActiveException("Sensor "+sid.getName()+" not available to run the command");
+							throw new SensorControlException("sensor unavailable", new SensorDisconnectedException("Sensor "+sid.getName()+" not available to run the command"));
 						}
 					}
 				}
 			} else {
 				//logger.error("Sensor not present.Cannot execute the command");
-				//TODO throw an exception here
+				throw new NotFoundException("No sensor matching name '"+sid.getName()+"'");
 			}
-		} //else
-			//logger.error("protocol not started.Cannot execute the command");
-			//TODO throw an exception here
+		} else {
+			logger.error("protocol not started.Cannot execute the command");
+			throw new SALRunTimeException("protocol not started - cant run the command");
+		}
 		return ret_val;
 	}
 	
 	/**
-	 * This method is called by parseConfig() when this object is contructed to 
+	 * This method is called by parseConfig() when this object is constructed to 
 	 * check whether a endPoint type is supported by this protocol
 	 * @param String the EndPoint type
 	 */
@@ -472,7 +471,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			if(s.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE).equals(id.getName())) {
 				return internal_isSensorSupported(s);
 			}
-		} catch (BadAttributeValueExpException e) {
+		} catch (NotFoundException e) {
 			logger.error("Cant find the name of the protocol the sensor is to be associated with");
 			return false;
 		}
@@ -521,10 +520,9 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * This method returns the CML docu for a given sensor
 	 * @param i the sensor whose CML we need
 	 * @return the CML description document
-	 * @throws ConfigurationException if the sensor is not found or isnt supported by this protocol
+	 * @throws NotFoundException if the sensor is not found or isnt supported by this protocol
 	 */
-	//TODO make me throw a better exception
-	public final CMLDescriptions getCML(SensorID i) throws ConfigurationException {
+	public final CMLDescriptions getCML(SensorID i) throws NotFoundException {
 		String key;
 		Sensor s =sensors.get(i);
 		if(s!=null) {
@@ -534,15 +532,15 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 					return cmls.getCMLDescriptions(key);  
 				} else {
 					logger.error("Error getting the key for sensor " + s.toString());
-					throw new ConfigurationException("Error getting the key for sensor " + s.toString());
+					throw new NotFoundException("Error getting the key for sensor " + s.toString());
 				}
 			}else {
 				logger.error("Sensor " +s.toString()+" not supported by this protocol");
-				throw new ConfigurationException("Sensor " +s.toString()+" not supported by this protocol");
+				throw new NotFoundException("Sensor " +s.toString()+" not supported by this protocol");
 			}
 		}
 		logger.error("Sensor "+ i.toString()+" is not associated with this protocol" );
-		throw new ConfigurationException("Sensor "+ i.toString()+" is not associated with this protocol");
+		throw new NotFoundException("Sensor "+ i.toString()+" is not associated with this protocol");
 	}
 	
 	/**
@@ -551,7 +549,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * @param s the sensor
 	 * @return the CML store key as a string
 	 */
-	protected abstract String internal_getCMLStoreKey(Sensor s) throws ConfigurationException;
+	protected abstract String internal_getCMLStoreKey(Sensor s);
 	
 	/**
 	 * this method should be overriden by protocols which provide sensor autodetection
@@ -671,6 +669,9 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 									logger.error("couldnt create the autodetected sensor from its autogenerated XML config: \n"+t);
 							} catch (ConfigurationException e) {
 								logger.error("couldnt instanciate component");
+								e.printStackTrace();
+							} catch (SALDocumentException e) {
+								logger.error("We shouldnt be here - cant create an SML description");
 								e.printStackTrace();
 							}
 					}

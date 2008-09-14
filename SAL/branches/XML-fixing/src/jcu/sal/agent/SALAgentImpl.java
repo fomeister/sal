@@ -3,16 +3,15 @@
  */
 package jcu.sal.agent;
 
-import java.io.NotActiveException;
-
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -78,7 +77,7 @@ public class SALAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgent#addSensor(java.lang.String)
 	 */
-	public synchronized String addSensor(String xml) throws ConfigurationException, ParserException {
+	public synchronized String addSensor(String xml) throws ParserException, SALDocumentException, ConfigurationException {
 		return sm.createComponent(new SMLDescription(xml)).getID().getName();
 	}
 
@@ -86,11 +85,15 @@ public class SALAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#removeSensor(java.lang.String)
 	 */
-	public synchronized void removeSensor(String sid) throws ConfigurationException {
+	public synchronized void removeSensor(String sid) throws NotFoundException {
 		SensorID s = new SensorID(sid);
-		try {sm.destroyComponent(s);}
-		catch (ConfigurationException e) {logger.debug("Looks like this sensor was not active");}
-		sm.removeSensorConfig(s);
+		sm.destroyComponent(s);
+		try {
+			sm.removeSensorConfig(s);
+		} catch (ConfigurationException e) {
+			logger.error("We shoudlnt be here - sensor still active");
+			e.printStackTrace();
+		}
 	}		
 	
 	/*
@@ -113,7 +116,7 @@ public class SALAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#execute(jcu.sal.components.Command, java.lang.String)
 	 */
-	public Response execute(Command c, String sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException {
+	public Response execute(Command c, String sid) throws NotFoundException, SensorControlException{
 		return pm.execute(c,new SensorID(sid));
 	}
 	
@@ -121,7 +124,7 @@ public class SALAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#getCML(java.lang.String)
 	 */
-	public String  getCML(String sid) throws ConfigurationException, NotActiveException {
+	public String  getCML(String sid) throws NotFoundException{
 		return pm.getCML(new SensorID(sid)).getXMLString();
 	}
 
@@ -133,7 +136,7 @@ public class SALAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#addProtocol(java.lang.String, boolean)
 	 */
-	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserException {
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserException, SALDocumentException {
 		synchronized (this) {
 			AbstractProtocol p = pm.createComponent(new ProtocolConfiguration(xml));
 			if(loadSensors) sm.loadSensorsFromConfig(p.getID());
@@ -145,11 +148,16 @@ public class SALAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#removeProtocol(java.lang.String, boolean)
 	 */
-	public void removeProtocol(String pid, boolean removeSensors) throws ConfigurationException {
+	public void removeProtocol(String pid, boolean removeSensors) throws NotFoundException {
 		ProtocolID p = new ProtocolID(pid);
 		synchronized (this) {
 			pm.destroyComponent(p);
-			pm.removeProtocolConfig(p, removeSensors);
+			try {
+				pm.removeProtocolConfig(p, removeSensors);
+			} catch (ConfigurationException e) {
+				logger.error("We shoudlnt be here - protocol still active");
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -165,11 +173,11 @@ public class SALAgentImpl implements SALAgent{
 	 * Event-related methods
 	 */
 	
-	public void registerEventHandler(EventHandler eh, String producerID) throws ConfigurationException {
+	public void registerEventHandler(EventHandler eh, String producerID) throws NotFoundException {
 		ev.registerEventHandler(eh, producerID);
 	}
 
-	public void unregisterEventHandler(EventHandler eh, String producerID) throws ConfigurationException {
+	public void unregisterEventHandler(EventHandler eh, String producerID) throws NotFoundException {
 		ev.unregisterEventHandler(eh, producerID);
 	}
 }

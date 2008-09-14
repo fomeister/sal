@@ -3,8 +3,9 @@
  */
 package jcu.sal.components.sensors;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.AbstractComponent;
@@ -29,18 +30,25 @@ public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 	 * Sensor constructor
 	 * @param i the sensor ID
 	 * @param c the configuration table
-	 * @throws ConfigurationException if the configuration is wrong
 	 */
-	public Sensor(SensorID i, SMLDescription s) throws ConfigurationException {
+	public Sensor(SensorID i, SMLDescription s) {
 		super(s,i);
 		state = new SensorState(i);
 	}
 
 	public void setPid(ProtocolID pid) throws ConfigurationException {
-		String p = config.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
+		String p;
+		try {
+			p = config.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
+		} catch (NotFoundException e) {
+			logger.error("Shouldnt be here, we have a sensor ("+id.toString()+") without a protocol name");
+			e.printStackTrace();
+			throw new SALRunTimeException("We have a sensor ("+id.toString()+") without a protocol name",e);
+		}
+		
 		if(!pid.getName().equals(p)) {
-			logger.error("Trying to associate with  protocol '"+pid.getName()+"' but sensor config expected '"+p+"'");
-			throw new ConfigurationException("cant associate with this protocol ("+pid.getName()+")");
+			logger.error("Trying to associate with protocol '"+pid.getName()+"' but sensor config expected '"+p+"'");
+			throw new ConfigurationException("cant associate with this protocol ("+pid.getName()+") - sensor config says "+p+" instead");
 		}		
 		id.setPid(pid);
 	}
@@ -48,9 +56,10 @@ public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 	public String getNativeAddress() {
 		try {
 			return config.getParameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			logger.error("Shouldnt be here, we have a sensor ("+id.toString()+") without a native address");
-			return null;
+			e.printStackTrace();
+			throw new SALRunTimeException("We have a sensor ("+id.toString()+") without a native address",e);
 		}
 	}
 		

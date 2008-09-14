@@ -6,10 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
 
@@ -61,9 +60,9 @@ public class Parameters {
 	 * instead of a org.w3.DOM.Document object.
 	 * @param p the string representation of the DOM document
 	 * @throws ParserException if the given string isnt a valid XML document
-	 * @throws ConfigurationException if there isnt exactly one parameters section or if it is malformed
+	 * @throws SALDocumentException if there isnt exactly one parameters section or if it is malformed
 	 */
-	public Parameters(String p) throws ParserException, ConfigurationException{
+	public Parameters(String p) throws ParserException, SALDocumentException{
 		this(XMLhelper.createDocument(p));
 	}
 	
@@ -94,9 +93,9 @@ public class Parameters {
 	 * located anywhere in the document. This constructor doesnt make any assumption with respect to the position of the parameters
 	 * section in the node hierarchy, as long as there is up to one section, and that it is properly formatted.   
 	 * @param d the DOM document containing a parameters section
-	 * @throws ConfigurationException if there iis mroe than one parameteres section, of if it is malformed.
+	 * @throws SALDocumentException if there is more than one parameteres section, of if it is malformed.
 	 */
-	public Parameters(Document d) throws ConfigurationException{
+	public Parameters(Document d) throws SALDocumentException{
 		params = new Hashtable<String,Parameter>();
 		parseParams(d);
 	}
@@ -104,9 +103,9 @@ public class Parameters {
 	/**
 	 * This method parses the given document and creates a Parameters object from the parameters section found in the document
 	 * @param d the DOM document containing up to one parameters section 
-	 * @throws ConfigurationException if the parameters section cant be parsed, or if there is more than one
+	 * @throws SALDocumentException if the parameters section cant be parsed, or if there is more than one
 	 */
-	private void parseParams(Document d) throws ConfigurationException{
+	private void parseParams(Document d) throws SALDocumentException{
 		//check that we have one and only one <parameters> tag
 		int nb;
 		try {
@@ -115,13 +114,13 @@ public class Parameters {
 			logger.error("Cant check how many parameters sections are in this document");
 			logger.error(XMLhelper.toString(d));
 			t.printStackTrace();
-			throw new ConfigurationException("Cant find/parse parameters section");
+			throw new SALDocumentException("Cant find/parse parameters section", t);
 		}
 		
 		if(nb!=1){
 			logger.error("There should be only one parameters section in this document, found "+nb+" ");
 			logger.error(XMLhelper.toString(d));
-			throw new ConfigurationException("Document doesnt have exactly one parameters section");
+			throw new SALDocumentException("Document doesnt have exactly one parameters section");
 		}
 		
 
@@ -132,7 +131,7 @@ public class Parameters {
 				params.put(l.get(nb+1), new Parameter(l.get(nb+1), l.get(nb+3)));
 		} catch (NotFoundException e) {
 			logger.error("cant find/parse the parameter list");
-			throw new ConfigurationException("Cant find parameter list");
+			throw new SALDocumentException("Cant find parameter list", e);
 		}		
 	}
 	
@@ -140,14 +139,14 @@ public class Parameters {
 	 * This method returns a Parameter object given its name.
 	 * @param name the name of the parameter to be returned
 	 * @return the Paramter object matching the name passed as argument
-	 * @throws ConfigurationException if there are no parameters matching the given name
+	 * @throws NotFoundException if there are no parameters matching the given name
 	 */
-	public Parameter getParameter(String name) throws ConfigurationException{
+	public Parameter getParameter(String name) throws NotFoundException{
 		if(params.containsKey(name))
 			return params.get(name);
 		
 		//logger.debug("No parameter named "+name );
-		throw new ConfigurationException();
+		throw new NotFoundException("Parameter '"+name+"' not found");
 	}
 	
 	/**

@@ -1,15 +1,13 @@
 package jcu.sal.client.stressTest.actions;
 
-import java.io.NotActiveException;
 import java.rmi.RemoteException;
 import java.util.Random;
-
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
 
 import jcu.sal.common.RMICommandFactory;
 import jcu.sal.common.RMICommandFactory.RMICommand;
 import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.utils.Slog;
 import jcu.sal.utils.XMLhelper;
@@ -49,18 +47,11 @@ public class ExecuteSensorAction implements Action {
 		}
 
 		Integer name=null;
-		String protocol=null;
 		int i = r.nextInt(p.getSize());
 		int j=0;
 		for(Integer n: p.getSIDs()){
 			if(j++==i) {
 				name = n;
-				try {
-					protocol = p.getDescription(name.intValue()).getProtocolName();
-				} catch (ConfigurationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 				break;
 			}
 		}
@@ -80,20 +71,16 @@ public class ExecuteSensorAction implements Action {
 			//logger.info("executing command on sensor "+name+" ("+protocol+")");
 			agent.execute(cmd, name.toString());
 			//logger.info("command executed by sensor "+name);
-		} catch (ConfigurationException e) {
-			logger.info("command NOT executed by sensor "+name+" "+protocol);
-			e.printStackTrace();
 		} catch (RemoteException e) {
 			logger.info("sensor "+name+" cant be removed");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (NotActiveException e) {
-			logger.info("sensor "+name+" cant be removed");
+		} catch (NotFoundException e) {
+			logger.info("we shouldnt be here");
 			// TODO Auto-generated catch block
-			e.printStackTrace();			
-		} catch (BadAttributeValueExpException e) {
-			logger.info("sensor "+name+" cant be removed");
-			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SensorControlException e) {
+			logger.info("Command execution failed");
 			e.printStackTrace();
 		} 
 	}

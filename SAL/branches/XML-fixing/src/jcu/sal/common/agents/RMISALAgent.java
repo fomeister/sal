@@ -1,15 +1,15 @@
 package jcu.sal.common.agents;
 
-import java.io.NotActiveException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.Response;
 import jcu.sal.common.RMICommandFactory.RMICommand;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.ParserException;
+import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SensorControlException;
 
 public interface RMISALAgent extends Remote{
 	/**
@@ -40,23 +40,24 @@ public interface RMISALAgent extends Remote{
 	 */
 	
 	/**
-	 * This method instanciate a new sensor given its XML document. the returned value is a representation
-	 * of the sensor identifier. If one is specified in the XML document, it will be ignored and replaced
-	 * with a new one (the returned value). public static String RMI_STUB_NAME = "RMI SAL Agent";
-	 * @param xml the sensor's XML configuration document
+	 * This method instantiates a new sensor given its SML document. the returned value is a representation
+	 * of the sensor identifier. If one is specified in the SML document, it will be ignored and replaced
+	 * with a new one (the returned value).
+	 * @param xml the sensor's SML configuration document
 	 * @return a string representing the sensor identifier
-	 * @throws ParserException if the XML document cannot be parsed
-	 * @throws ConfigurationException if the XML document is incorrect
+	 * @throws ParserException if the given string isnt a valid XML document
+	 * @throw SALDocumentException if the given SML document isnt valid
+	 * @throws ConfigurationException if the sensor cant be instantiated because of invalid configuration information
 	 */
-	public String addSensor(String xml) throws ConfigurationException, ParserException, RemoteException;
+	public String addSensor(String xml) throws SALDocumentException, ParserException, ConfigurationException, RemoteException;
 	
 	/**
 	 * This method removes a sensor with the given identifier. Its configuration information is also removed from the
 	 * configuration file.
 	 * @param sid the sensor identifier
-	 * @throws ConfigurationException if the ID cannot be found
+	 * @throws NotFoundException if the given sensor ID doesnt match any existing sensor
 	 */
-	public void removeSensor(String sid) throws ConfigurationException, RemoteException;
+	public void removeSensor(String sid) throws NotFoundException, RemoteException;
 	
 	/**
 	 * This method returns an XML document containing the configuration of all currently active sensors.
@@ -80,38 +81,42 @@ public interface RMISALAgent extends Remote{
 	 * @param c the command to be executed
 	 * @param sid the target sensor identifier
 	 * @return the result
+	 * @throws NotFoundException if the given sensor id doesnt match any existing sensor
+	 * @throws SensorControlException if there is an error controlling the sensor. If this exception is raised,
+	 * the cause of this exception will be linked to it and can be retrieved using <code>getCause()</code>  
 	 */
-	public Response execute(RMICommand c, String sid) throws ConfigurationException, BadAttributeValueExpException, NotActiveException, RemoteException;
+	public Response execute(RMICommand c, String sid) throws NotFoundException, SensorControlException, RemoteException;
 	
 	/**
 	 * This method returns the CML document for a given sensor
 	 * @param sid the sensor identifier
 	 * @return the CML doc
-	 * @throws ConfigurationException if the CML doc cant be found
+	 * @throws NotFoundException if the given sensor ID doesnt match any existing sensor
 	 */
-	public String getCML(String sid) throws ConfigurationException, NotActiveException, RemoteException;
+	public String getCML(String sid) throws NotFoundException, RemoteException;
 	
 	/*
 	 * Protocols-related methods 
 	 */
 	
 	/**
-	 * This method instanciate a new protocol given its XML document. If successful, this method will also
-	 * store the protocol's XML configuration information in the platform configuration file
-	 * @param xml the protocol's XML configuration document
+	 * This method instantiates a new protocol given its PCML document. If successful, this method will also
+	 * store the protocol's PCML configuration information in the platform configuration file
+	 * @param xml the protocol's PCML configuration document
 	 * @param loadSensors set to true if the sensor configuration file should be checked for sensors associated with 
 	 * this protocol and create them.
-	 * @throws ParserException if the XML document cannot be parsed
-	 * @throws ConfigurationException if the XML document is incorrect
+	 * @throws ParserException if the given string isnt a valid XML document
+	 * @throws SALDocumentException if the given PCML document is invalid
+	 * @throws ConfigurationException if the protocol cant be instantiated because of invalid configuration information
 	 */
-	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserException, RemoteException;
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, ParserException, SALDocumentException, RemoteException;
 	
 	/**
 	 * This method removes a protocol given its ID. The protocol is first stopped so commands are no further 
 	 * accepted. It then removes all associated sensors and their configuration if <code>removeSensors</code> is set to true. 
-	 * @throws ConfigurationException if the ID cannot be found
+	 * @throws NotFoundException if the given protocol ID doesnt match any existing protocols
 	 */
-	public void removeProtocol(String pid, boolean removeSensors) throws ConfigurationException, RemoteException;
+	public void removeProtocol(String pid, boolean removeSensors) throws NotFoundException, RemoteException;
 	
 	/**
 	 * This method lists the configuration of all existing protocols
@@ -133,18 +138,18 @@ public interface RMISALAgent extends Remote{
 	 * @param rmiName the name of the RMI client as previously registered with registerClient().
 	 * @param objName the name of the RMI event handler to lookup in the RMI registry.
 	 * @param producerID the identifier of a protocol or the special identifiers "SensorManager", "ProtocolManager" or "SensorState"
-	 * @throws ConfigurationException if the given producerID doesnt exist
-	 * @throws RemoteException if the RMI event handler obejct cant be found in the RMI registry
+	 * @throws NotFoundException if the given producerID doesnt exist
+	 * @throws RemoteException if the RMI event handler object cant be found in the RMI registry
 	 */
-	public void registerEventHandler(String rmiName, String objName, String producerID) throws ConfigurationException, RemoteException;
+	public void registerEventHandler(String rmiName, String objName, String producerID) throws NotFoundException, RemoteException;
 	
 	/**
 	 * This method unregisters an EventHandler previously registered with <code>registerEventHandler()</code>
 	 * @param rmiName the name of the RMI client as previously registered with registerClient().
 	 * @param objName the name of the object to lookup in the RMI registry.
 	 * @param producerID the producer to which it is associated
-	 * @throws ConfigurationException if the handler can not be found/removed
-	 * @throws RemoteException if the RMI event handler obejct cant be found in the RMI registry
+	 * @throws NotFoundException if the handler can not be found/removed
+	 * @throws RemoteException if the RMI event handler object cant be found in the RMI registry
 	 */
-	public void unregisterEventHandler(String rmiName, String objName, String producerID) throws ConfigurationException, RemoteException;
+	public void unregisterEventHandler(String rmiName, String objName, String producerID) throws NotFoundException, RemoteException;
 }

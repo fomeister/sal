@@ -8,9 +8,8 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.utils.Slog;
 
@@ -44,17 +43,23 @@ public class EthernetEndPoint extends EndPoint {
 	 */
 	@Override
 	public void parseConfig() throws ConfigurationException {
-		// Check if we have this ethernet device on this platform
+		// Check if we have this Ethernet device on this platform
 		NetworkInterface n = null;
 		String intName = null, ipAddress = null;
 		boolean found = false;
 		
 		//logger.debug("check if we have the ethernet port.");
+		try { intName = getParameter(ETHDEVICEATTRIBUTE_TAG); } catch (NotFoundException e1) {}
+		
+		//IP address is not mandatory
+		try {ipAddress = getParameter(IPADDRESSATTRIBUTE_TAG);} catch(NotFoundException e) {ipAddress="";}
+		
+		if (intName==null && ipAddress==null){
+			logger.error("Either the name or the ip address of an ethernet interface must be specified, none found");
+			throw new ConfigurationException("Either the name or the ip address of an ethernet interface must be specified, none found");
+		}
+		
 		try {
-			intName = getParameter(ETHDEVICEATTRIBUTE_TAG);
-			try {ipAddress = getParameter(IPADDRESSATTRIBUTE_TAG);} catch(BadAttributeValueExpException e) {ipAddress="";}
-			logger.debug( intName + "(" + ipAddress +")");
-			
 			/* Look for the ethernet if either by name or by IP address*/
 			if (ipAddress.length() == 0) {
 				/* by name */
@@ -63,7 +68,9 @@ public class EthernetEndPoint extends EndPoint {
 			} else {
 				/* by IP address*/
 				InetAddress i;
-				Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
+				Enumeration<NetworkInterface> e;
+	
+				e = NetworkInterface.getNetworkInterfaces();
 				while(e.hasMoreElements() && !found) {
 					n = e.nextElement();
 					if(n.getDisplayName().equals(intName)) {
@@ -72,32 +79,28 @@ public class EthernetEndPoint extends EndPoint {
 							i = ee.nextElement();
 							if(i.getHostAddress().equals(ipAddress)) {
 								found = true;
+								break;
 							}
 						}						
 					}
-				}
+				}	
 			}
 			
 			if(found) {
 				//logger.debug("Found ethernet port: " + n.getDisplayName());
 				if (!n.isUp()) {
-					logger.error("The ethernet port is down");
-					throw new ConfigurationException("The ethernet port is down");
+					logger.error("The ethernet interface '"+intName+"' is down");
+					throw new ConfigurationException("The ethernet interface '"+intName+"' is down");
 				}
 				configured = true;
 				//logger.debug("The ethernet port was successfully configured");
 			} else {
-				logger.error("The ethernet port could not be found");
-				throw new ConfigurationException("The ethernet port could not be found");
+				logger.error("The ethernet interface '"+intName+"' could not be found");
+				throw new ConfigurationException("The ethernet interface '"+intName+"' could not be found");
 			}
-		} catch (SocketException e) {
-			logger.error("Couldnt find the ethernet port...");
-			e.printStackTrace();
-			throw new ConfigurationException("Couldnt find the ethernet port...");
-		} catch (BadAttributeValueExpException e) {
-			logger.error("Bad ethernet EndPoint XML config");
-			e.printStackTrace();
-			throw new ConfigurationException("Couldnt initialise the ethernet port...");
-		} 
+		} catch (SocketException e1) {
+			logger.error("Error enumerating the network interfaces");
+			throw new ConfigurationException("The ethernet interface '"+intName+"' could not be found", e1);
+		}
 	}
 }

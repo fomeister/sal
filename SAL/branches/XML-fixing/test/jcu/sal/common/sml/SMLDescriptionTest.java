@@ -16,6 +16,8 @@ import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.utils.XMLhelper;
 
 import org.junit.After;
@@ -121,24 +123,28 @@ public class SMLDescriptionTest {
 
 	/**
 	 * Test method for {@link jcu.sal.common.sml.SMLDescription#SMLDescription(java.lang.Integer, java.util.Hashtable)}.
+	 * @throws SALDocumentException 
 	 * @throws ConfigurationException 
 	 */
 	@Test
-	public void testSMLDescriptionIntegerHashtableOfStringString() throws ConfigurationException{
+	public void testSMLDescriptionIntegerHashtableOfStringString() throws SALDocumentException{
 		try {
 			new SMLDescription(new Integer(10), p1);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		try {
 			new SMLDescription(new Integer(10), p2);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {}
 		
 		try {
 			new SMLDescription(new Integer(SMLConstants.SENSOR_ID_MAX+1), p3);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {}
 		
 		new SMLDescription(new Integer(1), p3);
 	}
@@ -148,19 +154,19 @@ public class SMLDescriptionTest {
 	 * @throws ConfigurationException 
 	 */
 	@Test
-	public void testSMLDescriptionDocument() throws ConfigurationException {
+	public void testSMLDescriptionDocument() throws SALDocumentException {
 		try {
 			new SMLDescription(d1);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {}
 		try {
 			new SMLDescription(d2);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {}
 		try {
 			new SMLDescription(d3);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {}
 		System.out.println("Checking d4:"+XMLhelper.toString(d4));
 		new SMLDescription(d4);
 	}
@@ -170,7 +176,7 @@ public class SMLDescriptionTest {
 	 * @throws ConfigurationException 
 	 */
 	@Test
-	public void testGetSID() throws ConfigurationException {
+	public void testGetSID() throws SALDocumentException {
 		SMLDescription s = new SMLDescription(d4);
 		assertTrue(s.getSID()==10);
 		
@@ -180,10 +186,11 @@ public class SMLDescriptionTest {
 
 	/**
 	 * Test method for {@link jcu.sal.common.sml.SMLDescription#getParameter(java.lang.String)}.
+	 * @throws NotFoundException 
 	 * @throws ConfigurationException 
 	 */
 	@Test
-	public void testGetParameter() throws ConfigurationException {
+	public void testGetParameter() throws SALDocumentException, NotFoundException {
 		SMLDescription s = new SMLDescription(d4);
 		assertEquals(s.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE), "MyProtocol");
 		assertEquals(s.getParameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE), "MySensorAddress");
@@ -198,7 +205,7 @@ public class SMLDescriptionTest {
 	 * @throws ConfigurationException 
 	 */
 	@Test
-	public void testGetParameterNames() throws ConfigurationException {
+	public void testGetParameterNames() throws SALDocumentException {
 		SMLDescription s = new SMLDescription(d4);
 		Set<String> set = new HashSet<String>();
 		Set<String> set1 = new HashSet<String>();

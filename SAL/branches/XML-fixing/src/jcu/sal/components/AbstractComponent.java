@@ -5,10 +5,10 @@ package jcu.sal.components;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
+import jcu.sal.common.exceptions.ConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.NotFoundException;
 
 /**
  * This class does something
@@ -29,8 +29,8 @@ public abstract class AbstractComponent<T extends Identifier, U extends HWCompon
 	public AbstractComponent(U c, T i) {config = c; id = i;}
 	
 	/**
-	 * This method returns the configuration obejct associated with this compoenent
-	 * @return the configuration obejct associated with this compoenent
+	 * This method returns the configuration object associated with this component
+	 * @return the configuration object associated with this component
 	 */
 	public U getConfig() { return config; }
 	
@@ -44,12 +44,8 @@ public abstract class AbstractComponent<T extends Identifier, U extends HWCompon
 	 * @see jcu.sal.components.HWComponent#getConfig(java.lang.String)
 	 */
 	@Override
-	public String getParameter(String directive) throws BadAttributeValueExpException {
-		try {
-			return config.getParameters().getParameter(directive).getStringValue();
-		} catch (ConfigurationException e) {
-			throw new BadAttributeValueExpException("Unable to get a config directive with this name "+ directive);
-		}
+	public String getParameter(String directive) throws NotFoundException {
+		return config.getParameters().getParameter(directive).getStringValue();
 	}
 	
 	/* (non-Javadoc)

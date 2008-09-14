@@ -3,8 +3,7 @@
  */
 package jcu.sal.components.EndPoints;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.utils.Slog;
 

@@ -1,21 +1,27 @@
 package jcu.sal.common;
 
 import java.io.Serializable;
-import java.nio.channels.ClosedChannelException;
 
-import javax.naming.ConfigurationException;
+import jcu.sal.common.exceptions.SensorControlException;
 
+/**
+ * Objects of this class encapsulate the result of the execution of a command on a sensor.
+ * The result can be retrieved using one of the <code>get*</code> methods. If a response object is part of
+ * a data stream, usually obtained from a callback method, the <code>get*</code> methods may return an  
+ * @author gilles
+ *
+ */
 public class Response implements Serializable {
 	private static final long serialVersionUID = -4090794353146528167L;
 	private byte[] b;
 	private String sid;
-	private boolean error;
+	private SensorControlException exception;
 	private long timeStamp;
 	
 	public Response(byte[] bb, String sid) {
 		timeStamp = System.currentTimeMillis();
 		this.sid = sid;
-		error = false;
+		exception = null;
 		if(bb==null)
 			b= new byte[0];
 		else
@@ -28,10 +34,10 @@ public class Response implements Serializable {
 	 * @param sid the sensor id
 	 * @param e whether there was an error or not (normal end of stream)
 	 */
-	public Response(String sid, boolean e){
+	public Response(String sid, SensorControlException e){
 		this(null,sid);
 		b=null;
-		error = e;
+		exception = e;
 	}
 	
 	/**
@@ -45,54 +51,47 @@ public class Response implements Serializable {
 	/**
 	 * This method returns the raw data from the sensor as a byte array.
 	 * @return the raw data from the sensor 
-	 * @throws ConfigurationException if there was an error getting the raw data at the sensor
-	 * @throws ClosedChannelException if the streaming channel has been closed by the sensor
+	 * @throws SensorControlException if there was an error getting the raw data at the sensor
 	 */
-	public byte[] getBytes() throws ConfigurationException, ClosedChannelException {
-		if(b==null && error)
-			throw new ConfigurationException();
-		else if(b==null && !error)
-			throw new ClosedChannelException();
+	public byte[] getBytes() throws SensorControlException {
+		if(b==null && exception!=null)
+			throw exception;
 		return b;
 	}
 	
 	/**
 	 * This method returns the length of the raw data from the sensor.
 	 * @return the raw data from the sensor 
-	 * @throws ConfigurationException if there was an error getting the raw data at the sensor
-	 * @throws ClosedChannelException if the streaming channel has been closed by the sensor
+	 * @throws SensorControlException if there was an error getting the raw data at the sensor
 	 */
-	public int getLength() throws ConfigurationException, ClosedChannelException{
+	public int getLength() throws SensorControlException{
 		return getBytes().length;
 	}
 	
 	/**
 	 * This method returns the raw data from the sensor as a string
 	 * @return the raw data from the sensor as a string
-	 * @throws ConfigurationException if there was an error getting the raw data at the sensor
-	 * @throws ClosedChannelException if the streaming channel has been closed by the sensor
+	 * @throws SensorControlException if there was an error getting the raw data at the sensor
 	 */
-	public String getString() throws ConfigurationException, ClosedChannelException {
+	public String getString() throws SensorControlException {
 		return new String(getBytes());
 	}
 	
 	/**
 	 * This method returns the raw data from the sensor as an integer
 	 * @return the raw data from the sensor as an integer
-	 * @throws ConfigurationException if there was an error getting the raw data at the sensor
-	 * @throws ClosedChannelException if the streaming channel has been closed by the sensor
+	 * @throws SensorControlException if there was an error getting the raw data at the sensor
 	 */
-	public int getInt() throws ConfigurationException, ClosedChannelException {
+	public int getInt() throws SensorControlException {
 		return Integer.parseInt(getString());
 	}
 	
 	/**
 	 * This method returns the raw data from the sensor as a float.
 	 * @return the raw data from the sensor as a float.
-	 * @throws ConfigurationException if there was an error getting the raw data at the sensor
-	 * @throws ClosedChannelException if the streaming channel has been closed by the sensor
+	 * @throws SensorControlException if there was an error getting the raw data at the sensor
 	 */
-	public float getFloat() throws ConfigurationException, ClosedChannelException {
+	public float getFloat() throws SensorControlException {
 		return Float.parseFloat(getString());
 	}
 	
