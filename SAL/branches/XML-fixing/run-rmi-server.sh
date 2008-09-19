@@ -15,9 +15,14 @@ rm ${PLATFORM_CONFIG}
 rm ${SENSORS_CONFIG}
 
 #
+# Disable SAL hardware auto-detection
+#
+#DISABLEHW="-Djcu.sal.disableHwDetection=1"
+
+#
 # Enables RMI loader debug
 #
-#DEBUG=-Dsun.rmi.loader.logLevel=VERBOSE
+#RMIDEBUG=-Dsun.rmi.loader.logLevel=VERBOSE
 
 
 #
@@ -25,5 +30,5 @@ rm ${SENSORS_CONFIG}
 #
 JMX_MGT="-Dcom.sun.management.jmxremote.port=56565 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"
 
-java -classpath ${SAL_BIN}:${SAL_LIB}/*:../HAL/lib/*:../HAL/bin:../v4l4j/* -Djava.library.path=../v4l4j:../HAL/lib -Djava.rmi.server.codebase="file:${SAL_BIN}/ file:${SAL_LIB}/log4j-1.2.15.jar" ${DEBUG} ${JMX_MGT} -Djava.rmi.server.hostname=$1 jcu.sal.agent.RMIAgentImpl $1 ${PLATFORM_CONFIG} ${SENSORS_CONFIG}
+java -classpath ${SAL_BIN}:${SAL_LIB}/*:../HAL/lib/*:../HAL/bin:../v4l4j/* -Djava.library.path=../v4l4j:../HAL/lib -Djava.rmi.server.codebase="file:${SAL_BIN}/ file:${SAL_LIB}/log4j-1.2.15.jar" ${RMIDEBUG} ${JMX_MGT} -Djava.rmi.server.hostname=$1 ${DISABLEHW} jcu.sal.agent.RMIAgentImpl $1 ${PLATFORM_CONFIG} ${SENSORS_CONFIG}
 

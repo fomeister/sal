@@ -253,7 +253,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			fg.startCapture();
 		} catch (V4L4JException e) {
 			logger.error("Error while starting frame capture");
-			throw new SensorIOException("Error while starting frame capture");
+			throw new SensorIOException("Error while starting frame capture",e);
 		}
 		try {
 			bb = fg.getFrame();
@@ -261,13 +261,13 @@ public class V4L2Protocol extends AbstractProtocol {
 			bb.get(b);
 		} catch (V4L4JException e1) {
 			logger.error("Error while capturing frame");
-			throw new SensorIOException("Error while capturing frame");
+			throw new SensorIOException("Error while capturing frame",e1);
 		} finally {
 			try {
 				fg.stopCapture();
 			} catch (V4L4JException e) {
 				logger.error("Error while stopping capture");
-				throw new SensorIOException("Error while stopping capture");
+				throw new SensorIOException("Error while stopping capture",e);
 			}
 		}
 		return b;

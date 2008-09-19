@@ -153,7 +153,7 @@ public class RmiClientDummyStressTest2{
 		
 		for(SMLDescription s: sensorState.getDescriptions())
 			try { 
-				agent.addSensor(s.getSMLString());
+				agent.addSensor(s.getXMLString());
 			} catch (ConfigurationException e){}
 	}
 	

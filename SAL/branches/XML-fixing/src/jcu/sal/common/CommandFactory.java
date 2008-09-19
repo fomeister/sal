@@ -190,18 +190,15 @@ public class CommandFactory {
 	/**
 	 * This method adds the value for an argument and overwrites any previous values.
 	 * The value is passed as a string and converted to the given type for checking
-	 * before being added. CallBack types are not accepted
+	 * before being added. <b>CallBack types are not accepted, use <code>addArgumentCallback()</code> instead.<b>
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the value cant be converted, the argument cant be found or is of type callback
 	 * @throws NotFoundException if no argument matches the given name
 	 */
 	public void addArgumentValue(String name, String val) throws ConfigurationException, NotFoundException{
-		ArgumentType t;
-		if((t= cml.getArgType(name))==null){
-			logger.debug("Cant find argument '"+name+"'");
-			throw new ConfigurationException();
-		} else if(t.getArgType().equals(CMLConstants.ARG_TYPE_FLOAT))
+		ArgumentType t = cml.getArgType(name);
+		if(t.getArgType().equals(CMLConstants.ARG_TYPE_FLOAT))
 			addArgumentValueFloat(name, Float.parseFloat(val));				
 		else if(t.getArgType().equals(CMLConstants.ARG_TYPE_INT))
 			addArgumentValueInt(name, Integer.parseInt(val));	
@@ -209,10 +206,10 @@ public class CommandFactory {
 			addArgumentValueString(name, val);
 		else if(t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
 			logger.error("Given an argument of type CALLBACK");
-			throw new ConfigurationException();
+			throw new ConfigurationException("Given an argument of type CALLBACK - use addArgumentCallback() instead");
 		} else {
 			logger.error("Unknown argument type '"+t.getArgType()+"'");
-			throw new ConfigurationException();
+			throw new ConfigurationException("Unknown argument type '"+t.getArgType()+"'");
 		}
 	}
 	

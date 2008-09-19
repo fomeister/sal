@@ -204,7 +204,7 @@ public class RMICommandFactory {
 			List<String> names = callbackNames.get(n);
 			if(names.size()!=2) {
 				logger.error("Callback "+n+" doesnt have appropriate values" );
-				throw new ConfigurationException();
+				throw new ConfigurationException("Callback "+n+" doesnt have appropriate values");
 			}				
 		}
 		

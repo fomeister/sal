@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jcu.sal.common.exceptions.AlreadyPresentException;
-import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SALRunTimeException;
@@ -114,14 +113,14 @@ public class SMLDescriptions {
 	 * This method returns an SMLDescription object for a single sensor, given it sensor ID
 	 * @param sid the sensor ID
 	 * @return an SMLDescription object
-	 * @throws ConfigurationException if the sensor ID cant be found
+	 * @throws NotFoundException if the sensor ID cant be found
 	 */
-	public SMLDescription getDescription(int sid) throws ConfigurationException {
+	public SMLDescription getDescription(int sid) throws NotFoundException {
 		for(SMLDescription s: smls)
 			if(s.getID().equals(String.valueOf(sid)))
 				return s;
 			
-		throw new ConfigurationException("no such sensor ID");
+		throw new NotFoundException("no such sensor ID");
 	}
 	
 	/**
@@ -136,12 +135,12 @@ public class SMLDescriptions {
 	 * This method returns the XML document associated with this SMLDescriptions object as a string
 	 * @return the XML document associated with this object
 	 */
-	public String getSMLString() {
+	public String getXMLString() {
 		StringBuffer sb = new StringBuffer();
 				
 		sb.append("<"+SMLConstants.SENSOR_CONF_NODE+">");
 		for(SMLDescription s: smls)
-			sb.append(s.getSMLString());
+			sb.append(s.getXMLString());
 		sb.append("</"+SMLConstants.SENSOR_CONF_NODE+">");
 		
 		return sb.toString();
@@ -151,9 +150,9 @@ public class SMLDescriptions {
 	 * This method returns the XML document associated with this SMLDescriptions object as a DOM document
 	 * @return the XML document associated with this SMLDescriptions object 
 	 */
-	public Document getSML() {
+	public Document getXML() {
 		try {
-			return XMLhelper.createDocument(getSMLString());
+			return XMLhelper.createDocument(getXMLString());
 		} catch (SALDocumentException e) {
 			logger.error("error creating XML SML doc");
 			throw new SALRunTimeException("Cant create the SML document",e);

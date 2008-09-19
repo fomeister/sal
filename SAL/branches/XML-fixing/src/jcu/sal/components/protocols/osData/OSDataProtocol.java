@@ -103,6 +103,8 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 		try {
 			supportedSensors.put(OSDataConstants.Temp3,new OSdata(getParameter(OSDataConstants.Temp3DataFile), null, 1, null, false));
 		} catch (NotFoundException e) {}
+		
+		autoDetectionInterval = -1; //must run only once
 		//logger.debug("OSData protocol configured");
 	}
 

@@ -52,7 +52,10 @@ public class SALAgentImpl implements SALAgent{
 	public void start(String pc, String sc) throws ConfigurationException {
 		pm.init(sc, pc);
 		pm.startAll();
-		hp.loadAll();
+		if(System.getProperty("jcu.sal.disableHwDetection")==null)
+			hp.loadAll();
+		else
+			logger.debug("Disabling HW autodetection");
 		
 	}
 	
@@ -100,7 +103,7 @@ public class SALAgentImpl implements SALAgent{
 	 * @see jcu.sal.agent.SALAgentInterface#listActiveSensors()
 	 */
 	public String listActiveSensors() {
-		return sm.listSensors(true).getSMLString();		
+		return sm.listSensors(true).getXMLString();		
 	}
 	
 	/*
@@ -108,7 +111,7 @@ public class SALAgentImpl implements SALAgent{
 	 * @see jcu.sal.agent.SALAgentInterface#listSensors()
 	 */
 	public String listSensors() {
-		return sm.listSensors(false).getSMLString();
+		return sm.listSensors(false).getXMLString();
 	}
 
 	/*

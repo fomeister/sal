@@ -86,11 +86,15 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	
 	/**
 	 * Can the protocol automatically detect sensor addition/removal ?
-	 * how often the autodetection process should kick in (in milliseconds)
-	 * if this value is negative, then the autodetection thread is executed only once
-	 * if it is set to 0, the autodetection thread never starts
+	 * If this value is negative, then the autodetection thread is executed only once.
+	 * If it is set to 0, the autodetection thread never starts
 	 * A positive value specifies how often (in milliseconds) the autodetect thread will try to detect
-	 * what s cuccrently connected. This value can be set by the subclass.
+	 * what s currently connected.
+	 * <b>Only the default value must be set by the subclass constructor. <code>parseConfig()</code> will set the
+	 * value to that of the "AutoDetectSensor" parameter if it exists. If not, the value is untouched,
+	 * and stays to the default set by the subclass's constructor. Also note that if the value MUST be kept
+	 * to its default, it must be set AGAIN in <code>internal_parseConfig()</code> to override any
+	 * change introduce by the presence of the "AutoDetectSensor" parameter.</b>
 	 */
 	protected int autoDetectionInterval = 0;
 	private Autodetection autodetectThread = null;
@@ -508,10 +512,9 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	protected abstract void internal_remove();
 	
 	/**
-	 * Parse the configuration of the protocol itself.
-	 * !!! this method is called from the super class constructor and BEFORE the subclass constructor !!!
-	 * !!! therefore none of the fields from the subclass are accessible. This method should only check!!
-	 * !!! that the required config directive are present and nothing more !!!
+	 * Parse the configuration of the protocol itself. This method should check the values of the parameters in the
+	 * <code>config</code> object, and apply them if sensible. Also, note that the value of <code>autoDetectionInterval</code>
+	 * will be changed to that of the "AutoDetecSensor" parameter if present (If not present, the value is untouched).
 	 */
 	protected abstract void internal_parseConfig() throws ConfigurationException;
 	

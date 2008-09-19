@@ -54,6 +54,10 @@ public class CMLDescription {
 	 */
 	public CMLDescription(String methodName, Integer id, String name, String desc, List<ArgumentType> argTypes,
 			List<String> argNames, ReturnType returnType){
+		if(argTypes.size()!=argNames.size()) {
+			logger.error("Error creating the CML doc: arguments number unequals somewhere");
+			throw new SALRunTimeException("number of argument types different from number of argument names");
+		}
 		cid=id;
 		this.name = name;
 		this.desc = desc;
@@ -61,11 +65,6 @@ public class CMLDescription {
 		this.argNames = new Vector<String>(argNames);
 		this.returnType = returnType;
 		this.methodName = methodName!=null ? methodName : "";
-		
-		if(argTypes.size()!=argNames.size()) {
-			logger.error("Error creating the CML doc: arguments number unequals somewhere");
-			throw new SALRunTimeException("number of argument types different from number of argument names");
-		}
 
 	}
 	
@@ -326,7 +325,7 @@ public class CMLDescription {
 	 * This method returns the argument type for a given argument.
 	 * @param name the name of the argument whose the type will be returned 
 	 * @return the argument type for a given argument.
-	 * @throws ConfigurationException if the argument <code>"name"</code> does not exist
+	 * @throws NotFoundException if the argument <code>"name"</code> does not exist
 	 */
 	public ArgumentType getArgType(String name) throws NotFoundException{
 		int pos = argNames.indexOf(name);

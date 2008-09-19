@@ -74,7 +74,7 @@ public class AddSensorAction implements Action {
 
 		try {
 			//logger.info("creating sensor for protocol "+n1);
-			agent.addSensor(new SMLDescription(new Integer(1), new Parameters(v)).getSMLString());
+			agent.addSensor(new SMLDescription(new Integer(1), new Parameters(v)).getXMLString());
 			//logger.info("sensor "+ret+" created");
 		} catch (ConfigurationException e) {
 			logger.info("sensor cant be instanciated");

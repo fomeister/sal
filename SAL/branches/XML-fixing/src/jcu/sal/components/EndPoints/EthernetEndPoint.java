@@ -52,7 +52,7 @@ public class EthernetEndPoint extends EndPoint {
 		try { intName = getParameter(ETHDEVICEATTRIBUTE_TAG); } catch (NotFoundException e1) {}
 		
 		//IP address is not mandatory
-		try {ipAddress = getParameter(IPADDRESSATTRIBUTE_TAG);} catch(NotFoundException e) {ipAddress="";}
+		try {ipAddress = getParameter(IPADDRESSATTRIBUTE_TAG);} catch(NotFoundException e) {}
 		
 		if (intName==null && ipAddress==null){
 			logger.error("Either the name or the ip address of an ethernet interface must be specified, none found");
@@ -61,7 +61,7 @@ public class EthernetEndPoint extends EndPoint {
 		
 		try {
 			/* Look for the ethernet if either by name or by IP address*/
-			if (ipAddress.length() == 0) {
+			if (ipAddress == null) {
 				/* by name */
 				n = NetworkInterface.getByName(intName);
 				found = true;
