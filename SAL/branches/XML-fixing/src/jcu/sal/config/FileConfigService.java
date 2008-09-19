@@ -14,7 +14,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
@@ -173,16 +172,15 @@ public class FileConfigService{
 	}
 	
 	/**
-	 * This method adds the given protocol configuration object to the platform config file
+	 * This method adds the given protocol configuration object to the platform config file. If the 
+	 * configuration is already present, nothing happens.
 	 * @param c the protocol config to be added
-	 * @throws AlreadyPresentException if the protocol config is already present in the platform config file
 	 */
-	public void addProtocol(ProtocolConfiguration c) throws AlreadyPresentException{
+	public void addProtocol(ProtocolConfiguration c){
 		synchronized(platformConfig){
-			if(!platformConfig.add(c))
-				throw new AlreadyPresentException("Platform config already has this protocol '"+c.getXMLString()+"'");
-		}
-		pcChanged.set(true);
+			if(platformConfig.add(c))
+				pcChanged.set(true);
+		}		
 	}
 	
 	/**
@@ -222,16 +220,15 @@ public class FileConfigService{
 	}
 	
 	/**
-	 * This method adds an SML description to the sensor config
+	 * This method adds an SML description to the sensor config. If the description is already present
+	 * , nothing happens.
 	 * @param s the SMl description to be added
-	 * @throws AlreadyPresentException if the given description is already present in the sensor config
 	 */
-	public void addSensor(SMLDescription s) throws AlreadyPresentException{
+	public void addSensor(SMLDescription s){
 		synchronized(sensorConfig){
-			if(!sensorConfig.add(s))
-				throw new AlreadyPresentException("Sensor config already has this sensor '"+s.getSMLString()+"'");
-		}
-		scChanged.set(true);
+			if(sensorConfig.add(s))
+				scChanged.set(true);
+		}		
 	}
 	
 	
@@ -358,7 +355,7 @@ public class FileConfigService{
 			sc = new SMLDescriptions (sensorConfig);
 		}
 		//logger.debug("writing SC file");
-		writeDocumentToFile(sensorConfigFile, sc.getSML());		
+		writeDocumentToFile(sensorConfigFile, sc.getXML());		
 	}
 	
 	private class WatchPCThread implements Runnable{

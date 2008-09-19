@@ -7,7 +7,10 @@ import jcu.sal.common.exceptions.SensorControlException;
 /**
  * Objects of this class encapsulate the result of the execution of a command on a sensor.
  * The result can be retrieved using one of the <code>get*</code> methods. If a response object is part of
- * a data stream, usually obtained from a callback method, the <code>get*</code> methods may return an  
+ * a data stream, usually obtained from a callback method, the <code>get*</code> methods may raise a
+ * <code>SensorControlException</code>, thrown by the agent to indicate an error of some sort (stream terminated,
+ * error getting reading, ...). The <code>getCause()</code> method invoked on the exception will show the
+ * source of the error.
  * @author gilles
  *
  */

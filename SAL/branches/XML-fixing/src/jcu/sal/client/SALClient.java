@@ -233,9 +233,17 @@ public class SALClient implements EventHandler, StreamCallback{
 	
 	
 	public static void main(String [] args){
+		String pc, sc;
+		if(args.length!=2) {
+			pc="conf/platformConfig-empty.xml";
+			sc="conf/sensorsConfig-empty.xml";
+		} else {
+			pc = args[0];
+			sc = args[1];
+		}
 		SALClient c = new SALClient();
 		try {
-			c.start(args[0], args[1]);
+			c.start(pc, sc);
 			c.run();
 		} catch (ConfigurationException e) {
 			e.printStackTrace();

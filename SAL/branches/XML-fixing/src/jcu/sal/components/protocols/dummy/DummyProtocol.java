@@ -9,7 +9,6 @@ import java.util.Vector;
 
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.exceptions.ConfigurationException;
-import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.FSEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
@@ -21,9 +20,10 @@ import jcu.sal.components.sensors.Sensor;
  *
  */
 public class DummyProtocol extends AbstractProtocol {
+	public static final String NB_DUMMY_SENSOR_ATTRIBUTE = "NbDummySensor";
 	public static final String PROTOCOL_TYPE = "DUMMY";
-	public static final int NB_DUMMY_SENSORS=100;
-	private byte[] reading= new String("439041101").getBytes();
+	public static int NB_DUMMY_SENSORS=100;
+	private final byte[] reading= new String("439041101").getBytes();
 
 	/**
 	 * @param i 
@@ -37,8 +37,8 @@ public class DummyProtocol extends AbstractProtocol {
 
 		//Add to the list of supported EndPoint IDs
 		supportedEndPointTypes.add(FSEndPoint.ENDPOINT_TYPE);
-		//runs auto detect thread only once if it is going to run
-		autoDetectionInterval = -1;
+		//Disable autodetection unless specified in config
+		autoDetectionInterval = 0;
 	}
 
 	/* (non-Javadoc)
@@ -62,8 +62,8 @@ public class DummyProtocol extends AbstractProtocol {
 	 */
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		try { autoDetectionInterval = (getParameter("AutoDetect").equals("1") || getParameter("AutoDetect").equalsIgnoreCase("true")) ? -1 : 0;}
-		catch (NotFoundException e) {autoDetectionInterval=0;}
+		try { NB_DUMMY_SENSORS = Integer.parseInt(getParameter(NB_DUMMY_SENSOR_ATTRIBUTE));}
+		catch (Exception e) {}
 		cmls = CMLDescriptionStore.getStore();
 	}
 

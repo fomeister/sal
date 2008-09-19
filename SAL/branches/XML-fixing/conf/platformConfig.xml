@@ -13,6 +13,13 @@
 					<Param name="MountPoint" value="/mnt/w1" />
 				</parameters>
 			</Protocol>
+			<Protocol name="Dummy1" type="DUMMY">
+				<EndPoint name="dummy-fs" type="fs" />
+				<parameters>
+					<Parameter name="AutoDetectSensors" value="-1" />
+					<Parameter name="NbDummySensor" value="10" />
+				</parameters>
+			</Protocol>			
 			<Protocol name="EMS_SNMP" type="SSNMP">
 				<EndPoint name="eth0" type="ethernet">
 					<parameters>

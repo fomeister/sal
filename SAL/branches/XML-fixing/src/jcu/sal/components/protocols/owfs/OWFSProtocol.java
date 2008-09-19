@@ -286,15 +286,15 @@ public class OWFSProtocol extends AbstractProtocol{
 			
 			if(!started) {
 				logger.error("Coudlnt start the OWFS process");
-				throw new ConfigurationException();
+				throw new ConfigurationException("Coudlnt start the OWFS process");
 			}
 			
 		} catch (IOException e) {
 			logger.error("Coudlnt run the OWFS process");
-			throw new ConfigurationException();
+			throw new ConfigurationException("Coudlnt run the OWFS process", e);
 		} catch (NotFoundException e) {
 			logger.error("Cant find the 1w mount point / OWFS bin location");
-			throw new ConfigurationException();
+			throw new ConfigurationException("Cant find the 1w mount point / OWFS bin location", e);
 		}
 	}
 	

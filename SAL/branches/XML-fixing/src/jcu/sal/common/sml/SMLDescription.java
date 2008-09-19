@@ -28,7 +28,6 @@ public class SMLDescription implements HWComponentConfiguration{
 	}
 
 	private Integer sid;
-	//private Map<String,String> parameters;
 	private Parameters parameters;
 	
 	private static String XPATH_SENSOR_DESC="/"+SMLConstants.SENSOR_TAG;
@@ -246,7 +245,7 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * This method returns the XML version of this SMLDescription object as a string
 	 * @return the XML version of this SMLDescription object
 	 */
-	public String getSMLString() {
+	public String getXMLString() {
 		StringBuffer sb = new StringBuffer();
 		
 		sb.append("<"+SMLConstants.SENSOR_TAG+" "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\""+sid.toString()+"\">\n"
@@ -279,9 +278,9 @@ public class SMLDescription implements HWComponentConfiguration{
 	 * This method returns the XML version of this SMLDescription object as a DOM document
 	 * @return the XML version of this SMLDescription object 
 	 */
-	public Document getSML(){
+	public Document getXML(){
 		try {
-			return XMLhelper.createDocument(getSMLString());
+			return XMLhelper.createDocument(getXMLString());
 		} catch (SALDocumentException e) {
 			logger.error("error creating XML SML doc");
 			throw new SALRunTimeException("Error creating SML document",e);

@@ -23,6 +23,14 @@ import jcu.sal.components.EndPoints.FSEndPoint;
 import jcu.sal.components.protocols.dummy.DummyProtocol;
 import jcu.sal.utils.XMLhelper;
 
+/**
+ * This SAL RMI client creates NB_SENSORS dummy sensor on a SAL agent. It then starts NB_CLIENTS
+ * threads all sending generic command 100 to a SAL agent for RUN_LENGTH milliseconds. At the end,
+ * statistics about the number of commands sent per second and the average command execution time 
+ * are printed. 
+ * @author gilles
+ *
+ */
 public class RmiClientDummyStressTest{
 	public static int RUN_LENGTH=120*1000;
 	public static int NB_SENSORS = 5000;
@@ -107,7 +115,7 @@ public class RmiClientDummyStressTest{
 			v.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, "_"+i));
 			
 			try {
-				agent.addSensor(new SMLDescription(id, new Parameters(v)).getSMLString());
+				agent.addSensor(new SMLDescription(id, new Parameters(v)).getXMLString());
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

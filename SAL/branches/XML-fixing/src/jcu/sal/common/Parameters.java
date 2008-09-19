@@ -115,22 +115,23 @@ public class Parameters {
 			throw new SALDocumentException("Cant find/parse parameters section", t);
 		}
 		
-		if(nb!=1){
+		if(nb>1){
 			logger.error("There should be only one parameters section in this document, found "+nb+" ");
 			logger.error(XMLhelper.toString(d));
 			throw new SALDocumentException("Document doesnt have exactly one parameters section");
+		} else if (nb==0){
+			logger.error("No parameters section in this document");
+		} else {
+			//creates individual parameter
+			try {
+				List<String> l = XMLhelper.getAttributeListFromElements(XPATH_PARAM, d);
+				for(nb = 0; nb<l.size(); nb+=4)
+					params.put(l.get(nb+1), new Parameter(l.get(nb+1), l.get(nb+3)));
+			} catch (NotFoundException e) {
+				logger.error("cant find/parse the parameter list");
+				throw new SALDocumentException("Cant find parameter list", e);
+			}
 		}
-		
-
-		//creates individual parameter
-		try {
-			List<String> l = XMLhelper.getAttributeListFromElements(XPATH_PARAM, d);
-			for(nb = 0; nb<l.size(); nb+=4)
-				params.put(l.get(nb+1), new Parameter(l.get(nb+1), l.get(nb+3)));
-		} catch (NotFoundException e) {
-			logger.error("cant find/parse the parameter list");
-			throw new SALDocumentException("Cant find parameter list", e);
-		}		
 	}
 	
 	/**

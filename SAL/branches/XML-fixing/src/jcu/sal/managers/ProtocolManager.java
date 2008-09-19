@@ -9,7 +9,6 @@ import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
-import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.ComponentInstantiationException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
@@ -110,13 +109,8 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 			throw new ComponentInstantiationException();
 		}
 
-		//raise save protocol config flag
-		try {
-			conf.addProtocol(config);
-		} catch (AlreadyPresentException e) {
-			logger.error("We shouldnt be here");
-			throw new ComponentInstantiationException("Cant save the protocol config",e);
-		}
+		//save protocol config
+		conf.addProtocol(config);
 		
 		ev.queueEvent(new ProtocolListEvent(ProtocolListEvent.PROTOCOL_ADDED, i.getName(), Constants.PROTOCOL_MANAGER_PRODUCER_ID));
 		logger.debug("Created protocol '"+config.getID()+"' - type: " + type);
@@ -166,7 +160,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		//Check if the protocol is still active
 		if(getComponent(pid)!=null) {
 			logger.error("Cant remove an active protocol configuration");
-			throw new ConfigurationException("Cant remove an active protocol");
+			throw new ConfigurationException("Configuration cant be removed because the protocol hasnt been removed before");
 		}
 		conf.removeProtocol(pid);
 		if(removeSensors)

@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jcu.sal.common.Constants;
-import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.ComponentInstantiationException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
@@ -91,11 +90,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 
 		
 		//save sensor config
-		try { conf.addSensor(s); }
-		catch (AlreadyPresentException e) {
-			logger.error("We shouldnt be here - cant save the sensor config");
-			throw new ComponentInstantiationException("cant save the sensor config", e);
-		}
+		conf.addSensor(s);
 
 		//associate it with its protocol
 		try { pm.associateSensor(sensor); }
@@ -183,7 +178,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 		//Check if the sensor is still active
 		if(getComponent(sid)!=null) {
 			logger.error("Cant remove an active sensor configuration");
-			throw new ConfigurationException();
+			throw new ConfigurationException("Cant remove a sensor's configuration if it hasnt been removed first");
 		}
 
 		conf.removeSensor(sid);
