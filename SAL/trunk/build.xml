@@ -56,7 +56,7 @@
 	<target name="all" depends="compile"/>
 	
 	<target name="compile" depends="init">
-		<javac srcdir="${project.src}" destdir="${project.classes}" deprecation="on" source="${source}" debug="off">
+		<javac srcdir="${project.src}" destdir="${project.classes}" deprecation="on" source="${source}" debug="on">
 			<classpath refid="build.SAL.classpath"/>
 			<include name="**/*.java"/>
 		</javac>

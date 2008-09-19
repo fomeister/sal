@@ -8,6 +8,8 @@ import javax.naming.ConfigurationException;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.ReturnType;
+import jcu.sal.common.exceptions.AlreadyPresentException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.components.protocols.AbstractStore;
 
 
@@ -17,7 +19,7 @@ public class CMLDescriptionStore extends AbstractStore{
 	static {
 		try {
 			c = new CMLDescriptionStore();
-		} catch (ConfigurationException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		} 
 	}
@@ -27,7 +29,7 @@ public class CMLDescriptionStore extends AbstractStore{
 	}
 	
 
-	private CMLDescriptionStore() throws ConfigurationException{
+	private CMLDescriptionStore() throws ConfigurationException, NotFoundException, AlreadyPresentException{
 		int i;
 		String name, mName, desc;
 		List<String> argNames;

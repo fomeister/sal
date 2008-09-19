@@ -4,24 +4,36 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.Iterator;
 import java.util.Random;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Parameters;
 import jcu.sal.common.RMICommandFactory;
+import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.RMICommandFactory.RMICommand;
 import jcu.sal.common.agents.RMISALAgent;
-import jcu.sal.common.events.Event;
-import jcu.sal.common.events.RMIEventHandler;
+import jcu.sal.common.pcml.EndPointConfiguration;
+import jcu.sal.common.pcml.ProtocolConfiguration;
+import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLDescription;
+import jcu.sal.common.sml.SMLDescriptions;
+import jcu.sal.components.EndPoints.FSEndPoint;
+import jcu.sal.components.protocols.dummy.DummyProtocol;
 import jcu.sal.utils.XMLhelper;
 
-import org.w3c.dom.NodeList;
-
-public class RmiClientDummyStressTest implements RMIEventHandler{
+/**
+ * This SAL RMI client creates NB_SENSORS dummy sensor on a SAL agent. It then starts NB_CLIENTS
+ * threads all sending generic command 100 to a SAL agent for RUN_LENGTH milliseconds. At the end,
+ * statistics about the number of commands sent per second and the average command execution time 
+ * are printed. 
+ * @author gilles
+ *
+ */
+public class RmiClientDummyStressTest{
 	public static int RUN_LENGTH=120*1000;
-	public static int NB_SENSORS = 1000;
+	public static int NB_SENSORS = 5000;
 	public static int NB_CLIENTS[] = {1, 10, 25, 50, 100};
 	private String[] sids = new String[NB_SENSORS];
 	private Vector<Thread> threads;
@@ -72,15 +84,11 @@ public class RmiClientDummyStressTest implements RMIEventHandler{
 	}	
 	
 	public void populateSensorList() throws ConfigurationException{
-		String sid;
-				
+		int i=0;
 		try {
-		NodeList nl = XMLhelper.getNodeList("/SAL/SensorConfiguration/Sensor/parameters/Param[@value=\"DummyProtocol0\"]/parent::*/parent::*", XMLhelper.createDocument(agent.listActiveSensors()));
-			for (int i = 0; i < nl.getLength(); i++) {
-				sid = XMLhelper.getAttributeFromName("sid", nl.item(i));
-				//System.out.println("Found sensor SID: "+sid);
-				sids[i]=sid;
-			}
+			for(SMLDescription s: new SMLDescriptions(agent.listActiveSensors()).getDescriptions())
+				sids[i++] = s.getID();
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new ConfigurationException();
@@ -88,31 +96,26 @@ public class RmiClientDummyStressTest implements RMIEventHandler{
 	}
 	
 	public void createDummySensors(){
-		String xml = "<Protocol name=\"DummyProtocol0\" type=\"DUMMY\">" +
-						"<EndPoint name=\"fs0\" type=\"fs\"> "+
-						"<parameters />" +
-						"</EndPoint>"+
-						"<parameters />"+
-						"</Protocol>";
+		Vector<Parameter> v = new Vector<Parameter>();
+		Integer id = new Integer(1);
+
+		ProtocolConfiguration p = new ProtocolConfiguration("dummy0", DummyProtocol.PROTOCOL_TYPE,
+															new EndPointConfiguration("fs",FSEndPoint.ENDPOINT_TYPE));
 		try {
-			agent.addProtocol(xml, false);
+			agent.addProtocol(p.getXMLString(), false);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 
-		xml = "<Sensor sid=\"1\">"+
-				"<parameters>" +
-				"<Param name=\"ProtocolName\" value=\"DummyProtocol0\" /> "+
-				"<Param name=\"Address\" value=\"PLACE_HOLDER\" />"+
-				"</parameters>"+
-				"</Sensor>";
-		String t;
-
 		for(int i=0;i<NB_SENSORS; i++) {
-			t = xml.replaceFirst("PLACE_HOLDER", "DUMMY_"+i);
+			v.removeAllElements();
+			v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "dummy0"));
+			v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, DummyProtocol.PROTOCOL_TYPE));
+			v.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, "_"+i));
+			
 			try {
-				agent.addSensor(t);
+				agent.addSensor(new SMLDescription(id, new Parameters(v)).getXMLString());
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -129,16 +132,12 @@ public class RmiClientDummyStressTest implements RMIEventHandler{
 				threads.add(new Thread(new Control(cf.getCommand())));
 
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 	}
 	
-	public void start(String ourRmiIP) throws ConfigurationException{}
-	
 	public void run(){
-		Iterator<Thread> it;
 		long t;
 
 		try {
@@ -159,21 +158,18 @@ public class RmiClientDummyStressTest implements RMIEventHandler{
 				
 				//Starts all client threads 
 				t = System.currentTimeMillis();
-				it = threads.iterator();
-				while(it.hasNext())
-					it.next().start();
+				for(Thread th: threads)
+					th.start();
 				
 				Thread.sleep(RUN_LENGTH);
 				
 				//Stops all the threads
-				it = threads.iterator();
-				while(it.hasNext())
-					it.next().interrupt();
+				for(Thread th: threads)
+					th.interrupt();
 				
 				//Joins all the threads
-				it = threads.iterator();
-				while(it.hasNext())
-					it.next().join();
+				for(Thread th: threads)
+					th.join();
 				
 				System.out.println("("+(System.currentTimeMillis()-t)+" ms)");
 	
@@ -183,20 +179,13 @@ public class RmiClientDummyStressTest implements RMIEventHandler{
 				System.out.println("Avg exe time: "+(sumAvgExe/NB_CLIENTS[i]));
 				sumCounts = sumAvgExe = 0;
 			}
-			agent.removeProtocol("DummyProtocol0", true);
+			agent.removeProtocol("dummy0", true);
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-	
-	public void stop() throws RemoteException{
-		agent = null;
-		System.gc();
-		
-	}
-	
 	
 	public static void main(String [] args) throws RemoteException, NotBoundException{
 		if(args.length!=3) {
@@ -205,22 +194,9 @@ public class RmiClientDummyStressTest implements RMIEventHandler{
 			System.exit(1);
 		}
 		
-		RmiClientDummyStressTest c = new RmiClientDummyStressTest(args[0], args[2], args[1]);
-		try {
-			c.start(args[1]);
-			c.run();
-		} catch (ConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			try{c.stop();} catch(RemoteException e){}
-			System.out.println("Main exiting");
-			System.exit(0);
-		}
-	}
-
-	public void handle(Event e) {
-		System.out.println("Received "+e.toString());
+		new RmiClientDummyStressTest(args[0], args[2], args[1]).run();
+		
+		System.out.println("Main exiting");
 	}
 }
 

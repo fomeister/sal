@@ -51,8 +51,8 @@ public class PlatformHelper {
 			} finally {
 				if(p!=null) p.destroy();
 			}
-		} else
-			logger.debug("Module " + module + " not loaded, cant remove it...");
+		} //else
+			//logger.debug("Module " + module + " not loaded, cant remove it...");
 		return ok;
 	}
 	
@@ -100,8 +100,8 @@ public class PlatformHelper {
 			} finally {
 				if (p!=null) p.destroy();
 			}
-		} else
-			logger.debug("Module " + module + " already loaded");
+		} //else
+			//logger.debug("Module " + module + " already loaded");
 		return ok;
 	}
 	
@@ -231,10 +231,8 @@ public class PlatformHelper {
 				b =  new BufferedReader(new FileReader("/proc/" + String.valueOf(iter.next()) + "/cmdline"));
 				String[] t = b.readLine().split("\00");
 				String name = t[0] + "(instance " + String.valueOf(++instance) + ")";
-				for (int i = 1; i < t.length; i++) {
-					System.out.println("string " + String.valueOf(i) + " : "+t[i]);
+				for (int i = 1; i < t.length; i++) 
 					args.put(name, t[i]);
-				}
 			}
 
 		} catch (IOException e) {
@@ -365,10 +363,13 @@ public class PlatformHelper {
 	 * @param delim the delimiter (if null, then a space is assumed)
 	 * @param translate whether to translate tabs to spaces
 	 * @return the field itself
-	 * @throws IOException
+	 * @throws IOException if the line number is set to 0, or is greater than the number of lines in the buffer
 	 */
 	public static String getFieldFromBuffer(BufferedReader b, int line, int field, String delim, boolean translate) throws IOException {
-		String result = "";
+		if(line<=0)
+			throw new IOException("Invalid line number");
+		
+		String result=null;
 		
 		/* find  line */
 		while( (line-- > 0) && ((result  = b.readLine())!= null) ); 
@@ -379,7 +380,7 @@ public class PlatformHelper {
 			return result;
 		}
 		else {
-			throw new IOException();
+			throw new IOException("Read past the end of buffer");
 		}
 	}
 	

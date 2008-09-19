@@ -1,14 +1,15 @@
 package jcu.sal.components.protocols.simpleSNMP;
 
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SensorControlException;
+import jcu.sal.common.exceptions.SensorIOException;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.EthernetEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
@@ -16,7 +17,6 @@ import jcu.sal.components.sensors.Sensor;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 import uk.co.westhawk.snmp.pdu.BlockPdu;
 import uk.co.westhawk.snmp.stack.AgentException;
@@ -30,6 +30,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 	 */
 	public static final String PROTOCOL_TYPE = "SSNMP";
 	private static Logger logger = Logger.getLogger(SSNMPProtocol.class);
+	static {Slog.setupLogger(logger);}
 	private static String OID_START = "1.3";
 	//Maximum number of OIDs to be detected automatically  
 	private static int MAX_AUTODETECTED_OIDS = 1000;
@@ -41,14 +42,13 @@ public class SSNMPProtocol extends AbstractProtocol{
 
 	/**
 	 * Construct the SSNMPProtocol object
+	 * @throws ConfigurationException 
 	 */
-	public SSNMPProtocol(ProtocolID i, Hashtable<String,String> c, Node d) {
-		super(i,PROTOCOL_TYPE,c,d);
-		Slog.setupLogger(logger);
-		
+	public SSNMPProtocol(ProtocolID i, ProtocolConfiguration c) throws ConfigurationException {
+		super(i,PROTOCOL_TYPE,c);		
 
 //		Add to the list of supported EndPoint IDs
-		supportedEndPointTypes.add(EthernetEndPoint.ETHERNETENDPOINT_TYPE);
+		supportedEndPointTypes.add(EthernetEndPoint.ENDPOINT_TYPE);
 	}
 
 	
@@ -58,20 +58,19 @@ public class SSNMPProtocol extends AbstractProtocol{
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
 		try {
-			agent = getConfig("AgentIP");
-			comm_string = getConfig("CommunityString");
-		} catch (BadAttributeValueExpException e) {
+			agent = getParameter("AgentIP");
+			comm_string = getParameter("CommunityString");
+		} catch (NotFoundException e) {
 			logger.error("Cant find 'AgentIP' / 'CommunityString' in AbstractProtocol config.");
-			throw new ConfigurationException("SSNMP 'AgentIP' / 'CommunityString' config directives missing");
+			throw new ConfigurationException("SSNMP 'AgentIP' / 'CommunityString' config directives missing",e);
 		}
 
-		try { timeout = Integer.parseInt(getConfig("Timeout")); }
-		catch (BadAttributeValueExpException e) { timeout=1500;}
-		try { autoDetectionInterval = (getConfig("AutodetectOIDs").equals("1") || getConfig("AutodetectOIDs").equalsIgnoreCase("true")) ? -1 : 0;}
-		catch (BadAttributeValueExpException e) {autoDetectionInterval=-1;}
+		try { timeout = Integer.parseInt(getParameter("Timeout")); }
+		catch (NotFoundException e) { timeout=1500;}
+
 		
 		cmls = CMLDescriptionStore.getStore();
-		logger.debug("SimpleSNMP protocol configured");
+		//logger.debug("SimpleSNMP protocol configured");
 	}
 
 	/* (non-Javadoc)
@@ -92,7 +91,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 			s.setCommunity(comm_string);
 		} catch (IOException e) {
 			logger.error("Cant create SNMP context");
-			throw new ConfigurationException();
+			throw new ConfigurationException("Cant create SNMP context", e);
 		}
 	}
 
@@ -109,9 +108,6 @@ public class SSNMPProtocol extends AbstractProtocol{
 	 */
 	@Override
 	protected boolean internal_isSensorSupported(Sensor sensor){
-		//TODO improve me... maybe check that the OID exist and is valid
-		//TODO with a GET PDU... only problem: it requires the Agent to
-		//TODO be accessible...
 		return true;	
 	}
 
@@ -123,7 +119,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 	protected boolean internal_probeSensor(Sensor s) {
 		try {
 			getRawReading(s.getNativeAddress());
-			logger.debug(s.toString()+" present");
+			//logger.debug(s.toString()+" present");
 			s.enable();
 			return true;
 		} catch (Exception e) {
@@ -165,7 +161,7 @@ public class SSNMPProtocol extends AbstractProtocol{
 				p.setRetryIntervals(new int[]{timeout});
 			}
 		} catch (Exception e) {
-			logger.debug("SNMP response timeout while retieving OIDs, could be the end of the SNMP walk");
+			logger.error("SNMP response timeout while retieving OIDs, could be the end of the SNMP walk");
 		}
 		return detected;
 	}
@@ -174,13 +170,12 @@ public class SSNMPProtocol extends AbstractProtocol{
 	/*
 	 * Command handling methods
 	 */
-	// TODO create an exception class for this instead of Exception
 	public static String GET_READING_METHOD = "getReading";
-	public  byte[] getReading(Command c, Sensor s) throws IOException{
+	public  byte[] getReading(Command c, Sensor s) throws SensorControlException{
 		return getRawReading(s.getNativeAddress());
 	}
 	
-	private byte[] getRawReading(String oid) throws IOException{
+	private byte[] getRawReading(String oid) throws SensorControlException{
 
 		varbind v=null;
 		String ret=null;
@@ -195,11 +190,13 @@ public class SSNMPProtocol extends AbstractProtocol{
 				ret = v.getValue().toString();
 		} catch (AgentException e) {
 			logger.error("SNMP response timeout while getting OID "+oid);
-
-			throw new IOException("SNMP response timeout");
+			throw new SensorIOException("SNMP response timeout",e);
 		} catch (PduException e) {
 			logger.error("PDU exception while getting OID "+oid);
-			throw new IOException("PDU exception");			
+			throw new SensorIOException("PDU exception",e);			
+		} catch (IOException e) {
+			logger.error("IOException while waiting for response");
+			throw new SensorIOException("IOException while waiting for response",e);
 		}
 
 		return ret.getBytes();

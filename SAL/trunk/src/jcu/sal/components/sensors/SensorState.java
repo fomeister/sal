@@ -3,8 +3,6 @@
  */
 package jcu.sal.components.sensors;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.Constants;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.events.EventDispatcher;
@@ -19,7 +17,9 @@ import org.apache.log4j.Logger;
  */
 public class SensorState {
 	
-	private Logger logger = Logger.getLogger(SensorState.class);
+	private static Logger logger = Logger.getLogger(SensorState.class);
+	static {Slog.setupLogger(logger);}
+	
 	private componentRemovalListener l;
 	private SensorID i;
 
@@ -34,7 +34,6 @@ public class SensorState {
 		state=SensorConstants.UNASSOCIATED;
 		disconnect_timestamp=-1;
 		this.i = i;
-		Slog.setupLogger(logger);
 	}
 	
 	public long getDisconnectTimestamp() {
@@ -91,9 +90,7 @@ public class SensorState {
 		synchronized (this) {
 			if(state==SensorConstants.DISABLED || state==SensorConstants.UNASSOCIATED || state==SensorConstants.IDLE) {
 				if(state!=SensorConstants.UNASSOCIATED) {
-					try {
-						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
-					} catch (ConfigurationException e) {logger.error("Cant queue event");}
+					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 				}
 				state=SensorConstants.IDLE; return true;
 			}
@@ -105,9 +102,7 @@ public class SensorState {
 		synchronized (this) {
 			if(state==SensorConstants.IDLE || state==SensorConstants.INUSE || state==SensorConstants.DISCONNECTED || state==SensorConstants.UNASSOCIATED) {
 				if(state!=SensorConstants.DISCONNECTED) {
-					try {
-						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
-					} catch (ConfigurationException e) {logger.error("Cant queue event");}
+					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 				}
 				state=SensorConstants.DISCONNECTED;
 				disconnect_timestamp = System.currentTimeMillis();
@@ -126,9 +121,7 @@ public class SensorState {
 			if(state==SensorConstants.DISCONNECTED) { 
 				disconnect_timestamp = -1;
 				state=SensorConstants.IDLE;
-				try {
-					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
-				} catch (ConfigurationException e) {logger.error("Cant queue event");}
+				ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 				return true; 
 			}
 			else if(state==SensorConstants.IDLE || state==SensorConstants.DISABLED || state==SensorConstants.INUSE) {return true; }//already connected 

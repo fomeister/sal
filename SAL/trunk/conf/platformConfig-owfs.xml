@@ -9,8 +9,8 @@
 			<Protocol name="1wtree" type="owfs">
 				<EndPoint name="usb" type="usb" />
 				<parameters>
-					<Param name="Location" value="/opt/owfs/bin/owfs" />
-					<Param name="MountPoint" value="/mnt/w1" />
+					<Parameter name="Location" value="/opt/owfs/bin/owfs" />
+					<Parameter name="MountPoint" value="/mnt/w1" />
 				</parameters>
 			</Protocol>
 		</protocols>

@@ -1,7 +1,6 @@
 package jcu.sal.common.cml;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -14,18 +13,17 @@ import org.apache.log4j.Logger;
 public class ArgumentType {
 	private String t;
 	private static Logger logger = Logger.getLogger(ArgumentType.class);
-	static {
-		Slog.setupLogger(logger);
-	}
+	static {Slog.setupLogger(logger);}
+	
 	/**
 	 * Construct a new argument type. Supported types are listed in CMLConstants.ARG_TYPE_*
 	 * @param s the type (CMLConstants.ARG_TYPE_*)
-	 * @throws ConfigurationException if the type is invalid
+	 * @throws SALRunTimeExceptions if the type is invalid
 	 */
-	public ArgumentType(String s) throws ConfigurationException{
+	public ArgumentType(String s){
 		if(!s.equals(CMLConstants.ARG_TYPE_STRING) && !s.equals(CMLConstants.ARG_TYPE_INT) && !s.equals(CMLConstants.ARG_TYPE_FLOAT) && !s.equals(CMLConstants.ARG_TYPE_CALLBACK)) {
 			logger.error("Unknown argument type: "+s);
-			throw new ConfigurationException();
+			throw new SALRunTimeException("Wrong argument type '"+s+"'");
 		}
 		t = s;
 	}

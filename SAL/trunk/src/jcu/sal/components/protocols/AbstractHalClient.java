@@ -6,26 +6,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.Identifier;
 import jcu.sal.config.FileConfigService;
 import jcu.sal.managers.ProtocolManager;
 import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
 
 import au.edu.jcu.haldbus.AbstractDeviceDetection;
 
 public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	private ProtocolManager pm;
 	private static Logger logger = Logger.getLogger(AbstractHalClient.class);
+	static {Slog.setupLogger(logger);}
 	
 	protected AbstractHalClient(int when){
 		super(when);
-		Slog.setupLogger(logger);
 		pm = ProtocolManager.getProcotolManager();
 	}
 	
@@ -34,14 +34,14 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	}
 	
 	/**
-	 * This method returns whether a protocol of a given type is already isntanciated
+	 * This method returns whether a protocol of a given type is already instantiated
 	 * @param type the type of protocols
-	 * @return whether a protocol of a given type is already isntanciated
+	 * @return whether a protocol of a given type is already instantiated
 	 */
 	protected boolean isProtocolRunning(String type){
 		try {
 			return pm.getComponentsOfType(type).size()!=0;
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			return false;
 		}
 	}
@@ -52,16 +52,16 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	 * @param type the type of protocols
 	 * @return a Map of their configuration
 	 */
-	protected Map<Identifier, Map<String,String>> findRunningProtocolConfigFromType(String type){
-		Map<Identifier, Map<String,String>> ret = new Hashtable<Identifier, Map<String,String>>();
+	protected Map<Identifier, Parameters> findRunningProtocolConfigFromType(String type){
+		Map<Identifier, Parameters> ret = new Hashtable<Identifier, Parameters>();
 		try {
 			Iterator<Identifier> i = pm.getComponentsOfType(type).iterator();
 			Identifier id;
 			while(i.hasNext()) {
 				id = i.next();
-				ret.put(id, pm.getComponent(id).getConfig());
+				ret.put(id, pm.getComponent(id).getParameters());
 			}
-		} catch (ConfigurationException e){}
+		} catch (NotFoundException e){}
 			
 		return ret;
 	}
@@ -76,14 +76,14 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	 */
 	protected List<Identifier> findRunningProtocolNameFromConfig(String type, String param, String value){
 		List<Identifier> l = new Vector<Identifier>();
-		Map<Identifier, Map<String,String>> m = findRunningProtocolConfigFromType(type);
+		Map<Identifier, Parameters> m = findRunningProtocolConfigFromType(type);
 		Identifier id;
 		Iterator<Identifier> i = m.keySet().iterator();
 
 		while(i.hasNext()){
 			id = i.next();
 			try {
-				if(m.get(id).get(param).equals(value))
+				if(m.get(id).hasValue(param,value))
 					l.add(id);
 			} catch (Exception e){}				
 		}
@@ -94,28 +94,33 @@ public abstract class AbstractHalClient extends AbstractDeviceDetection {
 	 * this method checks the File config service to retreive the whole configuration document of a protocol
 	 * given part of it. Given a parameter name (ex: "device_file"), and the expected value (ex: "/dev/video0"),
 	 * the File config service will look for a protocol configuration containing this parameter and its value, and if
-	 * found, the entire protocl configuration will be returned.  
+	 * found, the protocol configuration object will be returned.  
 	 * @param param the parameter name
 	 * @param value the expected parameter value
-	 * @return the entire protocol configuration, if found 
-	 * @throws ConfigurationException if not found
+	 * @return the protocol configuration object , if found 
+	 * @throws NotFoundException if nothing matches the given values 
 	 */
-	protected Document findProtocolConfigFromFile(String param, String value) throws ConfigurationException {
+	protected ProtocolConfiguration findProtocolConfigFromFile(String param, String value) throws NotFoundException {
 		return FileConfigService.getService().findProtocol(param, value);
 	}
 	
-	protected void createProtocol(Document d) throws ConfigurationException{
-		logger.debug("Creating new protocol with document: \n"+XMLhelper.toString(d));
-		try {pm.createComponent(d).start();}
+	protected void createProtocol(ProtocolConfiguration pc) throws ConfigurationException{
+		//logger.debug("Creating new protocol with document: \n"+pc.getXMLString());
+		try {pm.createComponent(pc).start();}
 		catch (Throwable t){
 			logger.error("Cant instanciate protocol");
 			t.printStackTrace();
 			throw new ConfigurationException();
 		}
 	}
-	
-	protected void removeProtocol(Identifier i) throws ConfigurationException{
-		logger.debug("Removing existing protocol "+i.toString());
+	/**
+	 * This method removes a protocol and its configuration
+	 * @param i the protocol identifier
+	 * @throws ConfigurationException if there is an error removing the configuration
+	 * @throws NotFoundException if no protocol matches the given id
+	 */
+	protected void removeProtocol(Identifier i) throws ConfigurationException, NotFoundException{
+		//logger.debug("Removing existing protocol "+i.toString());
 		pm.destroyComponent(i);
 		pm.removeProtocolConfig((ProtocolID) i, false);
 	}

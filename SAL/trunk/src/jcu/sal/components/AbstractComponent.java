@@ -3,53 +3,49 @@
  */
 package jcu.sal.components;
 
-import java.util.Hashtable;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
+import jcu.sal.common.exceptions.ConfigurationException;
 
-import jcu.sal.utils.Slog;
-
-import org.apache.log4j.Logger;
+import jcu.sal.common.Parameters;
+import jcu.sal.common.exceptions.NotFoundException;
 
 /**
  * This class does something
  * @author gilles
  *
  */
-public abstract class AbstractComponent<T extends Identifier> implements HWComponent {
+public abstract class AbstractComponent<T extends Identifier, U extends HWComponentConfiguration> implements HWComponent {
 	
-	protected Map<String, String> config;
-	private Logger logger = Logger.getLogger(AbstractComponent.class);
-//	protected boolean started = false;
+	protected U config;
 	protected AtomicBoolean removed;
-	protected String type = null;
 	protected T id = null;
 	
-	public AbstractComponent() {
-		Slog.setupLogger(this.logger);
-		config = new Hashtable<String,String>();
-	}
+	/**
+	 * This constructor creates an abstract component with the supplied configuration and ID objects
+	 * @param c the supplied configuration object
+	 * @param i the ID of the component
+	 */
+	public AbstractComponent(U c, T i) {config = c; id = i;}
+	
+	/**
+	 * This method returns the configuration object associated with this component
+	 * @return the configuration object associated with this component
+	 */
+	public U getConfig() { return config; }
 	
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#getConfig()
 	 */
 	@Override
-	public Map<String, String> getConfig() { return config; }
+	public Parameters getParameters() { return config.getParameters(); }
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.HWComponent#getConfig(java.lang.String)
 	 */
 	@Override
-	public String getConfig(String directive) throws BadAttributeValueExpException {
-		String s = config.get(directive);
-		if (s==null) {
-			//logger.error("Unable to get a config directive with this name "+ directive);
-			throw new BadAttributeValueExpException("Unable to get a config directive with this name "+ directive);
-		}			
-		return s; 
+	public String getParameter(String directive) throws NotFoundException {
+		return config.getParameters().getParameter(directive).getStringValue();
 	}
 	
 	/* (non-Javadoc)
@@ -75,7 +71,7 @@ public abstract class AbstractComponent<T extends Identifier> implements HWCompo
 	 */
 	@Override
 	public String getType() {
-		return this.type;
+		return config.getType();
 	}
 	
 	/**

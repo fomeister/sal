@@ -1,7 +1,6 @@
 package jcu.sal.common.cml;
 
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -20,12 +19,12 @@ public class ReturnType {
 	/**
 	 * Construct a new return type. Supported types are listed in CMLConstants.RET_TYPE_*
 	 * @param s the type (CMLConstants.RET_TYPE_*)
-	 * @throws ConfigurationException if the type is invalid
+	 * @throws SALRunTimeExceptionif the type is invalid
 	 */
-	public ReturnType(String s) throws ConfigurationException{
+	public ReturnType(String s) {
 		if(!s.equals(CMLConstants.RET_TYPE_INT) && !s.equals(CMLConstants.RET_TYPE_FLOAT) && !s.equals(CMLConstants.RET_TYPE_STRING) && !s.equals(CMLConstants.RET_TYPE_BYTE_ARRAY) && !s.equals(CMLConstants.RET_TYPE_VOID)) {
 			logger.error("Unknown return type: "+s);
-			throw new ConfigurationException();
+			throw new SALRunTimeException("Invalid return type '"+s+"'");
 		}
 		t = s;
 	}

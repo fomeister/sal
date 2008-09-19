@@ -4,17 +4,18 @@
 package jcu.sal.components.EndPoints;
 
 import java.util.Enumeration;
-import java.util.Hashtable;
 
 import javax.comm.CommPortIdentifier;
 import javax.comm.NoSuchPortException;
 import javax.comm.PortInUseException;
 import javax.comm.SerialPort;
 import javax.comm.UnsupportedCommOperationException;
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
 
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.utils.Slog;
+
 import org.apache.log4j.Logger;
 
 
@@ -29,17 +30,17 @@ public class SerialEndPoint extends EndPoint {
 	public static final String DATABITSATTRIBUTE_TAG = "DataBits";
 	public static final String PARITYATTRIBUTE_TAG = "Parity";
 	public static final String STOPBITATTRIBUTE_TAG = "StopBit";
-	public static final String SERIALENDPOINT_TYPE = "serial";
+	public static final String ENDPOINT_TYPE = "serial";
 	
-	private Logger logger = Logger.getLogger(SerialEndPoint.class);
+	private static Logger logger = Logger.getLogger(SerialEndPoint.class);
+	static {Slog.setupLogger(logger);}
 	
 	/**
 	 * @throws ConfigurationException 
 	 * 
 	 */
-	public SerialEndPoint(EndPointID i,  Hashtable<String,String> c) throws ConfigurationException {
-		super(i,SERIALENDPOINT_TYPE,c);
-		Slog.setupLogger(this.logger);
+	public SerialEndPoint(EndPointID i,  EndPointConfiguration c) throws ConfigurationException {
+		super(i,ENDPOINT_TYPE,c);
 		parseConfig();
 	}
 
@@ -50,41 +51,63 @@ public class SerialEndPoint extends EndPoint {
 	public void parseConfig() throws ConfigurationException {
 		// Check if we have this serial port on this platform
 		CommPortIdentifier id;
-		this.logger.debug("check if we can setup the serial port");
+		String device = null;
+		try { device = getParameter(PORTDEVICEATTRIBUTE_TAG); } catch (NotFoundException e1) {
+			logger.error("Cant find the serial port device file in the endpoint config");
+			throw new ConfigurationException("Cant find the serial port device file in the EndPoint configuration", e1);
+		}
+		int speed;
+		try { speed = Integer.valueOf(getParameter(PORTSPEEDATTRIBUTE_TAG)); } catch (Exception e1) {
+			logger.error("Cant find the serial port speed in the endpoint config");
+			throw new ConfigurationException("Cant find the serial port speed in the EndPoint configuration", e1);
+		}
+		
+		int dataBits;
+		try { dataBits = Integer.valueOf(getParameter(DATABITSATTRIBUTE_TAG));	} catch (Exception e1) {
+			logger.error("Cant find the serial port data bits in the endpoint config");
+			throw new ConfigurationException("Cant find the serial port data bits in the EndPoint configuration", e1);
+		}
+		
+		int stopBit;
+		try { stopBit = Integer.valueOf(getParameter(STOPBITATTRIBUTE_TAG));} catch (Exception e1) {
+			logger.error("Cant find the serial port stop bit in the endpoint config");
+			throw new ConfigurationException("Cant find the serial port stop bit in the EndPoint configuration", e1);
+		} 
+		
+		int parity;
+		try { parity = Integer.valueOf(getParameter(PARITYATTRIBUTE_TAG));	} catch (Exception e1) {
+			logger.error("Cant find the serial port parity in the endpoint config");
+			throw new ConfigurationException("Cant find the serial port parity in the EndPoint configuration", e1);		
+		}
+		//logger.debug("check if we can setup the serial port");
 		try {
-			id = CommPortIdentifier.getPortIdentifier(getConfig(PORTDEVICEATTRIBUTE_TAG));
+			id = CommPortIdentifier.getPortIdentifier(device);
 			if(id.getPortType()!=CommPortIdentifier.PORT_SERIAL) {
-				this.logger.error("The supplied device file is NOT a serial port");
+				logger.error("The supplied device file is NOT a serial port");
 				throw new ConfigurationException("Could not setup the serial port");
 			}
 
-			this.logger.debug("The serial port name is " + id.getName());
+			//logger.debug("The serial port name is " + id.getName());
 			SerialPort p = (SerialPort) id.open("SALv1", 20);
-			p.setSerialPortParams(Integer.valueOf(getConfig(PORTSPEEDATTRIBUTE_TAG)),
-					Integer.valueOf(getConfig(DATABITSATTRIBUTE_TAG)),
-					Integer.valueOf(getConfig(STOPBITATTRIBUTE_TAG)),
-					Integer.valueOf(getConfig(PARITYATTRIBUTE_TAG)));
+			p.setSerialPortParams(speed, dataBits, stopBit,	parity);
 			p.close();
-			this.configured = true;
-			this.logger.debug("The serial port was configured successfully");
+			configured = true;
+			//logger.debug("The serial port was configured successfully");
 		} catch (PortInUseException e) {
-			this.logger.warn("The serial port cannot be opened and is currently in use ...");
+			logger.error("The serial port cannot be opened and is currently in use ...");
 			e.printStackTrace();
 			throw new ConfigurationException("Could not setup the serial port");
 		} catch (NoSuchPortException e) {
 			e.printStackTrace();
 			throw new ConfigurationException("Could not setup the serial port");
-		} catch (BadAttributeValueExpException e) {
-			e.printStackTrace();
-			this.logger.debug("Bad serial EndPoint XML config");
-			throw new ConfigurationException("Could not setup the serial port");
 		} catch (UnsupportedCommOperationException e) {
-			this.logger.warn("The serial port cannot be setup");
+			logger.error("The serial port cannot be setup");
 			e.printStackTrace();
 			throw new ConfigurationException("Could not setup the serial port");
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
 		/* Lists javax.comm recognised-serial ports */
 		CommPortIdentifier portId;

@@ -5,13 +5,14 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.ReturnType;
+import jcu.sal.common.exceptions.AlreadyPresentException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -26,7 +27,8 @@ import org.apache.log4j.Logger;
  */
 public abstract class AbstractStore {
 	
-	private Logger logger = Logger.getLogger(AbstractStore.class);
+	private static Logger logger = Logger.getLogger(AbstractStore.class);
+	static{Slog.setupLogger(logger);}
 	
 
 	public static String GENERIC_ENABLE="Enable";			//10
@@ -63,7 +65,6 @@ public abstract class AbstractStore {
 	 * No arg constructor
 	 */
 	protected AbstractStore() {
-		Slog.setupLogger(logger);
 		cmls = new Hashtable<String, Hashtable<Integer, CMLDescription>>();
 		priv_cid = new Hashtable<String, Integer>();
 	}
@@ -72,15 +73,21 @@ public abstract class AbstractStore {
 	 * Retrieves the CML descriptions document for the given key f (native address, sensor family, ...)
 	 * @param k the key
 	 * @return the CML command descriptions doc 
-	 * @throws ConfigurationException if the key can not be found 
+	 * @throws NotFoundException if the key can not be found 
 	 */
-	public CMLDescriptions getCMLDescriptions(String k) throws ConfigurationException{
+	public CMLDescriptions getCMLDescriptions(String k) throws NotFoundException{
 		if(!cmls.containsKey(k)) {
 			logger.error("Cant find key "+k);
-			throw new ConfigurationException();
+			throw new NotFoundException("Cant find key "+k);
 		}
 				
-		return new CMLDescriptions(cmls.get(k));
+		try {
+			return new CMLDescriptions(cmls.get(k).values());
+		} catch (AlreadyPresentException e) {
+			logger.error("We shouldnt be here - duplicate CML descriptions in the CML store");
+			e.printStackTrace();
+			throw new SALRunTimeException("Duplicate CML descriptions in CML store", e);
+		}
 	}
 	
 	/**
@@ -88,18 +95,18 @@ public abstract class AbstractStore {
 	 * @param k the key 
 	 * @param cid the command id
 	 * @return the method name
-	 * @throws ConfigurationException if the method can not be found 
+	 * @throws NotFoundException if the method can not be found 
 	 */
-	public String getMethodName(String k, int cid) throws ConfigurationException{
+	public String getMethodName(String k, int cid) throws NotFoundException{
 		Hashtable<Integer, CMLDescription> t = cmls.get(k);
 		if(t==null) {
 			logger.error("Cant find key "+k);
-			throw new ConfigurationException();
+			throw new NotFoundException("Cant find key "+k);
 		}
 		CMLDescription d = t.get(new Integer(cid));
 		if(d==null){
 			logger.error("Cant find the cid "+cid);
-			throw new ConfigurationException();
+			throw new NotFoundException("Cant find the cid "+cid);
 		}
 		return d.getMethodName();
 	}
@@ -113,15 +120,16 @@ public abstract class AbstractStore {
 	 * @param argTypes an array containing the types (CMLDescription.*_TYPE) of the arguments
 	 * @param names an array containing the names of the arguments
 	 * @return the cid associated with this command
-	 * @throws ConfigurationException if the command cant be created
+	 * @throws AlreadyPresentException if the given key already has a CML table
 	 */
-	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, List<ArgumentType> argTypes, List<String> names, ReturnType returnType) throws ConfigurationException{
+	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, List<ArgumentType> argTypes,
+			List<String> names, ReturnType returnType) throws AlreadyPresentException {
 		//computes the CID
 		Integer cid = priv_cid.get(k);
 		if(cid==null)
 			cid = new Integer(PRIVATE_CID_START);
 		//builds the CML desc doc
-		logger.debug("Adding private CML for key "+k+", method: "+mName+", CID: "+cid.intValue());
+		//logger.debug("Adding private CML for key "+k+", method: "+mName+", CID: "+cid.intValue());
 		addCML(k, new CMLDescription(mName,cid, name, desc, argTypes, names, returnType));
 		priv_cid.put(k, new Integer(cid.intValue()+1));
 				
@@ -133,16 +141,17 @@ public abstract class AbstractStore {
 	 * @param k the key with which the alias is to be associated
 	 * @param name the name of the alias (AbstractStore.GENERIC_*)
 	 * @param cid the previously created command
-	 * @return the cid associated with this command
-	 * @throws ConfigurationException if the command cant be created
+	 * @return the cid associated with this command 
+	 * @throws AlreadyPresentException if a command with the same cid already exists
+	 * @throws NotFoundException if the given aliasNAme doesnt exist, if it doesnt refer to an existing command or if the key is invalid
 	 */
-	public final int addGenericCMLDesc(String k, String aliasName, int cid) throws ConfigurationException{
+	public final int addGenericCMLDesc(String k, String aliasName, int cid) throws NotFoundException, AlreadyPresentException{
 		//computes the CID
 		Integer c;
 		CMLDescription cml;
 		List<ArgumentType> t = new Vector<ArgumentType>();
 		List<String> s = new Vector<String>();
-		logger.debug("Adding generic CML for key "+k+", alias: "+aliasName);
+		//logger.debug("Adding generic CML for key "+k+", alias: "+aliasName);
 		if(aliasName.equals(GENERIC_ENABLE)){
 			c = new Integer(GENERIC_ENABLE_CID);
 			addCML(k, new CMLDescription(null, c, GENERIC_ENABLE, "Enables the sensor", t, s, new ReturnType(CMLConstants.RET_TYPE_VOID)));
@@ -162,8 +171,8 @@ public abstract class AbstractStore {
 		} else if(aliasName.equals(GENERIC_GETHUM)){
 			c = new Integer(GENERIC_GETHUM_CID);
 		} else {
-			logger.error("Cant create an alias, no such name");
-			throw new ConfigurationException();
+			logger.error("We shouldnt be here - Cant create an alias, no such name");
+			throw new SALRunTimeException("No such alias name '"+aliasName+"'");
 		}
 		
 		Hashtable<Integer, CMLDescription> table = cmls.get(k);
@@ -171,11 +180,11 @@ public abstract class AbstractStore {
 			cml = table.get(new Integer(cid));
 			if(cml==null){
 				logger.error("Cant find any pre-existing command "+cid+" to create the alias");
-				throw new ConfigurationException();				
+				throw new NotFoundException("Cant find any pre-existing command "+cid+" to create the alias");
 			}
 		} else {
 			logger.error("Cant find key "+k);
-			throw new ConfigurationException();
+			throw new NotFoundException("Cant find key "+k);
 		}
 
 		//builds the CML desc doc based on the existing one
@@ -183,16 +192,36 @@ public abstract class AbstractStore {
 				
 		return cid-1;
 	}
+	
+	/**
+	 * Adds a CML document to the CML table for a given sensor
+	 * @param k the sensor
+	 * @param v the CML doc
+	 * @throws AlreadyPresentException 
+	 */
+	private void addCML(String k, CMLDescription v) throws AlreadyPresentException{
+		Hashtable<Integer, CMLDescription> t = cmls.get(k);
+		if(t==null)
+			t = addSensor(k);
+		if(!t.containsKey(v.getCID()))
+			t.put(v.getCID(), v);
+		else {
+			logger.error("trying to add a CML doc (cid:"+v.getCID()+") to sensor " + k + " which already holds a CML with this id.");
+			throw new AlreadyPresentException("sensor " + k + " already holds a CML with this id");
+		}
+		if(false) dumpCML(k);
+	}
 
 	/**
 	 * Creates a new CML list for a new sensor identified by its key k
 	 * @param k the sensor key
+	 * @throws AlreadyPresentException if the sensor key already exists
 	 */
-	private Hashtable<Integer, CMLDescription> addSensor(String k) throws ConfigurationException {
+	private Hashtable<Integer, CMLDescription> addSensor(String k) throws AlreadyPresentException {
 		Hashtable<Integer, CMLDescription> t;
 		if(cmls.containsKey(k)){
 			logger.error("trying to add a CML table for sensor " + k + " which already has a CML table.");
-			throw new ConfigurationException();
+			throw new AlreadyPresentException("sensor " + k + " which already has a CML table");
 		}
 
 		t = new Hashtable<Integer, CMLDescription>();
@@ -202,32 +231,23 @@ public abstract class AbstractStore {
 
 		/* Add generic CML docs to this sensor */
 		/* generic enable command */
-		addGenericCMLDesc(k, GENERIC_ENABLE, 0);
+		try {
+			addGenericCMLDesc(k, GENERIC_ENABLE, 0);
+		} catch (Exception e) {
+			logger.error("We shouldnt be here - cant add generic ENABLE command to sensor '"+k+"'");
+			throw new SALRunTimeException("Cant add generic ENABLE command to sensor '"+k+"'");
+		} 
 		
 		/* generic disable command */
-		addGenericCMLDesc(k, GENERIC_DISABLE, 0);
+		try {
+			addGenericCMLDesc(k, GENERIC_DISABLE, 0);
+		} catch (Exception e) {
+			logger.error("We shouldnt be here - cant add generic DISABLE command to sensor '"+k+"'");
+			throw new SALRunTimeException("Cant add generic DISABLE command to sensor '"+k+"'");
+		}
 		
 		return t;
 
-	}
-	
-	/**
-	 * Adds a CML document to the CML table for a given sensor
-	 * @param k the sensor
-	 * @param v the CML doc
-	 * @throws ConfigurationException 
-	 */
-	private void addCML(String k, CMLDescription v) throws ConfigurationException{
-		Hashtable<Integer, CMLDescription> t = cmls.get(k);
-		if(t==null)
-			t = addSensor(k);
-		if(!t.containsKey(v.getCID()))
-			t.put(v.getCID(), v);
-		else {
-			logger.error("trying to add a CML doc (cid:"+v.getCID()+") to sensor " + k + " which already holds a CML with this id.");
-			throw new ConfigurationException();
-		}
-		if(false) dumpCML(k);
 	}
 	
 	private void dumpCML(String k){
