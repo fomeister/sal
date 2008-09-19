@@ -10,10 +10,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SensorControlException;
+import jcu.sal.common.exceptions.SensorIOException;
+import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.EndPoints.FSEndPoint;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
@@ -22,7 +24,6 @@ import jcu.sal.utils.PlatformHelper;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 /**
  * @author gilles
@@ -46,6 +47,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	}
 	
 	private static Logger logger = Logger.getLogger(OSDataProtocol.class);
+	static {Slog.setupLogger(logger);}
 	private Thread update_counters = null;
 	private Hashtable<String,String> lastValues;
 	private static Hashtable<String,OSdata> supportedSensors = new Hashtable<String,OSdata>();
@@ -57,10 +59,10 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	
 	/**
 	 * Construct the OSDataProtocol object
+	 * @throws ConfigurationException 
 	 */
-	public OSDataProtocol(ProtocolID i, Hashtable<String,String> c, Node d){
-		super(i,OSDataConstants.PROTOCOL_TYPE,c,d);
-		Slog.setupLogger(logger);
+	public OSDataProtocol(ProtocolID i, ProtocolConfiguration c) throws ConfigurationException{
+		super(i,OSDataConstants.PROTOCOL_TYPE,c);
 		
 		//Add to the list of supported sensors
 		supportedSensors.put(OSDataConstants.FreeMem,new OSdata("/proc/meminfo", "MemFree", 2, null, true));
@@ -82,7 +84,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 		autoDetectionInterval = -1; //run only once
 		
 //		Add to the list of supported EndPoint IDs
-		supportedEndPointTypes.add(FSEndPoint.FSENDPOINT_TYPE);
+		supportedEndPointTypes.add(FSEndPoint.ENDPOINT_TYPE);
 		multipleInstances=false;
 	}
 
@@ -90,18 +92,20 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.Protocol#internal_parseConfig()
 	 */
-	protected void internal_parseConfig() throws ConfigurationException {
+	protected void internal_parseConfig(){
 		cmls = CMLDescriptionStore.getStore();
 		try {
-			supportedSensors.put(OSDataConstants.Temp1,new OSdata(getConfig(OSDataConstants.Temp1DataFile), null, 1, null, false));
-		} catch (BadAttributeValueExpException e) {}
+			supportedSensors.put(OSDataConstants.Temp1,new OSdata(getParameter(OSDataConstants.Temp1DataFile), null, 1, null, false));
+		} catch (NotFoundException e) {}
 		try {
-			supportedSensors.put(OSDataConstants.Temp2,new OSdata(getConfig(OSDataConstants.Temp2DataFile), null, 1, null, false));
-		} catch (BadAttributeValueExpException e) {}
+			supportedSensors.put(OSDataConstants.Temp2,new OSdata(getParameter(OSDataConstants.Temp2DataFile), null, 1, null, false));
+		} catch (NotFoundException e) {}
 		try {
-			supportedSensors.put(OSDataConstants.Temp3,new OSdata(getConfig(OSDataConstants.Temp3DataFile), null, 1, null, false));
-		} catch (BadAttributeValueExpException e) {}
-		logger.debug("OSData protocol configured");
+			supportedSensors.put(OSDataConstants.Temp3,new OSdata(getParameter(OSDataConstants.Temp3DataFile), null, 1, null, false));
+		} catch (NotFoundException e) {}
+		
+		autoDetectionInterval = -1; //must run only once
+		//logger.debug("OSData protocol configured");
 	}
 
 	/* (non-Javadoc)
@@ -138,44 +142,45 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 		OSdata d = supportedSensors.get(s.getNativeAddress());
 		if(d!=null) {
 			if(PlatformHelper.isFile(d.file) && PlatformHelper.isFileReadable(d.file)) {
-				logger.debug(s.toString()+" present, using default file");
+				//logger.debug(s.toString()+" present, using default file");
 				s.enable();
 				return true;
 			} else  {
 				try {
-					if(PlatformHelper.isFileReadable(s.getConfig(OSDataConstants.SMLDataFile))) {
-						logger.debug(s.toString()+" present, using supplied file");
+					if(PlatformHelper.isFileReadable(s.getParameter(OSDataConstants.SMLDataFile))) {
+						//logger.debug(s.toString()+" present, using supplied file");
 						s.enable();
 						return true;
 					} else
 						logger.debug("Supplied data file unreadable for sensor "+s.getNativeAddress());
-				} catch (BadAttributeValueExpException e) {
+				} catch (NotFoundException e) {
 					logger.debug("No data file supplied for sensor "+s.getNativeAddress());
 				}
 			}
-			logger.debug("Disconnecting sensor "+s.toString());
-		} else 
-			logger.debug("Disconnecting unsupported sensor sensor "+s.toString());
+			//logger.debug("Disconnecting sensor "+s.toString());
+		} //else 
+			//logger.debug("Disconnecting unsupported sensor sensor "+s.toString());
 		s.disconnect();
 		return false;
 	}
 	
 	@Override
 	protected List<String> detectConnectedSensors() {
-		List<String> v = new Vector<String>();
 		//check that all our supported sensors are here, if not remove them from supportedSensors
-		Iterator<String> i = supportedSensors.keySet().iterator();
-		OSdata d;
 		String s;
-		while(i.hasNext()) {
+		List<String> v = new Vector<String>();
+		OSdata d;
+
+		for(Iterator<String> i = supportedSensors.keySet().iterator(); i.hasNext();) {
 			s = i.next();
 			d = supportedSensors.get(s);
 			if(!PlatformHelper.isFileReadable(d.file)) {
-				logger.error("Cant find file "+d.file);
+				logger.debug("Cant read file '"+d.file+"' for sensor '"+s+"'");
 				i.remove();
 			} else
 				v.add(s);
 		}
+		
 		return v; 
 	}
 	
@@ -249,7 +254,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	
 			}// end while interrupted
 		} catch (InterruptedException e) {}
-		logger.debug("update counter thread exiting");
+		//logger.debug("update counter thread exiting");
 	}
 	
 	/*
@@ -258,7 +263,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 
 	// TODO create an exception class for this instead of Exception
 	public static String GET_READING_METHOD = "getReading";
-	public byte[] getReading(Command c, Sensor s) throws IOException{
+	public byte[] getReading(Command c, Sensor s) throws SensorControlException{
 		OSdata d;
 		String ret;
 		if(s.getNativeAddress().equals(OSDataConstants.UserTime) || s.getNativeAddress().equals(OSDataConstants.NiceTime) || s.getNativeAddress().equals(OSDataConstants.SystemTime)|| s.getNativeAddress().equals(OSDataConstants.IdleTime)) {
@@ -266,14 +271,14 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 			if(ret.equals("-1")) { 
 				logger.error("couldnt run the command to get readings for sensor "+ s.toString());
 				s.disable();
-				throw new IOException("can read " +s.getNativeAddress()); 
+				throw new SensorIOException("Error while reading from " +s.getNativeAddress()); 
 			}
 		} else {
 			d = supportedSensors.get(s.getNativeAddress());
 			try { ret = PlatformHelper.getFieldFromFile(d.file, d.pattern, d.field, d.delim, d.translate); }
 			catch (IOException e) {
-				logger.error("couldnt get a reading for "+s.toString());
-				throw e;
+				logger.error("couldnt read value from sensor "+s.toString());
+				throw new SensorIOException("Error while reading value from sensor "+s.toString(),e);
 			}
 			if(s.getNativeAddress().equals(OSDataConstants.Temp1) || s.getNativeAddress().equals(OSDataConstants.Temp2) || s.getNativeAddress().equals(OSDataConstants.Temp3)){
 				ret = ret.substring(0, 2)+"."+ret.substring(2,4);

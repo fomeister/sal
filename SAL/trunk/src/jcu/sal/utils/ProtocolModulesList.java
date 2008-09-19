@@ -18,7 +18,7 @@ import jcu.sal.config.deviceDetection.HalHelper;
 import org.apache.log4j.Logger;
 
 /**
- * FIXME: This class needs rework. The  
+ * FIXME: This class needs rework.   
  * @author gilles
  */
 public class ProtocolModulesList {
@@ -62,7 +62,7 @@ public class ProtocolModulesList {
 			e.logger.error("Cant find the protocol class name from protocol type: " + type);
 			throw new ClassNotFoundException("Cant find the protocol class name from protocol type: " + type);
 		}
-		else e.logger.debug("Found protocol class " + c + " for type " + type);
+		//else e.logger.debug("Found protocol class " + c + " for type " + type);
 		
 		return c;
 	}

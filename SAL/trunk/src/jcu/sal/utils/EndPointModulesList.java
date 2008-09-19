@@ -29,11 +29,11 @@ public class EndPointModulesList {
 	private EndPointModulesList()
 	{
 		Slog.setupLogger(this.logger);
-		table.put(UsbEndPoint.USBENDPOINT_TYPE, SALcomponentPackage + "UsbEndPoint");
-		table.put(SerialEndPoint.SERIALENDPOINT_TYPE, SALcomponentPackage + "SerialEndPoint");
-		table.put(EthernetEndPoint.ETHERNETENDPOINT_TYPE , SALcomponentPackage + "EthernetEndPoint");
-		table.put(FSEndPoint.FSENDPOINT_TYPE, SALcomponentPackage + "FSEndPoint");
-		table.put(PCIEndPoint.PCIENDPOINT_TYPE, SALcomponentPackage + "PCIEndPoint");
+		table.put(UsbEndPoint.ENDPOINT_TYPE, SALcomponentPackage + "UsbEndPoint");
+		table.put(SerialEndPoint.ENDPOINT_TYPE, SALcomponentPackage + "SerialEndPoint");
+		table.put(EthernetEndPoint.ENDPOINT_TYPE , SALcomponentPackage + "EthernetEndPoint");
+		table.put(FSEndPoint.ENDPOINT_TYPE, SALcomponentPackage + "FSEndPoint");
+		table.put(PCIEndPoint.ENDPOINT_TYPE, SALcomponentPackage + "PCIEndPoint");
 	}
 	
 	public static String getClassName(String type) throws ClassNotFoundException
@@ -43,7 +43,7 @@ public class EndPointModulesList {
 			e.logger.error("Cant find the class name from EndPoint type: " + type);
 			throw new ClassNotFoundException("Cant find the class name from EndPoint type: " + type);
 		}
-		else e.logger.debug("Found class " + c + " for type " + type);
+		//else e.logger.debug("Found class " + c + " for type " + type);
 		
 		return c;
 	}

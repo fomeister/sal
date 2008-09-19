@@ -3,11 +3,11 @@ package jcu.sal.components.protocols.v4l2;
 import java.util.List;
 import java.util.Vector;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.ReturnType;
+import jcu.sal.common.exceptions.AlreadyPresentException;
+import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.components.protocols.AbstractStore;
 
 
@@ -21,13 +21,13 @@ public class CMLDescriptionStore extends AbstractStore {
 		//return c;
 		try {
 			return new CMLDescriptionStore();
-		} catch (ConfigurationException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		}
 	}
 	
-	private CMLDescriptionStore() throws ConfigurationException{
+	private CMLDescriptionStore() throws NotFoundException, AlreadyPresentException{
 		int i;
 		String key, name, mName, desc;
 		List<String> argNames;

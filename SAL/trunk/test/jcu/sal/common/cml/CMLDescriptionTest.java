@@ -141,21 +141,21 @@ public class CMLDescriptionTest {
 	}
 
 	/**
-	 * Test method for {@link jcu.sal.common.cml.CMLDescription#getCML()}.
+	 * Test method for {@link jcu.sal.common.cml.CMLDescription#getXML()}.
 	 */
 	@Test
 	public void testGetCML() throws Exception  {
 		testCMLDescriptionDocument();
 
-		System.out.println(XMLhelper.toString(c3.getCML()));
+		System.out.println(XMLhelper.toString(c3.getXML()));
 		System.out.println(XMLhelper.toString(d1));
 		//assertTrue(c3.getCML().equals(d1));
 		
-		System.out.println(XMLhelper.toString(c4.getCML()));
+		System.out.println(XMLhelper.toString(c4.getXML()));
 		System.out.println(XMLhelper.toString(d6));
 		//assertTrue(c4.getCML().equals(d6));
 
-		System.out.println(XMLhelper.toString(c5.getCML()));
+		System.out.println(XMLhelper.toString(c5.getXML()));
 		System.out.println(XMLhelper.toString(d7));
 		//assertTrue(c5.getCML().equals(d7));
 	}

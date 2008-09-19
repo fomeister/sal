@@ -2,19 +2,18 @@ package jcu.sal.common;
 
 import java.io.Serializable;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-
-import javax.management.BadAttributeValueExpException;
-import javax.naming.ConfigurationException;
 
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -53,9 +52,10 @@ public class RMICommandFactory {
 	 * and the given command id
 	 * @param desc the command descriptions document
 	 * @param cid the command id
-	 * @throws ConfigurationException if the given XML document is not a valid CML document
+	 * @throws SALDocumentException if the given CML document is invalid 
+	 * @throws NotFoundException if the given command id doesnt exist in the CML document
 	 */
-	public RMICommandFactory(Document desc, int cid) throws ConfigurationException{
+	public RMICommandFactory(Document desc, int cid) throws NotFoundException, SALDocumentException{
 		this(new CMLDescriptions(desc).getDescription(cid));
 	}
 	
@@ -64,7 +64,7 @@ public class RMICommandFactory {
 	 * @param c the command description object
 	 * @throws ConfigurationException if the given XML document is not a valid CML document
 	 */
-	public RMICommandFactory(CMLDescription c) throws ConfigurationException{
+	public RMICommandFactory(CMLDescription c){
 		cml = c;
 		factory = new CommandFactory(removeCallbacks());
 	}
@@ -79,20 +79,15 @@ public class RMICommandFactory {
 		
 		//Check if we have a callback function
 		List<ArgumentType> types = cml.getArgTypes();
-		try {
-			if(types.contains(new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK))) {
-				List<String> names = cml.getArgNames();
-				for (int i = 0; i < types.size(); i++) {
-					if(types.get(i).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
-						types.remove(i);
-						callbackNames.put(names.remove(i), new Vector<String>(2));
-					}
+		if(types.contains(new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK))) {
+			List<String> names = cml.getArgNames();
+			for (int i = 0; i < types.size(); i++) {
+				if(types.get(i).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+					types.remove(i);
+					callbackNames.put(names.remove(i), new Vector<String>(2));
 				}
-				return new CMLDescription("",cml.getCID(),cml.getName(),cml.getDesc(),types,names, cml.getReturnType());
 			}
-		}catch (ConfigurationException e) {
-			logger.error("We shoudnt be here !!");
-			e.printStackTrace();
+			return new CMLDescription("",cml.getCID(),cml.getName(),cml.getDesc(),types,names, cml.getReturnType());
 		}
 		
 		return cml;
@@ -102,16 +97,15 @@ public class RMICommandFactory {
 	 * This method returns the type of a given argument
 	 * @param name the name of the argument
 	 * @return the type of the argument
-	 * @throws ConfigurationException 
-	 * @throws ConfigurationException if the argument cant be found
+	 * @throws NotFoundException if no argument matches the given name
 	 */
-	public ArgumentType getArgType(String name) throws ConfigurationException{
+	public ArgumentType getArgType(String name) throws NotFoundException{
 		ArgumentType t;
 		try {
 			t = factory.getArgType(name);
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			if(!callbackNames.containsKey(name))
-				throw new ConfigurationException();
+				throw new NotFoundException("No argument named '"+name+"'");
 			else
 				t = new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK);
 		}		
@@ -125,9 +119,8 @@ public class RMICommandFactory {
 	 */
 	public List<String> listMissingArgNames() {
 		List<String> l = factory.listMissingArgNames();
-		Iterator<String> i = callbackNames.keySet().iterator();
-		while(i.hasNext())
-			l.add(i.next());
+		for(String s: callbackNames.keySet())
+			l.add(s);
 		return l;
 	}
 	
@@ -138,8 +131,9 @@ public class RMICommandFactory {
 	 * @param rmiName the name of the RMI client as previously registered with RMISALAgent.registerClient().
 	 * @param objName the name of the RMI StreamCallback to lookup in the RMI registry.
 	 * <code>name</code> isnt of type callback
+	 * @throws NotFoundException if no callback argument matches the given name 
 	 */
-	public void addArgumentCallback(String name, String rmiName, String objName) throws ConfigurationException{
+	public void addArgumentCallback(String name, String rmiName, String objName) throws NotFoundException{
 		if(callbackNames.containsKey(name)){
 			if(callbackNames.get(name).size()==0) {
 				callbackNames.get(name).add(rmiName);
@@ -148,7 +142,7 @@ public class RMICommandFactory {
 				logger.debug("There was a previous value for the callback argument "+name);
 		} else {
 			logger.error("no callback arguments called "+name);
-			throw new ConfigurationException();
+			throw new NotFoundException("No callback argument named '"+name+"'");
 		}
 	}
 	
@@ -156,9 +150,10 @@ public class RMICommandFactory {
 	 * This method adds the value for a float argument and overwrites any previous values.
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
+	 * @throws NotFoundException if no argument matches the given name
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type float
 	 */
-	public void addArgumentValueFloat(String name, float val) throws ConfigurationException{
+	public void addArgumentValueFloat(String name, float val) throws NotFoundException, ConfigurationException {
 		factory.addArgumentValueFloat(name, val);
 	}
 	
@@ -167,8 +162,9 @@ public class RMICommandFactory {
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type int
+	 * @throws NotFoundException if no argument matches the given name
 	 */
-	public void addArgumentValueInt(String name, int val) throws ConfigurationException{
+	public void addArgumentValueInt(String name, int val) throws ConfigurationException, NotFoundException{
 		factory.addArgumentValueInt(name, val);
 	}
 	
@@ -177,8 +173,9 @@ public class RMICommandFactory {
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type string
+	 * @throws NotFoundException if no argument matches the given name
 	 */
-	public void addArgumentValueString(String name, String val) throws ConfigurationException{
+	public void addArgumentValueString(String name, String val) throws ConfigurationException, NotFoundException{
 		factory.addArgumentValueString(name, val);
 	}
 	
@@ -189,8 +186,9 @@ public class RMICommandFactory {
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the value cant be converted, the argument cant be found or is of type callback
+	 * @throws NotFoundException if no argument matches the given name
 	 */
-	public void addArgumentValue(String name, String val) throws ConfigurationException{
+	public void addArgumentValue(String name, String val) throws ConfigurationException, NotFoundException{
 		factory.addArgumentValue(name, val);
 	}
 	
@@ -202,14 +200,11 @@ public class RMICommandFactory {
 	 */
 	public RMICommand getCommand() throws ConfigurationException{
 		//Make sure we have all the callbacks
-		Iterator<String> i = callbackNames.keySet().iterator();
-		String n;
-		while(i.hasNext()){
-			n = i.next();
+		for(String n: callbackNames.keySet()){
 			List<String> names = callbackNames.get(n);
 			if(names.size()!=2) {
-				logger.debug("Callback "+n+" doesnt have values" );
-				throw new ConfigurationException();
+				logger.error("Callback "+n+" doesnt have appropriate values" );
+				throw new ConfigurationException("Callback "+n+" doesnt have appropriate values");
 			}				
 		}
 		
@@ -244,7 +239,7 @@ public class RMICommandFactory {
 		}
 
 		
-		public String getConfig(String directive) throws BadAttributeValueExpException {
+		public String getConfig(String directive) throws NotFoundException {
 			return c.getConfig(directive);
 		}
 		
@@ -254,10 +249,6 @@ public class RMICommandFactory {
 		
 		public int getCID(){
 			return c.getCID();
-		}
-		
-		public void dumpCommand() {
-			c.dumpCommand();
 		}
 
 		public String getValue(String name){

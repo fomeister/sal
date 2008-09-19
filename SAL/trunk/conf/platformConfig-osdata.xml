@@ -9,9 +9,9 @@
 			<Protocol name="osData" type="PlatformData">
 				<EndPoint name="filesystem" type="fs" />
 				<parameters>
-					<Param name="CPUTempFile" value="/sys/class/hwmon/hwmon0/device/temp1_input" />
-					<Param name="NBTempFile" value="/sys/class/hwmon/hwmon0/device/temp3_input" />
-					<Param name="SBTempFile" value="/sys/class/hwmon/hwmon0/device/temp2_input" />
+					<Parameter name="CPUTempFile" value="/sys/class/hwmon/hwmon0/device/temp1_input" />
+					<Parameter name="NBTempFile" value="/sys/class/hwmon/hwmon0/device/temp3_input" />
+					<Parameter name="SBTempFile" value="/sys/class/hwmon/hwmon0/device/temp2_input" />
 				</parameters>
 			</Protocol>
 		</protocols>

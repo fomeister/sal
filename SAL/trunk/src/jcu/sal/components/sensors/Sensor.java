@@ -3,11 +3,11 @@
  */
 package jcu.sal.components.sensors;
 
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.common.sml.SMLConstants;
+import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.protocols.ProtocolID;
@@ -20,35 +20,47 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public class Sensor extends AbstractComponent<SensorID> {
+public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 	
-	private Logger logger = Logger.getLogger(Sensor.class);
+	private static Logger logger = Logger.getLogger(Sensor.class);
+	static {Slog.setupLogger(logger);}
 	private SensorState state;
-	public static final String SENSOR_TYPE = "Sensor";
 	
 	/**
 	 * Sensor constructor
 	 * @param i the sensor ID
 	 * @param c the configuration table
-	 * @throws ConfigurationException if the configuration is wrong
 	 */
-	public Sensor(SensorID i, Map<String,String> c) throws ConfigurationException {
-		super();
-		Slog.setupLogger(this.logger);
-		id = i;
-		type = SENSOR_TYPE;
-		config = c;
+	public Sensor(SensorID i, SMLDescription s) {
+		super(s,i);
 		state = new SensorState(i);
-		parseConfig();
 	}
 
-	public void setPid(ProtocolID pid) {
-		assert(pid.getName().equals(config.get(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE)));
+	public void setPid(ProtocolID pid) throws ConfigurationException {
+		String p;
+		try {
+			p = config.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
+		} catch (NotFoundException e) {
+			logger.error("Shouldnt be here, we have a sensor ("+id.toString()+") without a protocol name");
+			e.printStackTrace();
+			throw new SALRunTimeException("We have a sensor ("+id.toString()+") without a protocol name",e);
+		}
+		
+		if(!pid.getName().equals(p)) {
+			logger.error("Trying to associate with protocol '"+pid.getName()+"' but sensor config expected '"+p+"'");
+			throw new ConfigurationException("cant associate with this protocol ("+pid.getName()+") - sensor config says "+p+" instead");
+		}		
 		id.setPid(pid);
 	}
 	
 	public String getNativeAddress() {
-		return config.get(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);
+		try {
+			return config.getParameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);
+		} catch (NotFoundException e) {
+			logger.error("Shouldnt be here, we have a sensor ("+id.toString()+") without a native address");
+			e.printStackTrace();
+			throw new SALRunTimeException("We have a sensor ("+id.toString()+") without a native address",e);
+		}
 	}
 		
 	/*
@@ -104,7 +116,7 @@ public class Sensor extends AbstractComponent<SensorID> {
 	 */
 	@Override
 	public void remove(componentRemovalListener c) {
-		logger.debug("Registering removal of sensor " + toString());
+		//logger.debug("Registering removal of sensor " + toString());
 		state.remove(c);
 	}
 	

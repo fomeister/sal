@@ -2,12 +2,9 @@ package jcu.sal.client;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.nio.channels.ClosedChannelException;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Map;
 
-import javax.naming.ConfigurationException;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -25,8 +22,12 @@ import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
+import jcu.sal.utils.XMLhelper;
 
 public class SALClient implements EventHandler, StreamCallback{
 	private static final long serialVersionUID = -8376295971546676596L;
@@ -81,7 +82,7 @@ public class SALClient implements EventHandler, StreamCallback{
 			agent.registerEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
-		} catch (ConfigurationException e2) {
+		} catch (NotFoundException e2) {
 			e2.printStackTrace();
 		}
 		agent.start(pc, sc);
@@ -94,8 +95,9 @@ public class SALClient implements EventHandler, StreamCallback{
 		boolean ok=false;
 		System.out.println("Enter either :\n\ta sensor id to send a command\n\t-1 to quit\n\t-2 to see a list of active sensors (XML)");
 		System.out.println("\t-3 to see a list of active sensors (shorter, human readable listing)");
-		System.out.println("\t-4 to add a new protocol\n\t-5 to remove a protocol\n\t-6 to add a new sensor\n\t-7 to remove a sensor");
-		System.out.println("\t-8 to list all sensors (XML)\n\t-9 to list all sensors(shorter, human readable listing)");
+		System.out.println("\t-4 to add a new protocol\n\t-5 to remove a protocol\n\t-6 to list all protocols");
+		System.out.println("\t-7 to add a new sensor\n\t-8 to remove a sensor");
+		System.out.println("\t-9 to list all sensors (XML)\n\t-10 to list all sensors(shorter, human readable listing)");
 		while(!ok)
 			try {
 				sid = Integer.parseInt(b.readLine());
@@ -106,23 +108,20 @@ public class SALClient implements EventHandler, StreamCallback{
 	}
 	
 	public void doActionSensor(int sid) throws Exception{
-		String str, str2;
+		String str2;
 		CommandFactory cf;
 		Command c = null;
 		Response res;
 		ArgumentType t;
-		CMLDescription tmp;
 		CMLDescriptions cmls;
 		int j;
 		
 		cmls = new CMLDescriptions(agent.getCML(String.valueOf(sid)));
 		System.out.println("\n\nHere is the CML document for this sensor:");
-		System.out.println(cmls.getCMLString());
+		System.out.println(cmls.getXMLString());
 		System.out.println("Print human-readable form ?(Y/n)");
 		if(!b.readLine().equals("n")){
-			Iterator<CMLDescription> i = cmls.getDescriptions().iterator();
-			while(i.hasNext()){
-				tmp = i.next();
+			for(CMLDescription tmp: cmls.getDescriptions()){
 				System.out.print("CID: "+tmp.getCID());
 				System.out.println(" - "+tmp.getDesc());
 			}
@@ -133,9 +132,7 @@ public class SALClient implements EventHandler, StreamCallback{
 		cf = new CommandFactory(cmls.getDescription(j));
 		boolean argOK=false, argsDone=false;
 		while(!argsDone) {
-			Iterator<String> e = cf.listMissingArgNames().iterator();
-			while(e.hasNext()){
-				str = e.next();
+			for(String str: cf.listMissingArgNames()){
 				t = cf.getArgType(str);
 				if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
 					while(!argOK) {
@@ -163,10 +160,7 @@ public class SALClient implements EventHandler, StreamCallback{
 	}
 	
 	public void printSensorList(SMLDescriptions smls){
-		SMLDescription tmp;
-		Iterator<SMLDescription> i = smls.getDescriptions().iterator();
-		while(i.hasNext()) {
-			tmp = i.next();
+		for(SMLDescription tmp: smls.getDescriptions()){
 			System.out.print("SID: "+tmp.getSID());
 			System.out.print(" - "+tmp.getSensorAddress());
 			System.out.print(" - "+tmp.getProtocolType());
@@ -202,20 +196,22 @@ public class SALClient implements EventHandler, StreamCallback{
 					System.out.println("Remove associated sensors from config file ? (yes-no)");
 					str2=b.readLine();
 					agent.removeProtocol(str, (str2.equals("yes"))?true:false);
-				} else if(sid==-6) {
+				} else if(sid==-6)
+					System.out.println(XMLhelper.toString(agent.listProtocols())); 
+				else if(sid==-7) {
 					System.out.println("Enter the XML doc for the new sensor:");
 					sb.delete(0, sb.length());
 					while(!(str=b.readLine()).equals(""))
 						sb.append(str);
 					agent.addSensor(sb.toString());
 					sb.delete(0, sb.length());
-				} else if(sid==-7) {
+				} else if(sid==-8) {
 					System.out.println("Enter the ID of the Sensor to be removed:");
 					str=b.readLine();
 					agent.removeSensor(str);
-				} else if(sid==-8)
+				} else if(sid==-9)
 					System.out.println(agent.listSensors());
-				else if(sid==-9) 
+				else if(sid==-10) 
 					printSensorList(new SMLDescriptions(agent.listSensors()));
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -228,7 +224,7 @@ public class SALClient implements EventHandler, StreamCallback{
 			agent.unregisterEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
-		} catch (ConfigurationException e) {
+		} catch (NotFoundException e) {
 			e.printStackTrace();
 		}
 		agent.stop();
@@ -237,9 +233,17 @@ public class SALClient implements EventHandler, StreamCallback{
 	
 	
 	public static void main(String [] args){
+		String pc, sc;
+		if(args.length!=2) {
+			pc="conf/platformConfig-empty.xml";
+			sc="conf/sensorsConfig-empty.xml";
+		} else {
+			pc = args[0];
+			sc = args[1];
+		}
 		SALClient c = new SALClient();
 		try {
-			c.start(args[0], args[1]);
+			c.start(pc, sc);
 			c.run();
 		} catch (ConfigurationException e) {
 			e.printStackTrace();
@@ -256,6 +260,7 @@ public class SALClient implements EventHandler, StreamCallback{
 		System.out.println("Received "+e.toString());
 	}
 
+
 	private int n;
 	private long ts;
 	
@@ -269,13 +274,10 @@ public class SALClient implements EventHandler, StreamCallback{
 		} else
 			n++;
 		try {
-				viewers.get(r.getSID()).setImage(r.getBytes());
-			} catch (ConfigurationException e) {
-				System.out.println("Stream from sensor "+r.getSID()+" returned an error");
-				viewers.remove(r.getSID()).close();
-			} catch (ClosedChannelException e) {
-				System.out.println("Stream from sensor "+r.getSID()+" completed");
-				viewers.remove(r.getSID()).close();
+			viewers.get(r.getSID()).setImage(r.getBytes());
+		} catch (SensorControlException e) {
+			System.out.println("Stream from sensor "+r.getSID()+" returned an error");
+			viewers.remove(r.getSID()).close();
 		}
 	}
 

@@ -1,7 +1,5 @@
 package jcu.sal.events;
 
-import javax.naming.ConfigurationException;
-
 import jcu.sal.common.events.Event;
 
 public class ProtocolListEvent extends Event {
@@ -15,11 +13,11 @@ public class ProtocolListEvent extends Event {
 		MAX_TYPE_VALUE = PROTOCOL_MASK;
 	}
 	
-	public ProtocolListEvent(int t, String sid, String p) throws ConfigurationException {
+	public ProtocolListEvent(int t, String sid, String p){
 		super(t, sid, p);
 	}
 
-	public ProtocolListEvent(int t, String sid, String doc, String p) throws ConfigurationException {
+	public ProtocolListEvent(int t, String sid, String doc, String p) {
 		super(t, sid, doc, p);
 	}
 	

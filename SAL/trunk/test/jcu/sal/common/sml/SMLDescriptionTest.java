@@ -3,14 +3,21 @@
  */
 package jcu.sal.common.sml;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Set;
+import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.Parameters;
+import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.utils.XMLhelper;
 
 import org.junit.After;
@@ -23,46 +30,48 @@ import org.w3c.dom.Document;
  *
  */
 public class SMLDescriptionTest {
-	private Hashtable<String, String> p1, p2, p3;
+	private Parameters p1, p2, p3;
 	
 	//missing sid attribute
 	private String sml1 = "<"+SMLConstants.SENSOR_TAG+">\n" +
-							"<"+SMLConstants.PARAMETERS_NODE+">\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETERS_NODE+">\n"+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocol\" />\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MySensorAddress\" />\n"+
-							"</"+SMLConstants.PARAMETERS_NODE+">\n"+
+							"</"+Parameters.PARAMETERS_NODE+">\n"+
 							"</"+SMLConstants.SENSOR_TAG+">";
 	
 	//has an extra parameter
 	private String sml2 = "<"+SMLConstants.SENSOR_TAG+" "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\"10\">\n" +
-							"<"+SMLConstants.PARAMETERS_NODE+">\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETERS_NODE+">\n"+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocol\" />\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MySensorAddress\" />\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+
-							"=\"shouldNOT\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"goTHROUGH\" />\n"+
-							"</"+SMLConstants.PARAMETERS_NODE+">\n"+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+
+							"=\"should\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"goTHROUGH\" />\n"+
+							"</"+Parameters.PARAMETERS_NODE+">\n"+
 							"</"+SMLConstants.SENSOR_TAG+">";
 	
 	//missing one required parameter
 	private String sml3 = "<"+SMLConstants.SENSOR_TAG+" "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\"10\">\n" +
-							"<"+SMLConstants.PARAMETERS_NODE+">\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETERS_NODE+">\n"+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocol\" />\n"+
-							"</"+SMLConstants.PARAMETERS_NODE+">\n"+
+							"</"+Parameters.PARAMETERS_NODE+">\n"+
 							"</"+SMLConstants.SENSOR_TAG+">";
 	
 	//shoud be OK
 	private String sml4 = "<"+SMLConstants.SENSOR_TAG+" "+SMLConstants.SENSOR_ID_ATTRIBUTE_NODE+"=\"10\">\n" +
-							"<"+SMLConstants.PARAMETERS_NODE+">\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETERS_NODE+">\n"+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocol\" />\n"+
-							"<"+SMLConstants.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
 							SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MySensorAddress\" />\n"+
-							"</"+SMLConstants.PARAMETERS_NODE+">\n"+
+							"<"+Parameters.PARAMETER_NODE+" "+SMLConstants.PARAMETER_NAME_ATTRIBUTE_NODE+"=\""+
+							SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE+"\" "+SMLConstants.PARAMETER_VALUE_ATTRIBUTE_NODE+"=\"MyProtocolType\" />\n"+
+							"</"+Parameters.PARAMETERS_NODE+">\n"+
 							"</"+SMLConstants.SENSOR_TAG+">";
 	
 	
@@ -73,19 +82,26 @@ public class SMLDescriptionTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		p1 = new Hashtable<String, String>();
-		p2 = new Hashtable<String, String>();
-		p3 = new Hashtable<String, String>();
+		Vector<Parameter> v = new Vector<Parameter>();
+
+		//missing one required attribute
+		v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol"));
+		v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, "MyProtocolType"));
+		v.add(new Parameter("shoudNOT", "goTHROUGH"));
+		p1 = new Parameters(v);
 		
-		p1.put(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol");
-		p1.put(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, "MySensorAddress");
-		p1.put("shoudNOT", "goTHROUGH");
+		v.removeAllElements();
+		//missing two required attributes
+		v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol"));
+		v.add(new Parameter("shoudNOT", "goTHROUGH"));
+		p2 = new Parameters(v);
 		
-		p2.put(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol");
-		p2.put("shoudNOT", "goTHROUGH");
-		
-		p3.put(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol");
-		p3.put(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, "MySensorAddress");
+		v.removeAllElements();
+		//should be ok
+		v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "MyProtocol"));
+		v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, "MyProtocolType"));
+		v.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, "MySensorAddress"));
+		p3 = new Parameters(v);
 		
 		try {
 			d1 = XMLhelper.createDocument(sml1);
@@ -107,24 +123,28 @@ public class SMLDescriptionTest {
 
 	/**
 	 * Test method for {@link jcu.sal.common.sml.SMLDescription#SMLDescription(java.lang.Integer, java.util.Hashtable)}.
+	 * @throws SALDocumentException 
 	 * @throws ConfigurationException 
 	 */
 	@Test
-	public void testSMLDescriptionIntegerHashtableOfStringString() throws ConfigurationException{
+	public void testSMLDescriptionIntegerHashtableOfStringString() throws SALDocumentException{
 		try {
 			new SMLDescription(new Integer(10), p1);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		try {
 			new SMLDescription(new Integer(10), p2);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {}
 		
 		try {
 			new SMLDescription(new Integer(SMLConstants.SENSOR_ID_MAX+1), p3);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {}
 		
 		new SMLDescription(new Integer(1), p3);
 	}
@@ -134,19 +154,19 @@ public class SMLDescriptionTest {
 	 * @throws ConfigurationException 
 	 */
 	@Test
-	public void testSMLDescriptionDocument() throws ConfigurationException {
+	public void testSMLDescriptionDocument() throws SALDocumentException {
 		try {
 			new SMLDescription(d1);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {}
 		try {
 			new SMLDescription(d2);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {}
 		try {
 			new SMLDescription(d3);
 			fail("shoudnt be here");
-		} catch (ConfigurationException e) {}
+		} catch (SALDocumentException e) {}
 		System.out.println("Checking d4:"+XMLhelper.toString(d4));
 		new SMLDescription(d4);
 	}
@@ -156,7 +176,7 @@ public class SMLDescriptionTest {
 	 * @throws ConfigurationException 
 	 */
 	@Test
-	public void testGetSID() throws ConfigurationException {
+	public void testGetSID() throws SALDocumentException {
 		SMLDescription s = new SMLDescription(d4);
 		assertTrue(s.getSID()==10);
 		
@@ -166,10 +186,11 @@ public class SMLDescriptionTest {
 
 	/**
 	 * Test method for {@link jcu.sal.common.sml.SMLDescription#getParameter(java.lang.String)}.
+	 * @throws NotFoundException 
 	 * @throws ConfigurationException 
 	 */
 	@Test
-	public void testGetParameter() throws ConfigurationException {
+	public void testGetParameter() throws SALDocumentException, NotFoundException {
 		SMLDescription s = new SMLDescription(d4);
 		assertEquals(s.getParameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE), "MyProtocol");
 		assertEquals(s.getParameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE), "MySensorAddress");
@@ -184,7 +205,7 @@ public class SMLDescriptionTest {
 	 * @throws ConfigurationException 
 	 */
 	@Test
-	public void testGetParameterNames() throws ConfigurationException {
+	public void testGetParameterNames() throws SALDocumentException {
 		SMLDescription s = new SMLDescription(d4);
 		Set<String> set = new HashSet<String>();
 		Set<String> set1 = new HashSet<String>();
@@ -192,6 +213,7 @@ public class SMLDescriptionTest {
 		Set<String> set3 = new HashSet<String>();
 		set.add(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
 		set.add(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);
+		set.add(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE);
 		
 		set1.add(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE);
 		set1.add(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE);
