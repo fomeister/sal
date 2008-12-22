@@ -1,0 +1,9 @@
+
+IDEAS
+=====
+
+- server runs with either config file or command line options
+  - supported communications types and config for those
+  - whether or not to have a local client
+    - the type of gui to use for the local client 
+

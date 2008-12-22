@@ -1,0 +1,63 @@
+
+Commands and Communication
+==========================
+
+Want to be able to hold a connection open
+- might have several responses for the one command
+  - a series of sendResponses followed by an endResponse to signal the end
+
+public interface CommsClient {
+	public void setup();
+	public void shutdown();
+
+	public SALCommandCreator getCommandCreator();
+	public send(Command c, ResponseListener rl);
+}
+
+public interface Command {
+	public void send(CommsClient cc);
+}
+
+public interface SALCommandCreator {
+	AddSensorCommand createAddSensorCommand(...args...);
+	.
+	.
+	.
+}
+
+public abstract class AddSensorCommand implements Command {
+	abstract void send(CommsClient cc);
+}
+
+public class TcpCommsClient implements CommsClient {}
+public class TcpSALCommandCreator implements SALCommandCreator {}
+public class TcpAddSensorCommand extends AddSensorCommand() {}
+
+public interface CommsServer {
+	public void setup();
+	public void shutdown();
+
+	public SALResponseCreator getResponseCreator();
+	public send(Response r, ResponseListener rl);
+}
+
+public interface Response {
+	public void send(CommsServer cs);
+}
+
+- client creates command, later calls send while specifying a callback for the response
+  - callback registery assigns a communciations id to the command and adds that to the 
+    transport of the command
+  - responses are keyed on this comms id
+  - a special EndRepsonse object triggers the deregistering of the callback
+  - hopefully the comms client uses threads or someother callback mechanism to read the responses back
+  - when it has them it triggers the callback
+
+- server creates the commsserver object, registers various command handlers with the commsserver
+  - commsserver uses threads or someother callback mechanism to read the commands in
+  - when commands come in they go to the registered handlers
+    - command plus response listener for when the processing is done
+  - the server processes the commands then triggers the response listener
+     - the response listener then sends the response back to the client
+
+

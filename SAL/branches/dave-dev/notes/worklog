@@ -1,0 +1,42 @@
+
+WORKLOG
+=======
+
+10/12/08
+
+- created a basic directory layout and pom file
+- began adding the exisitng dependencies
+- created an XML schema for the config files
+
+11/12/08
+- resolved JAXB dependency conflict
+- began work on plugin code
+  - investigated the Java Plugin Framework (JPF) 
+    - looks a bit strange
+  - splashed around a little, rapidly prototyped a few ideas that didn't stick
+    - got to the point that it's starting to look alright
+  - need to finish the updating and jar loading code
+  - need to write tests
+
+12/12/08
+- finished code work on plugin classloader
+  - got jar loading working
+    - can't have jars within jars without a custom class loader
+    - that's less craziness to handle == good thing
+    - was just calling one read() of the JarInputStream 
+      - doesn't always read everything in the one call
+      - easily fixed after taking a while to diagnose
+  - got name resolution happening
+  - got dependencies working by lazy loading the classes
+    - prior to this things were freaking out 
+    - loading the classes as listed in a jar means you'll miss some dependency ordering
+  - got updates working by making a child class loader per file
+    - uses parent delegation to lazy load dependencies
+    - means we can remove or update class definitions per file
+  - got removal working by getting names into an array and iterating over them
+  - add method to get the names of the concrete class that implement a particular interface
+- still have unit testing and javadoc to complete
+
+22/12/08
+
+

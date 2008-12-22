@@ -1,0 +1,65 @@
+
+TODO
+====
+
+Ongoing
+-------
+
+- Keep the worklog up to date
+- When a logical unit of code is completed
+  - Javadoc it
+  - unit test it
+- Checkin regularly
+
+Overall List
+------------
+
+- get XML stuff working
+   - might have to create different root element types for different documents
+   - Giles seems to have various constraints he's imposing on the config files
+- write XML tests for marshalling / unmarshalling and validation
+
+- create client / server interfaces and code
+  - ServerComm and ClientComm interfaces 
+    - use DI to set Comm objects in generic Client and Server code
+    - local connection implements both
+    - will need a list of supported Comm objects at the server side, have to handle them all
+  - Higher level communications interface
+    - gives a domain specific comms api per subclass
+    - the object -> message translation is transport dependent, so makes sense
+
+- write client / server mock objects for testing
+- write client / server local comms code and test
+
+- ? write client / server rmi code with mina and test ?
+- write client / server binary protocol code with mina and test
+- write client / server xml rpc code with mina and test
+- ? write client / server rest code with mina and test ?
+
+- separate the UI from the client
+- use command pattern to clean up the client side commands
+
+- review events / sensors / protocols etc...
+  - attempt to make sensors / protocols pluggable 
+
+- possibly use ANTLR for a friendlier command line interface with the current one supported as the hotkeys
+
+- second version of DirectoryClassLoader
+  - see class header comments for notes
+
+Daily List
+----------
+
+- write xml helpers
+- add unit tests for xml helpers
+- javadoc for any xml helpers
+
+- write command and communication interfaces
+- write versions for local, binary, xmlrpc and rmi
+- write mock objects for comms code (high level and comms specific)
+- write unit tests for comms code
+- javadoc comms code
+
+- add unit tests for plugin code
+- javadoc plugin code
+
