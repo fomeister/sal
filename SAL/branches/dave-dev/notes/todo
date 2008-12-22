@@ -29,9 +29,7 @@ Overall List
     - the object -> message translation is transport dependent, so makes sense
 
 - write client / server mock objects for testing
-- write client / server local comms code and test
 
-- ? write client / server rmi code with mina and test ?
 - write client / server binary protocol code with mina and test
 - write client / server xml rpc code with mina and test
 - ? write client / server rest code with mina and test ?
@@ -54,8 +52,8 @@ Daily List
 - add unit tests for xml helpers
 - javadoc for any xml helpers
 
-- write command and communication interfaces
-- write versions for local, binary, xmlrpc and rmi
+- come up with a message schema, an xml representation, and a method of parsing it from a command line
+- write and informally test transport code for local, binary, xmlrpc
 - write mock objects for comms code (high level and comms specific)
 - write unit tests for comms code
 - javadoc comms code
