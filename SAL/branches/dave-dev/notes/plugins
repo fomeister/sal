@@ -1,0 +1,88 @@
+
+Plugin System
+=============
+
+- got to overload loadSystemLibrary in CL
+
+Initialised with a TreeInfo class, which contains:
+- an indicating of whether the classloader delegation moves up or down the tree
+- an indiciation of what should occur when errors happen
+  - suspend those with errors
+  - suspend those with errors that can't be fixed, attempt to fix those that 
+    can
+  - raise an exception
+- a list of PathInfo instances, each of which contain:
+  - a path name
+    - an initial "/" anchors the search to the root of the first directory
+    - otherwise it's a search for a directory name at any level in the hierarchy
+    - '*' catches any cases not handled by any of the other PathInfo cases
+  - booleans that indicate whether to load the classes, jars, or resouces when 
+    this path is matched
+  - a boolean that indicates whether or not to keep searching for matches for 
+    any of the PathInfo instances in the subdirectories of this match
+  - for example:
+    ["/shared/classes", true, false, true, false]
+    ["/shared/lib", false, true, true, false]
+    ["/common/classes", true, false, true, false]
+    ["/common/lib", false, true, true, false]
+	["classes", true, false, true, false]
+    ["libs", false, true, true, false]
+    ["webapps", false, false, false, true]
+	- anchored matches are checked first, then unanchored matches, then the 
+      optional wildcard match
+
+   - we build a DirectoryClassLoader for each anchored match
+   - we build a DirectoryClassLoader for each time we find a match for an 
+     unanchored match
+   - and we use this to build a heirarchy of DirectoryClassLoaders
+
+- We can track the dependencies of each class
+  - we override methods in the DirectoryClassLoader so that we can tell what's
+     being loaded when a class is resolved
+  - this means that if a class is not defined (from not being specified or 
+    from being removed) or if it's defined more than once we can work out what 
+    classes or resources are effected
+  - can suspend a class or resource and everything that depends on it if there's an
+    error
+  - likewise can unsuspend it if the error is suddenly fixed
+  - we have getClasses/Resources/Plugins, can add getSuspendedClasses/Resources/Plugins
+  - Return the file, the name and the reason
+    - if indirect, gives the chain of dependence to the cause and then the cause
+    - otherwise just gives the cause
+  - Optionally provides suggestions
+    - In the case of duplicate classes we can compare the byte arrays and if identical 
+      just use one of them
+      - means we have to track what happens if the class disappears
+      - may not be a good thing
+      - good for use in suggestions though
+        - bytes are the same => advise a particular file rearrangement
+          - if one source file contains classes/resources that are a strict subset 
+            of another file we can recommend getting rid of the subset file
+          - otherwise we can suggest moving common stuff higher up the tree
+        - otherwise give version and class conflict as the reason
+
+- We probably want to split FileInfo into 
+  - FileInfo
+  - ClassInfo
+  - ClassFileInfo
+    - contains FileInfo and ClassInfo
+  - JarFileInfo
+    - contains FileInfo and list of ClassInfos, FileInfos? for resources
+  - makes tracking what happens when we reload a jar easier
+
+- We want to be able to set listeners
+  - for errors
+  - for classes that have been added, removed, been suspended or been unsuspended that 
+    implement a given interface or set of interfaces
+  - for classes or resources that have been added or removed that match a given pattern
+    for their directory and/or filename
+  - for classes that match a pattern and implement an interface
+
+- We can add an event mechanism to propogate errors and/orthe addition of plugins
+  - make an abstract triggering mechanism
+  - use a Thread and scanDirectories() at first
+  - means we can do an inotify version when Java 7 comes out
+  - need startUpdates() and stopUpdates() calls so we can create a safe window to modify the directory
+
+- We can JMX enabled the tracking and handling of class errors
+- We should probably check class / jar magic numbers

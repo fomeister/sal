@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://sal.jcu.edu.au/schemas/config"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:tns="http://sal.jcu.edu.au/schemas/config"
+	elementFormDefault="qualified" attributeFormDefault="unqualified"
+	xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
+	<!--
+	jaxb:extensionBindingPrefixes="xjc" jaxb:version="2.0"> -->
+
+	<xsd:element name="SAL" type="tns:SALType" />
+
+	<xsd:complexType name="SALType">
+		<xsd:sequence>
+			<xsd:element name="PlatformConfiguration" type="tns:PlatformConfigurationType" minOccurs="0" maxOccurs="1" />
+			<xsd:element name="SensorConfiguration" type="tns:SensorConfigurationType" minOccurs="0" maxOccurs="1" />
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="PlatformConfigurationType">
+		<xsd:sequence>
+			<xsd:element name="general" type="tns:GeneralPlatformConfigurationType" minOccurs="0" maxOccurs="1"/>
+			<xsd:element name="protocols" type="tns:ProtocolListType" minOccurs="0" maxOccurs="1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="GeneralPlatformConfigurationType">
+		<xsd:sequence>
+			<xsd:element name="logging" type="xsd:string" nillable="true" />
+			<xsd:element name="readingDirectory" type="xsd:string"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ProtocolListType">
+		<xsd:sequence>
+			<xsd:element name="Protocol" type="tns:ProtocolType" minOccurs="0" maxOccurs="unbounded" />
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ProtocolType">
+		<xsd:sequence>
+			<xsd:element name="EndPoint" type="tns:EndpointType" minOccurs="0" maxOccurs="1" />
+			<xsd:element name="parameters" type="tns:ParameterListType" minOccurs="0" maxOccurs="1" />
+		</xsd:sequence>
+		<xsd:attribute name="name" type="xsd:string" />
+		<xsd:attribute name="type" type="xsd:string" />
+	</xsd:complexType>
+
+	<xsd:complexType name="EndpointType">
+		<xsd:attribute name="name" type="xsd:string" />
+		<xsd:attribute name="type" type="xsd:string" />
+	</xsd:complexType>
+
+	<xsd:complexType name="SensorConfigurationType">
+		<xsd:sequence>
+			<xsd:element name="Sensor" type="tns:SensorType" minOccurs="0" maxOccurs="unbounded" />
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="SensorType">
+		<xsd:sequence>
+			<xsd:element name="parameters" type="tns:ParameterListType" />
+		</xsd:sequence>
+		<xsd:attribute name="sid" type="xsd:int" />
+	</xsd:complexType>
+
+	<xsd:complexType name="ParameterListType">
+		<xsd:sequence>
+			<xsd:element name="Parameter" type="tns:ParameterType" minOccurs="0" maxOccurs="unbounded" />
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ParameterType">
+		<xsd:attribute name="name" type="xsd:string" />
+		<xsd:attribute name="value" type="xsd:string" />
+	</xsd:complexType>
+
+</xsd:schema>
