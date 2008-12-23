@@ -2,6 +2,22 @@
 IDEAS
 =====
 
+- all responses are streaming by default until a response tagged with isFinalResponse comes through
+  - means we can subscribe/unsubscribe to a sensor list and it'll keep up to date in the background
+    instead of having to poll for the list
+
+- probably for (much) later on
+  - need some form of addressing
+    - [SAL address][No-recurse char][Separator][Sensor address][Command address]
+    - can address a single SAL instance, or a single SAL instance plus all of its children
+      - that's what no-recurse is for
+    - should be able to aliases for addresses
+      - 'this' for the local SAL - not sure if that's with or without recursion
+    - SAL commands go to SAL addresses
+    - Sensor commands go to SAL+Sensor addresses
+    - Commands that make use of the outputs of other commands will have a command address in there arguments
+      - to connect the results of a sensor stream to some kind of data sink for instance
+
 - server runs with either config file or command line options
   - supported communications types and config for those
   - whether or not to have a local client
