@@ -84,7 +84,7 @@ public class DirectoryClassLoader extends ClassLoader {
 
 		for (FileInfo fi : classes.values()) {
 			fi.loadClassData();
-			if(implementsInterfaceAndConcrete(fi.loadClass, interfaceToMatch)) {
+			if(implementsInterfaceAndConcrete(fi.loadedClass, interfaceToMatch)) {
 				names.add(fi.name);
 			}
 		}

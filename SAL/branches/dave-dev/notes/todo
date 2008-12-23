@@ -52,7 +52,6 @@ Daily List
 - add unit tests for xml helpers
 - javadoc for any xml helpers
 
-- come up with a message schema, an xml representation, and a method of parsing it from a command line
 - write and informally test transport code for local, binary, xmlrpc
 - write mock objects for comms code (high level and comms specific)
 - write unit tests for comms code

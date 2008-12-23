@@ -40,3 +40,9 @@ WORKLOG
 22/12/08
 - created the basics of the communications classes
 
+23/12/08
+- more work on the communications classes
+  - made an xml schema for commands / responses
+  - pretty similar to Gilles' version, but with the inherent streaming rather than callbacks
+  - ready to play with Mina
+    - main task will be serializing commands / responses to bytes

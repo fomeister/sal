@@ -1,7 +1,7 @@
 
 package jcu.sal.comms.listeners;
 
-import jcu.sal.comms.common.Command;
+import jcu.sal.xml.Command;
 
 public interface CommandListener {
 	public void receivedCommand(Command c);
