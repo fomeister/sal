@@ -3,14 +3,12 @@ package jcu.sal.comms;
 
 import java.util.HashMap;
 
-import jcu.sal.comms.listeners.CommandProcessor;
+import jcu.sal.comms.CommandProcessor;
 import jcu.sal.comms.listeners.ResponseListener;
 import jcu.sal.comms.listeners.TransportResponseListener;
 import jcu.sal.comms.transport.ClientTransport;
-import jcu.sal.xml.Command;
-import jcu.sal.xml.Response;
-import jcu.sal.xml.TransportCommand;
-import jcu.sal.xml.TransportResponse;
+import jcu.sal.comms.transport.TransportCommand;
+import jcu.sal.comms.transport.TransportResponse;
 
 public class ClientCommsManager implements TransportResponseListener, CommandProcessor {
 
@@ -43,21 +41,14 @@ public class ClientCommsManager implements TransportResponseListener, CommandPro
 
 	public void process(Command c, ResponseListener rl) {
 		listeners.put(command_id, rl);
-
-		TransportCommand tc = new TransportCommand();
-		tc.setId(command_id);
-		tc.setCommand(c);
-
-		transport.send(tc);
-		command_id++;
+		transport.send(new TransportCommand(c, command_id++));
 	}
 
 	public void receivedResponse(TransportResponse tr) {
 		ResponseListener rl = listeners.get(tr.getId());
 		if (rl != null) {
-			Response r = tr.getResponse();
-			rl.receivedResponse(r);
-			if (r.isFinalResponse()) {
+			rl.receivedResponse(tr);
+			if (tr.isFinal()) {
 				listeners.remove(tr.getId());
 			}
 		}

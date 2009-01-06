@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://sal.jcu.edu.au/schemas/messages"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:tns="http://sal.jcu.edu.au/schemas/messages"
+	elementFormDefault="qualified" attributeFormDefault="unqualified"
+	xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
+
+	<xsd:element name="messageDescription" type="tns:MessageDescription" />
+
+	<xsd:complexType name="MessageDescription">
+		<xsd:sequence>
+			<xsd:element name="name" type="xsd:string" />
+			<xsd:element name="description" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true" />
+			<xsd:element name="argument" type="tns:ArgumentDescription" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ArgumentDescription">
+		<xsd:element name="description" type="xsd:string" minOccurs="0" maxOccurs="1" nillable="true" />
+		<xsd:attribute name="name" type="xsd:string" />
+		<xsd:attribute name="type" type="tns:ValidType" />
+	</xsd:complexType>
+
+	<xsd:simpleType name="ValidType">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="int"/>
+			<xsd:enumeration value="float"/>
+			<xsd:enumeration value="boolean"/>
+			<xsd:enumeration value="string"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+
+</xsd:schema>

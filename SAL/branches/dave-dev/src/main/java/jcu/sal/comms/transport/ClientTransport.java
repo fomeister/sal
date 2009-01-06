@@ -2,7 +2,6 @@
 package jcu.sal.comms.transport;
 
 import jcu.sal.comms.listeners.TransportResponseListener;
-import jcu.sal.xml.TransportCommand;
 
 public interface ClientTransport {
 	public void setup();

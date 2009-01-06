@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://sal.jcu.edu.au/schemas/messages"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:tns="http://sal.jcu.edu.au/schemas/messages"
+	elementFormDefault="qualified" attributeFormDefault="unqualified"
+	xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+	xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
+
+	<xsd:element name="message">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="argument" type="tns:Argument" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+			</xsd:sequence>
+			<xsd:attribute name="name" type="xsd:string" />
+			<xsd:attribute name="final" type="xsd:boolean" />
+		</xsd:complexType>
+	</xsd:element>
+	<!--
+	<xsd:complexType name="Message">
+		<xsd:sequence>
+			<xsd:element name="argument" type="tns:Argument" minOccurs="0" maxOccurs="unbounded" nillable="true" />
+		</xsd:sequence>
+		<xsd:attribute name="name" type="xsd:string" />
+		<xsd:attribute name="final" type="xsd:boolean" />
+	</xsd:complexType>
+	-->
+	<xsd:complexType name="Argument">
+		<xsd:sequence>
+			<xsd:element name="value" type="xsd:string" minOccurs="1" maxOccurs="unbounded" />
+		</xsd:sequence>
+	</xsd:complexType>
+
+</xsd:schema>
