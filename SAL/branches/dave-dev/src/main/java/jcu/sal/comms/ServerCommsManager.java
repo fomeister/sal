@@ -1,14 +1,12 @@
 
 package jcu.sal.comms;
 
-import jcu.sal.comms.listeners.CommandProcessor;
+import jcu.sal.comms.CommandProcessor;
 import jcu.sal.comms.listeners.TransportCommandListener;
 import jcu.sal.comms.listeners.ResponseListener;
 import jcu.sal.comms.transport.ServerTransport;
-import jcu.sal.xml.Command;
-import jcu.sal.xml.Response;
-import jcu.sal.xml.TransportCommand;
-import jcu.sal.xml.TransportResponse;
+import jcu.sal.comms.transport.TransportCommand;
+import jcu.sal.comms.transport.TransportResponse;
 
 public class ServerCommsManager implements TransportCommandListener {
 
@@ -44,15 +42,11 @@ public class ServerCommsManager implements TransportCommandListener {
 	}
 
 	private void send(int command_id, Response r) {
-		TransportResponse tr = new TransportResponse();
-		tr.setId(command_id);
-		tr.setResponse(r);
-
-		transport.send(tr);
+		transport.send(new TransportResponse(r, command_id));
 	}
 
 	public void receivedCommand(TransportCommand tc) {
-		processor.process(tc.getCommand(), new ProcessingResponseListener(this, tc.getId()));
+		processor.process(tc, new ProcessingResponseListener(this, tc.getId()));
 	}
 
 	private class ProcessingResponseListener implements ResponseListener {

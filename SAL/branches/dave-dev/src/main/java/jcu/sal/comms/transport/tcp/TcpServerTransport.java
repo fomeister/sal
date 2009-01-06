@@ -3,7 +3,7 @@ package jcu.sal.comms.transport.tcp;
 
 import jcu.sal.comms.transport.ServerTransport;
 import jcu.sal.comms.listeners.TransportCommandListener;
-import jcu.sal.xml.TransportResponse;
+import jcu.sal.comms.transport.TransportResponse;
 
 public class TcpServerTransport implements ServerTransport {
 

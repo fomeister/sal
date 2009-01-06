@@ -1,14 +1,14 @@
 
 package jcu.sal.comms.transport.local;
 
+import jcu.sal.comms.Command;
+import jcu.sal.comms.Response;
 import jcu.sal.comms.listeners.TransportCommandListener;
 import jcu.sal.comms.listeners.TransportResponseListener;
 import jcu.sal.comms.transport.ClientTransport;
 import jcu.sal.comms.transport.ServerTransport;
-import jcu.sal.xml.Command;
-import jcu.sal.xml.Response;
-import jcu.sal.xml.TransportCommand;
-import jcu.sal.xml.TransportResponse;
+import jcu.sal.comms.transport.TransportCommand;
+import jcu.sal.comms.transport.TransportResponse;
 
 public class LocalTransport implements ClientTransport, ServerTransport {
 

@@ -19,6 +19,8 @@ Overall List
    - Giles seems to have various constraints he's imposing on the config files
 - write XML tests for marshalling / unmarshalling and validation
 
+- maybe add an 'xml' type to the schema
+
 - create client / server interfaces and code
   - ServerComm and ClientComm interfaces 
     - use DI to set Comm objects in generic Client and Server code
@@ -45,18 +47,33 @@ Overall List
 - second version of DirectoryClassLoader
   - see class header comments for notes
 
-Daily List
-----------
+Short Term List
+---------------
 
 - write xml helpers
 - add unit tests for xml helpers
 - javadoc for any xml helpers
 
-- write and informally test transport code for local, binary, xmlrpc
+- write and informally test transport code for local, tcp.binary and tcp.xml
 - write mock objects for comms code (high level and comms specific)
 - write unit tests for comms code
 - javadoc comms code
 
 - add unit tests for plugin code
 - javadoc plugin code
+
+Today
+-----
+
+- get xml codec written and tested
+- get tcp transport written and tested
+- get binary codec written and tested (using strings for all data for now)
+- get message validation written and tested
+- finish off xml helpers / classes for configuration files and write tests
+- javadoc everything
+  - except plugin (wait until new version)
+- start writing SAL command factories
+
+
+
 
