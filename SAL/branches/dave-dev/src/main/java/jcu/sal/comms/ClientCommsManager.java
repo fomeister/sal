@@ -3,22 +3,21 @@ package jcu.sal.comms;
 
 import java.util.HashMap;
 
-import jcu.sal.comms.CommandProcessor;
+import jcu.sal.comms.MessageProcessor;
+import jcu.sal.comms.TransportMessage;
 import jcu.sal.comms.listeners.ResponseListener;
 import jcu.sal.comms.listeners.TransportResponseListener;
 import jcu.sal.comms.transport.ClientTransport;
-import jcu.sal.comms.transport.TransportCommand;
-import jcu.sal.comms.transport.TransportResponse;
 
-public class ClientCommsManager implements TransportResponseListener, CommandProcessor {
+public class ClientCommsManager implements TransportResponseListener, MessageProcessor {
 
 	private ClientTransport transport = null;
 
-	private int command_id;
+	private int message_id;
 	private HashMap<Integer, ResponseListener> listeners;
 
 	public ClientCommsManager() {
-		command_id = 0;
+		message_id = 0;
 		listeners = new HashMap<Integer, ResponseListener>();
 	}
 
@@ -30,26 +29,26 @@ public class ClientCommsManager implements TransportResponseListener, CommandPro
 		return transport;
 	}
 
-	public void setup() {
+	public void setup() throws Exception {
 		transport.setup();
 		transport.setResponseListener(this);
 	}
 
-	public void shutdown() {
+	public void shutdown() throws Exception {
 		transport.shutdown();
 	}
 
-	public void process(Command c, ResponseListener rl) {
-		listeners.put(command_id, rl);
-		transport.send(new TransportCommand(c, command_id++));
+	public void process(Message m, ResponseListener rl) {
+		listeners.put(message_id, rl);
+		transport.send(new TransportMessage(m, message_id++));
 	}
 
-	public void receivedResponse(TransportResponse tr) {
-		ResponseListener rl = listeners.get(tr.getId());
+	public void receivedResponse(TransportMessage tm) {
+		ResponseListener rl = listeners.get(tm.getId());
 		if (rl != null) {
-			rl.receivedResponse(tr);
-			if (tr.isFinal()) {
-				listeners.remove(tr.getId());
+			rl.receivedResponse(tm);
+			if (tm.isFinal()) {
+				listeners.remove(tm.getId());
 			}
 		}
 	}

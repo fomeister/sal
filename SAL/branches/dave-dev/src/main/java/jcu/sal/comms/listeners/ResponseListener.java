@@ -1,8 +1,8 @@
 
 package jcu.sal.comms.listeners;
 
-import jcu.sal.comms.Response;
+import jcu.sal.comms.Message;
 
 public interface ResponseListener {
-	public void receivedResponse(Response r);
+	public void receivedResponse(Message m);
 }

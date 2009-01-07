@@ -1,24 +1,28 @@
 
 package jcu.sal.comms.grow;
 
-import jcu.sal.comms.Response;
+import jcu.sal.comms.Message;
 
-public class GrowResponse extends Response {
+public class GrowResponse extends Message {
 
 	public GrowResponse() {
 		super();
-		setName("GrowResponse");
-		setFinal(true);
+		init();
+	}
+
+	public GrowResponse(Message message) {
+		super(message);
+		init();
 	}
 
 	public GrowResponse(String[] outputStrings) {
-		this();
+		super();
+		init();
 		setOutputStrings(outputStrings);
 	}
 
-	public GrowResponse(Response response) {
-		super(response);
-		setName("GrowResponse");
+	private void init() {
+		setName(GrowMessageFactory.GROW_RESPONSE_NAME);
 		setFinal(true);
 	}
 

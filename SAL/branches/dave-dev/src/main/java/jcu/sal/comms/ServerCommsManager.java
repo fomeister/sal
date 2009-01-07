@@ -1,17 +1,13 @@
 
 package jcu.sal.comms;
 
-import jcu.sal.comms.CommandProcessor;
-import jcu.sal.comms.listeners.TransportCommandListener;
-import jcu.sal.comms.listeners.ResponseListener;
+import jcu.sal.comms.MessageProcessor;
 import jcu.sal.comms.transport.ServerTransport;
-import jcu.sal.comms.transport.TransportCommand;
-import jcu.sal.comms.transport.TransportResponse;
 
-public class ServerCommsManager implements TransportCommandListener {
+public class ServerCommsManager {
 
 	private ServerTransport transport = null;
-	private CommandProcessor processor = null;
+	private MessageProcessor processor = null;
 
 	public ServerCommsManager() {
 	}
@@ -24,43 +20,20 @@ public class ServerCommsManager implements TransportCommandListener {
 		return transport;
 	}
 
-	public void setProcessor(CommandProcessor processor) {
+	public void setProcessor(MessageProcessor processor) {
 		this.processor = processor;
 	}
 
-	public CommandProcessor getProcessor() {
+	public MessageProcessor getProcessor() {
 		return processor;
 	}
 
-	public void setup() {
+	public void setup() throws Exception {
 		transport.setup();
-		transport.setCommandListener(this);
+		transport.setProcessor(processor);
 	}
 
-	public void shutdown() {
+	public void shutdown() throws Exception {
 		transport.shutdown();
-	}
-
-	private void send(int command_id, Response r) {
-		transport.send(new TransportResponse(r, command_id));
-	}
-
-	public void receivedCommand(TransportCommand tc) {
-		processor.process(tc, new ProcessingResponseListener(this, tc.getId()));
-	}
-
-	private class ProcessingResponseListener implements ResponseListener {
-
-		public ServerCommsManager manager;
-		public int command_id;
-
-		public ProcessingResponseListener(ServerCommsManager manager, int command_id) {
-			this.manager = manager;
-			this.command_id = command_id;
-		}
-
-		public void receivedResponse(Response r) {
-			manager.send(command_id, r);
-		}
 	}
 }

@@ -1,26 +1,24 @@
 
-package jcu.sal.comms.transport;
-
-import jcu.sal.comms.Command;
+package jcu.sal.comms;
 
 import javax.xml.bind.JAXBException;
 
-public class TransportCommand extends Command {
+public class TransportMessage extends Message {
 
 	private int id;
 
-	public TransportCommand() {
+	public TransportMessage() {
 		super();
 	}
 
-	public TransportCommand(Command c, int id) {
-		super();
-		this.message = c.getMessage();
+	public TransportMessage(Message m, int id) {
+		super(m);
 		this.id = id;
 	}
 
-	public TransportCommand(String xmlString) throws JAXBException {
+	public TransportMessage(String xmlString, int id) throws JAXBException {
 		super(xmlString);
+		this.id = id;
 	}
 
 	public void setId(int id) {
@@ -40,13 +38,13 @@ public class TransportCommand extends Command {
 			return true;
 		}
 
-		if (o == null || !(o instanceof TransportCommand)) {
+		if (o == null || !(o instanceof TransportMessage)) {
 			return false;
 		}
 
-		TransportCommand tc = (TransportCommand) o;
+		TransportMessage tm = (TransportMessage) o;
 
-		return (super.equals(tc) && id == tc.id);
+		return (super.equals(tm) && id == tm.id);
 	}
 
 	public int hashCode() {

@@ -1,8 +1,8 @@
 
 package jcu.sal.comms.listeners;
 
-import jcu.sal.comms.transport.TransportResponse;
+import jcu.sal.comms.TransportMessage;
 
 public interface TransportResponseListener {
-	public void receivedResponse(TransportResponse tr);
+	public void receivedResponse(TransportMessage tm);
 }

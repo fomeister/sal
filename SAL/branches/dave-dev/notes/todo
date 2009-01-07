@@ -14,27 +14,16 @@ Ongoing
 Overall List
 ------------
 
+- write client / server binary protocol code with mina and test
+
+- create client / server interfaces and code
+  - Server will need a list of ServerCommManagers, one for each type of supported transport
+    - swing can set up the list (as well as the transports it contains)
+
 - get XML stuff working
    - might have to create different root element types for different documents
    - Giles seems to have various constraints he's imposing on the config files
 - write XML tests for marshalling / unmarshalling and validation
-
-- maybe add an 'xml' type to the schema
-
-- create client / server interfaces and code
-  - ServerComm and ClientComm interfaces 
-    - use DI to set Comm objects in generic Client and Server code
-    - local connection implements both
-    - will need a list of supported Comm objects at the server side, have to handle them all
-  - Higher level communications interface
-    - gives a domain specific comms api per subclass
-    - the object -> message translation is transport dependent, so makes sense
-
-- write client / server mock objects for testing
-
-- write client / server binary protocol code with mina and test
-- write client / server xml rpc code with mina and test
-- ? write client / server rest code with mina and test ?
 
 - separate the UI from the client
 - use command pattern to clean up the client side commands
@@ -50,14 +39,21 @@ Overall List
 Short Term List
 ---------------
 
+- write tcp binary codec
+  - use strings throughout if there's no description
+  - otherwise pack down the types
+  - needs the ability to request the description when receiving an unfamiliar type
+    - a cache would be pretty handy here
+    - modification times might be useful as well in case someone updates a description
+
+- throw an exception if we create a particular message from a message with a different name
+
+- add exception handling and logging support to the comms code
+- javadoc comms code
+
 - write xml helpers
 - add unit tests for xml helpers
 - javadoc for any xml helpers
-
-- write and informally test transport code for local, tcp.binary and tcp.xml
-- write mock objects for comms code (high level and comms specific)
-- write unit tests for comms code
-- javadoc comms code
 
 - add unit tests for plugin code
 - javadoc plugin code
@@ -65,10 +61,12 @@ Short Term List
 Today
 -----
 
-- get xml codec written and tested
-- get tcp transport written and tested
-- get binary codec written and tested (using strings for all data for now)
 - get message validation written and tested
+
+- write and test the binary protocol 
+  - string based one first
+  - then the one based on descriptions
+
 - finish off xml helpers / classes for configuration files and write tests
 - javadoc everything
   - except plugin (wait until new version)

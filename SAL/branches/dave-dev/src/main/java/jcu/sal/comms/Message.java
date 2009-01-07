@@ -1,38 +1,47 @@
 
 package jcu.sal.comms;
 
-import jcu.sal.xml.Message;
+import jcu.sal.xml.MessageContent;
 import jcu.sal.xml.MessageDescription;
 import jcu.sal.xml.Argument;
-import jcu.sal.xml.ArgumentDescription;
 import jcu.sal.xml.XMLHelper;
 
 import java.util.List;
 
 import javax.xml.bind.JAXBException;
 
-public class Command {
+public class Message {
 
-	protected Message message = null;
+	protected MessageContent content;
+	protected MessageDescription description = null;
 
-	public Command() {
-		message = new Message();
+	public Message() {
+		content = new MessageContent();
 	}
 
-	public Command(Command command) {
-		this.message = command.getMessage();
+	public Message(Message message) {
+		this.content = message.getContent();
+		this.description = message.getDescription();
 	}
 
-	public Command(String xmlString) throws JAXBException {
-		message = (Message) XMLHelper.fromXmlString(xmlString);
+	public Message(String xmlString) throws JAXBException {
+		content = (MessageContent) XMLHelper.fromXmlString(xmlString);
 	}
 
 	public String toXmlString() throws JAXBException {
-		return XMLHelper.toXmlString(message);
+		return XMLHelper.toXmlString(content);
 	}
 
-	public Message getMessage() {
-		return message;
+	public MessageContent getContent() {
+		return content;
+	}
+
+	public void setDescription(MessageDescription description) {
+		this.description = description;
+	}
+
+	public MessageDescription getDescription() {
+		return description;
 	}
 
 	public boolean valid() {
@@ -40,7 +49,7 @@ public class Command {
 	}
 
 	public List<Argument> getArgument() {
-		return message.getArgument();
+		return content.getArgument();
 	}
 
 	public int getValueSize(int argIndex) {
@@ -104,15 +113,23 @@ public class Command {
 	}
 
 	public String getName() {
-		return message.getName();
+		return content.getName();
 	}
 
 	public void setName(String value) {
-		message.setName(value);
+		content.setName(value);
+	}
+
+	public Boolean isFinal() {
+		return content.isFinal();
+	}
+
+	public void setFinal(Boolean isFinal) {
+		content.setFinal(isFinal);
 	}
 
 	public String toString() {
-		return message.toString();
+		return content.toString();
 	}
 
 	public boolean equals(Object object) {
@@ -120,16 +137,16 @@ public class Command {
 			return true;
 		}
 
-		if (object == null || !(object instanceof Command)) {
+		if (object == null || !(object instanceof Message)) {
 			return false;
 		}
 
-		Command c = (Command) object;
+		Message m = (Message) object;
 
-		return (message.equals(c.message));
+		return (content.equals(m.content));
 	}
 
 	public int hashCode() {
-		return message.hashCode();
+		return content.hashCode();
 	}
 }

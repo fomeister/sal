@@ -1,12 +1,11 @@
 
 package jcu.sal.comms.transport;
 
-import jcu.sal.comms.listeners.TransportCommandListener;
+import jcu.sal.comms.MessageProcessor;
 
 public interface ServerTransport {
-	public void setup();
-	public void shutdown();
+	public void setup() throws Exception;
+	public void shutdown() throws Exception;
 
-	public void send(TransportResponse tr);
-	public void setCommandListener(TransportCommandListener cl);
+	public void setProcessor(MessageProcessor processor);
 }
