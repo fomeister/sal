@@ -61,7 +61,7 @@ WORKLOG
 - started work on the XML codec for the TCP transport
 
 07/01/09
-- got the XML codec and the TCP transport working and tested
-  - required some changes to the ServerCommsManager and ServerTransport classes
-- started on the MessageDescription handling with a view to working on the validation code
+- made some changes to the ServerCommsManager and ServerTransport classes
+- got the TCP transport, XML codec and string-based portion of the binary codec working and tested
 - refactored the code to merge the Command and Response types into a Message type
+- started on the MessageDescription handling with a view to working on the validation code

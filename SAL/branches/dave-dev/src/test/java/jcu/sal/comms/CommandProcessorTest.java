@@ -9,6 +9,7 @@ import jcu.sal.comms.transport.local.LocalTransport;
 import jcu.sal.comms.transport.tcp.TcpClientTransport;
 import jcu.sal.comms.transport.tcp.TcpServerTransport;
 import jcu.sal.comms.transport.tcp.codec.xml.XmlCodecFactory;
+import jcu.sal.comms.transport.tcp.codec.binary.BinaryCodecFactory;
 
 import org.junit.Test;
 import org.junit.Before;
@@ -85,8 +86,17 @@ public class CommandProcessorTest {
 	}
 
 	@Test
-	public void testTcpTransportWithBinaryCodec() {
-		fail("Not implemented.");
+	public void testTcpTransportWithBinaryCodec() throws Exception {
+		TcpClientTransport clientTransport = new TcpClientTransport();
+		TcpServerTransport serverTransport = new TcpServerTransport();
+
+		clientTransport.setPort(9000);
+		clientTransport.setHost("localhost");
+		clientTransport.setCodecFactory(new BinaryCodecFactory());
+		serverTransport.setPort(9000);
+		serverTransport.setCodecFactory(new BinaryCodecFactory());
+
+		testTransport(clientTransport, serverTransport);
 	}
 }
 

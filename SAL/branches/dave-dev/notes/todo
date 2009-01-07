@@ -14,8 +14,6 @@ Ongoing
 Overall List
 ------------
 
-- write client / server binary protocol code with mina and test
-
 - create client / server interfaces and code
   - Server will need a list of ServerCommManagers, one for each type of supported transport
     - swing can set up the list (as well as the transports it contains)
@@ -40,8 +38,7 @@ Short Term List
 ---------------
 
 - write tcp binary codec
-  - use strings throughout if there's no description
-  - otherwise pack down the types
+  - if a description is present then pack down the types
   - needs the ability to request the description when receiving an unfamiliar type
     - a cache would be pretty handy here
     - modification times might be useful as well in case someone updates a description
@@ -61,11 +58,15 @@ Short Term List
 Today
 -----
 
+- change grow factory to use a hashmap of names / descriptions for description retrieval
+  - potential spin off into a base class with convinience method to load descriptions from a directory
+
 - get message validation written and tested
 
 - write and test the binary protocol 
-  - string based one first
-  - then the one based on descriptions
+  - done string, now for one based on descriptions
+
+- test client / server code over multiple machines
 
 - finish off xml helpers / classes for configuration files and write tests
 - javadoc everything
