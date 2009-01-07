@@ -45,7 +45,7 @@ public class Message {
 	}
 
 	public boolean valid() {
-		return true;
+		return MessageValidator.valid(content, description);
 	}
 
 	public List<Argument> getArgument() {
