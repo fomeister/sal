@@ -48,7 +48,7 @@ WORKLOG
   - ready to play with Mina
     - main task will be serializing commands / responses to bytes
 
-05/01/09 & 06/01/08
+05/01/09 & 06/01/09
 - got the command and response types sorted out
   - added unit tests for the round tripping to/from xml
 - got the following working and tested
@@ -60,3 +60,8 @@ WORKLOG
   listeners and factories
 - started work on the XML codec for the TCP transport
 
+07/01/09
+- got the XML codec and the TCP transport working and tested
+  - required some changes to the ServerCommsManager and ServerTransport classes
+- started on the MessageDescription handling with a view to working on the validation code
+- refactored the code to merge the Command and Response types into a Message type

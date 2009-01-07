@@ -1,24 +1,29 @@
 
 package jcu.sal.comms.grow;
 
-import jcu.sal.comms.Command;
+import jcu.sal.comms.Message;
 
-public class GrowCommand extends Command {
+public class GrowCommand extends Message {
 
 	public GrowCommand() {
 		super();
-		setName("GrowCommand");
+		init();
+	}
+
+	public GrowCommand(Message message) {
+		super(message);
+		init();
 	}
 
 	public GrowCommand(String inputString, int reps) {
-		this();
+		super();
+		init();
 		setInputString(inputString);
 		setReps(reps);
 	}
 
-	public GrowCommand(Command command) {
-		super(command);
-		setName("GrowCommand");
+	private void init() {
+		setName(GrowMessageFactory.GROW_COMMAND_NAME);
 	}
 
 	public void setInputString(String inputString) {

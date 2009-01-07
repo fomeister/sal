@@ -1,20 +1,20 @@
 
-package jcu.sal.comms.transport.tcp.codec;
+package jcu.sal.comms.transport.tcp.codec.xml;
 
-import jcu.sal.comms.transport.TransportCommand;
+import jcu.sal.comms.TransportMessage;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
-import org.apache.mina.filter.codec.ProtocolEncoder;
+import org.apache.mina.filter.codec.ProtocolEncoderAdapter;
 
-public class CommandEncoder implements ProtocolEncoder {
+public class MessageEncoder extends ProtocolEncoderAdapter {
 
 	public void encode(IoSession session, Object message, ProtocolEncoderOutput out) throws Exception {
-		TransportCommand command = (TransportCommand) message;
+		TransportMessage command = (TransportMessage) message;
 
 		String s = command.toXmlString();
-		int size = 8 + s.length();
+		int size = 4 + s.length();
 
 		ByteBuffer buffer = ByteBuffer.allocate(size, false);
 
@@ -27,8 +27,5 @@ public class CommandEncoder implements ProtocolEncoder {
 
 		buffer.flip();
 		out.write(buffer);
-	}
-
-	public void dispose(IoSession session) throws Exception {
 	}
 }

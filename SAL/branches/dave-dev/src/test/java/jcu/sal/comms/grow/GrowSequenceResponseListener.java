@@ -1,7 +1,7 @@
 
 package jcu.sal.comms.grow;
 
-import jcu.sal.comms.Response;
+import jcu.sal.comms.Message;
 import jcu.sal.comms.listeners.ResponseListener;
 
 import static org.junit.Assert.*;
@@ -24,14 +24,14 @@ public class GrowSequenceResponseListener implements ResponseListener {
 		return numResponses;
 	}
 
-	public void receivedResponse(Response r) {
+	public void receivedResponse(Message m) {
 		if (numResponses > expectedNumResponses) {
 			fail("More responses recieved than expected.");
 			return;
 		}
 
-		assertTrue(r.getName().equals("GrowSequenceResponse"));
-		GrowSequenceResponse gsr = new GrowSequenceResponse(r);
+		assertTrue(m.getName().equals(GrowMessageFactory.GROW_SEQUENCE_RESPONSE_NAME));
+		GrowSequenceResponse gsr = new GrowSequenceResponse(m);
 
 		assertTrue(gsr.getOutputString().equals(expectedResponse));
 
