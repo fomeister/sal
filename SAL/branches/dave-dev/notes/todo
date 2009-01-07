@@ -34,16 +34,19 @@ Overall List
 - second version of DirectoryClassLoader
   - see class header comments for notes
 
+- look at ActiveMQ / Camel and/or JMS to manage messages
+  - means it's someone elses problem
+  - probably good to have some experience with it
+  - might be an easier integration point with dataturbine etc...
+
 Short Term List
 ---------------
 
-- write tcp binary codec
-  - if a description is present then pack down the types
+- for tcp binary codec
   - needs the ability to request the description when receiving an unfamiliar type
     - a cache would be pretty handy here
     - modification times might be useful as well in case someone updates a description
-
-- throw an exception if we create a particular message from a message with a different name
+  - might consider a pure binary form of the protocol later on
 
 - add exception handling and logging support to the comms code
 - javadoc comms code
@@ -58,15 +61,13 @@ Short Term List
 Today
 -----
 
-- change grow factory to use a hashmap of names / descriptions for description retrieval
-  - potential spin off into a base class with convinience method to load descriptions from a directory
-
-- get message validation written and tested
-
-- write and test the binary protocol 
-  - done string, now for one based on descriptions
+- get message validation tested
 
 - test client / server code over multiple machines
+
+- change grow factory to use a hashmap of names / descriptions for description retrieval
+  - potential spin off into a base class with convinience method to load descriptions from a directory
+    - possibly even from a resource path
 
 - finish off xml helpers / classes for configuration files and write tests
 - javadoc everything

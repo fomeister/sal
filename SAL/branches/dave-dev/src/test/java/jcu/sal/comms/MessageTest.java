@@ -2,6 +2,7 @@
 package jcu.sal.comms;
 
 import jcu.sal.xml.Argument;
+import jcu.sal.xml.MessageDescription;
 
 import javax.xml.bind.JAXBException;
 
@@ -14,6 +15,38 @@ public class MessageTest {
 
 	private Message message1;
 	private TransportMessage transportMessage1;
+
+	private MessageDescription description1;
+
+	// going to want to bulk load these from file / jar
+	// use var names as command names and build 
+	// a hashmap from command names to filestrings and
+	// a hashmap from command names to expected error strings
+	// try to do crazy resources opening stuff
+	// otherwise use spring
+	private String invalidXml;
+	private String wrongType;
+	private String nonArrayType;
+	private String wrongArrayType;
+	private String wrongArrayTypes;
+	private String wrongArrayTypesAndNonArrayType;
+	private String tooManyArguments;
+	private String tooManyArgumentsWrongType;
+	private String tooManyArgumentsNonArrayType;
+	private String tooManyArgumentsWrongArrayType;
+	private String tooManyArgumentsWrongArrayTypes;
+	private String tooManyArgumentswrongArrayTypesAndNonArrayType;
+	private String tooFewArguments;
+	private String tooFewArgumentsWrongType;
+	private String tooFewArgumentsNonArrayType;
+	private String tooFewArgumentsWrongArrayType;
+	private String tooFewArgumentsWrongArrayTypes;
+	private String tooFewArgumentswrongArrayTypesAndNonArrayType;
+	private String invalidInteger;
+	private String invalidFloat;
+	private String invalidBoolean;
+	private String invalidBinary;
+	private String valid;
 
 	@Before
 	public void setUp() {
@@ -68,5 +101,9 @@ public class MessageTest {
 		TransportMessage transportMessage3 = new TransportMessage(message1, 0);
 		assertFalse(transportMessage3.equals(message1));
 		assertTrue(message1.equals(transportMessage3));
+	}
+
+	@Test
+	public void testValidation() {
 	}
 }

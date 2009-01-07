@@ -3,16 +3,23 @@ package jcu.sal.comms.grow;
 
 import jcu.sal.comms.Message;
 import jcu.sal.comms.MessageProcessor;
+import jcu.sal.comms.InvalidMessageException;
 import jcu.sal.comms.listeners.ResponseListener;
 import jcu.sal.xml.Argument;
+
+import static org.junit.Assert.*;
 
 public class GrowMessageProcessor implements MessageProcessor {
 
 	public void process(Message m, ResponseListener rl) {
-		if (m.getName().equals(GrowMessageFactory.GROW_COMMAND_NAME)) {
-			processGrow(new GrowCommand(m), rl);
-		} else if (m.getName().equals(GrowMessageFactory.GROW_SEQUENCE_COMMAND_NAME)) {
-			processGrowSequence(new GrowSequenceCommand(m), rl);
+		try {
+			if (m.getName().equals(GrowMessageFactory.GROW_COMMAND_NAME)) {
+				processGrow(new GrowCommand(m), rl);
+			} else if (m.getName().equals(GrowMessageFactory.GROW_SEQUENCE_COMMAND_NAME)) {
+				processGrowSequence(new GrowSequenceCommand(m), rl);
+			}
+		} catch (InvalidMessageException ime) {
+			fail(ime.getMessage());
 		}
 	}
 

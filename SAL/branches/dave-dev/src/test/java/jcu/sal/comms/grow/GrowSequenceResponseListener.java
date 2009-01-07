@@ -2,6 +2,7 @@
 package jcu.sal.comms.grow;
 
 import jcu.sal.comms.Message;
+import jcu.sal.comms.InvalidMessageException;
 import jcu.sal.comms.listeners.ResponseListener;
 
 import static org.junit.Assert.*;
@@ -31,7 +32,13 @@ public class GrowSequenceResponseListener implements ResponseListener {
 		}
 
 		assertTrue(m.getName().equals(GrowMessageFactory.GROW_SEQUENCE_RESPONSE_NAME));
-		GrowSequenceResponse gsr = new GrowSequenceResponse(m);
+
+		GrowSequenceResponse gsr = null;
+		try {
+			gsr = new GrowSequenceResponse(m);
+		} catch (InvalidMessageException ime) {
+			fail(ime.getMessage());
+		}
 
 		assertTrue(gsr.getOutputString().equals(expectedResponse));
 

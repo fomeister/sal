@@ -12,15 +12,16 @@
 				<xsd:element name="description" type="xsd:string" />
 				<xsd:element name="argument" type="tns:ArgumentDescription" minOccurs="0" maxOccurs="unbounded" nillable="true" />
 			</xsd:sequence>
-			<xsd:attribute name="name" type="xsd:string" />
+			<xsd:attribute name="name" type="xsd:string" use="required" />
 		</xsd:complexType>
 	</xsd:element>
 
 	<xsd:complexType name="ArgumentDescription">
 		<xsd:simpleContent>
 			<xsd:extension base="xsd:string">
-				<xsd:attribute name="name" type="xsd:string" />
-				<xsd:attribute name="type" type="tns:ValidType" />
+				<xsd:attribute name="name" type="xsd:string" use="required" />
+				<xsd:attribute name="type" type="tns:ValidType" use="required" />
+				<xsd:attribute name="array" type="xsd:boolean" default="false" />
 			</xsd:extension>
 		</xsd:simpleContent>
 	</xsd:complexType>

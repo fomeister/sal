@@ -2,6 +2,7 @@
 package jcu.sal.comms.grow;
 
 import jcu.sal.comms.Message;
+import jcu.sal.comms.InvalidMessageException;
 
 public class GrowResponse extends Message {
 
@@ -10,8 +11,16 @@ public class GrowResponse extends Message {
 		init();
 	}
 
-	public GrowResponse(Message message) {
+	public GrowResponse(Message message) throws InvalidMessageException {
 		super(message);
+
+		if (message != null && !message.getName().equals(GrowMessageFactory.GROW_RESPONSE_NAME)) {
+			String em = "Incompatible message name -";
+			em += " Expected: " + GrowMessageFactory.GROW_RESPONSE_NAME;
+			em += " Found: " + message.getName();
+			throw new InvalidMessageException(em);
+		}
+
 		init();
 	}
 

@@ -66,7 +66,7 @@ public class GrowMessageFactory {
 			String xml = "<?xml version='1.0' encoding='UTF-8'?>\n";
 			xml += "<messageDescription name='" + GROW_RESPONSE_NAME + "'>\n";
 			xml += "	<description>Response to a GrowCommand message</description>\n";
-			xml += "	<argument name='outputString' type='string'>The array of output strings</argument>\n";
+			xml += "	<argument name='outputString' type='string' array='true'>The array of output strings</argument>\n";
 			xml += "</messageDescription>";
 
 			try {
