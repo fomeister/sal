@@ -16,6 +16,8 @@ public class GrowMessageFactory {
 
 	private static MessageDescription growCommandDescription = null;
 	private static MessageDescription growSequenceCommandDescription = null;
+	private static MessageDescription growResponseDescription = null;
+	private static MessageDescription growSequenceResponseDescription = null;
 
 	private static MessageDescription getGrowCommandDescription() {
 		if (growCommandDescription == null) {
@@ -58,10 +60,45 @@ public class GrowMessageFactory {
 		return growSequenceCommandDescription;
 	}
 
-	public static String[] getCommandNames() {
-		String[] s = new String[2];
+	private static MessageDescription getGrowResponseDescription() {
+		if (growResponseDescription == null) {
+
+			String xml = "<?xml version='1.0' encoding='UTF-8'?>\n";
+			xml += "<messageDescription name='" + GROW_RESPONSE_NAME + "'>\n";
+			xml += "	<description>Response to a GrowCommand message</description>\n";
+			xml += "	<argument name='outputString' type='string'>The array of output strings</argument>\n";
+			xml += "</messageDescription>";
+
+			try {
+				growResponseDescription = (MessageDescription) XMLHelper.fromXmlString(xml);
+			} catch (JAXBException je) {
+			}
+		}
+		return growResponseDescription;
+	}
+
+	private static MessageDescription getGrowSequenceResponseDescription() {
+		if (growSequenceResponseDescription == null) {
+
+			String xml = "<?xml version='1.0' encoding='UTF-8'?>\n";
+			xml += "<messageDescription name='" + GROW_SEQUENCE_RESPONSE_NAME + "'>\n";
+			xml += "	<description>Response to a GrowSequenceCommand message</description>\n";
+			xml += "	<argument name='outputString' type='string'>One of the stream of output strings</argument>\n";
+			xml += "</messageDescription>";
+			try {
+				growSequenceResponseDescription = (MessageDescription) XMLHelper.fromXmlString(xml);
+			} catch (JAXBException je) {
+			}
+		}
+		return growSequenceResponseDescription;
+	}
+
+	public static String[] getMessageNames() {
+		String[] s = new String[4];
 		s[0] = GROW_COMMAND_NAME;
 		s[1] = GROW_SEQUENCE_COMMAND_NAME;
+		s[2] = GROW_RESPONSE_NAME;
+		s[3] = GROW_SEQUENCE_RESPONSE_NAME;
 		return s;
 	}
 
@@ -70,6 +107,10 @@ public class GrowMessageFactory {
 			return getGrowCommandDescription();
 		} else if (commandName.equals(GROW_SEQUENCE_COMMAND_NAME)) {
 			return getGrowSequenceCommandDescription();
+		} else if (commandName.equals(GROW_RESPONSE_NAME)) {
+			return getGrowResponseDescription();
+		} else if (commandName.equals(GROW_SEQUENCE_RESPONSE_NAME)) {
+			return getGrowSequenceResponseDescription();
 		}
 
 		return null;
@@ -88,10 +129,14 @@ public class GrowMessageFactory {
 	}
 
 	public static GrowResponse createGrowResponse(String[] outputStrings) {
-		return new GrowResponse(outputStrings);
+		GrowResponse growResponse = new GrowResponse(outputStrings);
+		growResponse.setDescription(getGrowResponseDescription());
+		return growResponse;
 	}
 
 	public static GrowSequenceResponse createGrowSequenceResponse(String outputString, boolean isFinal) {
-		return new GrowSequenceResponse(outputString, isFinal);
+		GrowSequenceResponse growSequenceResponse = new GrowSequenceResponse(outputString, isFinal);
+		growSequenceResponse.setDescription(getGrowSequenceResponseDescription());
+		return growSequenceResponse;
 	}
 }
