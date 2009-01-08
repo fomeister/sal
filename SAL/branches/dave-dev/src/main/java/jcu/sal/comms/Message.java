@@ -4,7 +4,7 @@ package jcu.sal.comms;
 import jcu.sal.xml.MessageContent;
 import jcu.sal.xml.MessageDescription;
 import jcu.sal.xml.Argument;
-import jcu.sal.xml.XMLHelper;
+import jcu.sal.xml.JaxbHelper;
 
 import java.io.InputStream;
 import java.util.List;
@@ -26,15 +26,15 @@ public class Message {
 	}
 
 	public Message(InputStream is) throws JAXBException {
-		content = (MessageContent) XMLHelper.fromInputStream(is);
+		content = (MessageContent) JaxbHelper.fromInputStream(is);
 	}
 
 	public Message(String xmlString) throws JAXBException {
-		content = (MessageContent) XMLHelper.fromXmlString(xmlString);
+		content = (MessageContent) JaxbHelper.fromXmlString(xmlString);
 	}
 
 	public String toXmlString() throws JAXBException {
-		return XMLHelper.toXmlString(content);
+		return JaxbHelper.toXmlString(content);
 	}
 
 	public MessageContent getContent() {
@@ -49,8 +49,8 @@ public class Message {
 		return description;
 	}
 
-	public boolean valid() {
-		return MessageValidator.valid(content, description);
+	public void validate() throws InvalidMessageException {
+		MessageValidator.validate(content, description);
 	}
 
 	public List<Argument> getArgument() {

@@ -3,7 +3,7 @@ package jcu.sal.xml;
 
 import org.xml.sax.SAXParseException;
 
-public class ValidationException extends Exception {
+public class ValidationException extends XmlException {
 
 	public ValidationException(String message) {
 		super(message);

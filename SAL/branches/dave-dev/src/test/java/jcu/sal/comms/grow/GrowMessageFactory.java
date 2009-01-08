@@ -1,7 +1,7 @@
 
 package jcu.sal.comms.grow;
 
-import jcu.sal.xml.XMLHelper;
+import jcu.sal.xml.JaxbHelper;
 import jcu.sal.xml.MessageDescription;
 import jcu.sal.xml.ArgumentDescription;
 
@@ -32,7 +32,7 @@ public class GrowMessageFactory {
 			xml += "</messageDescription>";
 
 			try {
-				growCommandDescription = (MessageDescription) XMLHelper.fromXmlString(xml);
+				growCommandDescription = (MessageDescription) JaxbHelper.fromXmlString(xml);
 			} catch (JAXBException je) {
 			}
 		}
@@ -53,7 +53,7 @@ public class GrowMessageFactory {
 			xml += "</messageDescription>";
 
 			try {
-				growSequenceCommandDescription = (MessageDescription) XMLHelper.fromXmlString(xml);
+				growSequenceCommandDescription = (MessageDescription) JaxbHelper.fromXmlString(xml);
 			} catch (JAXBException je) {
 			}
 		}
@@ -70,7 +70,7 @@ public class GrowMessageFactory {
 			xml += "</messageDescription>";
 
 			try {
-				growResponseDescription = (MessageDescription) XMLHelper.fromXmlString(xml);
+				growResponseDescription = (MessageDescription) JaxbHelper.fromXmlString(xml);
 			} catch (JAXBException je) {
 			}
 		}
@@ -86,7 +86,7 @@ public class GrowMessageFactory {
 			xml += "	<argument name='outputString' type='string'>One of the stream of output strings</argument>\n";
 			xml += "</messageDescription>";
 			try {
-				growSequenceResponseDescription = (MessageDescription) XMLHelper.fromXmlString(xml);
+				growSequenceResponseDescription = (MessageDescription) JaxbHelper.fromXmlString(xml);
 			} catch (JAXBException je) {
 			}
 		}
