@@ -75,26 +75,41 @@ public class MessageValidator {
 				}
 			}
 
-			if (badTypeIndices.size() == 0) {
+			int sizeBad = badTypeIndices.size();
+
+			if (sizeBad == 0) {
 				return null;
 			} else {
-				if (badTypeIndices.size() == 1) {
+				if (sizeBad == 1) {
 					String reason = "Value at index ";
 					reason += String.valueOf(badTypeIndices.get(0));
+					reason += " (";
+					reason += argument.getValue().get(badTypeIndices.get(0));
+					reason += ")";
 					reason += " is not of type ";
 					reason += description.getType().value();
 					reason += ".\n";
 					return reason;
 				} else {
 					String reason = "Values at indices ";
-					for (int i = 0; i < badTypeIndices.size(); ++i) {
-						reason += String.valueOf(badTypeIndices.get(0));
-						if (i < size - 2) {
+					for (int i = 0; i < sizeBad; ++i) {
+						reason += String.valueOf(badTypeIndices.get(i));
+						if (i < sizeBad - 2) {
 							reason += ", ";
-						} else if (i == size - 2) {
+						} else if (i == sizeBad - 2) {
 							reason += " and ";
 						}
 					}
+					reason += " (";
+					for (int i = 0; i < sizeBad; ++i) {
+						reason += argument.getValue().get(badTypeIndices.get(i));
+						if (i < sizeBad - 2) {
+							reason += ", ";
+						} else if (i == sizeBad - 2) {
+							reason += " and ";
+						}
+					}
+					reason += ")";
 					reason += " are not of type ";
 					reason += description.getType().value();
 					reason += ".\n";
@@ -114,7 +129,7 @@ public class MessageValidator {
 			if (valid(argument.getValue().get(0), description.getType())) {
 				return null;
 			} else {
-				return "Value is not of type " + description.getType().value() + ".\n";
+				return "Value " + argument.getValue().get(0) + " is not of type " + description.getType().value() + ".\n";
 			}
 		}
 	}

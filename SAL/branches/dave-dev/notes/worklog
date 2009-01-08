@@ -66,3 +66,7 @@ WORKLOG
 - refactored the code to merge the Command and Response types into a Message type
 - wrote the Message validation code 
   - still have to do the testing
+
+08/01/09
+- wrote the Message Validation tests
+- got the XML Validation working (a bit of a battle)
