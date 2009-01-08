@@ -1,7 +1,9 @@
 
 package jcu.sal.comms;
 
-import jcu.sal.xml.XMLHelper;
+import jcu.sal.xml.JaxbHelper;
+import jcu.sal.xml.ValidationException;
+
 import jcu.sal.xml.MessageContent;
 import jcu.sal.xml.MessageDescription;
 import jcu.sal.xml.Argument;
@@ -10,11 +12,16 @@ import jcu.sal.xml.ValidType;
 
 import java.util.ArrayList;
 
-import javax.xml.bind.UnmarshalException;
-
 import org.apache.commons.codec.binary.Base64;
 
 public class MessageValidator {
+
+	public static void validate(MessageContent content, MessageDescription description) throws InvalidMessageException {
+		String reason = reasonInvalid(content, description);
+		if (reason != null) {
+			throw new InvalidMessageException(reason);
+		}
+	}
 
 	public static String reasonInvalid(MessageContent content, MessageDescription description) {
 		if (content == null) {
@@ -22,9 +29,9 @@ public class MessageValidator {
 		}
 
 		try {
-			XMLHelper.validate(content);
-		} catch(UnmarshalException ue) {
-			return "The content failed schema validation with this message - " + ue.getMessage();
+			JaxbHelper.validate(content);
+		} catch(ValidationException ve) {
+			return "The content failed schema validation with this message - " + ve.getMessage();
 		} catch(Exception e) {
 			return e.getMessage();
 		}

@@ -1,7 +1,7 @@
 
 package jcu.sal.comms;
 
-import jcu.sal.xml.XMLHelper;
+import jcu.sal.xml.JaxbHelper;
 import jcu.sal.xml.ValidationException;
 import jcu.sal.xml.Argument;
 import jcu.sal.xml.MessageContent;
@@ -28,32 +28,20 @@ public class MessageTest {
 		message1 = new Message();
 		message1.setName("Message 1");
 
-		Argument message1Argument1 = new Argument();
-		message1Argument1.getValue().add("a");
-		message1Argument1.getValue().add("b");
-
-		Argument message1Argument2 = new Argument();
-		message1Argument2.getValue().add("c");
-		message1Argument2.getValue().add("d");
-		message1Argument2.getValue().add("e");
-
-		message1.getArgument().add(message1Argument1);
-		message1.getArgument().add(message1Argument2);
+		message1.setValue(0, 0, "a", "");
+		message1.setValue(0, 1, "b", "");
+		message1.setValue(1, 0, "c", "");
+		message1.setValue(1, 1, "d", "");
+		message1.setValue(1, 2, "e", "");
 
 		transportMessage1 = new TransportMessage();
 		transportMessage1.setName("Transport Message 1");
 
-		Argument transportMessage1Argument1 = new Argument();
-		transportMessage1Argument1.getValue().add("k");
-		transportMessage1Argument1.getValue().add("l");
-
-		Argument transportMessage1Argument2 = new Argument();
-		transportMessage1Argument2.getValue().add("m");
-		transportMessage1Argument2.getValue().add("n");
-		transportMessage1Argument2.getValue().add("o");
-
-		transportMessage1.getArgument().add(transportMessage1Argument1);
-		transportMessage1.getArgument().add(transportMessage1Argument2);
+		transportMessage1.setValue(0, 0, "k", "");
+		transportMessage1.setValue(0, 1, "l", "");
+		transportMessage1.setValue(1, 0, "m", "");
+		transportMessage1.setValue(1, 1, "n", "");
+		transportMessage1.setValue(1, 2, "o", "");
 	}
 
 	@After
@@ -76,107 +64,6 @@ public class MessageTest {
 		TransportMessage transportMessage3 = new TransportMessage(message1, 0);
 		assertFalse(transportMessage3.equals(message1));
 		assertTrue(message1.equals(transportMessage3));
-	}
-
-	@Test
-	public void testSchemaValidation() {
-		String[] messages = new String[7];
-
-		messages[0] = "<?xml version='1.0' encoding='UTF-8'?>\n";
-		messages[0] += "<messageContent name='testMessage' xmlns='http://sal.jcu.edu.au/schemas/messages'>\n";
-		messages[0] += "  <argument>\n";
-		messages[0] += "    <value>123</value>\n";
-		messages[0] += "  </argument>\n";
-		messages[0] += "  <argument>\n";
-		messages[0] += "    <value>123.0</value>\n";
-		messages[0] += "  </argument>\n";
-		messages[0] += "</messageContent>\n";
-
-		messages[1] = "<messageContent name='testMessage' xmlns='http://sal.jcu.edu.au/schemas/messages'>\n";
-		messages[1] += "  <argument>\n";
-		messages[1] += "    <value>123</value>\n";
-		messages[1] += "  </argument>\n";
-		messages[1] += "  <argument>\n";
-		messages[1] += "    <value>123.0</value>\n";
-		messages[1] += "  </argument>\n";
-		messages[1] += "</messageContent>\n";
-
-		messages[2] = "<?xml version='1.0' encoding='UTF-8'?>\n";
-		messages[2] += "<messageContent name='testMessage' final='yes' xmlns='http://sal.jcu.edu.au/schemas/messages'>\n";
-		messages[2] += "  <argument>\n";
-		messages[2] += "    <value<123</value>\n";
-		messages[2] += "  </argument>\n";
-		messages[2] += "  <argument>\n";
-		messages[2] += "    <value>123.0</value>\n";
-		messages[2] += "  </argument>\n";
-		messages[2] += "</messageContent>\n";
-
-		messages[3] = "<?xml version='1.0' encoding='UTF-8'?>\n";
-		messages[3] += "<messageContent name='testMessage'>\n";
-		messages[3] += "  <argument>\n";
-		messages[3] += "    <value>123</value>\n";
-		messages[3] += "  </argument>\n";
-		messages[3] += "  <argument>\n";
-		messages[3] += "    <value>123.0</value>\n";
-		messages[3] += "  </argument>\n";
-		messages[3] += "</messageContent>\n";
-
-		messages[4] = "<?xml version='1.0' encoding='UTF-8'?>\n";
-		messages[4] += "<messageContent name='testMessage' xmlns='http://sal.jcu.edu.au/schemas/messages'>\n";
-		messages[4] += "  <argument>\n";
-		messages[4] += "    <value>123</value>\n";
-		messages[4] += "  </argument>\n";
-		messages[4] += "  <argument>\n";
-		messages[4] += "    <value>123.0</value>\n";
-		messages[4] += "  </argument>\n";
-		messages[4] += "  <random-new-tag />\n";
-		messages[4] += "</messageContent>\n";
-
-		messages[5] = "<?xml version='1.0' encoding='UTF-8'?>\n";
-		messages[5] += "<messageContent xmlns='http://sal.jcu.edu.au/schemas/messages'>\n";
-		messages[5] += "  <argument>\n";
-		messages[5] += "    <value>123</value>\n";
-		messages[5] += "  </argument>\n";
-		messages[5] += "  <argument>\n";
-		messages[5] += "    <value>123.0</value>\n";
-		messages[5] += "  </argument>\n";
-		messages[5] += "</messageContent>\n";
-
-		messages[6] = "<?xml version='1.0' encoding='UTF-8'?>\n";
-		messages[6] += "<messageContent name='testMessage' final='yes' xmlns='http://sal.jcu.edu.au/schemas/messages'>\n";
-		messages[6] += "  <argument>\n";
-		messages[6] += "    <value>123</value>\n";
-		messages[6] += "  </argument>\n";
-		messages[6] += "  <argument>\n";
-		messages[6] += "    <value>123.0</value>\n";
-		messages[6] += "  </argument>\n";
-		messages[6] += "</messageContent>\n";
-
-		String[] errors = new String[messages.length];
-
-		errors[0] = "";
-
-		errors[1] = "";
-
-		errors[2] = "[4,11]: Element type \"value\" must be followed by either attribute specifications, \">\" or \"/>\".\n";
-
-		errors[3] = "[2,36]: Cannot find the declaration of element 'messageContent'.\n";
-
-		errors[4] = "[9,21]: Invalid content was found starting with element 'random-new-tag'. One of '{\"http://sal.jcu.edu.au/schemas/messages\":argument}' is expected.\n";
-
-		errors[5] = "[2,64]: Attribute 'name' must appear on element 'messageContent'.\n";
-
-		errors[6] = "[2,95]: 'yes' is not a valid value for 'boolean'.\n";
-		errors[6] += "[2,95]: The value 'yes' of attribute 'final' on element 'messageContent' is not valid with respect to its type, 'boolean'.\n";
-
-		for (int i = 0; i < messages.length; ++i) {
-			try {
-				XMLHelper.validateString(MessageContent.class, messages[i]);
-				assertTrue(errors[i].equals(""));
-			} catch (ValidationException e) {
-				assertTrue(errors[i].equals(e.getMessage()));
-			}
-		}
 	}
 
 	@Test
@@ -297,7 +184,7 @@ public class MessageTest {
 			descriptionXml += "</messageDescription>\n";
 
 			message = new Message(messageXml);
-			description = (MessageDescription) XMLHelper.fromXmlString(descriptionXml);
+			description = (MessageDescription) JaxbHelper.fromXmlString(descriptionXml);
 
 			for (int i = 0; i < 10; ++i) {
 				typeErrors[i] = "";

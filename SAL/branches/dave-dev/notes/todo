@@ -117,11 +117,7 @@ Short Term List
 Today
 -----
 
-- move the xml specific portions of test/comms/MessageTest into test/xml/ValidationTest
-- move the static classes of XMLHelper into their own classes
-- split XMLHelper into JAXBHelper and ValidationHelper
-  - write unit tests for each
-  - javadoc everything in code/xml and test/xml
+ - javadoc everything in code/xml and test/xml
 
 - funnel the ValidationException into InvalidMessageException
   - make Message(String xmlString) validate
