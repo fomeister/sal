@@ -6,6 +6,7 @@ import jcu.sal.xml.MessageDescription;
 import jcu.sal.xml.Argument;
 import jcu.sal.xml.XMLHelper;
 
+import java.io.InputStream;
 import java.util.List;
 
 import javax.xml.bind.JAXBException;
@@ -22,6 +23,10 @@ public class Message {
 	public Message(Message message) {
 		this.content = message.getContent();
 		this.description = message.getDescription();
+	}
+
+	public Message(InputStream is) throws JAXBException {
+		content = (MessageContent) XMLHelper.fromInputStream(is);
 	}
 
 	public Message(String xmlString) throws JAXBException {

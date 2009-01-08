@@ -117,9 +117,21 @@ Short Term List
 Today
 -----
 
-- get message validation tested
+- move the xml specific portions of test/comms/MessageTest into test/xml/ValidationTest
+- move the static classes of XMLHelper into their own classes
+- split XMLHelper into JAXBHelper and ValidationHelper
+  - write unit tests for each
+  - javadoc everything in code/xml and test/xml
+
+- funnel the ValidationException into InvalidMessageException
+  - make Message(String xmlString) validate
+  - probably want to validate whenever the content or description change
+
+- make a validation error if a single type has no value
+  - add relevant testing to test/comms/MessageTest
 
 - do the antlr fun stuff
+  - the toString should be pretty easy
   - if the antlr fun is over too soon, commence the soot fun stuff
   - with a factory we can create commands from a map of names -> descriptions
 
@@ -128,6 +140,7 @@ Today
 - change grow factory to use a hashmap of names / descriptions for description retrieval
   - potential spin off into a base class with convinience method to load descriptions from a directory
     - possibly even from a resource path
+  - will be much easier post ANTLR fun
 
 - finish off xml helpers / classes for configuration files and write tests
 - javadoc everything
