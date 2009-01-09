@@ -1,8 +1,8 @@
 
-package jcu.sal.comms.grow;
+package jcu.sal.testing.grow;
 
-import jcu.sal.comms.Message;
-import jcu.sal.comms.InvalidMessageException;
+import jcu.sal.message.Message;
+import jcu.sal.message.InvalidMessageException;
 
 public class GrowResponse extends Message {
 
@@ -31,8 +31,12 @@ public class GrowResponse extends Message {
 	}
 
 	private void init() {
-		setName(GrowMessageFactory.GROW_RESPONSE_NAME);
-		setFinal(true);
+		try {
+			setName(GrowMessageFactory.GROW_RESPONSE_NAME);
+			setFinal(true);
+			setDescription(GrowMessageFactory.getDescription(GrowMessageFactory.GROW_RESPONSE_NAME));
+		} catch (InvalidMessageException ime) {
+		}
 	}
 
 	public void setOutputStrings(String[] outputStrings) {

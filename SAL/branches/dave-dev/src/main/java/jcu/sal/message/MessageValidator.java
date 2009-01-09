@@ -1,5 +1,5 @@
 
-package jcu.sal.comms;
+package jcu.sal.message;
 
 import jcu.sal.xml.JaxbHelper;
 import jcu.sal.xml.ValidationException;
@@ -126,7 +126,7 @@ public class MessageValidator {
 
 		} else {
 			if (size == 0) {
-				return null;
+				return "No value set for single valued argument.\n";
 			}
 
 			if (size > 1) {

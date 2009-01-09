@@ -1,8 +1,8 @@
 
-package jcu.sal.comms.grow;
+package jcu.sal.testing.grow;
 
-import jcu.sal.comms.Message;
-import jcu.sal.comms.InvalidMessageException;
+import jcu.sal.message.Message;
+import jcu.sal.message.InvalidMessageException;
 import jcu.sal.comms.listeners.ResponseListener;
 
 import static org.junit.Assert.*;

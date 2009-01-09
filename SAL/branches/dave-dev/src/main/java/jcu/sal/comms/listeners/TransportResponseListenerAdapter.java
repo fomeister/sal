@@ -1,7 +1,7 @@
 
 package jcu.sal.comms.listeners;
 
-import jcu.sal.comms.Message;
+import jcu.sal.message.Message;
 import jcu.sal.comms.TransportMessage;
 
 public class TransportResponseListenerAdapter implements ResponseListener {

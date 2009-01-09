@@ -1,13 +1,14 @@
 
 package jcu.sal.xml;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.OutputStream;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -50,12 +51,15 @@ public class JaxbHelper {
 				throw new XmlException("Cannot serialize null to an xml string.");
 			}
 
-			validate(o);
 			prepareJAXB();
 
 			StringWriter writer = new StringWriter();
 			marshaller.marshal(o, new StreamResult(writer));
-			return writer.toString();
+			String xmlString = writer.toString();
+
+			validateString(getSchema(o.getClass()), xmlString);
+
+			return xmlString;
 		} catch (JAXBException je) {
 			throw new JaxbException(je);
 		}
@@ -83,20 +87,6 @@ public class JaxbHelper {
 		}
 	}
 
-	public static void toOutputStream(Object o, OutputStream os) throws XMLException {
-		stringToOutputStream(toXmlString(o), os);
-	}
-
-	public static Object fromInputStream(InputStream is) throws XmlException {
-		return fromXmlString(inputStreamToString(is));
-	}
-
-	private static void stringToOutputStream(String s, OutputStream os) throws XmlException {
-	}
-
-	private static String inputStreamToString(InputStream is) throws XmlException {
-	}
-
 	public static void toFile(Object o, File f) throws XmlException {
 		stringToFile(toXmlString(o), f);
 	}
@@ -105,20 +95,37 @@ public class JaxbHelper {
 		return fromXmlString(fileToString(f));
 	}
 
-	private static stringToFile(String s, File f) throws XmlException {
+	private static void stringToFile(String s, File f) throws XmlException {
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(f));
+			out.write(s);
+			out.close();
+		} catch (IOException ioe) {
+			throw new XmlException(ioe);
+		}
 	}
 
-	private static fileToString(File f) throws XmlException {
-	}
+	private static String fileToString(File f) throws XmlException {
+		String result = "";
 
-	public static void validate(Object o) throws ValidationException {
-		Schema schema = getSchema(o.getClass());
+		try {
+			BufferedReader in = new BufferedReader(new FileReader(f));
+			String str;
 
-		if (schema == null) {
-			throw new ValidationException("Unable to find schema for class " +  o.getClass().getName());
+			while ((str = in.readLine()) != null) {
+				result += str;
+			}
+
+			in.close();
+		} catch (IOException ioe) {
+			throw new XmlException(ioe);
 		}
 
-		validateString(schema, toXmlString(o));
+		return result;
+	}
+
+	public static void validate(Object o) throws XmlException {
+		validateString(getSchema(o.getClass()), toXmlString(o));
 	}
 
 	public static void validateString(Schema schema, String xmlString) throws ValidationException {
@@ -150,7 +157,7 @@ public class JaxbHelper {
 			tmpContext.generateSchema(sc);
 			return sc.getSchema();
 		} catch (Exception e) {
-			return new XmlException(e);
+			throw new XmlException(e);
 		}
 	}
 

@@ -1,11 +1,11 @@
 
-package jcu.sal.comms.grow;
+package jcu.sal.testing.grow;
 
 import jcu.sal.xml.JaxbHelper;
+import jcu.sal.xml.XmlException;
+
 import jcu.sal.xml.MessageDescription;
 import jcu.sal.xml.ArgumentDescription;
-
-import javax.xml.bind.JAXBException;
 
 public class GrowMessageFactory {
 
@@ -33,7 +33,7 @@ public class GrowMessageFactory {
 
 			try {
 				growCommandDescription = (MessageDescription) JaxbHelper.fromXmlString(xml);
-			} catch (JAXBException je) {
+			} catch (XmlException xe) {
 			}
 		}
 		return growCommandDescription;
@@ -54,7 +54,7 @@ public class GrowMessageFactory {
 
 			try {
 				growSequenceCommandDescription = (MessageDescription) JaxbHelper.fromXmlString(xml);
-			} catch (JAXBException je) {
+			} catch (XmlException xe) {
 			}
 		}
 		return growSequenceCommandDescription;
@@ -71,7 +71,7 @@ public class GrowMessageFactory {
 
 			try {
 				growResponseDescription = (MessageDescription) JaxbHelper.fromXmlString(xml);
-			} catch (JAXBException je) {
+			} catch (XmlException xe) {
 			}
 		}
 		return growResponseDescription;
@@ -87,7 +87,7 @@ public class GrowMessageFactory {
 			xml += "</messageDescription>";
 			try {
 				growSequenceResponseDescription = (MessageDescription) JaxbHelper.fromXmlString(xml);
-			} catch (JAXBException je) {
+			} catch (XmlException xe) {
 			}
 		}
 		return growSequenceResponseDescription;
@@ -117,26 +117,18 @@ public class GrowMessageFactory {
 	}
 
 	public static GrowCommand createGrowCommand(String inputString, int reps) {
-		GrowCommand growCommand = new GrowCommand(inputString, reps);
-		growCommand.setDescription(getGrowCommandDescription());
-		return growCommand;
+		return new GrowCommand(inputString, reps);
 	}
 
 	public static GrowSequenceCommand createGrowSequenceCommand(String inputString, int reps) {
-		GrowSequenceCommand growSequenceCommand = new GrowSequenceCommand(inputString, reps);
-		growSequenceCommand.setDescription(getGrowSequenceCommandDescription());
-		return growSequenceCommand;
+		return new GrowSequenceCommand(inputString, reps);
 	}
 
 	public static GrowResponse createGrowResponse(String[] outputStrings) {
-		GrowResponse growResponse = new GrowResponse(outputStrings);
-		growResponse.setDescription(getGrowResponseDescription());
-		return growResponse;
+		return new GrowResponse(outputStrings);
 	}
 
 	public static GrowSequenceResponse createGrowSequenceResponse(String outputString, boolean isFinal) {
-		GrowSequenceResponse growSequenceResponse = new GrowSequenceResponse(outputString, isFinal);
-		growSequenceResponse.setDescription(getGrowSequenceResponseDescription());
-		return growSequenceResponse;
+		return new GrowSequenceResponse(outputString, isFinal);
 	}
 }

@@ -1,6 +1,9 @@
 
 package jcu.sal.comms;
 
+import jcu.sal.message.Message;
+import jcu.sal.message.InvalidMessageException;
+
 import javax.xml.bind.JAXBException;
 
 public class TransportMessage extends Message {
@@ -16,7 +19,7 @@ public class TransportMessage extends Message {
 		this.id = id;
 	}
 
-	public TransportMessage(String xmlString, int id) throws JAXBException {
+	public TransportMessage(String xmlString, int id) throws InvalidMessageException {
 		super(xmlString);
 		this.id = id;
 	}

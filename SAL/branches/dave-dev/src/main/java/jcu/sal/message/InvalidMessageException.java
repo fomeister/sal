@@ -1,5 +1,5 @@
 
-package jcu.sal.comms;
+package jcu.sal.message;
 
 public class InvalidMessageException extends Exception {
 

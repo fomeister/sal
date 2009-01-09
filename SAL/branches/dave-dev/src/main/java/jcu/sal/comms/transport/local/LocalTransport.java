@@ -1,7 +1,6 @@
 
 package jcu.sal.comms.transport.local;
 
-import jcu.sal.comms.Message;
 import jcu.sal.comms.TransportMessage;
 import jcu.sal.comms.MessageProcessor;
 import jcu.sal.comms.listeners.TransportResponseListener;

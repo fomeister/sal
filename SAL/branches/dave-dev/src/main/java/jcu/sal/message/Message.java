@@ -1,15 +1,20 @@
 
-package jcu.sal.comms;
+package jcu.sal.message;
+
+import jcu.sal.message.type.TypeFactory;
+import jcu.sal.message.type.SingleType;
+import jcu.sal.message.type.ArrayType;
 
 import jcu.sal.xml.MessageContent;
 import jcu.sal.xml.MessageDescription;
 import jcu.sal.xml.Argument;
+
 import jcu.sal.xml.JaxbHelper;
+import jcu.sal.xml.XsdHelper;
+import jcu.sal.xml.XmlException;
 
 import java.io.InputStream;
 import java.util.List;
-
-import javax.xml.bind.JAXBException;
 
 public class Message {
 
@@ -25,24 +30,30 @@ public class Message {
 		this.description = message.getDescription();
 	}
 
-	public Message(InputStream is) throws JAXBException {
-		content = (MessageContent) JaxbHelper.fromInputStream(is);
+	public Message(String xmlString) throws InvalidMessageException {
+		try {
+			content = (MessageContent) JaxbHelper.fromXmlString(xmlString);
+		} catch (XmlException xe) {
+			throw new InvalidMessageException(xe);
+		}
+		validate();
 	}
 
-	public Message(String xmlString) throws JAXBException {
-		content = (MessageContent) JaxbHelper.fromXmlString(xmlString);
-	}
-
-	public String toXmlString() throws JAXBException {
-		return JaxbHelper.toXmlString(content);
+	public String toXmlString() throws InvalidMessageException {
+		try {
+			return JaxbHelper.toXmlString(content);
+		} catch (XmlException xe) {
+			throw new InvalidMessageException(xe);
+		}
 	}
 
 	public MessageContent getContent() {
 		return content;
 	}
 
-	public void setDescription(MessageDescription description) {
+	public void setDescription(MessageDescription description) throws InvalidMessageException {
 		this.description = description;
+		validate();
 	}
 
 	public MessageDescription getDescription() {
@@ -134,7 +145,57 @@ public class Message {
 	}
 
 	public String toString() {
-		return content.toString();
+		String s = "";
+
+		s += getName();
+		s += "(";
+
+		TypeFactory typeFactory = new TypeFactory();
+
+		int size = getArgument().size();
+		for (int i = 0; i < size; ++i) {
+
+			Argument arg = getArgument().get(i);
+
+			String type = "string";
+			boolean array = (arg.getValue().size() != 1);
+
+			if (description != null && description.getArgument().size() > i) {
+				type = description.getArgument().get(i).getType().value();
+				array = description.getArgument().get(i).isArray();
+			}
+
+			if (array) {
+				ArrayType at = (ArrayType) typeFactory.createType(type, array);
+
+				if (at != null) {
+					s += at.toString(arg.getValue().toArray(new String[0]));
+				} else {
+					s += "#bad array type#";
+				}
+
+			} else {
+				SingleType st = (SingleType) typeFactory.createType(type, array);
+
+				if (st != null) {
+					s += st.toString(arg.getValue().get(0));
+				} else {
+					s += "#bad type#";
+				}
+			}
+
+			if (i != size - 1) {
+				s += ", ";
+			}
+		}
+
+		s += ")";
+
+		if (!isFinal()) {
+			s += "+";
+		}
+
+		return s;
 	}
 
 	public boolean equals(Object object) {

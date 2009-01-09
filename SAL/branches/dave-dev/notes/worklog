@@ -68,5 +68,20 @@ WORKLOG
   - still have to do the testing
 
 08/01/09
-- wrote the Message Validation tests
-- got the XML Validation working (a bit of a battle)
+- wrote the Message Validation tests and ironed out the bugs
+- got the XML Validation working
+  - was a bit of a battle
+- started to refactor the xml classes to use a common exception heirarchy
+
+09/01/09
+- got the common exception heirarchy working
+- refactored message to its own package
+- refactored the "grow" test classes to their own package
+- wrote and tested TypeFactory and the relevant types
+- refactored the ""alltypes" test classes to their own package
+- added a proper toString to message and tested it
+- added an "alltypes" processor and responselistener so we can test for correct echoing
+  with different transports and codecs
+- refactored the comms testing class into several classes and helper functions
+  to ease the testing of different transports and codecs
+
