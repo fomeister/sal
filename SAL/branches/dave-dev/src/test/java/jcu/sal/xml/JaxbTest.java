@@ -1,11 +1,12 @@
 
 package jcu.sal.comms;
 
-import jcu.sal.xml.JaxbHelper;
-import jcu.sal.xml.ValidationException;
-import jcu.sal.xml.MessageContent;
+import jcu.sal.message.Message;
+import jcu.sal.message.InvalidMessageException;
 
-import javax.xml.bind.JAXBException;
+import jcu.sal.xml.JaxbHelper;
+import jcu.sal.xml.XmlException;
+import jcu.sal.xml.MessageContent;
 
 import org.junit.Test;
 import org.junit.Before;
@@ -38,7 +39,7 @@ public class JaxbTest {
 	}
 
 	@Test
-	public void testMessage() throws JAXBException {
+	public void testMessage() throws InvalidMessageException {
 		Message message2 = new Message(message1.toXmlString());
 		assertTrue(message2.equals(message1));
 	}
@@ -88,7 +89,7 @@ public class JaxbTest {
 			try {
 				JaxbHelper.validateString(messages[i]);
 				assertTrue(errors[i].equals(""));
-			} catch (ValidationException e) {
+			} catch (XmlException e) {
 				assertTrue(errors[i].equals(e.getMessage()));
 			}
 		}

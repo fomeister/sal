@@ -1,8 +1,8 @@
 
-package jcu.sal.comms.grow;
+package jcu.sal.testing.grow;
 
-import jcu.sal.comms.Message;
-import jcu.sal.comms.InvalidMessageException;
+import jcu.sal.message.Message;
+import jcu.sal.message.InvalidMessageException;
 
 public class GrowSequenceCommand extends Message {
 
@@ -32,7 +32,11 @@ public class GrowSequenceCommand extends Message {
 	}
 
 	private void init() {
-		setName(GrowMessageFactory.GROW_SEQUENCE_COMMAND_NAME);
+		try {
+			setName(GrowMessageFactory.GROW_SEQUENCE_COMMAND_NAME);
+			setDescription(GrowMessageFactory.getDescription(GrowMessageFactory.GROW_SEQUENCE_COMMAND_NAME));
+		} catch (InvalidMessageException ime) {
+		}
 	}
 
 	public void setInputString(String inputString) {

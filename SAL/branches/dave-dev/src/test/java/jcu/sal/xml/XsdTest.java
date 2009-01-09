@@ -2,8 +2,9 @@
 package jcu.sal.xml;
 
 import jcu.sal.xml.JaxbHelper;
-import jcu.sal.xml.XsdHelper;
 import jcu.sal.xml.ValidationException;
+import jcu.sal.xml.XsdHelper;
+import jcu.sal.xml.XmlException;
 
 import jcu.sal.xml.MessageContent;
 
@@ -19,7 +20,7 @@ public class XsdTest {
 	Logger logger = Logger.getLogger(this.getClass());
 
 	@Test
-	public void testValidation() {
+	public void testValidation() throws XmlException {
 		String[] messages = new String[4];
 
 		messages[0] = "<?xml version='1.0' encoding='UTF-8'?>\n";

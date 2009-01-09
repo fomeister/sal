@@ -3,6 +3,7 @@ package jcu.sal.comms;
 
 import java.util.HashMap;
 
+import jcu.sal.message.Message;
 import jcu.sal.comms.MessageProcessor;
 import jcu.sal.comms.TransportMessage;
 import jcu.sal.comms.listeners.ResponseListener;

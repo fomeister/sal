@@ -103,6 +103,18 @@ Short Term List
     - a cache would be pretty handy here
     - modification times might be useful as well in case someone updates a description
   - might consider a pure binary form of the protocol later on
+  - differential length encoding for length fields
+    - add bytes until high bit is clear
+      -ie 0x7F, 0x01 0x80
+  - add session based chunking to the encoders / decoders
+    - have a constant for the maximum size to recieve at once
+    - grab that amount of data over and over until size is reached
+    - prevents oversize packet based DOS by cpu
+    - probably want to set an absolute max size to limit DOS by memory
+      - or two limits
+        - first switches to file backed storage of buffer
+        - second is hard upper limit 
+    - use configurable limits
 
 - add exception handling and logging support to the comms code
 - javadoc comms code
@@ -117,17 +129,16 @@ Short Term List
 Today
 -----
 
- - javadoc everything in code/xml and test/xml
+- change binary codec to string codec
+  - make it use a subclassed type factory to do the encoding / decoding work
+  - if we get the description request from the binary codec and the ANTLR stuff working we 
+    can just to / from string it...
+- write actual binary codec
+  - make sure that the marshalling and unmarshalling of all of the types is tested
 
-- funnel the ValidationException into InvalidMessageException
-  - make Message(String xmlString) validate
-  - probably want to validate whenever the content or description change
-
-- make a validation error if a single type has no value
-  - add relevant testing to test/comms/MessageTest
+- javadoc everything in xml, message and comms
 
 - do the antlr fun stuff
-  - the toString should be pretty easy
   - if the antlr fun is over too soon, commence the soot fun stuff
   - with a factory we can create commands from a map of names -> descriptions
 
