@@ -5,6 +5,16 @@ import jcu.sal.xml.ValidType;
 
 public class TypeFactory {
 
+	public static String[] getTypeNames() {
+		return new String[] {
+			"int",
+			"float",
+			"boolean",
+			"string",
+			"binary"
+		};
+	}
+
 	public static Type createType(String typeName, boolean array) {
 		if (typeName == null || typeName.length() == 0) {
 			return null;
