@@ -131,10 +131,12 @@ public class SALClient implements EventHandler, StreamCallback{
 		
 		cf = new CommandFactory(cmls.getDescription(j));
 		boolean argOK=false, argsDone=false;
+		int i = 0;
 		while(!argsDone) {
 			for(String str: cf.listMissingArgNames()){
 				t = cf.getArgType(str);
 				if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+					argOK=false;
 					while(!argOK) {
 						System.out.println("Enter value of type '"+t.getArgType()+"' for argument '"+str+"'");
 						str2 = b.readLine();
@@ -149,6 +151,10 @@ public class SALClient implements EventHandler, StreamCallback{
 			}
 			try {c = cf.getCommand(); argsDone=true;}
 			catch (ConfigurationException e1) {System.out.println("Values missing"); argsDone=false;}
+			if(i++>5){
+				System.out.println("Exiting");
+				return;
+			}
 		}
 		
 		res = agent.execute(c, String.valueOf(sid));
