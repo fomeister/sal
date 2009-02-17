@@ -32,6 +32,8 @@ import org.apache.log4j.Logger;
 
 import au.edu.jcu.v4l4j.Control;
 import au.edu.jcu.v4l4j.FrameGrabber;
+import au.edu.jcu.v4l4j.JPEGFrameGrabber;
+import au.edu.jcu.v4l4j.VideoDevice;
 import au.edu.jcu.v4l4j.exceptions.V4L4JException;
 
 public class V4L2Protocol extends AbstractProtocol {
@@ -45,11 +47,9 @@ public class V4L2Protocol extends AbstractProtocol {
 	public final static String CHANNEL_ATTRIBUTE_TAG= "channel";
 	public final static String STANDARD_ATTRIBUTE_TAG= "standard";	
 	public final static String CONTROL_VALUE_ATTRIBUTE_TAG = "ControlValue";
-	
-	private int intialQuality = 60;
 
 	
-	private FrameGrabber fg = null;
+	private VideoDevice vd = null;
 	private Hashtable<String,Control> ctrls = null;
 	private boolean streaming;
 	private StreamingThread st;
@@ -77,9 +77,9 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
-		//Check config directives:
 		String dev;
-		int w=-1,h=-1,std=-1,ch=-1, cid;
+		int cid;
+		//Check config directives:
 		try {
 			dev = getParameter(DEVICE_ATTRIBUTE_TAG);
 		} catch (NotFoundException e) {
@@ -87,43 +87,27 @@ public class V4L2Protocol extends AbstractProtocol {
 			throw new ConfigurationException();
 		}
 		
-		try {
-			ch = Integer.parseInt(getParameter(CHANNEL_ATTRIBUTE_TAG));
-			std = Integer.parseInt(getParameter(STANDARD_ATTRIBUTE_TAG));
-			w = Integer.parseInt(getParameter(WIDTH_ATTRIBUTE_TAG));
-			h = Integer.parseInt(getParameter(HEIGHT_ATTRIBUTE_TAG));
-		} catch (Exception e1) {}
-		
-		
 		//create the frame grabber object
 		try {
-			if(w!=-1 && h!=-1 && ch !=-1 && ch!=-1)
-				fg = new FrameGrabber(dev, w, h, ch, std, intialQuality);
-			else if(std!=-1 && ch!=-1)
-				fg = new FrameGrabber(dev, ch, std, intialQuality);
-			else 
-				fg = new FrameGrabber(dev, intialQuality);
-			
-			fg.init();
-
+			vd = new VideoDevice(dev);
 		} catch (V4L4JException e) {
-			logger.error("Couldnt create/initialise FrameGrabber object");
+			logger.error("Couldnt create/initialise VideoDevice object");
 			e.printStackTrace();
 			throw new ConfigurationException();
 		} catch(UnsatisfiedLinkError e) {
-			logger.error("Cant load JNI library. Couldnt create/initialise FrameGrabber object");
+			logger.error("Cant load JNI library. Couldnt create/initialise VideoDevice object");
 			throw new ConfigurationException();
 		} catch (NoClassDefFoundError e){
-			//thrown the second time a FrameGrabber is instanciated and the JNI lib is not found.
+			//thrown the second time a VideoDevice is instanciated and the JNI lib is not found.
 			//I suspect that at the first instanciation attempt, since the JVM cant find the JNI lib,
-			//it unloads the FrameGrabber class, which is why the second attempt throws NoClassDefFound
-			logger.error("Cant load JNI library. Couldnt create FrameGrabber object");
+			//it unloads the VideoDevice class, which is why the second attempt throws NoClassDefFound
+			logger.error("Cant load JNI library. Couldnt create VideoDevice object");
 			throw new ConfigurationException();
 		}
 		
 		cmls = CMLDescriptionStore.getStore();
 		//get the V4L2 controls
-		List<Control> v4l2c = fg.getControls();
+		List<Control> v4l2c = vd.getControlList().getList();
 		ctrls = new Hashtable<String, Control>();
 		String key = CMLDescriptionStore.CCD_KEY, name, ctrlName, desc;
 		List<String> argNamesEmpty = new Vector<String>();
@@ -179,20 +163,11 @@ public class V4L2Protocol extends AbstractProtocol {
 	protected void internal_stop() {
 		if(streaming)
 			st.stop();
-
-		//make sure the frame grabber capture is stopped
-		try {fg.stopCapture();} catch (V4L4JException e) {}
 	}
 	
 	@Override
 	protected void internal_remove() {
 		ctrls.clear();
-		try {
-			fg.remove();
-		} catch (V4L4JException e) {
-			logger.error("Error while deleting Frame grabber object");
-			e.printStackTrace();
-		}
 	}
 	
 	@Override
@@ -249,7 +224,11 @@ public class V4L2Protocol extends AbstractProtocol {
 		
 		byte[] b;
 		ByteBuffer bb;
+		JPEGFrameGrabber fg;
 		try {
+			fg = vd.getJPEGFrameGrabber(c.getIntValue(CMLDescriptionStore.WIDTH_VALUE_NAME),
+					c.getIntValue(CMLDescriptionStore.HEIGHT_VALUE_NAME), c.getIntValue(CMLDescriptionStore.CHANNEL_VALUE_NAME),
+					c.getIntValue(CMLDescriptionStore.STANDARD_VALUE_NAME), c.getIntValue(CMLDescriptionStore.QUALITY_VALUE_NAME));
 			fg.startCapture();
 		} catch (V4L4JException e) {
 			logger.error("Error while starting frame capture");
@@ -263,29 +242,29 @@ public class V4L2Protocol extends AbstractProtocol {
 			logger.error("Error while capturing frame");
 			throw new SensorIOException("Error while capturing frame",e1);
 		} finally {
-			try {
-				fg.stopCapture();
-			} catch (V4L4JException e) {
-				logger.error("Error while stopping capture");
-				throw new SensorIOException("Error while stopping capture",e);
-			}
+			fg.stopCapture();
+			vd.releaseFrameGrabber();
 		}
 		return b;
 	}
 	
 	public static String START_STREAM_METHOD = "startStream";
 	public byte[] startStream(Command c, Sensor s) throws SensorControlException{
+		JPEGFrameGrabber fg;
 		if(streaming)
 			throw new InvalidCommandException("The sensor is streaming data");
 
 		try {
+			fg = vd.getJPEGFrameGrabber(c.getIntValue(CMLDescriptionStore.WIDTH_VALUE_NAME),
+					c.getIntValue(CMLDescriptionStore.HEIGHT_VALUE_NAME), c.getIntValue(CMLDescriptionStore.CHANNEL_VALUE_NAME),
+					c.getIntValue(CMLDescriptionStore.STANDARD_VALUE_NAME), c.getIntValue(CMLDescriptionStore.QUALITY_VALUE_NAME));
 			fg.startCapture();
 		} catch (V4L4JException e) {
 			logger.error("Error while starting capture");
 			throw new SensorIOException("Error while starting capture", e);
 		}
 		try {
-			st = new StreamingThread(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s);
+			st = new StreamingThread(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s, fg);
 		} catch (NotFoundException e) {
 			logger.error("Error while starting streaming thread: invalid callback argument");
 			throw new SensorIOException("Error while starting streaming thread: invalid callback argument", e);
@@ -331,13 +310,15 @@ public class V4L2Protocol extends AbstractProtocol {
 	
 	private class StreamingThread implements Runnable{
 		private StreamCallback cb;
+		private FrameGrabber fg;
 		private Thread t;
 		private Sensor s;
 		private boolean error=false;
 		private boolean stop = false;
 		
-		public StreamingThread(StreamCallback c, Sensor s){
+		public StreamingThread(StreamCallback c, Sensor s, FrameGrabber f){
 			cb = c;
+			fg = f;
 			this.s = s;
 			t = new Thread(this, "V4L streaming thread");
 			stop = false;
@@ -380,11 +361,8 @@ public class V4L2Protocol extends AbstractProtocol {
 					error=true;
 				}
 			}
-			try {
-				fg.stopCapture();
-			} catch (V4L4JException e) {
-				logger.error("Cant stop capture");
-			}
+			fg.stopCapture();
+			vd.releaseFrameGrabber();
 			
 			if(!error)
 				try {cb.collect(new Response(sid, new ClosedStreamException()));} catch (IOException e) {}
