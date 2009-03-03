@@ -372,5 +372,15 @@ public class CommandFactory {
 		public String getValue(String name){
 			return parameters.get(name);
 		}
+		
+		/**
+		 * This method returns the value of a config directive as an integer, given its name.
+		 * @param name the name of the config directive
+		 * @return the int value of the config directive
+		 * @throws NumberFormatException if the value of the directive cannot be parsed to int.
+		 */
+		public int getIntValue(String name){
+			return Integer.valueOf(parameters.get(name));
+		}
 	}
 }

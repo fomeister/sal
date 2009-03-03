@@ -167,7 +167,7 @@ public class SMLDescription implements HWComponentConfiguration{
 	}
 	
 	/**
-	 * This method returns the type of the component
+	 * This method returns the type of the component: {@link SMLConstants#SENSOR_TYPE}
 	 */
 	public String getType() {
 		return SMLConstants.SENSOR_TYPE;

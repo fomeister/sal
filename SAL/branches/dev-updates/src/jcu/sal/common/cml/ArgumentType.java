@@ -34,6 +34,19 @@ public class ArgumentType {
 	public String getArgType() {
 		return t; 
 	}
+	
+	public String toString(){
+		if(t.equals(CMLConstants.ARG_TYPE_CALLBACK))
+			return "Callback";
+		else if(t.equals(CMLConstants.ARG_TYPE_FLOAT))
+			return "Float";
+		else if(t.equals(CMLConstants.ARG_TYPE_INT))
+			return "Int";
+		else if(t.equals(CMLConstants.ARG_TYPE_STRING))
+			return "String";
+
+		return ""; 
+	}
 	@Override
 	public int hashCode() {
 		final int PRIME = 73;

@@ -113,6 +113,14 @@ public class SALAgentImpl implements SALAgent{
 	public String listSensors() {
 		return sm.listSensors(false).getXMLString();
 	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see jcu.sal.agent.SALAgentInterface#listSensor(java.lang.String)
+	 */
+	public String listSensor(String sid) throws NotFoundException {
+		return sm.listSensor(new SensorID(sid)).getXMLString();
+	}
 
 	/*
 	 * (non-Javadoc)

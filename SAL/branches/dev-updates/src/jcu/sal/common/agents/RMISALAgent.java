@@ -30,7 +30,7 @@ public interface RMISALAgent extends Remote{
 	/**
 	 * This method unregisters a SAL client. 
 	 * @param rmiName The unique name associated with the Client
-	 * @throws ConfigurationException if this name already exists
+	 * @throws ConfigurationException if this name does not exist
 	 */
 	public void unregisterClient(String rmiName) throws ConfigurationException, RemoteException;
 	

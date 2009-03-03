@@ -171,6 +171,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 			for(String str: cf.listMissingArgNames()){
 				t = cf.getArgType(str);
 				if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+					argOK=false;
 					while(!argOK) {
 						System.out.println("Enter value of type '"+t.getArgType()+"' for argument '"+str+"'");
 						str2 = b.readLine();
