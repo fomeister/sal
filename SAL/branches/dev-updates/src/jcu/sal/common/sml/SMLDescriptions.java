@@ -2,7 +2,10 @@ package jcu.sal.common.sml;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.NotFoundException;
@@ -23,6 +26,12 @@ public class SMLDescriptions {
 	
 	private HashSet<SMLDescription> smls;
 	
+	/**
+	 * the following table contains a mapping between a protocol ID and all the SML description
+	 * objects belonging to that protocol.
+	 */
+	private Hashtable<String,List<SMLDescription>> smlsByPID;
+	
 	private static String XPATH_SENSORS_DESC = "/"+SMLConstants.SENSOR_CONF_NODE+"/"+SMLConstants.SENSOR_TAG;
 	
 	private SMLDescriptions() {
@@ -38,6 +47,8 @@ public class SMLDescriptions {
 		this();
 		for(SMLDescription s: c)
 			addSMLDescription(s);
+		
+		sortByPID();
 	}
 	
 	/**
@@ -46,6 +57,7 @@ public class SMLDescriptions {
 	 */
 	public SMLDescriptions(Set<SMLDescription> m){
 		smls = new HashSet<SMLDescription>(m);
+		sortByPID();
 	}
 	
 	/**
@@ -79,6 +91,18 @@ public class SMLDescriptions {
 				logger.error("Duplicate sensor config sections");
 				throw new SALDocumentException("Not a valid SML docuemnt", e);
 			}
+			
+		sortByPID();
+	}
+	
+	private void sortByPID(){
+		smlsByPID = new Hashtable<String, List<SMLDescription>>();
+		for(SMLDescription s: smls){
+			if(!smlsByPID.containsKey(s.getProtocolName()))
+				smlsByPID.put(s.getProtocolName(), new Vector<SMLDescription>());
+			
+			smlsByPID.get(s.getProtocolName()).add(s);
+		}
 	}
 	
 	private void addSMLDescription(SMLDescription s) throws AlreadyPresentException {
@@ -122,6 +146,28 @@ public class SMLDescriptions {
 			
 		throw new NotFoundException("no such sensor ID");
 	}
+	
+	/**
+	 * This methods returns a set of protocol IDs present in this SML descriptions object
+	 * @return a set of protocol IDs present in this SML descriptions object
+	 */
+	public Set<String> getPIDs(){
+		return new HashSet<String>(smlsByPID.keySet());
+	}
+	
+	/**
+	 * This method returns a list of SMLDescription objects belonging to a protocol
+	 * @param pid the protocol ID for which the list is to be returned
+	 * @return a list of SMLDescription objects having the same protocol ID as given in argument
+	 * @throws NotFoundException if the protocol ID cant be found
+	 */
+	public List<SMLDescription> getDescriptions(String pid) throws NotFoundException {
+		if(!smlsByPID.containsKey(pid))
+			throw new NotFoundException("no such protocol ID "+pid);
+		
+		return new Vector<SMLDescription>(smlsByPID.get(pid));
+	}
+	
 	
 	/**
 	 * This method returns the number of SML description objects in this object

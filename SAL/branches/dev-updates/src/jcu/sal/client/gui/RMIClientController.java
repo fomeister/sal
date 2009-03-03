@@ -1,28 +1,34 @@
-package jcu.sal.common.agents;
+package jcu.sal.client.gui;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 
 import jcu.sal.common.Response;
-import jcu.sal.common.CommandFactory.Command;
-import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.RMICommandFactory.RMICommand;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
 
-public interface SALAgent{
-	/**
-	 * This method initialises the SAL agent. It parses the platform & sensor configuration files
-	 * and creates the required components as per configuration files. 
-	 * @param pc the platform config file
-	 * @param sc the sensor config file
-	 * @throws ConfigurationException if the files can not be written to, parsed, or the configuration is incorrect
-	 */
-	public void start(String pc, String sc) throws ConfigurationException;
+public interface RMIClientController {
 	
 	/**
-	 * This method stops the SAL agent. It must be called if a previous call to <code>start()</code> was successful.
-	 *
+	 * This method registers a new SAL client with an agent 
+	 * @param rmiName A unique name associated with the RMI Client. The name is chosen by the caller and must be used in subsequent calls
+	 * to execute() and {un}registerEventHandler().
+	 * @param ipAddress the IP address of the agent RMI registry
+	 * @param ourIpAddress the IP address of the SAL client's RMI registry  
+	 * @throws ConfigurationException if this name already exists
+	 * @throws RemoteException if the registry cant be reached
 	 */
-	public void stop();
+	public void connect(String rmiName, String ipAddress, String ourIpAddress) throws ConfigurationException, RemoteException;
+	
+	/**
+	 * This method unregisters a SAL client from an agent
+	 * @param rmiName The unique name associated with the Client
+	 * @throws ConfigurationException if this name already exists
+	 */
+	public void disconnect(String rmiName) throws ConfigurationException, RemoteException;
 	
 	/*
 	 * Sensor-related methods
@@ -38,46 +44,36 @@ public interface SALAgent{
 	 * @throws SALDocumentException if the SML document is malformed
 	 * @throws ConfigurationException if the sensor cant be instantiated because of invalid configuration information
 	 */
-	public String addSensor(String xml) throws SALDocumentException,  ConfigurationException;
+	public String addSensor(String xml) throws SALDocumentException, ConfigurationException, RemoteException;
 	
 	/**
 	 * This method removes a sensor with the given identifier. Its configuration information is also removed from the
 	 * configuration file.
 	 * @param sid the sensor identifier
-	 * @throws NotFoundException if the ID cannot be found
+	 * @throws NotFoundException if the given sensor ID doesnt match any existing sensor
 	 */
-	public void removeSensor(String sid) throws NotFoundException;
+	public void removeSensor(String sid) throws NotFoundException, RemoteException;
 	
 	/**
-	 * This method returns an SML descriptions document containing the configuration of all currently active sensors.
+	 * This method returns an XML document containing the configuration of all currently active sensors.
 	 * An active sensor is one that has been connected at least once since startup. Note that an active
-	 * sensor may not be currently connected (for instance if its protocol has been removed).The returned string
+	 * sensor may not be currently connected (for instance if its protocol has been removed). The returned string
 	 * can be used to create a <code>SMLDescriptions</code> object which facilitate the parsing of the XML document.
 	 * @return the configuration of all active sensors as an XML document, from which a <code>SMLDescriptions</code>
-	 * can be created to facilitate parsing.
+	 * object can be created to facilitate parsing.
 	 */
-	public String listActiveSensors();
+	public String listActiveSensors() throws RemoteException;
 	
 	/**
-	 * This method returns an SML descriptions document containing the configuration of all known sensors.
-	 * A known sensor is one that has its configuration stored in the sensor configuration file.
+	 * This method returns an XML document containing the configuration of all known sensors.
+	 * A known sensor is one that has its configuration stored in the sensor configuration file 
 	 * Known sensors may or may not be currently connected, and may not have been connected at all since
-	 * startup. The returned string can be used to create a <code>SMLDescriptions</code> object which facilitate the
-	 * parsing of the XML document.
+	 * startup. The returned string can be used to create a <code>SMLDescriptions</code> object which facilitate
+	 * the parsing of the XML document.
 	 * @return the configuration of all known sensors as an XML document, from which a <code>SMLDescriptions</code>
 	 * object can be created to facilitate parsing.
 	 */
-	public String listSensors();
-	
-	/**
-	 * This method returns an SML description document containing the configuration for a given sensor.
-	 * The returned string can be used to create a <code>SMLDescriptions</code> object which facilitate the
-	 * parsing of the XML document.
-	 * @return the configuration of the given sensors as an XML document, from which a <code>SMLDescriptions</code>
-	 * object can be created to facilitate parsing.
-	 * @throws NotFoundException if no sensor matches the given identifier
-	 */
-	public String listSensor(String sid) throws NotFoundException;
+	public String listSensors() throws RemoteException;
 	
 	/**
 	 * This method instructs a sensor identified by sid to execute the command c 
@@ -88,7 +84,7 @@ public interface SALAgent{
 	 * @throws SensorControlException if there is an error controlling the sensor. If this exception is raised,
 	 * the cause of this exception will be linked to it and can be retrieved using <code>getCause()</code>  
 	 */
-	public Response execute(Command c, String sid) throws NotFoundException, SensorControlException;
+	public Response execute(RMICommand c, String sid) throws NotFoundException, SensorControlException, RemoteException;
 	
 	/**
 	 * This method returns the a string representation of the CML descriptions document for a given sensor.
@@ -98,7 +94,7 @@ public interface SALAgent{
 	 * @return the CML document, from which a <code>CMLDescriptions</code> can be created to facilitate parsing.
 	 * @throws NotFoundException if given sensor ID doesnt match any existing sensor
 	 */
-	public String getCML(String sid) throws NotFoundException;
+	public String getCML(String sid) throws NotFoundException, RemoteException;
 	
 	/*
 	 * Protocols-related methods 
@@ -113,9 +109,9 @@ public interface SALAgent{
 	 * @param loadSensors set to true if the sensor configuration file should be checked for sensors associated with 
 	 * this protocol and create them.
 	 * @throws ConfigurationException if the protocol cant be instantiated because of invalid configuration information
-	 * @throws SALDocumentException if the given PCML document is malformed  
+	 * @throws SALDocumentException if the given PCML document is malformed 
 	 */
-	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, SALDocumentException;
+	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, SALDocumentException, RemoteException;
 	
 	/**
 	 * This method removes a protocol given its ID. The protocol is first stopped so commands are no further 
@@ -124,7 +120,7 @@ public interface SALAgent{
 	 * @param removeSensor whether or not to remove the sensor configuration associated with this protocol from the config file
 	 * @throws NotFoundException if the given protocol ID doesnt match any existing protocols
 	 */
-	public void removeProtocol(String pid, boolean removeSensors) throws NotFoundException;
+	public void removeProtocol(String pid, boolean removeSensors) throws NotFoundException, RemoteException;
 	
 	/**
 	 * This method lists the configuration of all existing protocols. The returned value is a string
@@ -133,31 +129,34 @@ public interface SALAgent{
 	 * @return a string representation of a PCML document listing the protocols configuration, which can be used to create a 
 	 * <code>ProtocolConfigurations</code> object to facilitate parsing.
 	 */
-	public String listProtocols();
+	public String listProtocols() throws RemoteException;
 	
 	/*
-	 * Event-related methods 
+	 * Event handling
 	 */
 	
 	/**
-	 * This method registers an event handler. Whenever the producer <code>producerID</code> generates an event, the method
-	 * <code>handle</code> will be called on the EventHandler <code>ev</code> with a matching Event object as the sole argument.
+	 * This method registers an RMI event handler. Whenever the producer <code>producerID</code> generates an event, the method
+	 * <code>handle</code> will be called on the RMI EventHandler <code>ev</code> with a matching Event object as the sole argument.
 	 * A Producers ID is a protocol name. Three special producers also exist: <code>SensorManager.PRODUCER_ID</code> which generates
 	 * <code>SensorNodeEvent</code> events when sensors are created and deleted, <code>ProtocolManager.PRODUCER_ID</code> which
 	 * generates <code>ProtocolListEvent</code> events when protocols are created and deleted, <code>SensorState.PRODUCER_ID</code>
 	 * which generates <code>SensorStateEvent</code> events when a sensor is connected or disconnected.  
-	 * @param eh an instance of a class implementing the EventHandler interface which will receive events.
+	 * @param objName the name of the RMI event handler to lookup in the RMI registry.
 	 * @param producerID the identifier of a protocol or the special identifiers "SensorManager", "ProtocolManager" or "SensorState"
+	 * @param r the RMI event handler to be registered with the client's RMI registry. 
 	 * @throws NotFoundException if the given producerID doesnt exist
+	 * @throws RemoteException if the RMI event handler object cant be found in the RMI registry
 	 */
-	public void registerEventHandler(EventHandler eh, String producerID) throws NotFoundException;
+	public void registerEventHandler(String objName, String producerID, Remote r) throws NotFoundException, RemoteException;
 	
 	/**
 	 * This method unregisters an EventHandler previously registered with <code>registerEventHandler()</code>
-	 * @param eh the EventHandler to re be removed
+	 * @param objName the name of the object to lookup in the RMI registry.
 	 * @param producerID the producer to which it is associated
 	 * @throws NotFoundException if the handler can not be found/removed
+	 * @throws RemoteException if the RMI event handler object cant be found in the RMI registry
 	 */
-	public void unregisterEventHandler(EventHandler eh, String producerID) throws NotFoundException;
+	public void unregisterEventHandler(String objName, String producerID) throws NotFoundException, RemoteException;
+	
 }
-

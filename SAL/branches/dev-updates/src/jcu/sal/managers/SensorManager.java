@@ -169,6 +169,20 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 	}
 	
 	/**
+	 * This method returns an SMLDescriptions object for a sensor given its identifier
+	 * @param id the sensor identifier   
+	 * @return an SMLDescriptions object for the sensor
+	 * @throws NotFoundException if no sensor match the given sensor ID
+	 */
+	public SMLDescription listSensor(SensorID id) throws NotFoundException{
+		synchronized(ctable){
+			if(ctable.containsKey(id))
+				return ctable.get(id).getConfig();
+		}		
+		throw new NotFoundException("No sensor matching ID: "+id.toString());
+	}
+	
+	/**
 	 * This method removes a sensor's XML config information from the sensor config file
 	 * @param sid the sensor ID for which the configuration information must be removed
 	 * @throws ConfigurationException if the sensor is still active or the config info cant be deleted

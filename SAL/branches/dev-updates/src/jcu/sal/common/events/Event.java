@@ -27,14 +27,28 @@ public abstract class Event implements Serializable{
 		sourceDocument = doc;
 	}
 
+	/**
+	 * This method returns the identifier of the producer of this event, which
+	 * is different from the source of the event. 
+	 * @return the identifier of the producer of this event
+	 */
 	public final String getProducer() {
 		return producer;
 	}
 
+	/**
+	 * Dont use yet.
+	 * @return
+	 */
 	public final String getSourceDocument() {
 		return sourceDocument;
 	}
-
+	
+	/**
+	 * This method returns the identifier of the source of this event.
+	 * If a new sensor has been added, the source identifier is the sensor ID.
+	 * @return
+	 */
 	public final String getSourceID() {
 		return sourceID;
 	}
