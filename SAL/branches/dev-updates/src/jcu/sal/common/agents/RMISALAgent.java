@@ -80,6 +80,16 @@ public interface RMISALAgent extends Remote{
 	public String listSensors() throws RemoteException;
 	
 	/**
+	 * This method returns an SML description document containing the configuration for a given sensor.
+	 * The returned string can be used to create a <code>SMLDescriptions</code> object which facilitate the
+	 * parsing of the XML document.
+	 * @return the configuration of the given sensors as an XML document, from which a <code>SMLDescriptions</code>
+	 * object can be created to facilitate parsing.
+	 * @throws NotFoundException if no sensor matches the given identifier
+	 */
+	public String listSensor(String sid) throws NotFoundException, RemoteException;
+	
+	/**
 	 * This method instructs a sensor identified by sid to execute the command c 
 	 * @param c the command to be executed
 	 * @param sid the target sensor identifier

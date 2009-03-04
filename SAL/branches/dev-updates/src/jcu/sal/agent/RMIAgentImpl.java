@@ -103,6 +103,10 @@ public class RMIAgentImpl implements RMISALAgent {
 	public String listSensors() {
 		return agent.listSensors();
 	}
+	
+	public String listSensor(String sid) throws NotFoundException {
+		return agent.listSensor(sid);
+	}
 
 	public void registerClient(String name, String ipAddress) throws ConfigurationException, RemoteException {
 		SALClient c = new SALClient(ipAddress);

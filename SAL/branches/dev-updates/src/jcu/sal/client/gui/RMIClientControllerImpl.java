@@ -1,5 +1,6 @@
 package jcu.sal.client.gui;
 
+import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -111,12 +112,24 @@ public class RMIClientControllerImpl implements RMIClientController {
 		agent.removeSensor(sid);
 
 	}
+	
+	public void bind(String name, Remote r) throws AccessException, RemoteException{
+		ourRegistry.rebind(name, UnicastRemoteObject.exportObject(r, 0));
+	}
+	
+	public void unbind(String name) throws AccessException, RemoteException{
+		try {
+			ourRegistry.unbind(name);
+		} catch (NotBoundException e) {
+			System.out.println("No temote method with name "+name+" to unbind");
+		}
+
+	}
 
 	@Override
 	public void registerEventHandler(String objName,
 			String producerID, Remote r) throws NotFoundException,
 			RemoteException {
-		ourRegistry.rebind(objName, UnicastRemoteObject.exportObject(r, 0));
 		agent.registerEventHandler(RMIname, objName, producerID);
 		
 	}
@@ -124,13 +137,13 @@ public class RMIClientControllerImpl implements RMIClientController {
 	@Override
 	public void unregisterEventHandler(String objName,
 			String producerID) throws NotFoundException, RemoteException {
-		agent.unregisterEventHandler(RMIname, objName, producerID);
-		try {
-			ourRegistry.unbind(objName);
-		} catch (NotBoundException e) {
-			System.out.println("No temote method with name "+objName+" to unbind");
-		}
-		
+		agent.unregisterEventHandler(RMIname, objName, producerID);		
+	}
+
+	@Override
+	public String listSensor(String sid) throws NotFoundException,
+			RemoteException {
+		return agent.listSensor(sid);
 	}
 
 }
