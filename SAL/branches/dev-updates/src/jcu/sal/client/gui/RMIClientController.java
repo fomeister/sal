@@ -1,5 +1,6 @@
 package jcu.sal.client.gui;
 
+import java.rmi.AccessException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -76,6 +77,16 @@ public interface RMIClientController {
 	public String listSensors() throws RemoteException;
 	
 	/**
+	 * This method returns an SML description document containing the configuration for a given sensor.
+	 * The returned string can be used to create a <code>SMLDescriptions</code> object which facilitate the
+	 * parsing of the XML document.
+	 * @return the configuration of the given sensors as an XML document, from which a <code>SMLDescriptions</code>
+	 * object can be created to facilitate parsing.
+	 * @throws NotFoundException if no sensor matches the given identifier
+	 */
+	public String listSensor(String sid) throws NotFoundException, RemoteException;
+	
+	/**
 	 * This method instructs a sensor identified by sid to execute the command c 
 	 * @param c the command to be executed
 	 * @param sid the target sensor identifier
@@ -134,6 +145,23 @@ public interface RMIClientController {
 	/*
 	 * Event handling
 	 */
+	
+	/**
+	 * This method exports the RMI Remote object r, with the given name
+	 * @param name the name of the exported Remote object in the RMI registry
+	 * @param r the RMI remote object to be exported
+	 * @thows AccessException
+	 * @throws RemoteException
+	 */
+	public void bind(String name, Remote r) throws AccessException, RemoteException;
+	
+	/**
+	 * This method unbinds a Remote object previously exported with <code>bind<code> 
+	 * @param name the name of the Remote object 
+	 * @throws AccessException
+	 * @throws RemoteException
+	 */
+	public void unbind(String name) throws AccessException, RemoteException;
 	
 	/**
 	 * This method registers an RMI event handler. Whenever the producer <code>producerID</code> generates an event, the method

@@ -7,7 +7,7 @@ import jcu.sal.common.sml.SMLDescription;
 public class SensorTreeLabel {
 	public static int SML_TYPE = 0;
 	public static int PROTOCOL_TYPE = 1;
-	public static int STRING_TYPE = 1;
+	public static int STRING_TYPE = 2;
 	
 	/**
 	 * the type of label (SML or protocol config), see constants above
@@ -23,6 +23,8 @@ public class SensorTreeLabel {
 	 * The string representation shown in the Tree
 	 */
 	private String stringVal;
+	
+	private boolean isEnabled;
 	
 	
 	/**
@@ -48,6 +50,7 @@ public class SensorTreeLabel {
 		} else
 			throw new SALRunTimeException("The given object is neither of type ProcotolConfiguration nor SMLDescription");
 		obj = o;
+		isEnabled = true;
 	}
 	
 	/**
@@ -75,6 +78,14 @@ public class SensorTreeLabel {
 	 */
 	public ProtocolConfiguration getProtocolConfiguration(){
 		return (ProtocolConfiguration) obj;
+	}
+	
+	public void toggleState(){
+		isEnabled = !isEnabled;
+	}
+	
+	public boolean isEnabled(){
+		return isEnabled;
 	}
 		
 	

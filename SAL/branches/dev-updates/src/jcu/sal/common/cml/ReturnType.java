@@ -32,8 +32,24 @@ public class ReturnType {
 	 * Returns the return type (CMLConstants.RET_TYPE_*)
 	 * @return the return type (CMLConstants.RET_TYPE_*)
 	 */
-	String getReturnType() {
+	public String getReturnType() {
 		return t; 
+	}
+	
+	public String toString(){
+		if(t.equals(CMLConstants.RET_TYPE_INT))
+			return "integer";
+		else if(t.equals(CMLConstants.RET_TYPE_BYTE_ARRAY))
+			return "byte array";
+		else if(t.equals(CMLConstants.RET_TYPE_FLOAT))
+			return "float";
+		else if(t.equals(CMLConstants.RET_TYPE_STRING))
+			return "string";
+		else if(t.equals(CMLConstants.RET_TYPE_VOID))
+			return "none";
+		else
+			return "UNKNOWN RETURN TYPE";
+				
 	}
 	@Override
 	public int hashCode() {
