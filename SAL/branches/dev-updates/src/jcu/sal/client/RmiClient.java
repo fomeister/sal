@@ -51,7 +51,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	        f.getContentPane().add(l);
 	        f.setSize(640,480);
 	        f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-	        setVisible();
+	        f.setVisible(true);
 	    }
 	    
 	    public void setImage(byte[] b) {
@@ -70,9 +70,6 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	    	f.dispose();
 	    }
 	    
-	    public void setVisible(){
-	    	f.setVisible(true);
-	    }
 	}
 	
 	private Map<String, JpgMini> viewers;
@@ -170,7 +167,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		while(!argsDone) {
 			for(String str: cf.listMissingArgNames()){
 				t = cf.getArgType(str);
-				if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+				if(!t.equals(ArgumentType.CallbackArgument)) {
 					argOK=false;
 					while(!argOK) {
 						System.out.println("Enter value of type '"+t.getArgType()+"' for argument '"+str+"'");
@@ -320,6 +317,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 			viewers.get(r.getSID()).setImage(r.getBytes());
 		} catch (SensorControlException e) {
 			System.out.println("Stream from sensor "+r.getSID()+" returned an error");
+			viewers.get(r.getSID()).close();
 			viewers.remove(r.getSID());
 		}
 	}

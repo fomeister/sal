@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import jcu.sal.common.exceptions.AlreadyPresentException;
+import jcu.sal.common.exceptions.ArgumentNotFoundException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SALRunTimeException;
@@ -137,14 +138,14 @@ public class SMLDescriptions {
 	 * This method returns an SMLDescription object for a single sensor, given it sensor ID
 	 * @param sid the sensor ID
 	 * @return an SMLDescription object
-	 * @throws NotFoundException if the sensor ID cant be found
+	 * @throws ArgumentNotFoundException if the sensor ID cant be found
 	 */
-	public SMLDescription getDescription(int sid) throws NotFoundException {
+	public SMLDescription getDescription(int sid) {
 		for(SMLDescription s: smls)
 			if(s.getID().equals(String.valueOf(sid)))
 				return s;
 			
-		throw new NotFoundException("no such sensor ID");
+		throw new ArgumentNotFoundException("no such sensor ID");
 	}
 	
 	/**
@@ -159,11 +160,11 @@ public class SMLDescriptions {
 	 * This method returns a list of SMLDescription objects belonging to a protocol
 	 * @param pid the protocol ID for which the list is to be returned
 	 * @return a list of SMLDescription objects having the same protocol ID as given in argument
-	 * @throws NotFoundException if the protocol ID cant be found
+	 * @throws ArgumentNotFoundException if the protocol ID cant be found
 	 */
-	public List<SMLDescription> getDescriptions(String pid) throws NotFoundException {
+	public List<SMLDescription> getDescriptions(String pid) {
 		if(!smlsByPID.containsKey(pid))
-			throw new NotFoundException("no such protocol ID "+pid);
+			throw new ArgumentNotFoundException("no such protocol ID "+pid);
 		
 		return new Vector<SMLDescription>(smlsByPID.get(pid));
 	}

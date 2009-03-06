@@ -56,6 +56,7 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 	private List<HalFilterInterface> clients;
 	/**
 	 * The following is a map of the UDI we have seen so far and their associated successful matches.
+	 * This map is required so that when a DeviceRemoved signal is received, 
 	 * Entries to this map are added when a DeviceAdded signal is received and the matches in a filter are successful.
 	 * The matches are stored with the UDI of the added object. When this object is removed (DeviceRemoved signal), the same
 	 * matches are passed to the filter. 
@@ -67,7 +68,7 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 	 */
 	public HalHelper(){
 		
-		t = new Thread(this, "HalHelper thread");
+		t = null;
 		properties = new LinkedBlockingQueue<Map<String,Variant<Object>>>();
 		clients = new LinkedList<HalFilterInterface>();
 		udiMatches = new Hashtable<String, MatchingFilter>();
@@ -76,8 +77,9 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 
 	@Override
 	public synchronized void start() throws Exception{
-		logger.debug("'"+NAME+"' hardware probe starting ");
-		if(!t.isAlive()) {
+		if(t==null) {
+			logger.debug("'"+NAME+"' hardware probe starting ");
+			t = new Thread(this, "HalHelper thread");
 			try {
 				conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
 				conn.addSigHandler(Manager.DeviceAdded.class, this);
@@ -92,14 +94,21 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 	
 	@Override
 	public synchronized void stop(){
-		if(t.isAlive()) {
+		if(t!=null && t.isAlive()) {
 			t.interrupt();
 			join();
 			conn.disconnect();
+			logger.debug("'"+NAME+"' hardware probe stopped");
+			t = null;
 		}
-		logger.debug("'"+NAME+"' hardware probe stopped");
 	}
 	
+	/**
+	 * this method adds a new {@link HalFilterInterface} client to the list of clients
+	 * Maintained in this object.
+	 * @param f the new client to be added
+	 * @throws AddRemoveElemException if the client already exists.
+	 */
 	public void addClient(HalFilterInterface f) throws AddRemoveElemException{
 		synchronized (clients) {
 			if(clients.contains(f))
@@ -108,6 +117,12 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 		}
 	}
 	
+	/**
+	 * This method removes an {@link HalFilterInterface} from the list of existing clients
+	 * maintained by this object.
+	 * @param f the client to be removed
+	 * @throws AddRemoveElemException if the client is not in the list.
+	 */
 	public void removeClient(HalFilterInterface f) throws AddRemoveElemException{
 		synchronized (clients) {
 			if(!clients.contains(f))
@@ -155,13 +170,19 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 			
 	}
 	
-	
+	/**
+	 * FIXME: add code to ProtocolModuleList to call this method whenever filters 
+	 * (from a new protocol) are installed or removed
+	 * This method is called whenever the current filter list has changed 
+	 * (new elements or existing ones removed)
+	 */
 	@Override
 	public void listChanged() {
 		List<HalFilterInterface> tmp;
 		HalFilterInterface h = null;
 
 		synchronized(clients) {
+			//creates a temp copy of clients
 			tmp = new LinkedList<HalFilterInterface>(clients);
 			
 			//Create the new Halfilter and try to insert it in clients 
@@ -170,9 +191,11 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 					h = createClient(name);
 					addClient(h);
 				} catch (AddRemoveElemException e) {
+					//client already in the list, remove it from temp
 					tmp.remove(h);				
 				} catch (InstantiationException e) {} 
 				
+			//in temp, we now have the clients that must be removed.
 			if(tmp.size()>0)
 				for(HalFilterInterface f: tmp)
 					try { removeClient(f);} catch (AddRemoveElemException e) {}	
@@ -190,7 +213,8 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 	
 	/**
 	 * this method creates a filter given its class name.
-	 * @return the filter or null
+	 * @return the filter
+	 * @throws InstantiationException if the client filter can not be created for some reason.
 	 */
 	private HalFilterInterface createClient(String className) throws InstantiationException{
 		Constructor<?> c;
@@ -198,9 +222,9 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 		try {
 			c = Class.forName(className).getConstructor(new Class<?>[0]);
 			h = (HalFilterInterface) c.newInstance(new Object[0]);
-		} catch (Exception e) {
+		} catch (Throwable t) {
 			logger.error("Cant instanciate filter "+className);
-			e.printStackTrace();
+			t.printStackTrace();
 			throw new InstantiationException();
 		}
 		return h;		
@@ -225,7 +249,8 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 	
 	
 	/**
-	 * This method matches each of the HAL match objects against the HAl property list given in argument.
+	 * This method matches each of the HAL match objects (from all filters) against the HAl property 
+	 * list <code>map</code>given in argument.
 	 * @param map the property list against which each of the HAL match object must be tested.
 	 */
 	private void checkProperties(Map<String,Variant<Object>> map, boolean initial){
@@ -233,13 +258,13 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 		Map<String, HalMatchInterface> matchList;
 		HalMatchInterface m;
 		String s;
-		int maxUnmatch, countUnmatch;
+		int maxMismatch, countMismatch;
 		
 		synchronized(clients) {
 			for(HalFilterInterface c: clients){
 				//for each HAL client, get the match list
-				maxUnmatch = c.countMatches() - c.getMinMatches();
-				countUnmatch = 0;
+				maxMismatch = c.countMatches() - c.getMinMatches();
+				countMismatch = 0;
 				//logger.debug("Checking client "+c.getName() + c.initialMatch() + c.subsequentMatch());
 
 				matchList = c.getMatchList(); 
@@ -253,7 +278,7 @@ public class HalHelper implements Runnable, DBusSigHandler, HwProbeInterface, Li
 						matches.put(matchName,s);
 					} catch (MatchNotFoundException e) {
 						//logger.debug("No Match for "+matchName+ " - "+m.getName());
-						if(++countUnmatch>maxUnmatch) break;
+						if(++countMismatch>maxMismatch) break;
 					}
 				}
 

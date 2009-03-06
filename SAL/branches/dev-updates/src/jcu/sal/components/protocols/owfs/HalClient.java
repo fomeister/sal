@@ -15,7 +15,6 @@ import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
 
 import au.edu.jcu.haldbus.exceptions.AddRemoveElemException;
-import au.edu.jcu.haldbus.exceptions.InvalidConstructorArgs;
 import au.edu.jcu.haldbus.match.GenericMatch;
 
 
@@ -24,7 +23,7 @@ public class HalClient extends AbstractHalClient {
 	static {Slog.setupLogger(logger);}
 
 	
-	public HalClient() throws InvalidConstructorArgs, AddRemoveElemException{
+	public HalClient() throws AddRemoveElemException{
 
 		
 		//THe following rules have been commented out because on some machines, USB product and vendor descriptions

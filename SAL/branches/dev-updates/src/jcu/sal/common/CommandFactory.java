@@ -12,10 +12,10 @@ import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.exceptions.ArgumentNotFoundException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
-import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -63,33 +63,6 @@ public class CommandFactory {
 		parseArguments(desc, cid);
 	}
 	
-//	/**
-//	 * This constructor creates an command template and set the command arguments to the values in the command instance document.
-//	 * The command ID used is the one specified in the command instance document.
-//	 * @param desc the CML descriptions document
-//	 * @param inst the command instance document
-//	 * @return whether or not some arguments are missing
-//	 * @throws SALDocumentException if the given CML description document is invalid
-//	 * @throws NotFoundException 
-//	 * @throws ConfigurationException 
-//	 */
-//	public CommandFactory(Document desc, Document inst) throws ConfigurationException, NotFoundException, SALDocumentException{
-//		this(desc, getCIDFromInstance(inst));
-//		parseArgumentValues(inst);
-//	}
-////	
-//	/**
-//	 * This constructor creates a command template and set the command arguments to the values in the command instance document.
-//	 * The command ID used is the one specified in the command instance document.
-//	 * @param desc the CML descriptions document
-//	 * @param inst the command instance document
-//	 * @return whether or not some arguments are missing
-//	 */
-//	CommandFactory(CMLDescription desc, Document inst)  throws ConfigurationException{
-//		this(desc);
-//		parseArgumentValues(inst);
-//	}
-	
 	/**
 	 * This constructor creates a empty command template based on the CML description document object
 	 * @param desc the command description document
@@ -106,9 +79,9 @@ public class CommandFactory {
 	 * This method returns the type of a given argument
 	 * @param name the name of the argument
 	 * @return the type of the argument
-	 * @throws NotFoundException if the argument cant be found
+	 * @throws ArgumentNotFoundException if the argument cant be found
 	 */
-	public ArgumentType getArgType(String name) throws NotFoundException {
+	public ArgumentType getArgType(String name) {
 		return cml.getArgType(name);
 	}	
 	
@@ -127,10 +100,10 @@ public class CommandFactory {
 	 * @param val the callback
 	 * @throws ConfigurationException if the given callback object is null or the argument
 	 * <code>name</code> isnt of type callback
-	 * @throws NotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name
 	 */
-	public void addArgumentCallback(String name, StreamCallback val) throws ConfigurationException, NotFoundException{
-		if(!cml.getArgType(name).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+	public void addArgumentCallback(String name, StreamCallback val) throws ConfigurationException{
+		if(!cml.getArgType(name).equals(ArgumentType.CallbackArgument)) {
 			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'callback'");
 			throw new ConfigurationException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'callback'");
 		}
@@ -147,10 +120,10 @@ public class CommandFactory {
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type float
-	 * @throws NotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name
 	 */
-	public void addArgumentValueFloat(String name, float val) throws ConfigurationException, NotFoundException{
-		if(!cml.getArgType(name).getArgType().equals(CMLConstants.ARG_TYPE_FLOAT)) {
+	public void addArgumentValueFloat(String name, float val) throws ConfigurationException{
+		if(!cml.getArgType(name).equals(ArgumentType.FloatArgument)) {
 			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'float'");
 			throw new ConfigurationException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'float'");
 		}		
@@ -162,10 +135,10 @@ public class CommandFactory {
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type int
-	 * @throws NotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name
 	 */
-	public void addArgumentValueInt(String name, int val) throws ConfigurationException, NotFoundException{
-		if(!cml.getArgType(name).getArgType().equals(CMLConstants.ARG_TYPE_INT)) {
+	public void addArgumentValueInt(String name, int val) throws ConfigurationException {
+		if(!cml.getArgType(name).equals(ArgumentType.IntegerArgument)) {
 			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'int'");
 			throw new ConfigurationException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'int'");
 		}
@@ -177,10 +150,10 @@ public class CommandFactory {
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type string
-	 * @throws NotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name
 	 */
-	public void addArgumentValueString(String name, String val) throws ConfigurationException, NotFoundException{
-		if(!cml.getArgType(name).getArgType().equals(CMLConstants.ARG_TYPE_STRING)) {
+	public void addArgumentValueString(String name, String val) throws ConfigurationException {
+		if(!cml.getArgType(name).equals(ArgumentType.StringArgument)) {
 			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'string'");
 			throw new ConfigurationException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'string'");
 		}		
@@ -194,17 +167,27 @@ public class CommandFactory {
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the value cant be converted, the argument cant be found or is of type callback
-	 * @throws NotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name
 	 */
-	public void addArgumentValue(String name, String val) throws ConfigurationException, NotFoundException{
+	public void addArgumentValue(String name, String val) throws ConfigurationException {
 		ArgumentType t = cml.getArgType(name);
-		if(t.getArgType().equals(CMLConstants.ARG_TYPE_FLOAT))
-			addArgumentValueFloat(name, Float.parseFloat(val));				
-		else if(t.getArgType().equals(CMLConstants.ARG_TYPE_INT))
-			addArgumentValueInt(name, Integer.parseInt(val));	
-		else if(t.getArgType().equals(CMLConstants.ARG_TYPE_STRING))
+		if(t.equals(ArgumentType.FloatArgument)){
+			try {
+				addArgumentValueFloat(name, Float.parseFloat(val));
+			} catch (NumberFormatException nfe){
+				logger.error("Cant convert '"+val+"' to float");
+				throw new ConfigurationException("Cant convert '"+val+"' to float");
+			}
+		} else if(t.equals(ArgumentType.IntegerArgument)){
+			try {
+			addArgumentValueInt(name, Integer.parseInt(val));
+			} catch (NumberFormatException nfe){
+				logger.error("Cant convert '"+val+"' to integer");
+				throw new ConfigurationException("Cant convert '"+val+"' to integer");
+			}
+		} else if(t.equals(ArgumentType.StringArgument))
 			addArgumentValueString(name, val);
-		else if(t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+		else if(t.equals(ArgumentType.CallbackArgument)) {
 			logger.error("Given an argument of type CALLBACK");
 			throw new ConfigurationException("Given an argument of type CALLBACK - use addArgumentCallback() instead");
 		} else {
@@ -224,19 +207,13 @@ public class CommandFactory {
 		ArgumentType t;
 
 		for(String name: cml.getArgNames()){
-			try {
-				t = cml.getArgType(name);
-				if(t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK) && callback==null) {
-					logger.error("Callback object missing");
-					throw new ConfigurationException("CallBack object missing");
-				} else if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK) && argValues.get(name)==null) {
-					logger.error("Value for argument '"+name+"' missing");
-					throw new ConfigurationException("value for argument '"+name+"' missing");
-				}
-			} catch (NotFoundException e) {
-				logger.error("We shouldnt be here");
-				e.printStackTrace();
-				throw new SALRunTimeException("Cant loop over argument names",e);
+			t = cml.getArgType(name);
+			if(t.equals(ArgumentType.CallbackArgument) && callback==null) {
+				logger.error("Callback object missing");
+				throw new ConfigurationException("CallBack object missing");
+			} else if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK) && argValues.get(name)==null) {
+				logger.error("Value for argument '"+name+"' missing");
+				throw new ConfigurationException("value for argument '"+name+"' missing");
 			}
 		}
 		return new Command(cml.getCID().intValue(), argValues, callback);
@@ -336,31 +313,19 @@ public class CommandFactory {
 			this(cmd.cid, cmd.parameters, c);
 		}
 
-		/**
-		 * @deprecated Do not use this constructor. It will be removed soon. Use CommandFactory instead.
-		 * @param cid
-		 * @param key
-		 * @param value
-		 */
-		//MUST BE REMOVED - USED FOR TEST PURPOSES ONLY - ALSO MAKE THE INNER CLASS NON STATIC
-		public Command(int cid, String key, String value){
-			this.cid = cid;
-			parameters = new Hashtable<String, String>();
-			parameters.put(key,value);
-		}
 		
-		public StreamCallback getStreamCallBack(String name) throws NotFoundException{
+		public StreamCallback getStreamCallBack(String name) {
 			if(!streamc.containsKey(name))
-				throw new NotFoundException("No matching argument for name '"+name+"'");
+				throw new ArgumentNotFoundException("No matching argument for name '"+name+"'");
 			
 			return streamc.get(name);
 		}
 
-		public String getConfig(String directive) throws NotFoundException{
+		public String getConfig(String directive) {
 			String s = parameters.get(directive);
 			if (s==null) {
 				logger.error("Unable to get a config directive with this name "+ directive);
-				throw new NotFoundException("No matching argument for name '"+directive+"'");
+				throw new ArgumentNotFoundException("No matching argument for name '"+directive+"'");
 			}			
 			return s; 
 		}

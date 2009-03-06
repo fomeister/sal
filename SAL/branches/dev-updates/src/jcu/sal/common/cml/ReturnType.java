@@ -11,11 +11,19 @@ import org.apache.log4j.Logger;
  *
  */
 public class ReturnType {
-	private String t;
 	private static Logger logger = Logger.getLogger(ReturnType.class);
 	static {
 		Slog.setupLogger(logger);
 	}
+	
+	public static ReturnType Integer = new ReturnType(CMLConstants.RET_TYPE_INT);
+	public static ReturnType ByteArray = new ReturnType(CMLConstants.RET_TYPE_BYTE_ARRAY);
+	public static ReturnType String = new ReturnType(CMLConstants.RET_TYPE_STRING);
+	public static ReturnType Float = new ReturnType(CMLConstants.RET_TYPE_FLOAT);
+	public static ReturnType Void = new ReturnType(CMLConstants.RET_TYPE_VOID);
+	
+	private String t;
+	
 	/**
 	 * Construct a new return type. Supported types are listed in CMLConstants.RET_TYPE_*
 	 * @param s the type (CMLConstants.RET_TYPE_*)

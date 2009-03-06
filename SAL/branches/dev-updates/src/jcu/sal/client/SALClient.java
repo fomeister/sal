@@ -135,7 +135,7 @@ public class SALClient implements EventHandler, StreamCallback{
 		while(!argsDone) {
 			for(String str: cf.listMissingArgNames()){
 				t = cf.getArgType(str);
-				if(!t.getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+				if(!t.equals(ArgumentType.CallbackArgument)) {
 					argOK=false;
 					while(!argOK) {
 						System.out.println("Enter value of type '"+t.getArgType()+"' for argument '"+str+"'");

@@ -2,7 +2,9 @@ package jcu.sal.client.gui.view;
 
 import java.awt.Component;
 import java.awt.Dimension;
-import java.rmi.RemoteException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Vector;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -12,11 +14,10 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jcu.sal.client.gui.RMIClientController;
+import jcu.sal.client.gui.ClientController;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.exceptions.NotFoundException;
@@ -26,19 +27,20 @@ public class CommandListPane implements ListSelectionListener{
 
 	private static final long serialVersionUID = -2116369411796825252L;
 	
-	private RMIClientView view;
-	private RMIClientController controller;
+	private ClientView view;
+	private ClientController controller;
 	private JPanel panel;
 	private JLabel cmdLabel;
 	private DefaultListModel listModel;
 	private JList list;
 	private CommandDataPane cmdPane;
+	private String sid;
 	
-	public CommandListPane(RMIClientView v, RMIClientController c, CommandDataPane d){
+	public CommandListPane(ClientView v, CommandDataPane d){
 		super();
-		panel = new JPanel();		
+		panel = new JPanel();
 		view = v;
-		controller = c;
+		controller = v.getController();
 		cmdPane = d;
 		cmdLabel = new JLabel("Command list");
 
@@ -72,32 +74,38 @@ public class CommandListPane implements ListSelectionListener{
 	/**
 	 * This method updates the list of commands with the 
 	 * list of commands for the given sensor. 
-	 * @param sid the sensor ID whose command list is to be 
+	 * @param s the sensor ID whose command list is to be 
 	 * displayed. If <code>null</code> the command list is simply cleared.
 	 */
-	public void displayCommand(String sid){
+	public void displayCommand(String s){
 		CMLDescriptions cmls = null;
+		List<CommandListLabel> l = new Vector<CommandListLabel>();
 		listModel.clear();
-		cmdPane.displayCommandData(null);
-		if(sid!=null) {
+		cmdPane.displayCommandData(null, null);
+		if(s!=null) {
 			try {
-				cmls = new CMLDescriptions(controller.getCML(sid));
+				cmls = new CMLDescriptions(controller.getCML(s));
 			} catch (SALDocumentException e) {
-				view.addLog("Error in the CML document for sensor '"+sid+"'");
+				view.addLog("Error in the CML document for sensor '"+s+"'");
 				e.printStackTrace();
 				return;
 			} catch (NotFoundException e) {
-				view.addLog("No sensor with ID '"+sid+"'");
+				view.addLog("No sensor with ID '"+s+"'");
 				e.printStackTrace();
 				return;
-			} catch (RemoteException e) {
-				view.addLog("RMI Error while retrieving the CML document for sensor '"+sid+"'");
-				e.printStackTrace();
-				return;
-			}
+			} 
 			for(CMLDescription cml : cmls.getDescriptions())
-				listModel.addElement(new CommandListLabel(cml));
+				l.add(new CommandListLabel(cml));
+			
+			Collections.sort(l);
+			for(CommandListLabel c: l)
+				listModel.addElement(c);
+		
+			
+			panel.revalidate();
+			panel.repaint();
 		}
+		sid = s;
 	}
 	
 	/**
@@ -109,10 +117,10 @@ public class CommandListPane implements ListSelectionListener{
 	public void valueChanged(ListSelectionEvent e) {
 		if(!e.getValueIsAdjusting())
 			if(list.getSelectedValue()!=null)
-				cmdPane.displayCommandData(((CommandListLabel) list.getSelectedValue()).getCML());
+				cmdPane.displayCommandData(((CommandListLabel) list.getSelectedValue()).getCML(), sid);
 	}
 	
-	public static class CommandListLabel {
+	public static class CommandListLabel implements Comparable<CommandListLabel>{
 		private CMLDescription cml;
 		
 		public CommandListLabel(CMLDescription c){
@@ -126,8 +134,11 @@ public class CommandListPane implements ListSelectionListener{
 		public CMLDescription getCML(){
 			return cml;
 		}
+
+		@Override
+		public int compareTo(CommandListLabel o) {
+			return cml.getName().compareTo(o.cml.getName());
+		}
 		
 	}
-
-
 }

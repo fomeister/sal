@@ -4,8 +4,8 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.rmi.RemoteException;
 import java.util.Enumeration;
+import java.util.Hashtable;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -19,39 +19,50 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 
+import jcu.sal.client.gui.ClientController;
 import jcu.sal.client.gui.RMIClientController;
-import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
 
-public class SensorTree extends JPanel implements TreeSelectionListener{
+public class SensorTree implements TreeSelectionListener{
 
 	private static final long serialVersionUID = -1407856342401386714L;
-	private RMIClientView view;
-	private RMIClientController controller;
+	private ClientView view;
+	private ClientController controller;
 	
 	private JTree tree;
+	private JPanel mainPane;
 	private DefaultTreeModel treeModel;
 	private DefaultMutableTreeNode rootNode;
+	private Hashtable<String,ProtocolConfiguration> protocols;
+	private Hashtable<String,SMLDescription> smlDescriptions;
 	
-	public SensorTree(RMIClientView v){
-		super(new GridLayout(1,0));
+	
+	public SensorTree(ClientView v){
 
 		view = v;
 		controller = v.getController();
+		mainPane = new JPanel(new GridLayout(1,0));
 		rootNode = new DefaultMutableTreeNode(new SensorTreeLabel("SAL Client"));
         treeModel = new DefaultTreeModel(rootNode);
 		tree = new JTree(treeModel);
+		protocols = new Hashtable<String,ProtocolConfiguration>();
+		smlDescriptions = new Hashtable<String,SMLDescription>();
+		
+		
 		tree.setShowsRootHandles(true);
 		tree.addTreeSelectionListener(this);
 		ToolTipManager.sharedInstance().registerComponent(tree);
 		tree.setCellRenderer(new MyRenderer());
-		updateTree();
-		add(new JScrollPane(tree));
-		
+		mainPane.add(new JScrollPane(tree));
+		mainPane.setMinimumSize(new Dimension(200,400));
+	}
+	
+	public JPanel getPanel(){
+		return mainPane;
 	}
 	
 	/**
@@ -67,10 +78,6 @@ public class SensorTree extends JPanel implements TreeSelectionListener{
 		try {
 			smls = new SMLDescriptions(controller.listSensors());
 			pcml = new ProtocolConfigurations(controller.listProtocols());
-		} catch (RemoteException e) {
-			view.addLog("Error parsing the XML sensor /protocol list\n"+e.getMessage());
-			e.printStackTrace();
-			return;
 		} catch (SALDocumentException e) {
 			view.addLog("Error retrieving the XML sensor /protocol list\n"+e.getMessage());
 			e.printStackTrace();
@@ -84,22 +91,12 @@ public class SensorTree extends JPanel implements TreeSelectionListener{
 		for(ProtocolConfiguration p:pcml.getConfigurations()){
 			//add protocol node
 			parent = addNode(p, rootNode);
-			try {
-				//for all sensor under this protocol ...
-				for(SMLDescription s : smls.getDescriptions(p.getID()))
-					//add them
-					addNode(s,parent);
-			} catch (NotFoundException e) {
-				//we shouldnt be here
-				e.printStackTrace();
-			}
+			//for all sensor under this protocol ...
+			for(SMLDescription s : smls.getDescriptions(p.getID()))
+				//add them
+				addNode(s,parent);
 		}
 	}
-	
-	public Dimension getMinimumSize(){
-		return new Dimension(200,400);
-	}
-	
 
 	/**
 	 * This method must be called when a new protocol must be added to this tree
@@ -108,19 +105,21 @@ public class SensorTree extends JPanel implements TreeSelectionListener{
 	public void addProtocol(ProtocolConfiguration p){
 		synchronized(rootNode){
 			addNode(p, rootNode);
+			protocols.put(p.getID(),p);
 		}
 	}
 	
 	/**
-	 * This method must be called when a new protocol must be added to this tree
-	 * @param p the {@link ProtocolConfiguration} of the protocol to be added
+	 * This method must be called when a new protocol must be removed from this tree
+	 * @param p the protocol ID of the protocol to be removed
 	 */
 	public void removeProtocol(String pid){
 		synchronized(rootNode){
 			DefaultMutableTreeNode n = findProtocolNode(pid);
-			if(n!=null )
+			if(n!=null ){
 				removeNode(n);
-			else
+				protocols.remove(pid);
+			}else
 				System.out.println("Cant find protocol "+pid);
 		}
 	}
@@ -132,23 +131,25 @@ public class SensorTree extends JPanel implements TreeSelectionListener{
 	public void addSensor(SMLDescription s){
 		synchronized(rootNode){
 			DefaultMutableTreeNode n = findProtocolNode(s.getProtocolName());
-			if(n!=null )
+			if(n!=null ){
 				addNode(s, n);
-			else
+				smlDescriptions.put(s.getID(),s);
+			}else
 				System.out.println("Cant find parent protocol "+s.getProtocolName());
 		}
 	}
 	
 	/**
-	 * This method must be called when a new sensor must be added to this tree
-	 * @param s the {@link SMLDescription} of the sensor to be added
+	 * This method must be called when a new sensor must be removed from this tree
+	 * @param s the sensor ID of the sensor to be removed
 	 */
 	public void removeSensor(String sid){
 		synchronized(rootNode){
 			DefaultMutableTreeNode n = findSensorNode(sid);
-			if(n!=null )
+			if(n!=null ){
 				removeNode(n);
-			else
+				smlDescriptions.remove(sid);
+			}else
 				view.addLog("Cant find sensor node "+sid);
 		}
 	}
@@ -164,6 +165,29 @@ public class SensorTree extends JPanel implements TreeSelectionListener{
 	}
 	
 	/**
+	 * This method returns the {@link SensorTreeLabel} of the currently selected element.
+	 * @return the {@link SensorTreeLabel} of the currently selected element.
+	 */
+	public SensorTreeLabel getSelectedLabel(){
+		if(tree.getLastSelectedPathComponent()==null)
+			return null;
+		else
+			return (SensorTreeLabel) ((DefaultMutableTreeNode) tree.getLastSelectedPathComponent()).getUserObject();
+	}
+	
+	public SMLDescription getSMLDescription(String sid){
+		synchronized(rootNode){
+			return smlDescriptions.get(sid);
+		}
+	}
+	
+	public ProtocolConfiguration getProtocolConfiguration(String pid){
+		synchronized(rootNode){
+			return protocols.get(pid);
+		}
+	}
+	
+	/**
 	 * This method is called whenever a node in the tree is selected
 	 */
 	@Override
@@ -175,9 +199,7 @@ public class SensorTree extends JPanel implements TreeSelectionListener{
 		
 		view.componentSelected((SensorTreeLabel) node.getUserObject());		
 	}
-	
-	
-	
+
 	static class MyRenderer extends DefaultTreeCellRenderer {
 
 		private static final long serialVersionUID = -4758932006597272509L;

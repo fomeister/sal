@@ -11,6 +11,7 @@ import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.exceptions.ArgumentNotFoundException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
@@ -32,20 +33,6 @@ public class RMICommandFactory {
 	private CommandFactory factory;
 	private Map<String, List<String>> callbackNames;
 	private CMLDescription cml;
-	
-//	/**
-//	 * Create a RMI command template and set the command arguments to the values in the command instance document.
-//	 * The command ID used is the one specified in the command instance document.
-//	 * @param desc the CML descriptions document
-//	 * @param inst the command instance document
-//	 * @return whether or not some arguments are missing
-//	 */
-//	public RMICommandFactory(Document desc, Document inst)  throws ConfigurationException{
-//		Slog.setupLogger(logger);
-//		cml = new CMLDescriptions(desc).getDescription(CommandFactory.getCIDFromInstance(inst));
-//		factory = new CommandFactory(removeCallbacks(),inst);
-//
-//	}
 	
 	/**
 	 * Create a empty RMI command template based on the CML descriptions document 
@@ -97,15 +84,15 @@ public class RMICommandFactory {
 	 * This method returns the type of a given argument
 	 * @param name the name of the argument
 	 * @return the type of the argument
-	 * @throws NotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name
 	 */
-	public ArgumentType getArgType(String name) throws NotFoundException{
+	public ArgumentType getArgType(String name) {
 		ArgumentType t;
 		try {
 			t = factory.getArgType(name);
-		} catch (NotFoundException e) {
+		} catch (ArgumentNotFoundException e) {
 			if(!callbackNames.containsKey(name))
-				throw new NotFoundException("No argument named '"+name+"'");
+				throw new ArgumentNotFoundException("No argument named '"+name+"'");
 			else
 				t = new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK);
 		}		
@@ -131,9 +118,9 @@ public class RMICommandFactory {
 	 * @param rmiName the name of the RMI client as previously registered with RMISALAgent.registerClient().
 	 * @param objName the name of the RMI StreamCallback to lookup in the RMI registry.
 	 * <code>name</code> isnt of type callback
-	 * @throws NotFoundException if no callback argument matches the given name 
+	 * @throws ArgumentNotFoundException if no callback argument matches the given name 
 	 */
-	public void addArgumentCallback(String name, String rmiName, String objName) throws NotFoundException{
+	public void addArgumentCallback(String name, String rmiName, String objName) {
 		if(callbackNames.containsKey(name)){
 			if(callbackNames.get(name).size()==0) {
 				callbackNames.get(name).add(rmiName);
@@ -142,7 +129,7 @@ public class RMICommandFactory {
 				logger.debug("There was a previous value for the callback argument "+name);
 		} else {
 			logger.error("no callback arguments called "+name);
-			throw new NotFoundException("No callback argument named '"+name+"'");
+			throw new ArgumentNotFoundException("No callback argument named '"+name+"'");
 		}
 	}
 	
@@ -153,7 +140,7 @@ public class RMICommandFactory {
 	 * @throws NotFoundException if no argument matches the given name
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type float
 	 */
-	public void addArgumentValueFloat(String name, float val) throws NotFoundException, ConfigurationException {
+	public void addArgumentValueFloat(String name, float val) throws ConfigurationException {
 		factory.addArgumentValueFloat(name, val);
 	}
 	
@@ -162,9 +149,9 @@ public class RMICommandFactory {
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type int
-	 * @throws NotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name
 	 */
-	public void addArgumentValueInt(String name, int val) throws ConfigurationException, NotFoundException{
+	public void addArgumentValueInt(String name, int val) throws ConfigurationException{
 		factory.addArgumentValueInt(name, val);
 	}
 	
@@ -173,9 +160,9 @@ public class RMICommandFactory {
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the argument <code>name</code> isnt of type string
-	 * @throws NotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name
 	 */
-	public void addArgumentValueString(String name, String val) throws ConfigurationException, NotFoundException{
+	public void addArgumentValueString(String name, String val) throws ConfigurationException {
 		factory.addArgumentValueString(name, val);
 	}
 	
@@ -186,9 +173,9 @@ public class RMICommandFactory {
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
 	 * @throws ConfigurationException if the value cant be converted, the argument cant be found or is of type callback
-	 * @throws NotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name
 	 */
-	public void addArgumentValue(String name, String val) throws ConfigurationException, NotFoundException{
+	public void addArgumentValue(String name, String val) throws ConfigurationException {
 		factory.addArgumentValue(name, val);
 	}
 	
@@ -239,7 +226,7 @@ public class RMICommandFactory {
 		}
 
 		
-		public String getConfig(String directive) throws NotFoundException {
+		public String getConfig(String directive)  {
 			return c.getConfig(directive);
 		}
 		
