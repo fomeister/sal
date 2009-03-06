@@ -259,7 +259,10 @@ public class RMIAgentImpl implements RMISALAgent {
 			try {
 				s.collect(r);
 			} catch (Throwable e1) {
-				throw new IOException();
+				//e1.printStackTrace();
+				//be careful not to pass client thrown exceptions
+				//since their classes may not be in the class path of the SAL agent
+				throw new IOException("Error collecting response.\n"+e1.getMessage());
 			}			
 		}
 		

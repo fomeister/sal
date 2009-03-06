@@ -125,7 +125,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			//add two commands to the CCD sensor for this control
 			//(one to set its value, the other to get its value)
 			//getValue command
-			name = "get"+ctrlName.replace(" ", "");
+			name = "Get"+ctrlName.replace(" ", "");
 			desc = "Fetches the value of "+ctrlName;
 			try {
 				cid = cmls.addPrivateCMLDesc(key, GET_CONTROL_METHOD, name, desc, tEmpty, argNamesEmpty , retInt);
@@ -137,7 +137,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			ctrls.put(String.valueOf(cid), c);
 			
 			//setValue command
-			name = "set"+ctrlName.replace(" ", "");
+			name = "Set"+ctrlName.replace(" ", "");
 			desc = "Sets the value of "+ctrlName;
 			try {
 				cid = cmls.addPrivateCMLDesc(key, SET_CONTROL_METHOD, name, desc, tValue, argNamesValue , retVoid);
@@ -274,12 +274,8 @@ public class V4L2Protocol extends AbstractProtocol {
 			vd.releaseFrameGrabber();
 			throw new SensorIOException("Error while starting capture", e);
 		}
-		try {
-			st = new StreamingThread(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s, fg);
-		} catch (NotFoundException e) {
-			logger.error("Error while starting streaming thread: invalid callback argument");
-			throw new SensorIOException("Error while starting streaming thread: invalid callback argument", e);
-		}
+		st = new StreamingThread(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s, fg);
+
 		streaming = true;
 		return new byte[0];
 	}
@@ -301,12 +297,8 @@ public class V4L2Protocol extends AbstractProtocol {
 		if(streaming)
 			throw new InvalidCommandException("The sensor is already streaming");
 		
-		try {
-			stf = new StreamingThreadFake(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s);
-		} catch (NotFoundException e) {
-			logger.error("Error while starting streaming thread: invalid callback argument");
-			throw new SensorIOException("Error while starting streaming thread: invalid callback argument", e);
-		}
+		stf = new StreamingThreadFake(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s);
+
 		streaming = true;
 		return new byte[0];
 	}
@@ -369,8 +361,16 @@ public class V4L2Protocol extends AbstractProtocol {
 					error=true;
 				} catch (Throwable e) {
 					logger.error("Error while capturing frame");
-					try {cb.collect(new Response(sid, new SensorIOException("Error while capturing frame", e)));} catch (IOException e1) {}				
 					e.printStackTrace();
+					
+					try {
+						//PrintWriter pw = new PrintWriter(new StringWriter());
+						//e.printStackTrace(pw);
+						cb.collect(new Response(sid, new SensorIOException("Error while capturing frame."+e.getMessage())));
+					} catch (IOException e1) {
+						logger.error("Error notifying the client");
+						e1.printStackTrace();
+					}				
 					error=true;
 				}
 			}

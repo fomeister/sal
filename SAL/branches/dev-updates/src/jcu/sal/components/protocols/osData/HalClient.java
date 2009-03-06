@@ -12,7 +12,6 @@ import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
 
 import au.edu.jcu.haldbus.exceptions.AddRemoveElemException;
-import au.edu.jcu.haldbus.exceptions.InvalidConstructorArgs;
 import au.edu.jcu.haldbus.match.GenericMatch;
 
 
@@ -20,7 +19,7 @@ public class HalClient extends AbstractHalClient {
 	private static Logger logger = Logger.getLogger(HalClient.class);
 	static {Slog.setupLogger(logger);}
 	
-	public HalClient() throws InvalidConstructorArgs, AddRemoveElemException{		
+	public HalClient() throws AddRemoveElemException{		
 		addMatch("1-volume.mount_point", new GenericMatch<String>("volume.mount_point", "/"));
 	}
 

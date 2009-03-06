@@ -2,13 +2,13 @@ package jcu.sal.client.gui.view;
 
 import java.awt.CardLayout;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import jcu.sal.client.gui.RMIClientController;
 import jcu.sal.common.sml.SMLDescription;
 
 public class ActionPanel{
@@ -21,23 +21,21 @@ public class ActionPanel{
 
 	private static final long serialVersionUID = -3389916952429009472L;
 	
-	private RMIClientView view;
-	private RMIClientController controller;
+	private ClientView view;
 	private JLabel title;
 	private SensorControlPane sensorPane;
 	private JPanel controlPane, emptyPane, mainPane;
 
-	public ActionPanel(RMIClientView v, RMIClientController c){
+	public ActionPanel(ClientView v){
 		super();
 		
 		view = v;
-		controller = c;
 		controlPane = new JPanel(new CardLayout());
 		mainPane = new JPanel();
 		emptyPane = new JPanel();
 		title = new JLabel();
 		
-		sensorPane = new SensorControlPane(view, controller);
+		sensorPane = new SensorControlPane(view);
 	}
 	
 	public void init(){
@@ -53,6 +51,8 @@ public class ActionPanel{
 		
 		mainPane.add(Box.createGlue());
 		mainPane.add(controlPane);
+		
+		mainPane.setBorder(BorderFactory.createEmptyBorder(7, 7, 0, 0));
 		
 		switchToEmptyPane();
 	}

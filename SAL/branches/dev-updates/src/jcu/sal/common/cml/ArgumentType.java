@@ -11,9 +11,18 @@ import org.apache.log4j.Logger;
  *
  */
 public class ArgumentType {
-	private String t;
 	private static Logger logger = Logger.getLogger(ArgumentType.class);
 	static {Slog.setupLogger(logger);}
+	
+	public static ArgumentType StringArgument = new ArgumentType(CMLConstants.ARG_TYPE_STRING);
+	public static ArgumentType IntegerArgument = new ArgumentType(CMLConstants.ARG_TYPE_INT);
+	public static ArgumentType FloatArgument = new ArgumentType(CMLConstants.ARG_TYPE_FLOAT);
+	public static ArgumentType CallbackArgument = new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK);
+	
+	/**
+	 * The type itself
+	 */
+	private String t;
 	
 	/**
 	 * Construct a new argument type. Supported types are listed in CMLConstants.ARG_TYPE_*

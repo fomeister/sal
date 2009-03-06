@@ -94,9 +94,9 @@ public class HwProbeService implements ListChangeListener{
 					c = Class.forName(name).getConstructor(new Class<?>[0]);
 					HwProbeInterface h = (HwProbeInterface) c.newInstance(new Object[0]);
 					ret.put(name, h);
-				} catch (Exception e) {
-					logger.error("Cant instanciate Helper "+name);
-					e.printStackTrace();
+				} catch (Throwable t) {
+					logger.error("Cant instanciate hardware probe "+name);
+					t.printStackTrace();
 				}
 			}
 		}

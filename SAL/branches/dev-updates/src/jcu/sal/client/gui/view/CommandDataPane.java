@@ -5,8 +5,8 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -18,33 +18,32 @@ import javax.swing.JTextField;
 import javax.swing.Spring;
 import javax.swing.SpringLayout;
 
-import jcu.sal.client.gui.RMIClientController;
 import jcu.sal.common.cml.ArgumentType;
-import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 
 public class CommandDataPane implements ActionListener{
 	
 	private static final long serialVersionUID = -3929136251479602868L;
-	private RMIClientView view;
-	private RMIClientController controller;
+	private ClientView view;
 	private JPanel mainPane, dataPane;
 	private JButton send;
 	private JLabel title;
-	private Vector<JTextField> argValues;
+	private Hashtable<String, JTextField> argValues;
 	private CMLDescription cml;
+	private String sid;
 	
-	public CommandDataPane(RMIClientView v, RMIClientController c){
+	public CommandDataPane(ClientView v){
 		view = v;
-		controller = c;
 		dataPane = new JPanel(new SpringLayout());
 		mainPane = new JPanel();
 		send = new JButton("Send command");
 		title = new JLabel("Command detail");
-		argValues = new Vector<JTextField>();
+		argValues = new Hashtable<String, JTextField>();
 	}
 	
 	public void init(){
+		send.addActionListener(this);
+		
 		mainPane.setLayout(new BoxLayout(mainPane, BoxLayout.PAGE_AXIS));
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
 		mainPane.add(title);
@@ -62,9 +61,10 @@ public class CommandDataPane implements ActionListener{
 	 * This method is called whenever this panel should display
 	 * command data for the new command, given in argument 
 	 * @param c the {@link CMLDescription} object of the new command.
+	 * @param s the sensor ID where the command belongs
 	 * If <code>null</code> the panel is simply cleared.
 	 */
-	public void displayCommandData(CMLDescription c){
+	public void displayCommandData(CMLDescription c, String s){
 		dataPane.removeAll();
 		dataPane.repaint();
 
@@ -78,32 +78,26 @@ public class CommandDataPane implements ActionListener{
 					(i+2), 2, //rows, cols
 	                6, 6,        //initX, initY
 	                6, 6);       //xPad, yPad
-			dataPane.validate();
+			mainPane.validate();
+			mainPane.repaint();
 		}
 		cml = c;
+		sid = s;
 	}
 	
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource().equals(send)){
-			if(!validateValues())
-				return;
-				
-		}
-	}
-	
-	private boolean validateValues(){
-		List<String> names = cml.getArgNames();
-		List<ArgumentType> types = cml.getArgTypes();
-		int i;
-		for(i=0; i<names.size(); i++){
+			final Hashtable<String,String> values = new Hashtable<String,String>();
+			//put entered values in a table
+			for(String name: argValues.keySet())
+				values.put(name, argValues.get(name).getText());
+						
+			//send table to view
+			view.sendCommand(values, cml, sid);
 			
-			//skip callbacks
-			if(types.get(i).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK))
-				continue;
 		}
-		return false;
 	}
 	
 	private void addDescription(String d){
@@ -127,13 +121,13 @@ public class CommandDataPane implements ActionListener{
 		for(i=0; i<names.size(); i++){
 			
 			//skip callbacks
-			if(types.get(i).getArgType().equals(CMLConstants.ARG_TYPE_CALLBACK))
+			if(types.get(i).equals(ArgumentType.CallbackArgument))
 				continue;
 			
 			JLabel l = new JLabel(names.get(i));
 			dataPane.add(l);
 			JTextField t = new JTextField(25);
-			argValues.add(t);
+			argValues.put(names.get(i), t);
 			t.setPreferredSize(new Dimension(200,30));
 			t.setMaximumSize(new Dimension(800,30));
 			l.setLabelFor(t);

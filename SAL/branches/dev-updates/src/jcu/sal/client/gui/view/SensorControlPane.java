@@ -1,34 +1,29 @@
 package jcu.sal.client.gui.view;
 
-import java.awt.Color;
 import java.awt.Component;
 
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import jcu.sal.client.gui.RMIClientController;
 import jcu.sal.common.sml.SMLDescription;
 
 public class SensorControlPane{
 
 	private static final long serialVersionUID = -3678056141437194190L;
-	private RMIClientView view;
-	private RMIClientController controller;
+	private ClientView view;
 	private CommandListPane cmdPane;
 	private CommandDataPane cmdDataPane;
 	private SMLDescription current;
 	private JPanel pane;
 	
-	public SensorControlPane(RMIClientView v, RMIClientController c){
+	public SensorControlPane(ClientView v){
 		super();
 		pane = new JPanel();
 		view = v;
-		controller = c;
-		cmdDataPane = new CommandDataPane(view, controller);
-		cmdPane = new CommandListPane(view, controller, cmdDataPane);
+		cmdDataPane = new CommandDataPane(view);
+		cmdPane = new CommandListPane(view, cmdDataPane);
 
 	}
 	

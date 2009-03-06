@@ -392,7 +392,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 								Class<?>[] params = {Command.class,Sensor.class};
 								//logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()));
 								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params);
-								//logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
+								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
 								ret_val = (byte[]) m.invoke(this,c, s);
 							} catch (SecurityException e) {
 								logger.error("Not allowed to execute the method matching this command");

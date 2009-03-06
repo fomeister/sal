@@ -31,8 +31,8 @@ public abstract class AbstractStore {
 	static{Slog.setupLogger(logger);}
 	
 
-	public static String GENERIC_ENABLE="Enable";			//10
-	public static String GENERIC_DISABLE="Disable";		//11
+	public static String GENERIC_ENABLE="enable";			//10
+	public static String GENERIC_DISABLE="disable";		//11
 	public static String GENERIC_GETREADING="getReading";	//100
 	public static String GENERIC_STARTSTREAM="startStream";	//102
 	public static String GENERIC_STOPSTREAM="stopStream";	//103

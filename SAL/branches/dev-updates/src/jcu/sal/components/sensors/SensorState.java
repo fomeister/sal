@@ -81,8 +81,15 @@ public class SensorState {
 				logger.error("###############################################################################################");
 				logger.error("###############################################################################################");
 				return false; 
-			} else if(state==SensorConstants.IDLE || state==SensorConstants.DISCONNECTED || state==SensorConstants.DISABLED) { state=SensorConstants.DISABLED; return true; }
-			else { logger.error("trying to disable a non IDLE/INUSE/DISCONNECTED sensor"); dumpState(); return false; }
+			} else if(state==SensorConstants.IDLE || state==SensorConstants.DISCONNECTED || state==SensorConstants.DISABLED) {
+				state=SensorConstants.DISABLED;
+				ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
+				return true; 
+			} else {
+				logger.error("trying to disable a non IDLE/INUSE/DISCONNECTED sensor"); 
+				dumpState();
+				return false; 
+			}
 		}
 	}
 	

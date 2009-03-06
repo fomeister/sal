@@ -6,6 +6,7 @@ package jcu.sal.common.cml;
 import java.util.List;
 import java.util.Vector;
 
+import jcu.sal.common.exceptions.ArgumentNotFoundException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
@@ -325,13 +326,13 @@ public class CMLDescription {
 	 * This method returns the argument type for a given argument.
 	 * @param name the name of the argument whose the type will be returned 
 	 * @return the argument type for a given argument.
-	 * @throws NotFoundException if the argument <code>"name"</code> does not exist
+	 * @throws ArgumentNotFoundException if the argument <code>"name"</code> does not exist
 	 */
-	public ArgumentType getArgType(String name) throws NotFoundException{
+	public ArgumentType getArgType(String name) throws ArgumentNotFoundException{
 		int pos = argNames.indexOf(name);
 		if(pos>=0)
 			return argTypes.get(pos);
-		throw new NotFoundException("Argument '"+name+"' not found");
+		throw new ArgumentNotFoundException("Argument '"+name+"' not found");
 	}
 
 	@Override

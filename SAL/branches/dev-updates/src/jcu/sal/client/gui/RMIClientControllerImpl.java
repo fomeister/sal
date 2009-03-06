@@ -24,16 +24,23 @@ public class RMIClientControllerImpl implements RMIClientController {
 
 	@Override
 	public void addProtocol(String xml, boolean loadSensors)
-			throws ConfigurationException, SALDocumentException,
-			RemoteException {
-		agent.addProtocol(xml, loadSensors);
+			throws ConfigurationException, SALDocumentException {
+		try {
+			agent.addProtocol(xml, loadSensors);
+		} catch (RemoteException e) {
+			throw new AgentException("Cannot add protocol", e);
+		}
 
 	}
 
 	@Override
 	public String addSensor(String xml) throws SALDocumentException,
-			ConfigurationException, RemoteException {
-		return agent.addSensor(xml);
+			ConfigurationException {
+		try {
+			return agent.addSensor(xml);
+		} catch (RemoteException e) {
+			throw new AgentException("Cannot add sensor", e);
+		}
 	}
 
 	@Override
@@ -80,36 +87,59 @@ public class RMIClientControllerImpl implements RMIClientController {
 	}
 
 	@Override
-	public String getCML(String sid) throws NotFoundException, RemoteException {
-		return agent.getCML(sid);
+	public String getCML(String sid) throws NotFoundException {
+		try {
+			return agent.getCML(sid);
+		} catch (RemoteException e) {
+			throw new AgentException("Cannot get CML document", e);
+		}
 	}
 
 	@Override
-	public String listActiveSensors() throws RemoteException {
-		return agent.listActiveSensors();
+	public String listActiveSensors() {
+		try {
+			return agent.listActiveSensors();
+		} catch (RemoteException e) {
+			throw new AgentException("Cannot list active sensors", e);
+		}
 	}
 
 	@Override
-	public String listProtocols() throws RemoteException {
-		return agent.listProtocols();
+	public String listProtocols() {
+		try {
+			return agent.listProtocols();
+		} catch (RemoteException e) {
+			throw new AgentException("Cannot list protocols", e);
+		}
 	}
 
 	@Override
-	public String listSensors() throws RemoteException {
-		return agent.listSensors();
+	public String listSensors() {
+		try {
+			return agent.listSensors();
+		} catch (RemoteException e) {
+			throw new AgentException("Cannot list sensors", e);
+		}
 	}
 
 	@Override
 	public void removeProtocol(String pid, boolean removeSensors)
-			throws NotFoundException, RemoteException {
-		agent.removeProtocol(pid, removeSensors);
+			throws NotFoundException {
+		try {
+			agent.removeProtocol(pid, removeSensors);
+		} catch (RemoteException e) {
+			throw new AgentException("Cannot remove protocol", e);
+		}
 
 	}
 
 	@Override
-	public void removeSensor(String sid) throws NotFoundException,
-			RemoteException {
-		agent.removeSensor(sid);
+	public void removeSensor(String sid) throws NotFoundException {
+		try {
+			agent.removeSensor(sid);
+		} catch (RemoteException e) {
+			throw new AgentException("Cannot remove sensor", e);
+		}
 
 	}
 	
@@ -128,9 +158,13 @@ public class RMIClientControllerImpl implements RMIClientController {
 
 	@Override
 	public void registerEventHandler(String objName,
-			String producerID, Remote r) throws NotFoundException,
-			RemoteException {
-		agent.registerEventHandler(RMIname, objName, producerID);
+			String producerID) throws NotFoundException,
+			AgentException {
+		try {
+			agent.registerEventHandler(RMIname, objName, producerID);
+		} catch (RemoteException e) {
+			throw new AgentException("Cannot register event handler", e);
+		}
 		
 	}
 
@@ -141,9 +175,12 @@ public class RMIClientControllerImpl implements RMIClientController {
 	}
 
 	@Override
-	public String listSensor(String sid) throws NotFoundException,
-			RemoteException {
-		return agent.listSensor(sid);
+	public String listSensor(String sid) throws NotFoundException{
+		try {
+			return agent.listSensor(sid);
+		} catch (RemoteException e) {
+			throw new AgentException("Cannot list sensor", e);
+		}
 	}
 
 }

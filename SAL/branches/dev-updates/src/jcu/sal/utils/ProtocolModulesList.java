@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.dummy.DummyProtocol;
 import jcu.sal.components.protocols.osData.OSDataConstants;
 import jcu.sal.components.protocols.owfs.OWFSProtocol;
@@ -18,6 +19,8 @@ import jcu.sal.config.deviceDetection.HalHelper;
 import org.apache.log4j.Logger;
 
 /**
+ * This class maintains a list of all known {@link AbstractProtocol}s and their device detection
+ * filters.  
  * FIXME: This class needs rework.   
  * @author gilles
  */
@@ -67,6 +70,13 @@ public class ProtocolModulesList {
 		return c;
 	}
 	
+	/**
+	 * This method returns a list of class names representing hardware filters for a given
+	 * hardware detection probe. For instance, all HAL filters register with this object so
+	 * that the {@link HalHelper} can retrieve a list of all its HAL filters. 
+	 * @param fitlerName the name of the hardware detection probe, for instance {@link HalHelper#NAME}.
+	 * @return a list of class names representing filters for the given hardware detection probe.
+	 */
 	public static List<String> getFilter(String fitlerName) {
 		if(e.filterTable.get(fitlerName)!=null)
 			return new LinkedList<String>(e.filterTable.get(fitlerName));

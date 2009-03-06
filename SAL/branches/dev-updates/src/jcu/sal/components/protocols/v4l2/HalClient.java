@@ -18,7 +18,6 @@ import jcu.sal.utils.Slog;
 import org.apache.log4j.Logger;
 
 import au.edu.jcu.haldbus.exceptions.AddRemoveElemException;
-import au.edu.jcu.haldbus.exceptions.InvalidConstructorArgs;
 import au.edu.jcu.haldbus.match.AlwaysMatch;
 import au.edu.jcu.haldbus.match.GenericMatch;
 import au.edu.jcu.haldbus.match.NextMatch;
@@ -29,7 +28,7 @@ public class HalClient extends AbstractHalClient {
 	private static Logger logger = Logger.getLogger(HalClient.class);
 	static {Slog.setupLogger(logger);}
 	
-	public HalClient() throws InvalidConstructorArgs, AddRemoveElemException{
+	public HalClient() throws AddRemoveElemException{
 		
 		addMatch("1-capability", new VectorMatch<String>("info.capabilities", "video4linux"));
 		addMatch("2-category", new GenericMatch<String>("info.category", "video4linux"));
