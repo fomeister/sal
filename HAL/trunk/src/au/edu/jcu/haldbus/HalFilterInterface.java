@@ -70,4 +70,10 @@ public interface HalFilterInterface {
 	 * @return the minimum number of matches required  
 	 */
 	public int getMaxMatches();
+	
+	/**
+	 * This method returns the total number of matches in this filter
+	 * @return the number of matches  
+	 */
+	public int countMatches();
 }

@@ -9,6 +9,11 @@ import au.edu.jcu.haldbus.exceptions.MatchNotFoundException;
 public class VectorMatch<T> extends AbstractMatch {
 	private T propValue;
 	
+	public VectorMatch(String prop, T val, boolean negate) throws InvalidConstructorArgs{
+		super(prop, "VectorMatch<"+val.getClass().getName()+">", negate);
+		propValue = val;
+	}
+	
 	public VectorMatch(String prop, T val) throws InvalidConstructorArgs{
 		super(prop, "VectorMatch<"+val.getClass().getName()+">");
 		propValue = val;
