@@ -150,7 +150,7 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 	
 	
 	/**
-	 * This method matches each of the HAL match objects against the HAl property list given in argument
+	 * This method matches each of the HAL match objects against the HAl property list given in argument.
 	 * @param map the property list against which each of the HAL match object must be tested.
 	 */
 	private void checkProperties(Map<String,Variant<Object>> map, boolean initial){
@@ -161,30 +161,38 @@ public class HalDeviceDetectionHelper implements Runnable, DBusSigHandler<Manage
 		HalFilterInterface c;
 		HalMatchInterface m;
 		String s, matchName;
+		int maxUnmatch, countUnmatch;
 		
 		synchronized(clients) {
 			iter = clients.iterator();
-			while(iter.hasNext()){
+			while(iter.hasNext()){	
 				//for each HAL client, get the match list
 				c = iter.next();
+				maxUnmatch = c.countMatches() - c.getMinMatches();
+				countUnmatch = 0;
+				//System.out.println("Checking client "+c.getName() + c.initialMatch() + c.subsequentMatch());
 				if( (initial && c.initialMatch()) || (!initial && c.subsequentMatch()) ) {  
 					matchList = c.getMatchList(); 
 					iter2 = matchList.keySet().iterator();
-						while(iter2.hasNext()){
-							//for each HALMatch object, check if there is a match
-							matchName = iter2.next();
-							m = matchList.get(matchName);
-							try {
-								s = match(map, m);
-								matches.put(matchName,s);
-							} catch (MatchNotFoundException e) {}//System.out.println("No Match for "+matchName+ " - "+m.getName());}
+					while(iter2.hasNext()){
+						//for each HALMatch object, check if there is a match
+						matchName = iter2.next();
+						m = matchList.get(matchName);
+						try {
+							s = match(map, m);
+							//System.out.println("Match for "+matchName+ " - "+m.getName() + " : "+s	);
+							matches.put(matchName,s);
+						} catch (MatchNotFoundException e) {
+							//System.out.println("No Match for "+matchName+ " - "+m.getName());
+							if(++countUnmatch>maxUnmatch) break;
 						}
-						
-						//if we have enough matches, call doAction()
-						//System.out.println("We had "+matches.size()+" matches - expected min: "+c.getMinMatches()+" - max: "+c.getMaxMatches());
-						if(c.getMinMatches()<=matches.size() && matches.size()<=c.getMaxMatches())
-							c.doAction(matches);
-					
+					}
+
+					//if we have enough matches, call doAction()
+					//System.out.println("We had "+matches.size()+" matches - expected min: "+c.getMinMatches()+" - max: "+c.getMaxMatches());
+					if(c.getMinMatches()<=matches.size() && matches.size()<=c.getMaxMatches())
+						c.doAction(matches);
+
 					//move on to next client
 					matches.clear();
 				}

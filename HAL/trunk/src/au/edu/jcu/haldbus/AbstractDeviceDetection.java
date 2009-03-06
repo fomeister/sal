@@ -1,7 +1,7 @@
 package au.edu.jcu.haldbus;
 
-import java.util.Hashtable;
 import java.util.Map;
+import java.util.TreeMap;
 
 import au.edu.jcu.haldbus.exceptions.AddRemoveElemException;
 import au.edu.jcu.haldbus.match.HalMatchInterface;
@@ -19,26 +19,31 @@ public abstract class AbstractDeviceDetection implements HalFilterInterface {
 	private int whenFlags;
 	public static int INITIAL_RUN_FLAG = 1;
 	public static int SUBSEQUENT_RUN_FLAG = 2;
-	public static int ALWAYS_RUN_FLAG = (INITIAL_RUN_FLAG & SUBSEQUENT_RUN_FLAG);
+	public static int ALWAYS_RUN_FLAG = (INITIAL_RUN_FLAG | SUBSEQUENT_RUN_FLAG);
 	
 
 	/**
-	 * This method creates the AbstractClient, initialises the map and set the execution flags
+	 * This method creates the AbstractDeviceDetection, initialises the map and set the execution flags
 	 */
 	protected AbstractDeviceDetection(int when){
-		list = new Hashtable<String,HalMatchInterface>();
-		whenFlags = when; 
+		list = new TreeMap<String,HalMatchInterface>();
+		whenFlags = when;
 	}
 	
 	/**
-	 * This method creates the AbstractClient and initialises the map
+	 * This method creates the AbstractDeviceDetection and initialises the map. The execution flag is set to ALWAYS
+	 * (both in the initial and subsequent runs)
 	 */
 	protected AbstractDeviceDetection(){
 		this(ALWAYS_RUN_FLAG); 
 	}
 	
 	/**
-	 * This method adds a new HalMatch object to the map.
+	 * This method adds a new HalMatch object to the map. The ordering of HalMatch objects is important. Matches most likely
+	 * to fail should be first, while those unlikely to fail should be last. Infulencing the ordering of an HalMatch object
+	 * is done by adjusting the name associated with this HalMatch object. A naming convention such as the following should
+	 * be applied: Start each name with a two-digit number, then a dash, followed by any name. That way changing the number
+	 * will change the rank of a HalMatch object. 
 	 * @param name the name associated with the HalMatch
 	 * @param m the HalMatch object
 	 * @throws AddRemoveElemException if the given name is already associated with a match 
@@ -76,12 +81,17 @@ public abstract class AbstractDeviceDetection implements HalFilterInterface {
 	}
 	
 	@Override
-	public boolean initialMatch(){
+	public final int countMatches() {
+		return list.size();
+	}
+	
+	@Override
+	public final boolean initialMatch(){
 		return (whenFlags & INITIAL_RUN_FLAG)!=0;
 	}
 	
 	@Override
-	public boolean subsequentMatch(){
+	public final boolean subsequentMatch(){
 		return (whenFlags & SUBSEQUENT_RUN_FLAG)!=0;
 	}
 }

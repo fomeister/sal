@@ -9,9 +9,22 @@ public class IntMatch extends AbstractMatch {
 	private int valMin;
 	private int valMax;
 	
+	public IntMatch(String prop, int val, boolean negate) throws InvalidConstructorArgs{
+		super(prop, NAME, negate);
+		valMax = valMin = val;	
+	}
+	
 	public IntMatch(String prop, int val) throws InvalidConstructorArgs{
 		super(prop, NAME);
 		valMax = valMin = val;	
+	}
+	
+	public IntMatch(String prop, int min, int max, boolean negate) throws InvalidConstructorArgs{
+		super(prop, NAME, negate);
+		if(max<min)
+			throw new InvalidConstructorArgs();
+		valMax = max; 
+		valMin = min;		
 	}
 	
 	public IntMatch(String prop, int min, int max) throws InvalidConstructorArgs{
