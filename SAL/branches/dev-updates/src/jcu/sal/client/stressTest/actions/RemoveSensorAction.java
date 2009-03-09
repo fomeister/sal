@@ -3,7 +3,7 @@ package jcu.sal.client.stressTest.actions;
 import java.rmi.RemoteException;
 import java.util.Random;
 
-import jcu.sal.common.agents.RMISALAgent;
+import jcu.sal.agent.RMISALAgent;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.utils.Slog;

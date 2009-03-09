@@ -1,4 +1,4 @@
-package jcu.sal.common.agents;
+package jcu.sal.agent;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

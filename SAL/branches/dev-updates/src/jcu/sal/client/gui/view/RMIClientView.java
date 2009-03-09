@@ -38,7 +38,6 @@ public class RMIClientView extends AbstractClientView implements RMIEventHandler
 	
 	private String RMI_CLIENT_NAME = "Client View RMI Handler";
 	private String name;
-	private String agentIP = "127.0.0.1";
 	private RMIClientController rmiController;
 	private Hashtable<String, VideoViewer> viewers;
 
@@ -50,17 +49,15 @@ public class RMIClientView extends AbstractClientView implements RMIEventHandler
 		viewers = new Hashtable<String, VideoViewer>();
 	}
 	
-	public void connect() throws NotFoundException, RemoteException, ConfigurationException{		
+	public void connect(String agentIP, String ourIP) throws NotFoundException, RemoteException, ConfigurationException{		
 		/*
 		 * RMI stuff		
 		 */
-		rmiController.connect(name, agentIP, "127.0.0.1");
+		rmiController.connect(name, agentIP, ourIP);
 		rmiController.bind(RMI_CLIENT_NAME, this);
 		rmiController.registerEventHandler(RMI_CLIENT_NAME, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 		rmiController.registerEventHandler(RMI_CLIENT_NAME, Constants.SENSOR_MANAGER_PRODUCER_ID);
 		rmiController.registerEventHandler(RMI_CLIENT_NAME, Constants.SENSOR_STATE_PRODUCER_ID);
-		
-		initGUI();
 	}
 	
 	@Override
@@ -107,7 +104,7 @@ public class RMIClientView extends AbstractClientView implements RMIEventHandler
 	
 	@Override
 	public void sendCommand(Hashtable<String, String> values,
-			final CMLDescription cml, final String sid) {
+			final CMLDescription cml, final Context c) {
 
 		final RMICommandFactory cf = new RMICommandFactory(cml);
 		
@@ -125,7 +122,7 @@ public class RMIClientView extends AbstractClientView implements RMIEventHandler
 			SMLDescription sml = tree.getSelectedLabel().getSMLDescription();
 			List<String> names = cml.getArgNames();
 			cf.addArgumentCallback(names.get(cml.getArgTypes().indexOf(ArgumentType.CallbackArgument)), name, RMI_CLIENT_NAME);
-			viewers.put(sid, new JPEGViewer(sml.getProtocolName()+" - "+sml.getID()));
+			viewers.put(c.getSMLDescription().getID(), new JPEGViewer(sml.getProtocolName()+" - "+sml.getID()));
 		}
 		//Must be sent in a separate thread. Otherwise, race condition occur
 		//with v4l sensors which stream video handled by the AWT event dispatcher thread
@@ -134,7 +131,7 @@ public class RMIClientView extends AbstractClientView implements RMIEventHandler
 			public void run(){
 				Response r;
 				try {
-					r = rmiController.execute(cf.getCommand(), sid);
+					r = rmiController.execute(cf.getCommand(), c.getSMLDescription().getID());
 					if(cml.getReturnType().equals(ReturnType.ByteArray)){
 						new JPEGViewer(tree.getSelectedLabel().toString()).setImage(r.getBytes());
 					} else if (r.getLength()>0)
@@ -205,22 +202,13 @@ public class RMIClientView extends AbstractClientView implements RMIEventHandler
 		
 	}
 
-	public static void main(String[] args) throws InterruptedException, ConfigurationException, RemoteException, NotFoundException {
+	public static void main(final String[] args) throws InterruptedException, ConfigurationException, RemoteException, NotFoundException {
 		
 		RMIClientController c = new RMIClientControllerImpl();
 		final RMIClientView cl = new RMIClientView(c, args[0]);
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run(){
-				try {
-					cl.connect();
-				} catch (NotFoundException e) {
-					e.printStackTrace();			
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				} catch (ConfigurationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				cl.initGUI();
 			}
 		});
 

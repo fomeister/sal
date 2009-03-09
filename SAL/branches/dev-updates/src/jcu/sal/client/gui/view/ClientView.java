@@ -20,16 +20,16 @@ public interface ClientView {
 	 * @param values the values for each argument of the command, except {@link CMLConstants#ARG_TYPE_CALLBACK} 
 	 * callback arguments.
 	 * @param cml the {@link CMLDescription} of the command to be sent
-	 * @param sid the sensor ID where the command should be sent
+	 * @param c the context of the selected sensor
 	 */
-	public void sendCommand(Hashtable<String,String> values, CMLDescription cml, String sid);
+	public void sendCommand(Hashtable<String,String> values, CMLDescription cml, Context c);
 	
 	/**
 	 * This method is called by {@link SensorTree} when a component (sensor, protocol, agent)
 	 * to notify the view that it should update other parts.
-	 * @param label the {@link SensorTreeLabel} of the selected object
+	 * @param label the {@link Context} of the selected object
 	 */
-	public void componentSelected(SensorTreeLabel label);
+	public void componentSelected(Context label);
 	
 	/**
 	 * This method adds an entry to the log area

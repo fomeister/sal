@@ -8,13 +8,13 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jcu.sal.agent.RMISALAgent;
 import jcu.sal.client.stressTest.actions.Action;
 import jcu.sal.client.stressTest.actions.AddProtocolAction;
 import jcu.sal.client.stressTest.actions.AddSensorAction;
 import jcu.sal.client.stressTest.actions.ExecuteSensorAction;
 import jcu.sal.client.stressTest.actions.RemoveProtocolAction;
 import jcu.sal.client.stressTest.actions.RemoveSensorAction;
-import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;

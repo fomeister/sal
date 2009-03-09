@@ -30,7 +30,7 @@ public class CommandDataPane implements ActionListener{
 	private JLabel title;
 	private Hashtable<String, JTextField> argValues;
 	private CMLDescription cml;
-	private String sid;
+	private Context current;
 	
 	public CommandDataPane(ClientView v){
 		view = v;
@@ -64,7 +64,7 @@ public class CommandDataPane implements ActionListener{
 	 * @param s the sensor ID where the command belongs
 	 * If <code>null</code> the panel is simply cleared.
 	 */
-	public void displayCommandData(CMLDescription c, String s){
+	public void displayCommandData(CMLDescription c, Context ctx){
 		dataPane.removeAll();
 		dataPane.repaint();
 
@@ -82,7 +82,7 @@ public class CommandDataPane implements ActionListener{
 			mainPane.repaint();
 		}
 		cml = c;
-		sid = s;
+		current = ctx;
 	}
 	
 
@@ -95,7 +95,7 @@ public class CommandDataPane implements ActionListener{
 				values.put(name, argValues.get(name).getText());
 						
 			//send table to view
-			view.sendCommand(values, cml, sid);
+			view.sendCommand(values, cml, current);
 			
 		}
 	}

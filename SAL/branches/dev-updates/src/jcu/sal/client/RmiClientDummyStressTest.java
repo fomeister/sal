@@ -9,11 +9,11 @@ import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.agent.RMISALAgent;
 import jcu.sal.common.Parameters;
 import jcu.sal.common.RMICommandFactory;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.RMICommandFactory.RMICommand;
-import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLConstants;

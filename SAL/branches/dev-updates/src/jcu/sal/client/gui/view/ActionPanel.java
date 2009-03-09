@@ -9,8 +9,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import jcu.sal.common.sml.SMLDescription;
-
 public class ActionPanel{
 	
 	public static String SENSOR_CONTROL_PANE_TITLE = "Sensor control";
@@ -63,13 +61,12 @@ public class ActionPanel{
 	
 	/**
 	 * This method triggers the display of information (commands, ...)
-	 * related to a sensor given its {@link SMLDescription} object.
-	 * @param sml the {@link SMLDescription} for the sensor whose
-	 * information is to be displayed
+	 * related to a sensor given its {@link Context} object.
+	 * @param the context of the sensor element. If <code>null</code> the panel data is reset.
 	 */
-	public void displaySensor(SMLDescription sml){
+	public void displaySensor(Context c){
 		switchToSensorPane();
-		sensorPane.displaySensor(sml);
+		sensorPane.displaySensor(c);
 	}
 	
 	/**

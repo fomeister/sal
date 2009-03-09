@@ -4,9 +4,9 @@ import java.rmi.RemoteException;
 import java.util.Random;
 import java.util.Vector;
 
+import jcu.sal.agent.RMISALAgent;
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
-import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfigurations;

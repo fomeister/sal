@@ -1,5 +1,6 @@
 package jcu.sal.common.agents;
 
+import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.events.EventHandler;
@@ -9,21 +10,6 @@ import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
 
 public interface SALAgent{
-	/**
-	 * This method initialises the SAL agent. It parses the platform & sensor configuration files
-	 * and creates the required components as per configuration files. 
-	 * @param pc the platform config file
-	 * @param sc the sensor config file
-	 * @throws ConfigurationException if the files can not be written to, parsed, or the configuration is incorrect
-	 */
-	public void start(String pc, String sc) throws ConfigurationException;
-	
-	/**
-	 * This method stops the SAL agent. It must be called if a previous call to <code>start()</code> was successful.
-	 *
-	 */
-	public void stop();
-	
 	/*
 	 * Sensor-related methods
 	 */
@@ -138,13 +124,13 @@ public interface SALAgent{
 	/*
 	 * Event-related methods 
 	 */
-	
 	/**
 	 * This method registers an event handler. Whenever the producer <code>producerID</code> generates an event, the method
-	 * <code>handle</code> will be called on the EventHandler <code>ev</code> with a matching Event object as the sole argument.
-	 * A Producers ID is a protocol name. Three special producers also exist: <code>SensorManager.PRODUCER_ID</code> which generates
-	 * <code>SensorNodeEvent</code> events when sensors are created and deleted, <code>ProtocolManager.PRODUCER_ID</code> which
-	 * generates <code>ProtocolListEvent</code> events when protocols are created and deleted, <code>SensorState.PRODUCER_ID</code>
+	 * {@link EventHandler#handle(jcu.sal.common.events.Event)} will be called on the given EventHandler <code>eh</code>.
+	 * A Producers ID is usually a protocol name. However, three special producers also exist:
+	 *  {@link Constants#SENSOR_MANAGER_PRODUCER_ID} which generates
+	 * <code>SensorNodeEvent</code> events when sensors are created and deleted, {@link Constants#SENSOR_MANAGER_PRODUCER_ID} which
+	 * generates <code>ProtocolListEvent</code> events when protocols are created and deleted, {@link Constants#SENSOR_MANAGER_PRODUCER_ID}
 	 * which generates <code>SensorStateEvent</code> events when a sensor is connected or disconnected.  
 	 * @param eh an instance of a class implementing the EventHandler interface which will receive events.
 	 * @param producerID the identifier of a protocol or the special identifiers "SensorManager", "ProtocolManager" or "SensorState"
