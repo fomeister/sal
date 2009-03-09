@@ -34,7 +34,7 @@ public class CommandListPane implements ListSelectionListener{
 	private DefaultListModel listModel;
 	private JList list;
 	private CommandDataPane cmdPane;
-	private String sid;
+	private Context current;
 	
 	public CommandListPane(ClientView v, CommandDataPane d){
 		super();
@@ -74,38 +74,49 @@ public class CommandListPane implements ListSelectionListener{
 	/**
 	 * This method updates the list of commands with the 
 	 * list of commands for the given sensor. 
-	 * @param s the sensor ID whose command list is to be 
+	 * @param c the {@link Context} object of the sensor whose command list is to be 
 	 * displayed. If <code>null</code> the command list is simply cleared.
 	 */
-	public void displayCommand(String s){
+	public void displayCommand(Context c){
 		CMLDescriptions cmls = null;
 		List<CommandListLabel> l = new Vector<CommandListLabel>();
 		listModel.clear();
 		cmdPane.displayCommandData(null, null);
-		if(s!=null) {
-			try {
-				cmls = new CMLDescriptions(controller.getCML(s));
-			} catch (SALDocumentException e) {
-				view.addLog("Error in the CML document for sensor '"+s+"'");
-				e.printStackTrace();
-				return;
-			} catch (NotFoundException e) {
-				view.addLog("No sensor with ID '"+s+"'");
-				e.printStackTrace();
-				return;
-			} 
+		if(c!=null) {
+			
+			//check if the Context has CML descriptions
+			if(c.getCMLDescriptions()==null){
+				//no it doesnt so retrieve them...
+				try {
+					cmls = new CMLDescriptions(controller.getCML(c.getSMLDescription().getID()));
+				} catch (SALDocumentException e) {
+					view.addLog("Error in the CML document for sensor '"+c.getSMLDescription().getID()+"'");
+					e.printStackTrace();
+					return;
+				} catch (NotFoundException e) {
+					view.addLog("No sensor with ID '"+c.getSMLDescription().getID()+"'");
+					e.printStackTrace();
+					return;
+				}
+				//and store them for next time
+				c.setCMLDescriptions(cmls);
+			} else
+				//yes it does, so get them.
+				cmls = c.getCMLDescriptions();
+			
+			
 			for(CMLDescription cml : cmls.getDescriptions())
 				l.add(new CommandListLabel(cml));
 			
 			Collections.sort(l);
-			for(CommandListLabel c: l)
-				listModel.addElement(c);
+			for(CommandListLabel cll: l)
+				listModel.addElement(cll);
 		
 			
 			panel.revalidate();
 			panel.repaint();
 		}
-		sid = s;
+		current = c;
 	}
 	
 	/**
@@ -117,7 +128,7 @@ public class CommandListPane implements ListSelectionListener{
 	public void valueChanged(ListSelectionEvent e) {
 		if(!e.getValueIsAdjusting())
 			if(list.getSelectedValue()!=null)
-				cmdPane.displayCommandData(((CommandListLabel) list.getSelectedValue()).getCML(), sid);
+				cmdPane.displayCommandData(((CommandListLabel) list.getSelectedValue()).getCML(), current);
 	}
 	
 	public static class CommandListLabel implements Comparable<CommandListLabel>{

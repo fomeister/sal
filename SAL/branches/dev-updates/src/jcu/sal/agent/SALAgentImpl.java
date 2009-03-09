@@ -45,9 +45,12 @@ public class SALAgentImpl implements SALAgent{
 
 	}
 	
-	/*
-	 * (non-Javadoc)
-	 * @see jcu.sal.agent.SALAgent#start(java.lang.String, java.lang.String)
+	/**
+	 * This method initialises the SAL agent. It parses the platform & sensor configuration files
+	 * and creates the required components as per configuration files. 
+	 * @param pc the platform config file
+	 * @param sc the sensor config file
+	 * @throws ConfigurationException if the files can not be written to, parsed, or the configuration is incorrect
 	 */
 	public void start(String pc, String sc) throws ConfigurationException {
 		pm.init(sc, pc);
@@ -60,9 +63,9 @@ public class SALAgentImpl implements SALAgent{
 	}
 	
 	
-	/*
-	 * (non-Javadoc)
-	 * @see jcu.sal.agent.SALAgent#stop()
+	/**
+	 * This method stops the SAL agent. It must be called if a previous call to <code>start()</code> was successful.
+	 *
 	 */
 	public void stop(){
 		hp.stopAll();

@@ -45,8 +45,6 @@ public abstract class AbstractClientView implements ClientView{
 		upDown.setTopComponent(leftRight);
 		upDown.setBottomComponent(scroll);		
 		
-		tree.updateTree();
-		
 		frame.getContentPane().add(upDown);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.addWindowListener(new WindowAdapter() {
@@ -73,16 +71,18 @@ public abstract class AbstractClientView implements ClientView{
 	/**
 	 * This method is called by {@link SensorTree} when a component (sensor, protocol, agent)
 	 * has been selected
-	 * @param label the {@link SensorTreeLabel} of the selected object
+	 * @param c the {@link Context} of the selected object
 	 */
 	@Override
-	public void componentSelected(SensorTreeLabel label){
-		if(label.getType()==SensorTreeLabel.STRING_TYPE)
-			addLog("Root Node '"+label.toString()+"' selected");
-		else if(label.getType()==SensorTreeLabel.PROTOCOL_TYPE)
-			addLog("Protocol '"+label.toString()+"' selected");
-		else if(label.getType()==SensorTreeLabel.SML_TYPE)
-			actionPane.displaySensor(label.getSMLDescription());
+	public void componentSelected(Context c){
+		if(c.getType()==Context.ROOT_NODE)
+			addLog("Root Node '"+c.toString()+"' selected");
+		else if(c.getType()==Context.AGENT_TYPE)
+			addLog("Agent Node '"+c.toString()+"' selected");
+		else if(c.getType()==Context.PROTOCOL_TYPE)
+			addLog("Protocol '"+c.toString()+"' selected");
+		else if(c.getType()==Context.SENSOR_TYPE)
+			actionPane.displaySensor(c);
 		else
 			addLog("Unknown element type");
 		

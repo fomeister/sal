@@ -16,11 +16,11 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+import jcu.sal.agent.RMISALAgent;
 import jcu.sal.common.Constants;
 import jcu.sal.common.RMICommandFactory;
 import jcu.sal.common.Response;
 import jcu.sal.common.RMICommandFactory.RMICommand;
-import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;

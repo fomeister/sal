@@ -46,7 +46,7 @@ public class SensorTree implements TreeSelectionListener{
 		view = v;
 		controller = v.getController();
 		mainPane = new JPanel(new GridLayout(1,0));
-		rootNode = new DefaultMutableTreeNode(new SensorTreeLabel("SAL Client"));
+		rootNode = new DefaultMutableTreeNode(new Context("SAL Client", null));
         treeModel = new DefaultTreeModel(rootNode);
 		tree = new JTree(treeModel);
 		protocols = new Hashtable<String,ProtocolConfiguration>();
@@ -73,7 +73,7 @@ public class SensorTree implements TreeSelectionListener{
 	public void updateTree(){
 		SMLDescriptions smls = null;
 		ProtocolConfigurations pcml = null;
-		MutableTreeNode parent;
+		DefaultMutableTreeNode parent;
 		
 		try {
 			smls = new SMLDescriptions(controller.listSensors());
@@ -165,26 +165,14 @@ public class SensorTree implements TreeSelectionListener{
 	}
 	
 	/**
-	 * This method returns the {@link SensorTreeLabel} of the currently selected element.
-	 * @return the {@link SensorTreeLabel} of the currently selected element.
+	 * This method returns the {@link Context} of the currently selected element.
+	 * @return the {@link Context} of the currently selected element.
 	 */
-	public SensorTreeLabel getSelectedLabel(){
+	public Context getSelectedLabel(){
 		if(tree.getLastSelectedPathComponent()==null)
 			return null;
 		else
-			return (SensorTreeLabel) ((DefaultMutableTreeNode) tree.getLastSelectedPathComponent()).getUserObject();
-	}
-	
-	public SMLDescription getSMLDescription(String sid){
-		synchronized(rootNode){
-			return smlDescriptions.get(sid);
-		}
-	}
-	
-	public ProtocolConfiguration getProtocolConfiguration(String pid){
-		synchronized(rootNode){
-			return protocols.get(pid);
-		}
+			return (Context) ((DefaultMutableTreeNode) tree.getLastSelectedPathComponent()).getUserObject();
 	}
 	
 	/**
@@ -197,7 +185,7 @@ public class SensorTree implements TreeSelectionListener{
 		if(node==null)
 			return;
 		
-		view.componentSelected((SensorTreeLabel) node.getUserObject());		
+		view.componentSelected((Context) node.getUserObject());		
 	}
 
 	static class MyRenderer extends DefaultTreeCellRenderer {
@@ -224,7 +212,7 @@ public class SensorTree implements TreeSelectionListener{
                             expanded, leaf, row,
                             hasFocus);
             DefaultMutableTreeNode n = (DefaultMutableTreeNode) value;
-            SensorTreeLabel l = (SensorTreeLabel) n.getUserObject();
+            Context l = (Context) n.getUserObject();
             if(l.isEnabled()) {
                 setToolTipText("Enabled");
                 setFont(enabledFont);
@@ -258,7 +246,7 @@ public class SensorTree implements TreeSelectionListener{
 		Enumeration<DefaultMutableTreeNode> e = rootNode.children();
 		while(e.hasMoreElements()){
 			n = e.nextElement();
-			p = ((SensorTreeLabel) n.getUserObject()).getProtocolConfiguration();
+			p = ((Context) n.getUserObject()).getProtocolConfiguration();
 			if(p.getID().equals(pid)){
 				return n;
 			}
@@ -284,7 +272,7 @@ public class SensorTree implements TreeSelectionListener{
 			sensors = pn.children();
 			while(sensors.hasMoreElements()){
 				sn = sensors.nextElement();
-				s = ((SensorTreeLabel) sn.getUserObject()).getSMLDescription();
+				s = ((Context) sn.getUserObject()).getSMLDescription();
 				if(s.getID().equals(sid))
 					return sn;				
 			}
@@ -299,8 +287,8 @@ public class SensorTree implements TreeSelectionListener{
 	 * @param parent the parent node
 	 * @return the newly added node
 	 */
-	private MutableTreeNode addNode(Object o, final MutableTreeNode parent){
-		final DefaultMutableTreeNode n = new DefaultMutableTreeNode(new SensorTreeLabel(o));
+	private DefaultMutableTreeNode addNode(Object o, final DefaultMutableTreeNode parent){
+		final DefaultMutableTreeNode n = new DefaultMutableTreeNode(new Context(o, (Context) parent.getUserObject()));
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run(){
 				treeModel.insertNodeInto(n, parent, parent.getChildCount());				
@@ -330,7 +318,7 @@ public class SensorTree implements TreeSelectionListener{
 	 * @param n the sensor node
 	 */
 	private void toggleSensor(final DefaultMutableTreeNode n){
-		SensorTreeLabel stl = (SensorTreeLabel) n.getUserObject();
+		Context stl = (Context) n.getUserObject();
 		stl.toggleState();
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run(){

@@ -7,15 +7,13 @@ import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import jcu.sal.common.sml.SMLDescription;
-
 public class SensorControlPane{
 
 	private static final long serialVersionUID = -3678056141437194190L;
 	private ClientView view;
 	private CommandListPane cmdPane;
 	private CommandDataPane cmdDataPane;
-	private SMLDescription current;
+	private Context current;
 	private JPanel pane;
 	
 	public SensorControlPane(ClientView v){
@@ -55,16 +53,15 @@ public class SensorControlPane{
 	/**
 	 * This method updates this panel with the information relative
 	 * to the given sensor
-	 * @param sml the {@link SMLDescription} object of the sensor
-	 * whose information is to be displayed.
+	 * @param c the {@link Context} object of the sensor
+	 * whose information is to be displayed. If <code>null</code> the panel data is reset.
 	 */
-	public void displaySensor(SMLDescription sml){
-		if(sml!=current){
-			if(sml==null) 
-				cmdPane.displayCommand(null);
-			else
-				cmdPane.displayCommand(sml.getID());
-			current = sml;
+	public void displaySensor(Context c){
+		if(c==null) 
+			cmdPane.displayCommand(null);
+		else if(c!=current){
+			current = c;
+			cmdPane.displayCommand(current);
 		}
 	}
 

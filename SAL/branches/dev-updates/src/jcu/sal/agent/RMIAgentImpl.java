@@ -14,7 +14,6 @@ import java.util.Map;
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Response;
 import jcu.sal.common.RMICommandFactory.RMICommand;
-import jcu.sal.common.agents.RMISALAgent;
 import jcu.sal.common.cml.RMIStreamCallback;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.Event;
