@@ -3,7 +3,32 @@ package au.edu.jcu.haldbus.match;
 import au.edu.jcu.haldbus.exceptions.InvalidMethodCall;
 import au.edu.jcu.haldbus.exceptions.MatchNotFoundException;
 
-
+/**
+ * Classes implementing this interface encapsulate information on criteria applied to an HAL object and decide whether
+ * this HAL object is a match or not. Properties in HAL objects are
+ * checked and required ones are passed to an <code>HalMatchInterface</code>, which decide whether there is a match or not.
+ * The use case is somewhat recursive and is detailed below:
+ * <ul>
+ * <li>{@link #matchThisObject()} returns <code>true</code>: this {@link HalMatchInterface} should be matched against 
+ * the current HAL object . In this case, {@link #getPropName()} returns the name of the property in the current 
+ * HAL object whose value should be passed to {@link #match(Object)}. If there is a match, 
+ * {@link #match(Object)} returns <code>true</code>, or <code>false</code> otherwise.</li>
+ * 
+ * <li>{@link #matchThisObject()} returns <code>false</code>: this {@link HalMatchInterface} is simply a pointer to another HAL object, 
+ * called the next HAL object, which should be checked. Two scenariis are possible: 
+ *   <ul>
+ *   <li>{@link #matchNextObjectValue()} returns <code>true</code>:  the UDI of the next HAL object is immediately available,
+ *   and can be obtained by calling {@link #getNextObjectValue()}. This method returns the UDI of the next HAL object against which
+ *   the {@link HalMatchInterface} returned by {@link #getNextMatch()} must be matched (start over form the beginning).</li>
+ *   <li>{@link #matchNextObjectLink()} returns <code>true</code>: the UDI of the next HAL object can be found in the value of
+ *   a property in the current HAL object. The name of property containing the next HAL object's UDI is returned by {@link #getNextObjectLink()}.
+ *   The UDI must be retrieved from this property in the current HAL object. The next HAL object must be matched against the {@link HalMatchInterface}
+ *   returned by {@link #getNextMatch()} (start over from the beginning).</li>
+ *   </ul>
+ * </ul>    
+ * @author gilles
+ *
+ */
 public interface HalMatchInterface {
 	/**
 	 * This method returns the name associated with this match
@@ -33,7 +58,7 @@ public interface HalMatchInterface {
 	
 	/**
 	 * This method returns true when this match applies to a property found in another HAL
-	 * object. This object's name  is stored in a property in the current HAL object. The name of this
+	 * object. This object's name (UDI) is stored in a property in the current HAL object. The name of this
 	 * property is retrieved by calling <code>getNextObjectLink()</code>. When the properties of the other
 	 * HAL objects are retrieved, they must be matched against the HalMatchInterface instance returned
 	 * by <code>getNextMatch()</code>.If this method returns false, <code>getNextObjectLink()</code> 
@@ -44,7 +69,7 @@ public interface HalMatchInterface {
 	
 	/**
 	 * This method returns true when this match applies to a property found in another HAL
-	 * object. This object's name  is retrieved by calling <code>getNextObjectValue()</code>. When the
+	 * object. This object's name is retrieved by calling <code>getNextObjectValue()</code>. When the
 	 * properties of the other HAL objects are retrieved, they must be matched against the 
 	 * HalMatchInterface instance returned by <code>getNextMatch()</code>.If this method returns
 	 * false, <code>getNextObjectValue()</code> will return an exception.

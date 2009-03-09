@@ -4,17 +4,16 @@ package au.edu.jcu.haldbus;
 import java.util.Map;
 
 import au.edu.jcu.haldbus.exceptions.AddRemoveElemException;
-import au.edu.jcu.haldbus.exceptions.InvalidConstructorArgs;
 import au.edu.jcu.haldbus.match.AlwaysMatch;
-import au.edu.jcu.haldbus.match.NextMatch;
 import au.edu.jcu.haldbus.match.GenericMatch;
+import au.edu.jcu.haldbus.match.NextMatch;
 import au.edu.jcu.haldbus.match.VectorMatch;
 
 
 public class V4LHalClient extends AbstractDeviceDetection {
 	
 	
-	public V4LHalClient() throws InvalidConstructorArgs, AddRemoveElemException{
+	public V4LHalClient() throws AddRemoveElemException{
 		//super(INITIAL_RUN_FLAG);
 		addMatch("1-capability", new VectorMatch<String>("info.capabilities", "video4linux"));
 		addMatch("2-category", new GenericMatch<String>("info.category", "video4linux"));

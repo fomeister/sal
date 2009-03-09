@@ -47,16 +47,16 @@ public interface HalFilterInterface {
 	public Map<String, HalMatchInterface> getMatchList();
 	
 	/**
-	 * When a new device is added, this method is executed if there is at least <code>getMinMatches()</code>
-	 * and at most <code>getMaxMatches()</code> correct matches.
-	 * @param l a map of matched strings identified by the HALMatchInterface's name
+	 * When a new device is added, this method is executed if there is at least {@link #getMinMatches()}
+	 * and at most {@link #getMaxMatches()}correct matches.
+	 * @param l a map of matched strings identified by the {@link HalMatchInterface}'s name
 	 */
 	public void deviceAdded(Map<String,String> l);
 	
 	/**
-	 * When an existing device is removed, this method is executed iff <code>deviceAdded()</code> was executed for that
+	 * When an existing device is removed, this method is executed iff {@link #deviceAdded(Map)} was executed for that
 	 * same device.
-	 * @param l a map of matched strings identified by the HALMatchInterface's name
+	 * @param l a map of matched strings identified by the {@link HalMatchInterface}'s name
 	 */
 	public void deviceRemoved(Map<String,String> l);
 	
