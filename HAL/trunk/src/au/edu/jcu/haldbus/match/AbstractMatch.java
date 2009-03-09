@@ -1,12 +1,12 @@
 package au.edu.jcu.haldbus.match;
 
-import au.edu.jcu.haldbus.exceptions.InvalidConstructorArgs;
+import au.edu.jcu.haldbus.exceptions.InvalidArgumentsException;
 import au.edu.jcu.haldbus.exceptions.InvalidMethodCall;
 import au.edu.jcu.haldbus.exceptions.MatchNotFoundException;
 
 /**
- * This class impements the barebones structure of a Hal Match object. It mostly handles contrstuction of the object
- * and makes sure the right attributes are initialised. It then declares somme get() methods. Subclasses need only
+ * This class impements the barebones structure of a Hal Match object. It mostly handles construction of the object
+ * and makes sure the right attributes are initialised. It then declares some get() methods. Subclasses need only
  * implement a proper constructor and a matchObject() method.<br>HAL match object have some form of recursivity: they can
  * hold a reference to another HAL match object (referred to as the <b>"next HAL match object"</b>). Two scenarios can happen:<ul>
  * <li>The simplest one: an HAL match object is to be matched against a property found in the current HAL object. In this
@@ -47,9 +47,9 @@ public abstract class AbstractMatch implements HalMatchInterface {
 	private HalMatchInterface nextMatch;
 	private boolean negate;
 
-	private AbstractMatch(String obj, String pName, HalMatchInterface n, String name, boolean negate) throws InvalidConstructorArgs {
+	private AbstractMatch(String obj, String pName, HalMatchInterface n, String name, boolean negate) throws InvalidArgumentsException {
 		if(name==null)
-			throw new InvalidConstructorArgs();
+			throw new InvalidArgumentsException("the property name cannot be null");
 		this.name = name;
 		if (obj != null && n != null) {
 			// check that the object name is valid
@@ -58,16 +58,16 @@ public abstract class AbstractMatch implements HalMatchInterface {
 				object = obj;
 				propName = null;
 				nextMatch = n;
-			} else {
-				throw new InvalidConstructorArgs();
-			}
+			} else 
+				throw new InvalidArgumentsException("The next HAL object name or link is invalid");
+
 		} else if (pName != null) {
 			object = THIS_OBJECT;
 			propName = pName;
 			nextMatch = null;
-		} else {
-			throw new InvalidConstructorArgs();
-		}
+		} else 
+			throw new InvalidArgumentsException("Either the property name or the next HAL object name and match must be valid");
+
 		this.negate = negate;
 	}
 	
@@ -76,7 +76,7 @@ public abstract class AbstractMatch implements HalMatchInterface {
 	 * This HAL object is referred to either by its name or by a link pointing to its name:
 	 * <ul><li>In the former case, the <code>obj</code> argument contains the name (UDI) of the next HAL object to be
 	 * checked.</li>
-	 * <li>In the latter case, the link is simply the name of a property found preceeded by a '@' sign in the
+	 * <li>In the latter case, the link is simply the name of a property found preceded by a '@' sign in the
 	 * current HAL object that contains the name of the next HAL object object to be checked.</li></ul>
 	 * In both cases, when the next HAL object's properties have been retrieved, they will be matched against the
 	 * given <code>HalMatchInterface n</code> instance.  
@@ -84,14 +84,20 @@ public abstract class AbstractMatch implements HalMatchInterface {
 	 * of a property found in the current HAL object which contains the name of the next HAL object).
 	 * @param n the HalMatchInterface object against which the next HAL object will be matched 
 	 * @param name the name of this Hal match
-	 * @param negate whether or not to negate the match (if the match is succesful, throw MatchNotFound exception and vice-versa)
-	 * @throws InvalidConstructorArgs if either of the arguments have invalid values
+	 * @param negate whether or not to negate the match (if the match is successful, throw MatchNotFound exception and vice-versa)
+	 * @throws InvalidArgumentsException if either of the arguments have invalid values
 	 */
-	protected AbstractMatch(String obj, HalMatchInterface n, String name, boolean negate) throws InvalidConstructorArgs {
+	protected AbstractMatch(String obj, HalMatchInterface n, String name, boolean negate) {
 		this(obj, null, n, name, negate);
 	}
 	
-	protected AbstractMatch(String obj, HalMatchInterface n, String name) throws InvalidConstructorArgs {
+	/**
+	 * @see {@link AbstractMatch#AbstractMatch(String, HalMatchInterface, String, boolean)}
+	 * @param obj
+	 * @param n
+	 * @param name
+	 */
+	protected AbstractMatch(String obj, HalMatchInterface n, String name) {
 		this(obj, null, n, name, false);
 	}
 
@@ -100,14 +106,19 @@ public abstract class AbstractMatch implements HalMatchInterface {
 	 * is referred to by its name (<code>prop</code> argument). 
 	 * @param prop the name of the property to be checked 
 	 * @param name the name of the HAL match object
-	 * @param negate whether or not to negate the match (if the match is succesful, throw MatchNotFound exception and vice-versa)
-	 * @throws InvalidConstructorArgs if either of the arguments have invalid values
+	 * @param negate whether or not to negate the match (if the match is successful, throw MatchNotFound exception and vice-versa)
+	 * @throws InvalidArgumentsException if either of the arguments have invalid values
 	 */
-	protected AbstractMatch(String prop, String name, boolean negate) throws InvalidConstructorArgs {
+	protected AbstractMatch(String prop, String name, boolean negate) {
 		this(null, prop, null, name, negate);
 	}
 	
-	protected AbstractMatch(String prop, String name) throws InvalidConstructorArgs {
+	/**
+	 * @see {@link AbstractMatch#AbstractMatch(String, String, boolean)}
+	 * @param prop
+	 * @param name
+	 */
+	protected AbstractMatch(String prop, String name)  {
 		this(null, prop, null, name, false);
 	}
 
