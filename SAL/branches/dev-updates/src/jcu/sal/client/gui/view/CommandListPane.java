@@ -88,7 +88,7 @@ public class CommandListPane implements ListSelectionListener{
 			if(c.getCMLDescriptions()==null){
 				//no it doesnt so retrieve them...
 				try {
-					cmls = new CMLDescriptions(controller.getCML(c.getSMLDescription().getID()));
+					cmls = new CMLDescriptions(controller.getCML(c.getAgent(), c.getSMLDescription().getID()));
 				} catch (SALDocumentException e) {
 					view.addLog("Error in the CML document for sensor '"+c.getSMLDescription().getID()+"'");
 					e.printStackTrace();

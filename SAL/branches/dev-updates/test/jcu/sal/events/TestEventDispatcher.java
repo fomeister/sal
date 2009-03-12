@@ -3,7 +3,7 @@ package jcu.sal.events;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.events.Event;
-import jcu.sal.common.events.EventHandler;
+import jcu.sal.events.EventHandler;
 import jcu.sal.common.exceptions.NotFoundException;
 import junit.framework.TestCase;
 

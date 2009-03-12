@@ -1,14 +1,10 @@
 package jcu.sal.client;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
-import java.rmi.AccessException;
 import java.rmi.NotBoundException;
-import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -16,18 +12,20 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
-import jcu.sal.agent.RMISALAgent;
+import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Constants;
-import jcu.sal.common.RMICommandFactory;
 import jcu.sal.common.Response;
-import jcu.sal.common.RMICommandFactory.RMICommand;
+import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.agents.SALAgentFactory;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
-import jcu.sal.common.cml.RMIStreamCallback;
+import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.events.ClientEventHandler;
 import jcu.sal.common.events.Event;
-import jcu.sal.common.events.RMIEventHandler;
+import jcu.sal.common.exceptions.ArgumentNotFoundException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SensorControlException;
@@ -35,7 +33,7 @@ import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.utils.XMLhelper;
 
-public class RmiClient implements RMIEventHandler, RMIStreamCallback{
+public class RmiClient implements ClientEventHandler, StreamCallback{
 	
 	public static class JpgMini {
 		private JLabel l;
@@ -73,18 +71,13 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	}
 	
 	private Map<String, JpgMini> viewers;
-	private RMISALAgent agent;
-	private Registry agentRegistry, ourRegistry;
-	private String RMIname;
+	private SALAgent agent;
 	private BufferedReader b;
 	
-	public RmiClient(String rmiName, String agentRMIRegIP, String ourIP) throws RemoteException {
-		agentRegistry = LocateRegistry.getRegistry(agentRMIRegIP);
-		ourRegistry = LocateRegistry.getRegistry(ourIP);
+	public RmiClient(String rmiName, String agentIP, String ourIP) throws RemoteException {
 		viewers = new Hashtable<String, JpgMini>();
-		RMIname = rmiName;
 		try {
-			agent = (RMISALAgent) agentRegistry.lookup(RMISALAgent.RMI_STUB_NAME);
+			agent = SALAgentFactory.getFactory().createRMIAgent(agentIP, ourIP, rmiName);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RemoteException();
@@ -93,32 +86,12 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	}
 	
 	
-	public void start(String ourRmiIP) throws ConfigurationException{
-		
+	public void start() throws ConfigurationException{
 		try {
-			agent.registerClient(RMIname, ourRmiIP);
-		} catch (RemoteException e) {
-			e.printStackTrace();
-			throw new ConfigurationException();
-		}
-		try {
-			export(RMIname, this);
-		} catch (AccessException e) {
-			e.printStackTrace();
-			throw new ConfigurationException();
-		} catch (RemoteException e) {
-			e.printStackTrace();
-			throw new ConfigurationException();
-		}
-		
-		try {
-			agent.registerEventHandler(RMIname, RMIname, Constants.SENSOR_MANAGER_PRODUCER_ID);
-			agent.registerEventHandler(RMIname, RMIname, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
-			agent.registerEventHandler(RMIname, RMIname, Constants.SENSOR_STATE_PRODUCER_ID);
-		} catch (RemoteException e) {
-			e.printStackTrace();
-			throw new ConfigurationException();
-		} catch (NotFoundException e) {
+			agent.registerEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
+			agent.registerEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
+			agent.registerEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
+		}  catch (NotFoundException e) {
 			//cant register for event, we can keep going
 		}
 	}
@@ -142,8 +115,8 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	
 	public void doActionSensor(int sid) throws Exception{
 		String str2;
-		RMICommandFactory cf;
-		RMICommand c = null;
+		CommandFactory cf;
+		Command c = null;
 		Response res;
 		ArgumentType t;
 		CMLDescriptions cmls;
@@ -162,7 +135,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		System.out.println("Enter a command id:");
 		j=Integer.parseInt(b.readLine());
 		
-		cf = new RMICommandFactory(cmls.getDescription(j));
+		cf = new CommandFactory(cmls.getDescription(j));
 		boolean argOK=false, argsDone=false;
 		while(!argsDone) {
 			for(String str: cf.listMissingArgNames()){
@@ -173,10 +146,10 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 						System.out.println("Enter value of type '"+t.getArgType()+"' for argument '"+str+"'");
 						str2 = b.readLine();
 						try {cf.addArgumentValue(str, str2); argOK = true;}
-						catch (ConfigurationException e1) {System.out.println("Wrong value"); argOK=false;}
+						catch (ArgumentNotFoundException e1) {System.out.println("Wrong value"); argOK=false;}
 					}
 				} else {
-					cf.addArgumentCallback(str,RMIname, RMIname);
+					cf.addArgumentCallback(str, this);
 					viewers.put(String.valueOf(sid), new JpgMini(String.valueOf(sid)));	
 				}
 			}
@@ -256,22 +229,14 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 	
 	public void stop() throws RemoteException{
 		try {
-			agent.unregisterEventHandler(RMIname, RMIname, Constants.SENSOR_MANAGER_PRODUCER_ID);
-			agent.unregisterEventHandler(RMIname, RMIname, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
-			agent.unregisterEventHandler(RMIname, RMIname, Constants.SENSOR_STATE_PRODUCER_ID);
+			agent.unregisterEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
+			agent.unregisterEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
+			agent.unregisterEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
 		} catch (NotFoundException e) {
 			//cant unregister our event handler, keep going
 		}
-		
-		try {
-			agent.unregisterClient(RMIname);
-		} catch (ConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		agent = null;
-		System.gc();
-		
+	
+		SALAgentFactory.getFactory().releaseRMIAgent(agent);	
 	}
 	
 	
@@ -284,7 +249,7 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 		
 		RmiClient c = new RmiClient(args[0], args[2], args[1]);
 		try {
-			c.start(args[1]);
+			c.start();
 			c.run();
 		} catch (ConfigurationException e) {
 			// TODO Auto-generated catch block
@@ -294,10 +259,6 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 			System.out.println("Main exiting");
 			System.exit(0);
 		}
-	}
-
-	public void handle(Event e) {
-		System.out.println("Received "+e.toString());
 	}
 
 	private int n;
@@ -321,9 +282,10 @@ public class RmiClient implements RMIEventHandler, RMIStreamCallback{
 			viewers.remove(r.getSID());
 		}
 	}
-	
-	public void export(String name, Remote r) throws AccessException, RemoteException{
-		ourRegistry.rebind(name, UnicastRemoteObject.exportObject(r, 0));
+
+	@Override
+	public void handle(Event e, SALAgent a) throws IOException {
+		System.out.println("Received "+e.toString());
 	}
 }
 

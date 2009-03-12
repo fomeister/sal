@@ -1,17 +1,17 @@
-package jcu.sal.agent;
+package jcu.sal.common.agents.rmi;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
-import jcu.sal.common.RMICommandFactory.RMICommand;
+import jcu.sal.common.agents.rmi.RMICommandFactory.RMICommand;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
 
-public interface RMISALAgent extends Remote{
+public interface RMIAgent extends Remote{
 	/**
 	 * This string is the name of the SAL agent stub as found in the RMI registry.
 	 */

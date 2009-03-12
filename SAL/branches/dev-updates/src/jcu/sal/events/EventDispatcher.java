@@ -1,5 +1,6 @@
 package jcu.sal.events;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -11,7 +12,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import jcu.sal.common.events.Event;
-import jcu.sal.common.events.EventHandler;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.utils.Slog;
 
@@ -83,7 +83,7 @@ public class EventDispatcher implements Runnable{
 				synchronized(eventHandlers) {
 					if(!eventHandlers.get(producer).remove(e)) {
 						logger.error("Unregistering event handler "+e+" from producer: "+producer+" failed");
-						throw new NotFoundException("Registered event hanlder not found");
+						throw new NotFoundException("Registered event handler not found");
 					}
 					//else
 						//logger.debug("Unregistered event handler "+e+" from producer: "+producer);
@@ -117,16 +117,20 @@ public class EventDispatcher implements Runnable{
 	}
 	
 	public void sendEvent(Event e) {
-		List<EventHandler> l;
-		Iterator<EventHandler> iterh;
-		EventHandler ev;
+		List<EventHandler> l;	
 		l = eventHandlers.get(e.getProducer());
 		if(l!=null) {
-			iterh = l.iterator();
-			while(iterh.hasNext()) {
-				ev = iterh.next();
+			Iterator<EventHandler> i = l.iterator();
+			EventHandler ev;
+			while(i.hasNext()){
+				ev = i.next();
 				//logger.debug("Dispatching "+e.toString()+" to handler "+ev);
-				ev.handle(e);
+				try {
+					ev.handle(e);
+				} catch (IOException e1) {
+					logger.debug("Error dispatching event to handler - unregistering handler "+ev+" for producer "+e.getProducer());
+					i.remove();
+				}
 			}
 		}
 	}

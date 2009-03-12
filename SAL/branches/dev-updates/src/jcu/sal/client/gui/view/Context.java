@@ -1,5 +1,6 @@
 package jcu.sal.client.gui.view;
 
+import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
@@ -67,15 +68,16 @@ public class Context {
 	
 	/**
 	 * This method builds a Context object.
+	 * If o is of type {@link SALagent}, this context refers to an agent and <code>p</code> must be 
+	 * of type {@link #{ROOT_NODE}, 
 	 * If o is of type {@link String}, this context refers to the root node and <code>p</code> must be <code>null</code>.
 	 * If o is of type {@link ProtocolConfiguration}, this context refers to a protocol and <code>p</code> must be 
 	 * of type {@link #AGENT_TYPE}, 
 	 * If o is of type {@link SMLDescription}, this context refers to a sensor and <code>p</code> must be 
 	 * of type {@link #PROTOCOL_TYPE}, 
-	 * Otherwise, this context refers to a SAL agent and <code>p</code> must be 
-	 * of type {@link #ROOT_NODE}, 
+	 * Otherwise, a {@link SALRunTimeException} is thrown. 
 	 * @param o a {@link ProtocolConfiguration}, {@link SMLDescription}, {@link String}
-	 * or {@link Object} to build the context from.
+	 * or {@link SALagent} to build the context from.
 	 * @param p the parent {@link Context} of this {@link Context}.
 	 * @throws SALRunTimeException if the given parent is not of the right type for this Context.
 	 */
@@ -102,14 +104,15 @@ public class Context {
 			stringVal = new String(((SMLDescription) o).getSensorAddress()+
 					" - "+((SMLDescription) o).getID());
 			parent = p;
-		} else {
+		} else if (o instanceof SALAgent){
 			//agent context
 			if(p.getType()!=ROOT_NODE)
 				throw new SALRunTimeException("Inavlid parent context (not the root node) for agent context");
 			stringVal = (String) o;
 			type = AGENT_TYPE;
 			parent = p;
-		} 
+		} else
+			throw new SALRunTimeException("Inavlid context object");
 		obj = o;
 		isEnabled = true;
 	}
@@ -153,15 +156,15 @@ public class Context {
 	
 	/**
 	 * This method finds and returns the
-	 * {@link Object} associated with this context, or one of its parents.
-	 * @return the {@link Object} associated with this context or one of its parents.
+	 * {@link SALAgent} associated with this context, or one of its parents.
+	 * @return the {@link SALAgent} associated with this context or one of its parents.
 	 * @throws SALRunTimeException if this context does not refer to a sensor or a protocol
 	 */
-	public Object getAgentConfiguration(){
+	public SALAgent getAgent(){
 		if(type > AGENT_TYPE)
-			return parent.getAgentConfiguration();
+			return parent.getAgent();
 		else if (type==AGENT_TYPE)
-			return obj;
+			return (SALAgent) obj;
 
 		throw new SALRunTimeException("This context does not refer to an agent, a protocol or a sensor");		
 	}

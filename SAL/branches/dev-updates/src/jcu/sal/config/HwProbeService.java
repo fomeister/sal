@@ -19,6 +19,38 @@ import org.apache.log4j.Logger;
  *
  */
 public class HwProbeService implements ListChangeListener{
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((helperMap == null) ? 0 : helperMap.hashCode());
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		HwProbeService other = (HwProbeService) obj;
+		if (helperMap == null) {
+			if (other.helperMap != null)
+				return false;
+		} else if (!helperMap.equals(other.helperMap))
+			return false;
+		return true;
+	}
+
 	private static Logger logger = Logger.getLogger(HwProbeService.class);
 	static {Slog.setupLogger(logger);}
 	

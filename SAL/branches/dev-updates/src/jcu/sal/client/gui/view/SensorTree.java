@@ -5,7 +5,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -21,6 +22,7 @@ import javax.swing.tree.MutableTreeNode;
 
 import jcu.sal.client.gui.ClientController;
 import jcu.sal.client.gui.RMIClientController;
+import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
@@ -37,8 +39,9 @@ public class SensorTree implements TreeSelectionListener{
 	private JPanel mainPane;
 	private DefaultTreeModel treeModel;
 	private DefaultMutableTreeNode rootNode;
-	private Hashtable<String,ProtocolConfiguration> protocols;
-	private Hashtable<String,SMLDescription> smlDescriptions;
+	//private Hashtable<String,ProtocolConfiguration> protocols;
+	//private Hashtable<String,SMLDescription> smlDescriptions;
+	private List<SALAgent> agents;
 	
 	
 	public SensorTree(ClientView v){
@@ -49,8 +52,9 @@ public class SensorTree implements TreeSelectionListener{
 		rootNode = new DefaultMutableTreeNode(new Context("SAL Client", null));
         treeModel = new DefaultTreeModel(rootNode);
 		tree = new JTree(treeModel);
-		protocols = new Hashtable<String,ProtocolConfiguration>();
-		smlDescriptions = new Hashtable<String,SMLDescription>();
+		agents = new Vector<SALAgent>();
+		//protocols = new Hashtable<String,ProtocolConfiguration>();
+		//smlDescriptions = new Hashtable<String,SMLDescription>();
 		
 		
 		tree.setShowsRootHandles(true);
@@ -66,61 +70,60 @@ public class SensorTree implements TreeSelectionListener{
 	}
 	
 	/**
-	 * This method clears the tree, calls {@link RMIClientController#listProtocols()} and
-	 * {@link RMIClientController#listSensors()} to re-populate the tree. this method is
-	 * computationally expensive. 
+	 * This method returns a copy of the agents list maintained
+	 * in this tree. 
+	 * @return a copy of the agents list 
 	 */
-	public void updateTree(){
-		SMLDescriptions smls = null;
-		ProtocolConfigurations pcml = null;
-		DefaultMutableTreeNode parent;
-		
-		try {
-			smls = new SMLDescriptions(controller.listSensors());
-			pcml = new ProtocolConfigurations(controller.listProtocols());
-		} catch (SALDocumentException e) {
-			view.addLog("Error retrieving the XML sensor /protocol list\n"+e.getMessage());
-			e.printStackTrace();
-			return;
-		}
-		
-		//Empty tree
-		rootNode.removeAllChildren();
-		
-		//add protocols & sensors
-		for(ProtocolConfiguration p:pcml.getConfigurations()){
-			//add protocol node
-			parent = addNode(p, rootNode);
-			//for all sensor under this protocol ...
-			for(SMLDescription s : smls.getDescriptions(p.getID()))
-				//add them
-				addNode(s,parent);
-		}
+	public List<SALAgent> getAgents(){
+		return new Vector<SALAgent>(agents);
 	}
-
+	
+	
 	/**
-	 * This method must be called when a new protocol must be added to this tree
-	 * @param p the {@link ProtocolConfiguration} of the protocol to be added
+	 * This method must be called to add a new agent to this tree
+	 * @param a the {@link SALAgent} to be added
 	 */
-	public void addProtocol(ProtocolConfiguration p){
+	public void addAgent(SALAgent a){
+		DefaultMutableTreeNode n;
 		synchronized(rootNode){
-			addNode(p, rootNode);
-			protocols.put(p.getID(),p);
+			n = addNode(a, rootNode);
+			updateTree(n,a);
+			agents.add(a);
 		}
 	}
 	
 	/**
-	 * This method must be called when a new protocol must be removed from this tree
+	 * This method must be called to remove an agent from this tree.
+	 * @param a the {@link SALAgent} to be removed.
+	 */
+	public void removeAgent(SALAgent a){
+		synchronized(rootNode){
+			removeNode(findAgentNode(a));
+			agents.remove(a);
+		}
+	}
+
+	/**
+	 * This method must be called when a new protocol must be added to this tree.
+	 * @param a the SAL agent where the protocol should be added.
+	 * @param p the {@link ProtocolConfiguration} of the protocol to be added.
+	 */
+	public void addProtocol(SALAgent a, ProtocolConfiguration p){
+		synchronized(rootNode){
+			addNode(p, findAgentNode(a));
+//			protocols.put(p.getID(),p);
+		}
+	}
+	
+	/**
+	 * This method must be called when a new protocol must be removed from this tree.
+	 * @param a the SAL agent where the protocol should be removed
 	 * @param p the protocol ID of the protocol to be removed
 	 */
-	public void removeProtocol(String pid){
+	public void removeProtocol(SALAgent a, String pid){
 		synchronized(rootNode){
-			DefaultMutableTreeNode n = findProtocolNode(pid);
-			if(n!=null ){
-				removeNode(n);
-				protocols.remove(pid);
-			}else
-				System.out.println("Cant find protocol "+pid);
+			removeNode(findProtocolNode(a, pid));
+//				protocols.remove(pid);
 		}
 	}
 	
@@ -128,14 +131,10 @@ public class SensorTree implements TreeSelectionListener{
 	 * This method must be called when a new sensor must be added to this tree
 	 * @param s the {@link SMLDescription} of the sensor to be added
 	 */
-	public void addSensor(SMLDescription s){
+	public void addSensor(SALAgent a, SMLDescription s){
 		synchronized(rootNode){
-			DefaultMutableTreeNode n = findProtocolNode(s.getProtocolName());
-			if(n!=null ){
-				addNode(s, n);
-				smlDescriptions.put(s.getID(),s);
-			}else
-				System.out.println("Cant find parent protocol "+s.getProtocolName());
+			addNode(s, findProtocolNode(a, s.getProtocolName()));
+//				smlDescriptions.put(s.getID(),s);
 		}
 	}
 	
@@ -143,24 +142,16 @@ public class SensorTree implements TreeSelectionListener{
 	 * This method must be called when a new sensor must be removed from this tree
 	 * @param s the sensor ID of the sensor to be removed
 	 */
-	public void removeSensor(String sid){
+	public void removeSensor(SALAgent a, String sid){
 		synchronized(rootNode){
-			DefaultMutableTreeNode n = findSensorNode(sid);
-			if(n!=null ){
-				removeNode(n);
-				smlDescriptions.remove(sid);
-			}else
-				view.addLog("Cant find sensor node "+sid);
+			removeNode(findSensorNode(a, sid));
+//				smlDescriptions.remove(sid);
 		}
 	}
 	
-	public void toggleSensor(String sid){
+	public void toggleSensor(SALAgent a, String sid){
 		synchronized(rootNode){
-			DefaultMutableTreeNode n = findSensorNode(sid);
-			if(n!=null )
-				toggleSensor(n);
-			else
-				view.addLog("Cant find sensor node "+sid);
+			toggleSensor(findSensorNode(a, sid));
 		}
 	}
 	
@@ -240,10 +231,32 @@ public class SensorTree implements TreeSelectionListener{
 	 * if no protocol matches the given ID.
 	 */
 	@SuppressWarnings("unchecked")
-	private DefaultMutableTreeNode findProtocolNode(String pid){
-		ProtocolConfiguration p;
+	private DefaultMutableTreeNode findAgentNode(SALAgent a){
 		DefaultMutableTreeNode n;
 		Enumeration<DefaultMutableTreeNode> e = rootNode.children();
+		while(e.hasMoreElements()){
+			n = e.nextElement();
+			if(((Context) n.getUserObject()).getAgent().equals(a))
+				return n;
+		}
+		
+		//TODO: add agent id when implemented
+		view.addLog("Cannot find agent node");
+		return null;
+	}
+	
+	/**
+	 * This method returns the node in this tree representing a protocol matching
+	 * the given protocol ID. 
+	 * @param pid the protocol ID of the protocol node to be looked up in this tree.
+	 * @return the node representing the protocol, or <code>null</code>
+	 * if no protocol matches the given ID.
+	 */
+	@SuppressWarnings("unchecked")
+	private DefaultMutableTreeNode findProtocolNode(SALAgent a, String pid){
+		ProtocolConfiguration p;
+		DefaultMutableTreeNode n;
+		Enumeration<DefaultMutableTreeNode> e = findAgentNode(a).children();
 		while(e.hasMoreElements()){
 			n = e.nextElement();
 			p = ((Context) n.getUserObject()).getProtocolConfiguration();
@@ -252,6 +265,7 @@ public class SensorTree implements TreeSelectionListener{
 			}
 		}
 		
+		view.addLog("Cannot find protocol node (pid: '"+pid+"')");
 		return null;
 	}
 	
@@ -263,10 +277,10 @@ public class SensorTree implements TreeSelectionListener{
 	 * if no sensor matches the given ID.
 	 */
 	@SuppressWarnings("unchecked")
-	private DefaultMutableTreeNode findSensorNode(String sid){
+	private DefaultMutableTreeNode findSensorNode(SALAgent a, String sid){
 		DefaultMutableTreeNode pn, sn;
 		SMLDescription s;
-		Enumeration<DefaultMutableTreeNode> sensors, proto = rootNode.children();
+		Enumeration<DefaultMutableTreeNode> sensors, proto = findAgentNode(a).children();
 		while(proto.hasMoreElements()){
 			pn = proto.nextElement();
 			sensors = pn.children();
@@ -277,6 +291,7 @@ public class SensorTree implements TreeSelectionListener{
 					return sn;				
 			}
 		}
+		view.addLog("Cannot find sensor node (sid: '"+sid+"')");
 		return null;
 	}	
 
@@ -326,20 +341,35 @@ public class SensorTree implements TreeSelectionListener{
 			}
 		});
 	}
-//
-//
-//	
-//	public static void main(String[] args) throws InterruptedException, ConfigurationException, RemoteException, NotFoundException {
-//		JFrame f = new JFrame("test");
-//		RMIClientView cl = new RMIClientView(new RMIClientControllerImpl());
-//		cl.getController().connect(args[0], "127.0.0.1", "127.0.0.1");
-//		SensorTree t = new SensorTree(cl);
-//		f.getContentPane().setLayout(new BoxLayout(f.getContentPane(),BoxLayout.PAGE_AXIS));
-//
-//		f.add(t);
-//		f.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-//		f.pack();
-//		f.setVisible(true);
-//		t.updateTree();
-//	}
+	
+	/**
+	 * This method adds a new SAL agent to the tree &
+	 *  calls {@link RMIClientController#listProtocols()} and
+	 * {@link RMIClientController#listSensors()}. The lock on
+	 * {@link #rootNode} must be obtained prior to calling this method.
+	 */
+	private void updateTree(DefaultMutableTreeNode parent, SALAgent a){
+		SMLDescriptions smls = null;
+		ProtocolConfigurations pcml = null;
+		DefaultMutableTreeNode proto;
+		
+		try {
+			smls = new SMLDescriptions(controller.listSensors(a));
+			pcml = new ProtocolConfigurations(controller.listProtocols(a));
+		} catch (SALDocumentException e) {
+			view.addLog("Error retrieving the XML sensor /protocol list\n"+e.getMessage());
+			e.printStackTrace();
+			return;
+		}
+		
+		//add protocols & sensors
+		for(ProtocolConfiguration p:pcml.getConfigurations()){
+			//add protocol node
+			proto = addNode(p, parent);
+			//for all sensor under this protocol ...
+			for(SMLDescription s : smls.getDescriptions(p.getID()))
+				//add them
+				addNode(s,proto);
+		}
+	}
 }

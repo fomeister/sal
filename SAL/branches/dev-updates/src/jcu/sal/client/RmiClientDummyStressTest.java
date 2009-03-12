@@ -9,11 +9,11 @@ import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
-import jcu.sal.agent.RMISALAgent;
 import jcu.sal.common.Parameters;
-import jcu.sal.common.RMICommandFactory;
 import jcu.sal.common.Parameters.Parameter;
-import jcu.sal.common.RMICommandFactory.RMICommand;
+import jcu.sal.common.agents.rmi.RMIAgent;
+import jcu.sal.common.agents.rmi.RMICommandFactory;
+import jcu.sal.common.agents.rmi.RMICommandFactory.RMICommand;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLConstants;
@@ -37,7 +37,7 @@ public class RmiClientDummyStressTest{
 	public static int NB_CLIENTS[] = {1, 10, 25, 50, 100};
 	private String[] sids = new String[NB_SENSORS];
 	private Vector<Thread> threads;
-	private RMISALAgent agent;
+	private RMIAgent agent;
 	private Registry agentRegistry;
 	private long sumAvgExe = 0, sumCounts;
 	
@@ -76,7 +76,7 @@ public class RmiClientDummyStressTest{
 		agentRegistry = LocateRegistry.getRegistry(agentRMIRegIP);
 		threads = new Vector<Thread>();
 		try {
-			agent = (RMISALAgent) agentRegistry.lookup(RMISALAgent.RMI_STUB_NAME);
+			agent = (RMIAgent) agentRegistry.lookup(RMIAgent.RMI_STUB_NAME);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RemoteException();

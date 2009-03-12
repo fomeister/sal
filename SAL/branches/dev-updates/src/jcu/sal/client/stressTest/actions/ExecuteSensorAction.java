@@ -3,9 +3,9 @@ package jcu.sal.client.stressTest.actions;
 import java.rmi.RemoteException;
 import java.util.Random;
 
-import jcu.sal.agent.RMISALAgent;
-import jcu.sal.common.RMICommandFactory;
-import jcu.sal.common.RMICommandFactory.RMICommand;
+import jcu.sal.common.agents.rmi.RMIAgent;
+import jcu.sal.common.agents.rmi.RMICommandFactory;
+import jcu.sal.common.agents.rmi.RMICommandFactory.RMICommand;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.sml.SMLDescriptions;
@@ -21,11 +21,11 @@ public class ExecuteSensorAction implements Action {
 	}
 	public static String name="Dummy_";
 	
-	private RMISALAgent agent;
+	private RMIAgent agent;
 	private Random r;
 	private RMICommand cmd;
 	
-	public ExecuteSensorAction(RMISALAgent a){
+	public ExecuteSensorAction(RMIAgent a){
 		agent = a;
 		r = new Random();
 		cmd = null;
