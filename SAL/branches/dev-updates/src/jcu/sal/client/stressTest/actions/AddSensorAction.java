@@ -4,9 +4,9 @@ import java.rmi.RemoteException;
 import java.util.Random;
 import java.util.Vector;
 
-import jcu.sal.agent.RMISALAgent;
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
+import jcu.sal.common.agents.rmi.RMIAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfigurations;
@@ -26,10 +26,10 @@ public class AddSensorAction implements Action {
 	public static String name="Dummy_";
 	public static int MAX_SENSORS = 100;
 	
-	private RMISALAgent agent;
+	private RMIAgent agent;
 	private Random r;
 	
-	public AddSensorAction(RMISALAgent a){
+	public AddSensorAction(RMIAgent a){
 		agent = a;
 		r = new Random();
 	}

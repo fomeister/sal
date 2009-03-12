@@ -11,20 +11,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Response;
-import jcu.sal.common.RMICommandFactory.RMICommand;
-import jcu.sal.common.cml.RMIStreamCallback;
+import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.agents.rmi.RMIAgent;
+import jcu.sal.common.agents.rmi.RMIEventHandler;
+import jcu.sal.common.agents.rmi.RMIStreamCallback;
+import jcu.sal.common.agents.rmi.RMICommandFactory.RMICommand;
 import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.events.ClientEventHandler;
 import jcu.sal.common.events.Event;
-import jcu.sal.common.events.EventHandler;
-import jcu.sal.common.events.RMIEventHandler;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
+import jcu.sal.utils.Slog;
 
-public class RMIAgentImpl implements RMISALAgent {
+public class RMIAgentImpl implements RMIAgent {
 	private static class SALClient {
 		public static int RMI_REGISTRY_PORT = 1099;
 		private int port;
@@ -52,12 +57,15 @@ public class RMIAgentImpl implements RMISALAgent {
 		}
 	}
 	
-	private SALAgentImpl agent;
+	private static Logger logger = Logger.getLogger(LocalAgentImpl.class);
+	static {Slog.setupLogger(logger);}
+	
+	private LocalAgentImpl agent;
 	private Map<String, SALClient> clients;
 	
 	public RMIAgentImpl(){
 		clients = new Hashtable<String, SALClient>();
-		agent = new SALAgentImpl();
+		agent = new LocalAgentImpl();
 	}
 	
 	public void start(String pc, String sc) throws ConfigurationException{
@@ -68,14 +76,17 @@ public class RMIAgentImpl implements RMISALAgent {
 		agent.stop();
 	}
 
+	@Override
 	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, SALDocumentException {
 		agent.addProtocol(xml, loadSensors);
 	}
 
+	@Override
 	public String addSensor(String xml) throws ConfigurationException, SALDocumentException {
 		return agent.addSensor(xml);
 	}
 
+	@Override
 	public Response execute(RMICommand c, String sid) throws RemoteException, NotFoundException, SensorControlException {
 		Map<String,List<String>> src = c.getRMIStreamCallBack();
 		Map<String, StreamCallback> target = new Hashtable<String, StreamCallback>();
@@ -88,17 +99,20 @@ public class RMIAgentImpl implements RMISALAgent {
 			l = src.get(name);
 			target.put(name, new ProxyStreamCallback((RMIStreamCallback )clients.get(l.get(0)).getRef(l.get(1)), l.get(0), l.get(1) ));
 		}
-		return agent.execute(CommandFactory.getCommand(c, target), sid);
+		return agent.execute(CommandFactory.getCommand(c.getCommand(), target), sid);
 	}
 
+	@Override
 	public String getCML(String sid) throws NotFoundException{
 		return agent.getCML(sid);
 	}
 
+	@Override
 	public String listActiveSensors(){
 		return agent.listActiveSensors();
 	}
 
+	@Override
 	public String listSensors() {
 		return agent.listSensors();
 	}
@@ -107,6 +121,7 @@ public class RMIAgentImpl implements RMISALAgent {
 		return agent.listSensor(sid);
 	}
 
+	@Override
 	public void registerClient(String name, String ipAddress) throws ConfigurationException, RemoteException {
 		SALClient c = new SALClient(ipAddress);
 		synchronized(clients){
@@ -117,6 +132,7 @@ public class RMIAgentImpl implements RMISALAgent {
 		System.out.println("Client '"+name+"' registered");
 	}
 
+	@Override
 	public void unregisterClient(String name) throws ConfigurationException {
 		synchronized(clients){
 			if(!clients.containsKey(name))
@@ -126,8 +142,9 @@ public class RMIAgentImpl implements RMISALAgent {
 		System.out.println("Client '"+name+"' unregistered");
 	}
 
+	@Override
 	public void registerEventHandler(String rmiName, String objName, String producerID) throws RemoteException, NotFoundException {
-		EventHandler eh;
+		ClientEventHandler eh;
 		synchronized (clients) {
 			if(!clients.containsKey(rmiName))
 				throw new NotFoundException("Cant find RMI client named '"+rmiName+"'");
@@ -140,13 +157,14 @@ public class RMIAgentImpl implements RMISALAgent {
 		}
 	}
 	
+	@Override
 	public void unregisterEventHandler(String rmiName, String objName, String producerID) throws NotFoundException, RemoteException {
-		EventHandler eh;
+		ClientEventHandler eh;
 		synchronized (clients) {
 			if(!clients.containsKey(rmiName))
 				throw new NotFoundException("Cant find RMI client named '"+rmiName+"'");
-			
-				eh = new ProxyEventHandler((RMIEventHandler) clients.get(rmiName).getRef(objName), rmiName, objName,producerID);
+
+			eh = new ProxyEventHandler((RMIEventHandler) clients.get(rmiName).getRef(objName), rmiName, objName,producerID);
 			agent.unregisterEventHandler(eh, producerID);
 			
 			/* null any ref to remote objects for GC*/
@@ -154,15 +172,17 @@ public class RMIAgentImpl implements RMISALAgent {
 		}
 	}
 
+	@Override
 	public void removeProtocol(String pid, boolean removeSensors) throws NotFoundException {
 		agent.removeProtocol(pid, removeSensors);
-
 	}
 
+	@Override
 	public void removeSensor(String sid) throws NotFoundException {
 		agent.removeSensor(sid);
 	}
 	
+	@Override
 	public String listProtocols(){
 		return agent.listProtocols();
 	}
@@ -176,7 +196,7 @@ public class RMIAgentImpl implements RMISALAgent {
 		Registry registry = LocateRegistry.getRegistry(args[0]);
 		RMIAgentImpl agent = new RMIAgentImpl();
 		agent.start(args[1], args[2]);
-		RMISALAgent stub = (RMISALAgent) UnicastRemoteObject.exportObject((RMISALAgent) agent, 0);
+		RMIAgent stub = (RMIAgent) UnicastRemoteObject.exportObject((RMIAgent) agent, 0);
 		try {
 			registry.rebind(RMI_STUB_NAME, stub);
 			System.out.println("RMI SAL Agent ready. Press <Enter> to quit");
@@ -189,7 +209,7 @@ public class RMIAgentImpl implements RMISALAgent {
 		System.exit(0);
 	}
 	
-	private static class ProxyEventHandler implements EventHandler{
+	private static class ProxyEventHandler implements ClientEventHandler{
 		private RMIEventHandler r;
 		private String rmiName, objName, producerID;
 		public ProxyEventHandler(RMIEventHandler r, String rmiName, String objName, String producerID){
@@ -200,22 +220,35 @@ public class RMIAgentImpl implements RMISALAgent {
 		}
 
 		@Override
-		public void handle(Event e) {
+		public void handle(Event e, SALAgent s) throws IOException {
 			try {
 				r.handle(e);
 			} catch (Throwable e1) {
 				e1.printStackTrace();
+				throw new IOException("Error dispatching event to handler - "+e1.getMessage());
 			}
 		}
+
+		
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
 		@Override
 		public int hashCode() {
-			final int PRIME = 57;
+			final int prime = 31;
 			int result = 1;
-			result = PRIME * result + ((objName == null) ? 0 : objName.hashCode());
-			result = PRIME * result + ((producerID == null) ? 0 : producerID.hashCode());
-			result = PRIME * result + ((rmiName == null) ? 0 : rmiName.hashCode());
+			result = prime * result
+					+ ((objName == null) ? 0 : objName.hashCode());
+			result = prime * result
+					+ ((producerID == null) ? 0 : producerID.hashCode());
+			result = prime * result
+					+ ((rmiName == null) ? 0 : rmiName.hashCode());
 			return result;
 		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
 		@Override
 		public boolean equals(Object obj) {
 			if (this == obj)
@@ -224,7 +257,7 @@ public class RMIAgentImpl implements RMISALAgent {
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
-			final ProxyEventHandler other = (ProxyEventHandler) obj;
+			ProxyEventHandler other = (ProxyEventHandler) obj;
 			if (objName == null) {
 				if (other.objName != null)
 					return false;
@@ -240,8 +273,9 @@ public class RMIAgentImpl implements RMISALAgent {
 					return false;
 			} else if (!rmiName.equals(other.rmiName))
 				return false;
+
 			return true;
-		}		
+		}
 	}
 	
 	private static class ProxyStreamCallback implements StreamCallback{

@@ -274,7 +274,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			vd.releaseFrameGrabber();
 			throw new SensorIOException("Error while starting capture", e);
 		}
-		st = new StreamingThread(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s, fg);
+		st = new StreamingThread(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s, fg, c.getCID());
 
 		streaming = true;
 		return new byte[0];
@@ -297,7 +297,7 @@ public class V4L2Protocol extends AbstractProtocol {
 		if(streaming)
 			throw new InvalidCommandException("The sensor is already streaming");
 		
-		stf = new StreamingThreadFake(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s);
+		stf = new StreamingThreadFake(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s,c.getCID());
 
 		streaming = true;
 		return new byte[0];
@@ -318,13 +318,15 @@ public class V4L2Protocol extends AbstractProtocol {
 		private FrameGrabber fg;
 		private Thread t;
 		private Sensor s;
+		private int cid;
 		private boolean error=false;
 		private boolean stop = false;
 		
-		public StreamingThread(StreamCallback c, Sensor s, FrameGrabber f){
+		public StreamingThread(StreamCallback c, Sensor s, FrameGrabber f, int cid){
 			cb = c;
 			fg = f;
 			this.s = s;
+			this.cid = cid;
 			t = new Thread(this, "V4L streaming thread");
 			stop = false;
 			t.start();
@@ -353,7 +355,7 @@ public class V4L2Protocol extends AbstractProtocol {
 					bb.position(0);
 					//ts3 = System.currentTimeMillis();
 					//logger.debug("prepFrame: "+(ts3 - ts2)+" ms");
-					cb.collect(new Response(b, sid));
+					cb.collect(new Response(b, cid, sid));
 					//logger.debug("collect: "+(System.currentTimeMillis()- ts3)+" ms");
 					//logger.debug("total: "+(System.currentTimeMillis()- ts)+" ms");
 				} catch (IOException e1) {
@@ -366,7 +368,7 @@ public class V4L2Protocol extends AbstractProtocol {
 					try {
 						//PrintWriter pw = new PrintWriter(new StringWriter());
 						//e.printStackTrace(pw);
-						cb.collect(new Response(sid, new SensorIOException("Error while capturing frame."+e.getMessage())));
+						cb.collect(new Response(sid, cid, new SensorIOException("Error while capturing frame."+e.getMessage())));
 					} catch (IOException e1) {
 						logger.error("Error notifying the client");
 						e1.printStackTrace();
@@ -378,7 +380,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			vd.releaseFrameGrabber();
 			
 			if(!error)
-				try {cb.collect(new Response(sid, new ClosedStreamException()));} catch (IOException e) {}
+				try {cb.collect(new Response(sid, cid, new ClosedStreamException()));} catch (IOException e) {}
 				
 			//logger.debug("Capture thread stopped");
 			streaming = false;
@@ -389,14 +391,16 @@ public class V4L2Protocol extends AbstractProtocol {
 		private StreamCallback cb;
 		private Thread t;
 		private Sensor s;
+		private int cid;
 		private boolean error=false;
 		private byte[] b;
 		private int FAKE_ARRAY_SIZE=100000;
 		
 		
-		public StreamingThreadFake(StreamCallback c, Sensor s){
+		public StreamingThreadFake(StreamCallback c, Sensor s, int cid){
 			cb = c;
 			this.s = s;
+			this.cid = cid;
 			t = new Thread(this, "V4L streaming thread fake");
 			t.start();
 		}
@@ -418,20 +422,20 @@ public class V4L2Protocol extends AbstractProtocol {
 					b = new byte[FAKE_ARRAY_SIZE];
 					for(int i=0; i<FAKE_ARRAY_SIZE; i++)
 						b[i]=(byte) (i%100);
-					cb.collect(new Response(b, sid));
+					cb.collect(new Response(b, cid, sid));
 					//logger.debug("collect: "+(System.currentTimeMillis()- before2)+" ms");
 					//logger.debug("total: "+(System.currentTimeMillis()- before)+" ms");
 				} catch (IOException e1) {
 					logger.error("Callback error");
 					error=true;
 				}  catch (Exception e) {
-					try {cb.collect(new Response(sid, new SensorIOException("Error while capturing frame", e)));} catch (IOException e1) {}
+					try {cb.collect(new Response(sid, cid, new SensorIOException("Error while capturing frame", e)));} catch (IOException e1) {}
 					e.printStackTrace();
 					error=true;
 				}
 			}
 			if(!error)
-				try {cb.collect(new Response(sid, new ClosedStreamException()));} catch (IOException e) {}
+				try {cb.collect(new Response(sid, cid, new ClosedStreamException()));} catch (IOException e) {}
 			logger.debug("Capture thread fake stopped");
 		}		
 	}

@@ -238,7 +238,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 * @throws NotFoundException if the given sensor id doesnt match any existing sensor
 	 */
 	public Response execute(Command c, SensorID sid) throws SensorControlException, NotFoundException {
-		return new Response(getProtocol(sid).execute(c, sid), sid.getName());
+		return new Response(getProtocol(sid).execute(c, sid), c.getCID(), sid.getName());
 	}
 	
 	/**

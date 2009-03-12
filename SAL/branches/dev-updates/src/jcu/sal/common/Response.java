@@ -8,7 +8,7 @@ import jcu.sal.common.exceptions.SensorControlException;
  * Objects of this class encapsulate the result of the execution of a command on a sensor.
  * The result can be retrieved using one of the <code>get*</code> methods. If a response object is part of
  * a data stream, usually obtained from a callback method, the <code>get*</code> methods may raise a
- * <code>SensorControlException</code>, thrown by the agent to indicate an error of some sort (stream terminated,
+ * {@link SensorControlException}, thrown by the agent to indicate an error of some sort (stream terminated,
  * error getting reading, ...). The <code>getCause()</code> method invoked on the exception will show the
  * source of the error.
  * @author gilles
@@ -18,12 +18,14 @@ public class Response implements Serializable {
 	private static final long serialVersionUID = -4090794353146528167L;
 	private byte[] b;
 	private String sid;
+	private int cid;
 	private SensorControlException exception;
 	private long timeStamp;
 	
-	public Response(byte[] bb, String sid) {
+	public Response(byte[] bb, int cid, String sid) {
 		timeStamp = System.currentTimeMillis();
 		this.sid = sid;
+		this.cid = cid;
 		exception = null;
 		if(bb==null)
 			b= new byte[0];
@@ -32,23 +34,32 @@ public class Response implements Serializable {
 	}
 	
 	/**
-	 * This constructor builds a response object with either the errror or the end flag set. It is only intended to be used
+	 * This constructor builds a response object with either the error or the end flag set. It is only intended to be used
 	 * by streaming threads returning a response via a callback method 
 	 * @param sid the sensor id
+	 * @param cid the command id of the command which generated this reponse
 	 * @param e whether there was an error or not (normal end of stream)
 	 */
-	public Response(String sid, SensorControlException e){
-		this(null,sid);
+	public Response(String sid, int cid, SensorControlException e){
+		this(null,cid, sid);
 		b=null;
 		exception = e;
 	}
 	
 	/**
-	 * This method returns the sensor identifier of the sensor which generated the response
-	 * @return the sensor identifier of the sensor which generated the response
+	 * This method returns the sensor identifier of the sensor which generated this response
+	 * @return the sensor identifier of the sensor which generated this response
 	 */
 	public String getSID() {
 		return sid;
+	}
+	
+	/**
+	 * This method returns the command identifier of the command which generated this response
+	 * @return the sensor identifier of the sensor which generated this response
+	 */
+	public int getCID() {
+		return cid;
 	}
 	
 	/**
@@ -57,7 +68,7 @@ public class Response implements Serializable {
 	 * @throws SensorControlException if there was an error getting the raw data at the sensor
 	 */
 	public byte[] getBytes() throws SensorControlException {
-		if(b==null && exception!=null)
+		if(hasException())
 			throw exception;
 		return b;
 	}
@@ -104,5 +115,13 @@ public class Response implements Serializable {
 	 */
 	public long getTimeStamp(){
 		return timeStamp;
+	}
+	
+	/**
+	 * This method specifies whether an exception is attached to this response
+	 * @return true if an exception is attached to this response.
+	 */
+	public boolean hasException(){
+		return (b==null && exception !=null);
 	}
 }

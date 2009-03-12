@@ -13,15 +13,16 @@ import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
-import jcu.sal.common.agents.AgentFactory;
+import jcu.sal.common.agents.SALAgentFactory;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.events.ClientEventHandler;
 import jcu.sal.common.events.Event;
-import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.exceptions.ArgumentNotFoundException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SensorControlException;
@@ -29,7 +30,7 @@ import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.utils.XMLhelper;
 
-public class SALClient implements EventHandler, StreamCallback{
+public class SALClient implements ClientEventHandler, StreamCallback{
 	private static final long serialVersionUID = -8376295971546676596L;
 	
 	public static class JpgMini {
@@ -77,7 +78,7 @@ public class SALClient implements EventHandler, StreamCallback{
 	}
 	
 	public void start(String pc, String sc) throws ConfigurationException{
-		agent = AgentFactory.getFactory().createLocalAgent(pc, sc);
+		agent = SALAgentFactory.getFactory().createLocalAgent(pc, sc);
 		try {
 			agent.registerEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
@@ -141,7 +142,7 @@ public class SALClient implements EventHandler, StreamCallback{
 						System.out.println("Enter value of type '"+t.getArgType()+"' for argument '"+str+"'");
 						str2 = b.readLine();
 						try {cf.addArgumentValue(str, str2); argOK = true;}
-						catch (ConfigurationException e1) {System.out.println("Wrong value"); argOK=false;}
+						catch (ArgumentNotFoundException e1) {System.out.println("Wrong value"); argOK=false;}
 					}
 				} else {
 					cf.addArgumentCallback(str, this);
@@ -233,7 +234,7 @@ public class SALClient implements EventHandler, StreamCallback{
 		} catch (NotFoundException e) {
 			e.printStackTrace();
 		}
-		AgentFactory.getFactory().releaseLocalAgent(agent);
+		SALAgentFactory.getFactory().releaseLocalAgent(agent);
 		System.out.println("Main exiting");
 	}
 	
@@ -262,7 +263,7 @@ public class SALClient implements EventHandler, StreamCallback{
 		return "SAL user";
 	}
 
-	public void handle(Event e) {
+	public void handle(Event e, SALAgent a) {
 		System.out.println("Received "+e.toString());
 	}
 

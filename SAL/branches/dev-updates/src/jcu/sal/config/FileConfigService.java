@@ -360,11 +360,6 @@ public class FileConfigService{
 	
 	private class WatchPCThread implements Runnable{
 		private Thread t;
-		
-		/**
-		 * Creates a watch thread kicking in every 'i' milliseconds
-		 * @param i the check interval in milliseconds
-		 */
 		public WatchPCThread(){
 			t = new Thread(this, "PCWatcher");
 		}
@@ -402,11 +397,7 @@ public class FileConfigService{
 	
 	private class WatchSCThread implements Runnable{
 		private Thread t;
-		
-		/**
-		 * Creates a watch thread kicking in every 'i' milliseconds
-		 * @param i the check interval in milliseconds
-		 */
+
 		public WatchSCThread(){
 			t = new Thread(this, "SCWatcher");
 		}

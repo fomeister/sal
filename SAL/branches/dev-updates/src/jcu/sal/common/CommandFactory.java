@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import jcu.sal.common.RMICommandFactory.RMICommand;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
@@ -16,6 +15,7 @@ import jcu.sal.common.exceptions.ArgumentNotFoundException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
@@ -98,17 +98,18 @@ public class CommandFactory {
 	 * This method adds a callback argument and overwrites any previous values.
 	 * @param name the name of the argument for which the value is to be added
 	 * @param val the callback
-	 * @throws ConfigurationException if the given callback object is null or the argument
+	 * @throws SALRunTimeException 
+	 * @throws ArgumentNotFoundException if no argument matches the given name, 
+	 * if the given callback object is null or the argument
 	 * <code>name</code> isnt of type callback
-	 * @throws ArgumentNotFoundException if no argument matches the given name
 	 */
-	public void addArgumentCallback(String name, StreamCallback val) throws ConfigurationException{
+	public void addArgumentCallback(String name, StreamCallback val){
 		if(!cml.getArgType(name).equals(ArgumentType.CallbackArgument)) {
 			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'callback'");
-			throw new ConfigurationException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'callback'");
+			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'callback'");
 		}
 		if(val==null)
-			throw new ConfigurationException("Callback object null");
+			throw new ArgumentNotFoundException("Callback object null");
 		if(callback.containsKey(name))
 			logger.debug("A previous value exists for callback "+name+" - will be overwritten");
 		callback.put(name, val);
@@ -119,13 +120,13 @@ public class CommandFactory {
 	 * This method adds the value for a float argument and overwrites any previous values.
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
-	 * @throws ConfigurationException if the argument <code>name</code> isnt of type float
-	 * @throws ArgumentNotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name or
+	 * if the argument <code>name</code> isnt of type float
 	 */
-	public void addArgumentValueFloat(String name, float val) throws ConfigurationException{
+	public void addArgumentValueFloat(String name, float val) {
 		if(!cml.getArgType(name).equals(ArgumentType.FloatArgument)) {
 			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'float'");
-			throw new ConfigurationException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'float'");
+			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'float'");
 		}		
 		addValue(name, String.valueOf(val));
 	}
@@ -134,13 +135,13 @@ public class CommandFactory {
 	 * This method adds the value for an integer argument and overwrites any previous values.
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
-	 * @throws ConfigurationException if the argument <code>name</code> isnt of type int
-	 * @throws ArgumentNotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name or
+	 * if the argument <code>name</code> isnt of type int
 	 */
-	public void addArgumentValueInt(String name, int val) throws ConfigurationException {
+	public void addArgumentValueInt(String name, int val) {
 		if(!cml.getArgType(name).equals(ArgumentType.IntegerArgument)) {
 			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'int'");
-			throw new ConfigurationException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'int'");
+			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'int'");
 		}
 		addValue(name, String.valueOf(val));
 	}
@@ -149,13 +150,13 @@ public class CommandFactory {
 	 * This method adds the value for an string argument and overwrites any previous values.
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
-	 * @throws ConfigurationException if the argument <code>name</code> isnt of type string
-	 * @throws ArgumentNotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name or
+	 * if the argument <code>name</code> isnt of type string
 	 */
-	public void addArgumentValueString(String name, String val) throws ConfigurationException {
+	public void addArgumentValueString(String name, String val) {
 		if(!cml.getArgType(name).equals(ArgumentType.StringArgument)) {
 			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'string'");
-			throw new ConfigurationException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'string'");
+			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+cml.getArgType(name).getArgType()+"' not 'string'");
 		}		
 		addValue(name, val);
 	}
@@ -166,33 +167,33 @@ public class CommandFactory {
 	 * before being added. <b>CallBack types are not accepted, use <code>addArgumentCallback()</code> instead.<b>
 	 * @param val the value
 	 * @param name the name of the argument for which the value is to be added
-	 * @throws ConfigurationException if the value cant be converted, the argument cant be found or is of type callback
-	 * @throws ArgumentNotFoundException if no argument matches the given name
+	 * @throws ArgumentNotFoundException if no argument matches the given name or
+	 * if the value cant be converted, the argument cant be found or is of type callback
 	 */
-	public void addArgumentValue(String name, String val) throws ConfigurationException {
+	public void addArgumentValue(String name, String val){
 		ArgumentType t = cml.getArgType(name);
 		if(t.equals(ArgumentType.FloatArgument)){
 			try {
 				addArgumentValueFloat(name, Float.parseFloat(val));
 			} catch (NumberFormatException nfe){
 				logger.error("Cant convert '"+val+"' to float");
-				throw new ConfigurationException("Cant convert '"+val+"' to float");
+				throw new ArgumentNotFoundException("Cant convert '"+val+"' to float");
 			}
 		} else if(t.equals(ArgumentType.IntegerArgument)){
 			try {
 			addArgumentValueInt(name, Integer.parseInt(val));
 			} catch (NumberFormatException nfe){
 				logger.error("Cant convert '"+val+"' to integer");
-				throw new ConfigurationException("Cant convert '"+val+"' to integer");
+				throw new ArgumentNotFoundException("Cant convert '"+val+"' to integer");
 			}
 		} else if(t.equals(ArgumentType.StringArgument))
 			addArgumentValueString(name, val);
 		else if(t.equals(ArgumentType.CallbackArgument)) {
 			logger.error("Given an argument of type CALLBACK");
-			throw new ConfigurationException("Given an argument of type CALLBACK - use addArgumentCallback() instead");
+			throw new ArgumentNotFoundException("Given an argument of type CALLBACK - use addArgumentCallback() instead");
 		} else {
 			logger.error("Unknown argument type '"+t.getArgType()+"'");
-			throw new ConfigurationException("Unknown argument type '"+t.getArgType()+"'");
+			throw new ArgumentNotFoundException("Unknown argument type '"+t.getArgType()+"'");
 		}
 	}
 	
@@ -281,13 +282,18 @@ public class CommandFactory {
 //		}
 //	}
 	
-	
-	public static Command getCommand(RMICommand c, Map<String,StreamCallback> cb) {
-		return new Command(c.getCommand(), cb);
-	}
-	
 	public int getCID(){
 		return cml.getCID().intValue();
+	}
+	
+	
+	public static Command getCommand(Command c, Map<String,StreamCallback> cb) {
+		return new Command(c, cb);
+	}
+	
+	public static Command stripCallbacks(Command c){
+		c.streamc = null;
+		return c;
 	}
 	
 	public static class Command implements Serializable{
@@ -300,8 +306,6 @@ public class CommandFactory {
 		}
 		private Map<String,String> parameters;
 		private Map<String,StreamCallback> streamc;
-
-		public static final String PARAMETER_TAG = "Param";
 
 		private Command(int cid, Map<String, String> values, Map<String,StreamCallback> c){
 			this.cid = cid;
@@ -320,14 +324,13 @@ public class CommandFactory {
 			
 			return streamc.get(name);
 		}
-
-		public String getConfig(String directive) {
-			String s = parameters.get(directive);
-			if (s==null) {
-				logger.error("Unable to get a config directive with this name "+ directive);
-				throw new ArgumentNotFoundException("No matching argument for name '"+directive+"'");
-			}			
-			return s; 
+		
+		public Map<String,StreamCallback> getStreamCallBack() {
+			return new Hashtable<String,StreamCallback>(streamc);
+		}
+		
+		public Map<String,String> getParameters(){
+			return new Hashtable<String,String>(parameters);
 		}
 		
 		public int getCID(){

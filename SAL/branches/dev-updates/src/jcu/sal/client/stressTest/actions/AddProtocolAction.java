@@ -3,7 +3,7 @@ package jcu.sal.client.stressTest.actions;
 import java.rmi.RemoteException;
 import java.util.Set;
 
-import jcu.sal.agent.RMISALAgent;
+import jcu.sal.common.agents.rmi.RMIAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.EndPointConfiguration;
@@ -25,9 +25,9 @@ public class AddProtocolAction implements Action {
 	
 	private static String type = DummyProtocol.PROTOCOL_TYPE;
 	
-	private RMISALAgent agent;
+	private RMIAgent agent;
 	
-	public AddProtocolAction(RMISALAgent a){
+	public AddProtocolAction(RMIAgent a){
 		agent = a;
 	}
 

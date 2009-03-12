@@ -8,13 +8,13 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jcu.sal.agent.RMISALAgent;
 import jcu.sal.client.stressTest.actions.Action;
 import jcu.sal.client.stressTest.actions.AddProtocolAction;
 import jcu.sal.client.stressTest.actions.AddSensorAction;
 import jcu.sal.client.stressTest.actions.ExecuteSensorAction;
 import jcu.sal.client.stressTest.actions.RemoveProtocolAction;
 import jcu.sal.client.stressTest.actions.RemoveSensorAction;
+import jcu.sal.common.agents.rmi.RMIAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
@@ -48,7 +48,7 @@ public class RmiClientDummyStressTest2{
 	public static int SLEEP = 0;
 	
 	private Vector<Client> clients;
-	private RMISALAgent agent;
+	private RMIAgent agent;
 	private Registry agentRegistry;
 	private AtomicBoolean setupFlag;
 	private ProtocolConfigurations protocolState;
@@ -114,7 +114,7 @@ public class RmiClientDummyStressTest2{
 		clients = new Vector<Client>();
 		setupFlag = new AtomicBoolean(false);
 		try {
-			agent = (RMISALAgent) agentRegistry.lookup(RMISALAgent.RMI_STUB_NAME);
+			agent = (RMIAgent) agentRegistry.lookup(RMIAgent.RMI_STUB_NAME);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RemoteException();

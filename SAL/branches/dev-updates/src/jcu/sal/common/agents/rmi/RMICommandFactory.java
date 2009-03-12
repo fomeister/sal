@@ -1,4 +1,4 @@
-package jcu.sal.common;
+package jcu.sal.common.agents.rmi;
 
 import java.io.Serializable;
 import java.util.Hashtable;
@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import jcu.sal.common.CommandFactory;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
@@ -197,10 +198,14 @@ public class RMICommandFactory {
 		
 		return new RMICommand(factory.getCommand(), callbackNames);
 	}
+	
+	public static RMICommand getCommand(Command c, Map<String, List<String>> cb){
+		return new RMICommand(c, cb);
+	}
 
 	/**
 	 * Objects of this class represent a SAL command when using the RMI version.
-	 * An RMICommandFactory is responsible for instanciating these objects.
+	 * An RMICommandFactory is responsible for instantiating these objects.
 	 * @author gilles
 	 *
 	 */
@@ -210,10 +215,10 @@ public class RMICommandFactory {
 		private Command c;
 
 		private RMICommand(Command c, Map<String,List<String>> RMIcallbacks){
-			this.c = c;
+			this.c = CommandFactory.stripCallbacks(c);
 			callbacks = RMIcallbacks;
 		}
-
+		
 		/**
 		 * This method returns a list of string representing an RMI callback argument.
 		 * The string at position 0 in the list is the rmiName (the name the Client used when calling RMISALAgent.registerClient()). 
@@ -226,20 +231,8 @@ public class RMICommandFactory {
 		}
 
 		
-		public String getConfig(String directive)  {
-			return c.getConfig(directive);
-		}
-		
-		Command getCommand(){
+		public Command getCommand(){
 			return c;
-		}
-		
-		public int getCID(){
-			return c.getCID();
-		}
-
-		public String getValue(String name){
-			return c.getValue(name);
 		}
 	}
 }

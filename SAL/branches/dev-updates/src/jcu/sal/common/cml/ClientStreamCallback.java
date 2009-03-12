@@ -3,17 +3,15 @@ package jcu.sal.common.cml;
 import java.io.IOException;
 
 import jcu.sal.common.Response;
+import jcu.sal.common.agents.SALAgent;
+
 
 /**
- * This interface is implemented by by objects within the SAL agent, and SAL client stubs.
- * It must not be used by any SAL client (other than stubs). Instead, these should use the
- * {@link ClientStreamCallback} interface instead. 
- * Object implementing this interface can be used as callback objects to collect
- * streaming data from a sensor which supports it. 
+ * Object implementing this interface can be used as callback objects to collect streaming data from a sensor which supports it. 
  * @author gilles
  *
  */
-public interface StreamCallback {
+public interface ClientStreamCallback {
 	/**
 	 * This method is called by a Protocol when streaming data from a sensor is available. 
 	 * @param r the streaming data to be collected
@@ -23,5 +21,5 @@ public interface StreamCallback {
 	 * is not available anymore to collect data.</li>
 	 * <li>by the RMI SAL client stub to tell the agent to stop the stream.
 	 */
-	public void collect(Response r) throws IOException;
+	public void collect(Response r, SALAgent a) throws IOException;
 }

@@ -3,10 +3,13 @@
  */
 package jcu.sal.agent;
 
+import java.io.IOException;
+
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
-import jcu.sal.common.events.EventHandler;
+import jcu.sal.common.events.ClientEventHandler;
+import jcu.sal.common.events.Event;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
@@ -18,6 +21,7 @@ import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.config.HwProbeService;
 import jcu.sal.events.EventDispatcher;
+import jcu.sal.events.EventHandler;
 import jcu.sal.managers.ProtocolManager;
 import jcu.sal.managers.SensorManager;
 import jcu.sal.utils.Slog;
@@ -28,15 +32,15 @@ import org.apache.log4j.Logger;
  * @author gilles
  *
  */
-public class SALAgentImpl implements SALAgent{
-	
-	private Logger logger = Logger.getLogger(SALAgentImpl.class);
+public class LocalAgentImpl implements SALAgent{
+	private static Logger logger = Logger.getLogger(LocalAgentImpl.class);
+	static {Slog.setupLogger(logger);}
 	private ProtocolManager pm;
 	private SensorManager sm;
 	private EventDispatcher ev;
 	private HwProbeService hp;
 	
-	public SALAgentImpl(){
+	public LocalAgentImpl(){
 		Slog.setupLogger(logger);
 		ev = EventDispatcher.getInstance();
 		pm = ProtocolManager.getProcotolManager();
@@ -186,11 +190,75 @@ public class SALAgentImpl implements SALAgent{
 	 * Event-related methods
 	 */
 	
-	public void registerEventHandler(EventHandler eh, String producerID) throws NotFoundException {
-		ev.registerEventHandler(eh, producerID);
+	public void registerEventHandler(ClientEventHandler eh, String producerID) throws NotFoundException {
+		ev.registerEventHandler(new EventHandlerAdapter(eh, this), producerID);
 	}
 
-	public void unregisterEventHandler(EventHandler eh, String producerID) throws NotFoundException {
-		ev.unregisterEventHandler(eh, producerID);
+	public void unregisterEventHandler(ClientEventHandler eh, String producerID) throws NotFoundException {
+		ev.unregisterEventHandler(new EventHandlerAdapter(eh, this), producerID);
+	}
+	
+	/**
+	 * This class acts as an adapter around a {@link ClientEventHandler} object, and
+	 * transforms it into an {@link EventHandler} object.
+	 * @author gilles
+	 *
+	 */
+	private static class EventHandlerAdapter implements EventHandler{
+		private ClientEventHandler r;
+		private SALAgent s;
+		
+		/**
+		 * this method builds an {@link EventHandler} object from 
+		 * a {@link ClientEventHandler} object.
+		 * @param r a {@link ClientEventHandler} object
+		 * @param s the {@link SALAgent} from which the event appear to originate
+		 */
+		public EventHandlerAdapter(ClientEventHandler r, SALAgent s){
+			this.r = r;
+			this.s = s;
+		}
+
+		@Override
+		public void handle(Event e) throws IOException {
+			try {
+				r.handle(e, s);
+			} catch (Throwable e1) {
+				logger.error("Error dispatching event to client:\n"+e1.getMessage());
+				throw new IOException("Error dispatching event to client");
+				
+			}
+		}
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((r == null) ? 0 : r.hashCode());
+			return result;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			EventHandlerAdapter other = (EventHandlerAdapter) obj;
+			if (r == null) {
+				if (other.r != null)
+					return false;
+			} else if (!r.equals(other.r))
+				return false;
+			
+			return true;
+		}
 	}
 }
