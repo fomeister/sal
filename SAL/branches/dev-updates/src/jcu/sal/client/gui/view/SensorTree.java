@@ -19,9 +19,10 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreePath;
 
 import jcu.sal.client.gui.ClientController;
-import jcu.sal.client.gui.RMIClientController;
+import jcu.sal.common.Constants;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
@@ -59,10 +60,11 @@ public class SensorTree implements TreeSelectionListener{
 		
 		tree.setShowsRootHandles(true);
 		tree.addTreeSelectionListener(this);
+		tree.setRootVisible(false);
 		ToolTipManager.sharedInstance().registerComponent(tree);
 		tree.setCellRenderer(new MyRenderer());
 		mainPane.add(new JScrollPane(tree));
-		mainPane.setMinimumSize(new Dimension(200,400));
+		mainPane.setMinimumSize(new Dimension(300,500));
 	}
 	
 	public JPanel getPanel(){
@@ -204,14 +206,29 @@ public class SensorTree implements TreeSelectionListener{
                             hasFocus);
             DefaultMutableTreeNode n = (DefaultMutableTreeNode) value;
             Context l = (Context) n.getUserObject();
-            if(l.isEnabled()) {
-                setToolTipText("Enabled");
-                setFont(enabledFont);
-            } else {
-            	setToolTipText("Disabled");
-            	setFont(disabledFont);
+            switch(l.getType()){
+            	case Context.AGENT_TYPE:
+            		if(l.getAgent().getType()==Constants.Local_Agent_type)
+            			setIcon(Context.localAgentIcon);
+            		else
+            			setIcon(Context.remoteAgentIcon);
+            		break;
+            	case Context.PROTOCOL_TYPE:
+            		setIcon(Context.protocolIcon);
+            		break;
+            	case Context.SENSOR_TYPE:
+                    if(l.isEnabled()) {
+                    	setIcon(Context.sensorEnabledIcon);
+                        setToolTipText("Sensor enabled");
+                        setFont(enabledFont);
+                    } else {
+                    	setIcon(Context.sensorDisabledIcon);
+                    	setToolTipText("Sensor disabled");
+                    	setFont(disabledFont);
+                    }
+            		break;            
             }
-            
+
             
             return this;
         }
@@ -306,7 +323,8 @@ public class SensorTree implements TreeSelectionListener{
 		final DefaultMutableTreeNode n = new DefaultMutableTreeNode(new Context(o, (Context) parent.getUserObject()));
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run(){
-				treeModel.insertNodeInto(n, parent, parent.getChildCount());				
+				treeModel.insertNodeInto(n, parent, parent.getChildCount());
+				tree.scrollPathToVisible(new TreePath(n.getPath()));
 			}
 		});
 

@@ -5,10 +5,16 @@ import java.rmi.RemoteException;
 import jcu.sal.agent.LocalAgentImpl;
 import jcu.sal.common.agents.rmi.RMIClientStub;
 import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 
 /**
  * This class of object is responsible for instantiating various types
  * of client stubs connecting to SAL agents in different ways. 
+ * Stubs are created with this factory using one of the <code>create*</code> methods
+ * and <b>must<b> be released when done using either the <code>release</code>
+ * method matching the <code>create</code> method used to instantiate the agent, or
+ * using the generic {@link #releaseAgent(SALAgent)} method which will invoke the right
+ * <code>release</code> method.  
  * @author gilles
  *
  */
@@ -73,4 +79,21 @@ public class SALAgentFactory {
 		agent.release();
 	}
 
+	
+	/**
+	 * This method releases a reference to a SAL agent previously 
+	 * instantiated with any of the <code>create*</code> methods in this factory.
+	 * The type of the given SAL agent is automatically detected, and the 
+	 * correct <code>release*</code> method is invoked.
+	 * @param s the SAL agent to be released
+	 * @throws SALRunTimeException if the given object is not a SAL agent.
+	 */
+	public void releaseAgent(SALAgent s){
+		if(s instanceof RMIClientStub)
+			releaseLocalAgent(s);
+		else if (s instanceof LocalAgentImpl)
+			releaseRMIAgent(s);
+		else
+			throw new SALRunTimeException("The given object is not a SAL agent");
+	}
 }

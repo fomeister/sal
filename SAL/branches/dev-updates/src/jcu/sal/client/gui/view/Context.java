@@ -1,5 +1,7 @@
 package jcu.sal.client.gui.view;
 
+import javax.swing.ImageIcon;
+
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.exceptions.SALRunTimeException;
@@ -30,10 +32,25 @@ import jcu.sal.common.sml.SMLDescription;
  *
  */
 public class Context {
-	public static int ROOT_NODE= 0;
-	public static int AGENT_TYPE = 1;
-	public static int PROTOCOL_TYPE = 2;
-	public static int SENSOR_TYPE = 3;
+	public static final int ROOT_NODE= 0;
+	public static final int AGENT_TYPE = 1;
+	public static final int PROTOCOL_TYPE = 2;
+	public static final int SENSOR_TYPE = 3;
+	
+	public static ImageIcon sensorEnabledIcon;
+	public static ImageIcon sensorDisabledIcon;
+	public static ImageIcon protocolIcon;
+	public static ImageIcon localAgentIcon;
+	public static ImageIcon remoteAgentIcon;
+	
+	static{
+		//load icons
+		sensorEnabledIcon = createImageIcon("icons/Symbols-Tips-15x15.png");
+		sensorDisabledIcon = createImageIcon("icons/Symbols-Error-15x15.png");
+		protocolIcon = createImageIcon("icons/folder-orange-scanners-cameras-26x26.png");
+		localAgentIcon = createImageIcon("icons/Hardware-My-Computer-1-26x26.png");
+		remoteAgentIcon = createImageIcon("icons/Network-Remote-Desktop-26x26.png");
+	}
 	
 	
 	
@@ -108,13 +125,14 @@ public class Context {
 			//agent context
 			if(p.getType()!=ROOT_NODE)
 				throw new SALRunTimeException("Inavlid parent context (not the root node) for agent context");
-			stringVal = (String) o;
+			stringVal = ((SALAgent) o).getID();
 			type = AGENT_TYPE;
 			parent = p;
 		} else
 			throw new SALRunTimeException("Inavlid context object");
 		obj = o;
 		isEnabled = true;
+		//dump();
 	}
 	
 	/**
@@ -134,9 +152,9 @@ public class Context {
 	 */
 	public SMLDescription getSMLDescription(){
 		if(type >= SENSOR_TYPE)
-			throw new SALRunTimeException("This context does not refer to a sensor");
+			return (SMLDescription) obj;
 		
-		return (SMLDescription) obj;
+		throw new SALRunTimeException("This context does not refer to a sensor");
 	}
 
 	/**
@@ -193,6 +211,40 @@ public class Context {
 	public boolean isEnabled(){
 		return isEnabled;
 	}
+
+	public void dump(){
+		dump(0);
+	}
+	public void dump(int rank){
+		if(rank==0){
+			System.out.println("===============\nDump for context "+hashCode());
+		}
+		for(int i = 0; i<rank;i++)
+			System.out.print("\t");
+		System.out.println("Type: "+(type==ROOT_NODE?"Root node":(type==AGENT_TYPE?"Agent node":(type==PROTOCOL_TYPE?"Protocol node":"Sensor node"))) 
+				+"Value: "+stringVal );
+
+		if(type!=ROOT_NODE){
+			parent.dump(rank+1);
+		}
+		
+	}
+	
+	/**
+	 * This method load an icon given its path relative to the
+	 * directory where this class is
+	 * @param path its image file path relative to the directory where this class is
+	 * @return an ImageIcon
+	 * @throws SALRunTimeException if the image cannot be loaded
+	 */
+	public static ImageIcon createImageIcon(String path) {
+	    java.net.URL imgURL = Context.class.getResource(path);
+	    if (imgURL != null)
+	        return new ImageIcon(imgURL);
+	  
+	    throw new SALRunTimeException("Can load image "+path);
+	}
+
 		
 	
 	@Override

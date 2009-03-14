@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
@@ -28,14 +29,14 @@ public class RMIClientStub implements SALAgent{
 //	private static Logger logger = Logger.getLogger(RMIClientStub.class);
 //	static {Slog.setupLogger(logger);}
 	
-	private String rmiName;
+	private String rmiName, agentIP;
 	private RMIAgent agent;
 	private Registry agentRegistry, ourRegistry;
 	private Hashtable<String,RMIEventHandlerProxy> handlers;
 	
 	/**
 	 * This method creates an RMI client stub.
-	 * @param agentIP the ip address of the agent's RMI registry
+	 * @param agentRmiIP the ip address of the agent's RMI registry
 	 * @param ourIP the ip address of this client's RMI registry
 	 * @param RMIname the RMI name this client will use to register with the agent, and the 
 	 * name this client will use to export RMI object in its own registry.
@@ -44,12 +45,13 @@ public class RMIClientStub implements SALAgent{
 	 * @throws ConfigurationException if we cannot register with the SAL agent. Most likely
 	 * the supplied RMI name is probably taken.
 	 */
-	public RMIClientStub(String agentIP, String ourIP, String RMIname) throws RemoteException, ConfigurationException{
-		agentRegistry = LocateRegistry.getRegistry(agentIP);
+	public RMIClientStub(String agentRmiIP, String ourIP, String RMIname) throws RemoteException, ConfigurationException{
+		agentRegistry = LocateRegistry.getRegistry(agentRmiIP);
 		ourRegistry = LocateRegistry.getRegistry(ourIP);
 		rmiName = RMIname;
+		agentIP = agentRmiIP;
 	
-		connect(agentIP, ourIP);
+		connect(agentRmiIP, ourIP);
 		
 		handlers = new Hashtable<String,RMIEventHandlerProxy>();
 	}
@@ -84,6 +86,16 @@ public class RMIClientStub implements SALAgent{
 		
 		agent = null;
 		System.gc();
+	}
+	
+	@Override
+	public String getID(){
+		return Constants.RMI_Agent_ID_Prefix+agentIP;
+	}
+	
+	@Override
+	public String getType() {
+		return Constants.RMI_Agent_type;
 	}
 
 	@Override

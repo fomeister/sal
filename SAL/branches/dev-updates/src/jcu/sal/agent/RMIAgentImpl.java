@@ -29,6 +29,12 @@ import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.utils.Slog;
 
+/**
+ * This class acts as an adapter around a {@link SALAgent} object and transforms
+ * it into an {@link RMIAgent}
+ * @author gilles
+ *
+ */
 public class RMIAgentImpl implements RMIAgent {
 	private static class SALClient {
 		public static int RMI_REGISTRY_PORT = 1099;
@@ -187,26 +193,34 @@ public class RMIAgentImpl implements RMIAgent {
 		return agent.listProtocols();
 	}
 	
-	public static void main (String args[]) throws ConfigurationException, IOException {
+	public static void main (String args[]) throws ConfigurationException, IOException{
 		if(args.length!=3) {
 			System.out.println("We need three arguments:");
 			System.out.println("1: the IP address of our registry - 2: the platform configuration file - 3: the sensor configuration file");
 			System.exit(1);
 		}
-		Registry registry = LocateRegistry.getRegistry(args[0]);
+		Registry registry;
+		try {
+			registry = LocateRegistry.getRegistry(args[0]);
+		} catch (RemoteException e1) {
+			System.out.println("Error finding our registry");
+			throw e1;
+		}
+		
 		RMIAgentImpl agent = new RMIAgentImpl();
 		agent.start(args[1], args[2]);
-		RMIAgent stub = (RMIAgent) UnicastRemoteObject.exportObject((RMIAgent) agent, 0);
 		try {
+			RMIAgent stub = (RMIAgent) UnicastRemoteObject.exportObject((RMIAgent) agent, 0);
 			registry.rebind(RMI_STUB_NAME, stub);
 			System.out.println("RMI SAL Agent ready. Press <Enter> to quit");
 			System.in.read();
 		} catch (RemoteException e) {
 			System.out.println("Error binding agent to the RMI registry");
 			e.printStackTrace();
+		} finally {
+			agent.stop();
+			System.exit(0);
 		}
-		agent.stop();
-		System.exit(0);
 	}
 	
 	private static class ProxyEventHandler implements ClientEventHandler{

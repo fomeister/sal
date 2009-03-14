@@ -5,6 +5,7 @@ package jcu.sal.agent;
 
 import java.io.IOException;
 
+import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
@@ -35,6 +36,7 @@ import org.apache.log4j.Logger;
 public class LocalAgentImpl implements SALAgent{
 	private static Logger logger = Logger.getLogger(LocalAgentImpl.class);
 	static {Slog.setupLogger(logger);}
+	
 	private ProtocolManager pm;
 	private SensorManager sm;
 	private EventDispatcher ev;
@@ -76,6 +78,17 @@ public class LocalAgentImpl implements SALAgent{
 		pm.destroyAllComponents();
 		pm.stop();
 		ev.stop();
+	}
+	
+
+	@Override
+	public String getID() {
+		return Constants.Local_Agent_ID_Prefix + hashCode();
+	}
+	
+	@Override
+	public String getType() {
+		return Constants.Local_Agent_type;
 	}
 	
 	/*

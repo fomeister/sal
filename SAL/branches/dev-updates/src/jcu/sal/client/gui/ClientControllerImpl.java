@@ -12,7 +12,7 @@ import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
 
-public class RMIClientControllerImpl implements RMIClientController {
+public class ClientControllerImpl implements ClientController {
 
 	@Override
 	public void addProtocol(SALAgent a, String xml, boolean loadSensors)
@@ -28,11 +28,15 @@ public class RMIClientControllerImpl implements RMIClientController {
 	}
 
 	@Override
-	public SALAgent connect(String rmiName, String ipAddress, String ourIpAddress)
-			throws ConfigurationException, RemoteException {
+	public SALAgent rmiConnect(String rmiName, String ipAddress, String ourIpAddress) throws ConfigurationException, RemoteException {
 		return SALAgentFactory.getFactory().createRMIAgent(ipAddress, ourIpAddress, rmiName);
 	}
-
+	
+	@Override
+	public void rmiDisonnect(SALAgent a) {
+		SALAgentFactory.getFactory().releaseRMIAgent(a);
+	}
+	
 	@Override
 	public void disconnect(SALAgent a) {
 		SALAgentFactory.getFactory().releaseRMIAgent(a);
@@ -80,9 +84,8 @@ public class RMIClientControllerImpl implements RMIClientController {
 	}
 
 	@Override
-	public void registerEventHandler(SALAgent a,
-			ClientEventHandler ev, String producerID) throws NotFoundException,
-			AgentException {
+	public void registerEventHandler(SALAgent a,ClientEventHandler ev, String producerID) 
+		throws NotFoundException{
 		a.registerEventHandler(ev, producerID);
 		
 	}

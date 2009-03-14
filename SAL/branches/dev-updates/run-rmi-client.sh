@@ -8,7 +8,7 @@ fi
 #
 # Enables RMI loader debug
 #
-#DEBUG=-Dsun.rmi.loader.logLevel=VERBOSE
+#DEBUG="-Dsun.rmi.loader.logLevel=VERBOSE -Djava.rmi.server.logCalls=true"
 
 
 DIR="$(dirname $0)"

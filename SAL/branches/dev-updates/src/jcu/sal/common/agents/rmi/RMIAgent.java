@@ -35,6 +35,7 @@ public interface RMIAgent extends Remote{
 	 */
 	public void unregisterClient(String rmiName) throws ConfigurationException, RemoteException;
 	
+
 	/*
 	 * Sensor-related methods
 	 */
