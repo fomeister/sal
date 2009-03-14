@@ -65,9 +65,6 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 		return s;
 	}
 
-	/* (non-Javadoc)
-	 * @see jcu.sal.managers.ManagerFactory#build(org.w3c.dom.Document)
-	 */
 	@Override
 	protected Sensor build(SMLDescription s, Identifier id) throws ComponentInstantiationException {
 		SensorID i = (SensorID) id;
@@ -108,9 +105,6 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 		return sensor;
 	}
 	
-	/* (non-Javadoc)
-	 * @see jcu.sal.managers.ManagerFactory#getComponentID(org.w3c.dom.Document)
-	 */
 	@Override
 	protected Identifier getComponentID(SMLDescription s){
 		/*
@@ -131,9 +125,7 @@ public class SensorManager extends AbstractManager<Sensor, SMLDescription> {
 		return id;
 	}
 	
-	/* (non-Javadoc)
-	 * @see jcu.sal.managers.ManagerFactory#remove(java.lang.Object)
-	 */
+
 	@Override
 	protected void remove(Sensor component) {
 		try {

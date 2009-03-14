@@ -1,45 +1,66 @@
 package jcu.sal.client.gui.view;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.rmi.RemoteException;
+import java.util.Hashtable;
+import java.util.List;
 
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
-import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 
 import jcu.sal.client.gui.ClientController;
+import jcu.sal.common.CommandFactory;
+import jcu.sal.common.Response;
+import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.cml.ArgumentType;
+import jcu.sal.common.cml.CMLDescription;
+import jcu.sal.common.cml.ReturnType;
+import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.events.ClientEventHandler;
+import jcu.sal.common.events.Event;
+import jcu.sal.common.exceptions.ClosedStreamException;
+import jcu.sal.common.exceptions.ConfigurationException;
+import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SensorControlException;
+import jcu.sal.common.pcml.ProtocolConfigurations;
+import jcu.sal.common.sml.SMLDescription;
+import jcu.sal.events.ProtocolListEvent;
+import jcu.sal.events.SensorNodeEvent;
+import jcu.sal.events.SensorStateEvent;
 
-public abstract class AbstractClientView implements ClientView, ActionListener{
-	
-	private static String ActionAddRMIAgent = "addRMI";
-	private static String ActionRemoveRMIAgent = "removeRMI";
-	private static String ActionQuit = "quit";
-	
+public abstract class AbstractClientView implements StreamCallback, ClientEventHandler, ClientView {
+
 	protected JFrame frame;
 	protected SensorTree tree;
 	protected JTextArea log;
 	protected ActionPanel actionPane;
 	protected ClientController controller;
+	protected Hashtable<String, VideoViewer> viewers;
 	
+	/**
+	 * This method initialises all the attributes
+	 * @param c the {@link ClientController} object
+	 */
 	protected AbstractClientView(ClientController c){
 		controller = c;
 		actionPane = new ActionPanel(this);
 		tree = new SensorTree(this);
-		log = new JTextArea(8,80);
+		log = new JTextArea(10,80);
 		frame = new JFrame("SAL Client");
+		viewers = new Hashtable<String, VideoViewer>();
 	}
-		
-	protected void initGUI(){
+	
+	/**
+	 * This method initialises the GUI objects. It must be called by the AWT event dispatcher thread.
+	 */
+	public void initGUI(){
 		frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(),BoxLayout.PAGE_AXIS));
 
 		actionPane.init();
@@ -75,122 +96,122 @@ public abstract class AbstractClientView implements ClientView, ActionListener{
 		frame.setVisible(true);
 	}
 	
-	protected JMenuBar createMenu(){
-		JMenuBar bar = new JMenuBar();
-		JMenu menu = new JMenu("SAL Client");
-		bar.add(menu);
-		
-		JMenuItem item = new JMenuItem("Add RMI Agent");
-		item.setActionCommand(ActionAddRMIAgent);
-		item.setMnemonic(KeyEvent.VK_A);
-		item.addActionListener(this);
-		menu.add(item);
-		
-		item = new JMenuItem("Disconnect RMI Agent");
-		item.setActionCommand(ActionRemoveRMIAgent);
-		item.setMnemonic(KeyEvent.VK_D);
-		item.addActionListener(this);
-		menu.add(item);
-		
-		menu.addSeparator();
-		
-		item = new JMenuItem("Quit");
-		item.setActionCommand(ActionQuit);
-		item.setMnemonic(KeyEvent.VK_Q);
-		item.addActionListener(this);
-		menu.add(item);		
-		
-		return bar;
-	}
+	/**
+	 * This method is invoked from {@link #initGUI()} to initialise the menu bar.
+	 * It must be implemented by subclasses
+	 * @return a fully initialised JMenuBar
+	 */
+	protected abstract JMenuBar createMenu();
 	
-	public void addRmiAgent(){
-//		Vector<String> v;
-//		try {
-//			v = new Vector<String>();
-//			Enumeration<NetworkInterface> i = NetworkInterface.getNetworkInterfaces();
-//			Enumeration<InetAddress> add;
-//			while(i.hasMoreElements()){
-//				add = i.nextElement().getInetAddresses();
-//				while(add.hasMoreElements())
-//					v.add(add.nextElement().getHostAddress());
-//			}
-//				
-//		} catch (SocketException e1) {
-//			JOptionPane.showMessageDialog(frame,
-//				    "Unable to list the network interfaces.",
-//				    "Network error",
-//				    JOptionPane.ERROR_MESSAGE);
-//			return;
-//		}
-//		String[] ifs = new String[v.size()];		
-//		v.copyInto(ifs);
+	@Override
+	public void sendCommand(Hashtable<String, String> values,
+			final CMLDescription cml, final Context c) {
+
+		final CommandFactory cf = new CommandFactory(cml);
 		
-		String agentIP = (String)JOptionPane.showInputDialog(
-                frame,
-                "Enter the IP address of the RMI SAL agent:\n",
-                "SAL Agent detail",
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                null,
-                "127.0.0.1");
-		if(agentIP==null)
-			return;
+		//put all arg-values in 
+		for(String name: values.keySet())
+			cf.addArgumentValue(name, values.get(name));
 		
-		String ourIP = (String)JOptionPane.showInputDialog(
-                frame,
-                "Enter the IP address of the RMI SAL agent:\n",
-                "SAL Agent detail",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                null,
-                "127.0.0.1");
-		
-		if(ourIP!=null){
-			
+		//check for callbacks
+		if(cml.getArgTypes().contains(ArgumentType.CallbackArgument)){
+			SMLDescription sml = tree.getSelectedLabel().getSMLDescription();
+			List<String> names = cml.getArgNames();
+			cf.addArgumentCallback(names.get(cml.getArgTypes().indexOf(ArgumentType.CallbackArgument)), this);
+			viewers.put(c.getSMLDescription().getID(), new JPEGViewer(sml.getProtocolName()+" - "+sml.getID()));
 		}
-	}
+		//Must be sent in a separate thread. Otherwise, race condition occur
+		//with v4l sensors which stream video handled by the AWT event dispatcher thread
+		//it also makes the GUI more responsive for slow sensor, aka 1-wire
+		new Thread(new Runnable(){
+			public void run(){
+				Response r;
+				try {
+					r = controller.execute(c.getAgent(), cf.getCommand(), c.getSMLDescription().getID());
+					if(cml.getReturnType().equals(ReturnType.ByteArray)){
+						new JPEGViewer(tree.getSelectedLabel().toString()).setImage(r.getBytes());
+					} else if (r.getLength()>0)
+						addLog("Command returned: "+r.getString());
+					
+				} catch (SensorControlException e) {
+					addLog("Error executing command:\n"+e.getMessage()+"("+e.getCause().getMessage()+")");
+				} catch (NotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ConfigurationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}).start();
 	
-	public void actionPerformed(ActionEvent e) {
-		if(ActionAddRMIAgent.equals(e.getActionCommand())){
-			addRmiAgent();
-		} else if(ActionRemoveRMIAgent.equals(e.getActionCommand())){
-			//remove rmi agent
-		} else if(ActionQuit.equals(e.getActionCommand())){
-			//quit
-			frame.dispose();
-		} 
+	}	
+
+	@Override
+	public void collect(Response r) throws RemoteException {
+		try {
+			viewers.get(r.getSID()).setImage(r.getBytes());
+		} catch (SensorControlException e) {
+			addLog("Stream from sensor "+r.getSID()+" terminated");
+			if(!e.getClass().equals(ClosedStreamException.class))
+				addLog("Error: "+e.getMessage());
+			viewers.get(r.getSID()).close();
+			viewers.remove(r.getSID());
+		}		
 	}
 
+	@Override
+	public void handle(Event e, SALAgent a) throws RemoteException {
+		addLog("Received event:\n"+e.toString());
+		if(e instanceof ProtocolListEvent){
+			ProtocolListEvent ple = (ProtocolListEvent) e;
+			if(ple.getType()==ProtocolListEvent.PROTOCOL_ADDED){
+				//add new protocol to tree
+				try {
+					ProtocolConfigurations ps = new ProtocolConfigurations(controller.listProtocols(a));
+					tree.addProtocol(a, ps.getDescription(ple.getSourceID()));
+				} catch (SALDocumentException e1) {
+					e1.printStackTrace();
+				} catch (NotFoundException e2) {
+					e2.printStackTrace();
+				}
+			} else if(ple.getType()==ProtocolListEvent.PROTOCOL_REMOVED)
+				tree.removeProtocol(a,ple.getSourceID());
+			
+		} else if (e instanceof SensorNodeEvent){
+			SensorNodeEvent sne = (SensorNodeEvent) e;
+			if(sne.getType()==SensorNodeEvent.SENSOR_NODE_ADDED){
+				//add new sensor to tree
+				try {
+					SMLDescription sml = new SMLDescription(controller.listSensor(a, sne.getSourceID()));
+					tree.addSensor(a,sml);
+				} catch (SALDocumentException e1) {
+					e1.printStackTrace();
+				} catch (NotFoundException e2) {
+					e2.printStackTrace();
+				}
+			} else if(sne.getType()==SensorNodeEvent.SENSOR_NODE_REMOVED){
+				actionPane.displaySensor(null);
+				tree.removeSensor(a,sne.getSourceID());
+			}
 
+		} else if(e instanceof SensorStateEvent){
+			SensorStateEvent sse = (SensorStateEvent) e;
+			if(sse.getType()==SensorStateEvent.SENSOR_STATE_CONNECTED)
+				tree.toggleSensor(a,sse.getSourceID());
+			else if(sse.getType()==SensorStateEvent.SENSOR_STATE_DISCONNECTED)
+				tree.toggleSensor(a,sse.getSourceID());
+
+		} else {
+			addLog("Inknown event type");
+		}
+		
+	}
 	
 	@Override
 	public final ClientController getController(){
 		return controller;
-	}
-	
-	/**
-	 * This method is called by {@link SensorTree} when a component (sensor, protocol, agent)
-	 * has been selected
-	 * @param c the {@link Context} of the selected object
-	 */
-	@Override
-	public void componentSelected(Context c){
-		if(c.getType()==Context.ROOT_NODE)
-			addLog("Root Node '"+c.toString()+"' selected");
-		else if(c.getType()==Context.AGENT_TYPE)
-			addLog("Agent Node '"+c.toString()+"' selected");
-		else if(c.getType()==Context.PROTOCOL_TYPE)
-			addLog("Protocol '"+c.toString()+"' selected");
-		else if(c.getType()==Context.SENSOR_TYPE)
-			actionPane.displaySensor(c);
-		else
-			addLog("Unknown element type");
-		
-		actionPane.getPanel().revalidate();
-		actionPane.getPanel().repaint();
-		
-	}
-	
+	}	
 	
 	@Override
 	public void addLog(String l){
@@ -203,7 +224,7 @@ public abstract class AbstractClientView implements ClientView, ActionListener{
 		
 	/**
 	 * This method is called after the frame has been disposed, when the application exits.
-	 * Can be overriden be subclasses
+	 * It gives subclasses a chance to do some cleanup before exiting.
 	 */
 	public void release(){}
 

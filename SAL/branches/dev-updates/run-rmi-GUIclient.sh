@@ -1,6 +1,6 @@
 #!/bin/bash
-if [ $# -ne 3 ]; then
-	echo "Usage: $0 RmiClientName ClientRMIRegistryIp AgentRMIRegistryIP"
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 ClientName"
 	exit 1
 fi
 
@@ -12,5 +12,5 @@ fi
 
 
 DIR="$(dirname $0)"
-java -classpath ./lib/*:./classes -Djava.rmi.server.codebase="file:${DIR}/classes/" ${DEBUG} -Djava.rmi.server.hostname=$2 jcu.sal.client.gui.view.RMIClientView $1 $2 $3
+java -classpath ./lib/*:./classes -Djava.rmi.server.codebase="file:${DIR}/classes/" ${DEBUG} -Djava.rmi.server.hostname=$2 jcu.sal.client.gui.view.ClientViewImpl $1
 

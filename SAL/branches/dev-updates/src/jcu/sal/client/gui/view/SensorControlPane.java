@@ -1,11 +1,14 @@
 package jcu.sal.client.gui.view;
 
 import java.awt.Component;
+import java.awt.Dimension;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.SpringLayout;
 
 public class SensorControlPane{
 
@@ -13,21 +16,33 @@ public class SensorControlPane{
 	private ClientView view;
 	private CommandListPane cmdPane;
 	private CommandDataPane cmdDataPane;
-	private Context current;
-	private JPanel pane;
+	private DescriptionPane descriptionPane;
+
+	/**
+	 * containerPane contains cmdPane and cmdDataPane
+	 */
+	private JPanel containerPane;
+	private JPanel mainPane;
 	
 	public SensorControlPane(ClientView v){
 		super();
-		pane = new JPanel();
+		mainPane = new JPanel();
 		view = v;
 		cmdDataPane = new CommandDataPane(view);
 		cmdPane = new CommandListPane(view, cmdDataPane);
+		descriptionPane = new DescriptionPane();
+		containerPane = new JPanel();
+
 
 	}
 	
 	public void init(){
-		pane.setLayout(new BoxLayout(pane, BoxLayout.LINE_AXIS));
+		mainPane.setLayout(new BoxLayout(mainPane, BoxLayout.PAGE_AXIS));
 		
+		descriptionPane.init();		
+		//mainPane.add(descriptionPane.getPanel());
+		
+		containerPane.setLayout(new BoxLayout(containerPane, BoxLayout.LINE_AXIS));
 		cmdPane.init();
 //		cmdPane.getPanel().setBorder(BorderFactory.createCompoundBorder(
 //                BorderFactory.createLineBorder(Color.red),
@@ -39,15 +54,17 @@ public class SensorControlPane{
 //                cmdDataPane.getPanel().getBorder()));
 
 		cmdPane.getPanel().setAlignmentX(Component.RIGHT_ALIGNMENT);
-		pane.add(cmdPane.getPanel());
-		pane.add(Box.createHorizontalStrut(20));
+		containerPane.add(cmdPane.getPanel());
+		containerPane.add(Box.createHorizontalStrut(20));
 		JScrollPane listScroller = new JScrollPane(cmdDataPane.getPanel());
 		//listScroller.setPreferredSize(new Dimension(250, 80));
-		pane.add(listScroller);
+		containerPane.add(listScroller);
+		
+		mainPane.add(containerPane);
 	}
 	
 	public JPanel getPanel(){
-		return pane;
+		return mainPane;
 	}
 	
 	/**
@@ -56,15 +73,49 @@ public class SensorControlPane{
 	 * @param c the {@link Context} object of the sensor
 	 * whose information is to be displayed. If <code>null</code> the panel data is reset.
 	 */
-	public void displaySensor(Context c){
-		if(c==null) 
-			cmdPane.displayCommand(null);
-		else if(c!=current){
-			current = c;
-			cmdPane.displayCommand(current);
-		}
+	public void displaySensor(Context c){			
+		cmdPane.displayCommand(c);
+	}
+	
+	public void setDescription(Context c){
+		//SMLDescription sml = c.getSMLDescription();
+		
 	}
 
+	private class DescriptionPane{
+		private JLabel id, protocolName, protocolType;
+		private JPanel mainPane;
+		
+		public DescriptionPane(){
+			id = new JLabel("Sensor ID:");
+			protocolName = new JLabel("Protocol name:");
+			protocolType = new JLabel("Protocol type:");
+			mainPane = new JPanel();
+		}
+		
+		public void init(){
+			id.setMinimumSize(new Dimension( 150, (int) id.getMinimumSize().getHeight()));
+			protocolName.setMinimumSize(new Dimension( 150, (int) id.getMinimumSize().getHeight()));
+			protocolType.setMinimumSize(new Dimension( 150, (int) id.getMinimumSize().getHeight()));
 
+			
+			mainPane.setLayout(new SpringLayout());
+			mainPane.add(id);
+			mainPane.add(protocolName);
+			mainPane.add(protocolType);
+			mainPane.add(new JLabel());
+			SpringLayoutHelper.makeGrid(mainPane, 2, 2, 10, 10, 5, 5);
+		}
+		
+		public JPanel getPanel(){
+			return mainPane;
+		}
+		
+		public void printSize(){
+			System.out.println("Min: "+id.getMinimumSize().width+"x"+id.getMinimumSize().height);
+			System.out.println("Cur: "+id.getSize().width+"x"+id.getSize().height);
+			System.out.println("Max: "+id.getMaximumSize().width+"x"+id.getMaximumSize().height);
+		}
+	}
 
 }

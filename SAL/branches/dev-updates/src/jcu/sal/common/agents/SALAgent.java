@@ -16,6 +16,20 @@ import jcu.sal.common.sml.SMLDescriptions;
 import jcu.sal.events.EventHandler;
 
 public interface SALAgent{
+	
+	/**
+	 * This method returns the unique ID of this SAL Agent
+	 * @return the unique ID of this SAL Agent
+	 */
+	public String getID();
+	
+	/**
+	 * This method returns a string representation of the type of this agent
+	 * Possible values are: {@link Constants#Local_Agent_type}, {@link Constants#RMI_Agent_type}
+	 * @return the type of this agent
+	 */
+	public String getType();
+	
 	/*
 	 * Sensor-related methods
 	 */

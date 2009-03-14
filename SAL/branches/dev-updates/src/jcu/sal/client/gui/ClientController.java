@@ -1,5 +1,7 @@
 package jcu.sal.client.gui;
 
+import java.rmi.RemoteException;
+
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
@@ -9,10 +11,33 @@ import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
-import jcu.sal.events.EventHandler;
 
 public interface ClientController {
 	
+	
+	/**
+	 * This method creates a client stub connecting to a remote RMI SAL agent and returns a reference to it.
+	 * @param rmiName the unique RMI name used to identify this RMI client
+	 * @param ipAddress the IP address of the SAL agent RMI registry
+	 * @param ourIpAddress the IP address of this client's RMI registry
+	 * @return a reference to a remote RMI SAL agent
+	 * @throws ConfigurationException if the given unique RMI name is already taken
+	 * @throws RemoteException if there is an RMI error while connecting to the agent.
+	 */
+	public SALAgent rmiConnect(String rmiName, String ipAddress, String ourIpAddress) throws ConfigurationException, RemoteException;
+	
+	/**
+	 * This method creates a client stub connecting to a remote RMI SAL agent and returns a reference to it.
+	 * @param a the RMI SAL agent
+	 * @throw {@link ClassCastException} if the given SAL agent is not an RMI agent
+	 */
+	public void rmiDisonnect(SALAgent a);
+
+	/**
+	 * This method releases a SAL agent. 
+	 * @param a a reference to an SAL agent.
+	 */
+	public void disconnect(SALAgent a);
 	
 	
 	/*
@@ -30,7 +55,7 @@ public interface ClientController {
 	 * @throws SALDocumentException if the SML document is malformed
 	 * @throws ConfigurationException if the sensor cant be instantiated because of invalid configuration information
 	 */
-	public String addSensor(SALAgent a, String xml) throws SALDocumentException, ConfigurationException, AgentException;
+	public String addSensor(SALAgent a, String xml) throws SALDocumentException, ConfigurationException;
 	
 	/**
 	 * This method removes a sensor with the given identifier. Its configuration information is also removed from the
@@ -39,7 +64,7 @@ public interface ClientController {
 	 * @param sid the sensor identifier
 	 * @throws NotFoundException if the given sensor ID doesnt match any existing sensor
 	 */
-	public void removeSensor(SALAgent a, String sid) throws NotFoundException, AgentException;
+	public void removeSensor(SALAgent a, String sid) throws NotFoundException;
 	
 	/**
 	 * This method returns an XML document containing the configuration of all currently active sensors.
@@ -50,7 +75,7 @@ public interface ClientController {
 	 * @return the configuration of all active sensors as an XML document, from which a <code>SMLDescriptions</code>
 	 * object can be created to facilitate parsing.
 	 */
-	public String listActiveSensors(SALAgent a) throws AgentException;
+	public String listActiveSensors(SALAgent a);
 	
 	/**
 	 * This method returns an XML document containing the configuration of all known sensors.
@@ -62,7 +87,7 @@ public interface ClientController {
 	 * @return the configuration of all known sensors as an XML document, from which a <code>SMLDescriptions</code>
 	 * object can be created to facilitate parsing.
 	 */
-	public String listSensors(SALAgent a) throws AgentException;
+	public String listSensors(SALAgent a);
 	
 	/**
 	 * This method returns an SML description document containing the configuration for a given sensor.
@@ -73,7 +98,7 @@ public interface ClientController {
 	 * object can be created to facilitate parsing.
 	 * @throws NotFoundException if no sensor matches the given identifier
 	 */
-	public String listSensor(SALAgent a, String sid) throws NotFoundException, AgentException;
+	public String listSensor(SALAgent a, String sid) throws NotFoundException;
 	
 	/**
 	 * This method instructs a sensor identified by sid to execute a given command c
@@ -96,7 +121,7 @@ public interface ClientController {
 	 * @return the CML document, from which a <code>CMLDescriptions</code> can be created to facilitate parsing.
 	 * @throws NotFoundException if given sensor ID doesnt match any existing sensor
 	 */
-	public String getCML(SALAgent a,String sid) throws NotFoundException, AgentException;
+	public String getCML(SALAgent a,String sid) throws NotFoundException;
 	
 	/*
 	 * Protocols-related methods 
@@ -114,7 +139,7 @@ public interface ClientController {
 	 * @throws ConfigurationException if the protocol cant be instantiated because of invalid configuration information
 	 * @throws SALDocumentException if the given PCML document is malformed 
 	 */
-	public void addProtocol(SALAgent a, String xml, boolean loadSensors) throws ConfigurationException, SALDocumentException, AgentException;
+	public void addProtocol(SALAgent a, String xml, boolean loadSensors) throws ConfigurationException, SALDocumentException;
 	
 	/**
 	 * This method removes a protocol given its ID. The protocol is first stopped so commands are no further 
@@ -124,7 +149,7 @@ public interface ClientController {
 	 * @param removeSensor whether or not to remove the sensor configuration associated with this protocol from the config file
 	 * @throws NotFoundException if the given protocol ID doesnt match any existing protocols
 	 */
-	public void removeProtocol(SALAgent a, String pid, boolean removeSensors) throws NotFoundException, AgentException;
+	public void removeProtocol(SALAgent a, String pid, boolean removeSensors) throws NotFoundException;
 	
 	/**
 	 * This method lists the configuration of all existing protocols. The returned value is a string
@@ -134,7 +159,7 @@ public interface ClientController {
 	 * @return a string representation of a PCML document listing the protocols configuration, which can be used to create a 
 	 * <code>ProtocolConfigurations</code> object to facilitate parsing.
 	 */
-	public String listProtocols(SALAgent a) throws AgentException;
+	public String listProtocols(SALAgent a);
 	
 	/*
 	 * 
