@@ -4,10 +4,10 @@
 package jcu.sal.components.sensors;
 
 import jcu.sal.common.Constants;
+import jcu.sal.common.Slog;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.SensorStateEvent;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 

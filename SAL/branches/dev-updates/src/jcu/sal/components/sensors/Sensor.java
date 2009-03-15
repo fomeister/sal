@@ -3,6 +3,7 @@
  */
 package jcu.sal.components.sensors;
 
+import jcu.sal.common.Slog;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALRunTimeException;
@@ -11,7 +12,6 @@ import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.protocols.ProtocolID;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 

@@ -2,29 +2,32 @@
 
 	
 	<property file="build.properties"/>
-
-	<!-- define the HAL classpath for running -->
-	<path id="HAL.classpath">
-		<pathelement location="${HAL.bin}"/>
-		<fileset dir="${HAL.lib}">
+	
+	<!-- define the project-wide dependencies classpath for
+	building & running -->
+	<path id="project.dependencies.classpath">
+		<fileset dir="${platform.standard.jar.location}">
 			<include name="*.jar"/>
 		</fileset>
 	</path>
-
-	<!-- define the v4l4j classpath for running -->
-	<path id="v4l4j.classpath">
-		<pathelement location="${v4l4j.bin}"/>
+	
+	<!-- define the classpath for building common package -->
+	<path id="build.common.classpath">
+		<path refid="project.dependencies.classpath"/>
 	</path>
 
-	<!-- define the SAL classpath for building -->
-	<path id="build.SAL.classpath">
-		<path refid="HAL.classpath"/>
-		<path refid="v4l4j.classpath"/>
-		<pathelement location="${project.src}"/>
-		<fileset dir="${project.lib}">
-			<include name="*.jar"/>
-		</fileset>
+	<!-- define the classpath for building agent package-->
+	<path id="build.agent.classpath">
+		<path refid="project.dependencies.classpath"/>
 	</path>
+	
+	<!-- define the classpath for building plugins package-->
+	<path id="build.plugins.classpath">
+		<path refid="project.dependencies.classpath"/>
+		<!-- plugins need abstract classes & interfaces from agent -->
+		<pathelement location="${project.classes}" />
+	</path>
+	
 	
 	<!-- define the SAL classpath for running -->
 	<path id="run.SAL.classpath">
@@ -44,25 +47,77 @@
 		<echo message=""/>
 		<echo message="Available targets :"/>
 		<echo message=""/>
-		<echo message=" all :         Compile and run SAL "/>
-		<echo message=" compile :     Compile SAL"/>
+		<echo message=" compile:      Compile SAL"/>
+		<echo message=" jar-agent:    Create a JAR file with classes needed by SAL agents"/>
+		<echo message=" jar-common:   Create a JAR file with classes needed by SAL clients"/>
+		<echo message=" jar-plugins:  Create a JAR file with classes needed by SAL agent plugins"/>
 		<echo message=" clean:        Remove all build generated files"/>
 		<echo message=""/>
 	</target>
 	
 	<target name="init">
 		<mkdir dir="${project.classes}"/>
+		<mkdir dir="${project.plugins.classes}"/>
+		<copy file="${project.lib}/${plugin.deps.snmp.jar}" tofile="${platform.standard.jar.location}/${plugin.deps.snmp.jar}" />
 	</target>
 	
-	<target name="all" depends="compile"/>
-	
-	<target name="compile" depends="init">
+	<target name="compile-agent" depends="init">
 		<javac srcdir="${project.src}" destdir="${project.classes}" deprecation="on" source="${source}" debug="on">
-			<classpath refid="build.SAL.classpath"/>
-			<include name="**/*.java"/>
+			<classpath refid="build.agent.classpath" />
 		</javac>
 	</target>
 	
+	<target name="compile-plugins" depends="compile-agent">
+			<javac srcdir="${project.plugins.src}" destdir="${project.plugins.classes}" deprecation="on" source="${source}" debug="on">
+				<classpath refid="build.plugins.classpath"/>
+			</javac>
+		</target>
+	
+	<target name="compile-common" depends="init">
+		<javac srcdir="${project.src}" destdir="${project.classes}" deprecation="on" source="${source}" debug="on">
+			<classpath refid="build.common.classpath"/>
+			<include name="jcu/sal/common/**"/>
+		</javac>
+	</target>
+	
+	<target name="jar-agent" depends="compile-agent">
+		<jar jarfile="${project.agent.jar}">
+			<fileset dir="${project.classes}">
+				<include name="**"/>
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="jar-common" depends="compile-common">
+		<jar jarfile="${project.dir}/${project.common.jar}">
+			<fileset dir="${project.classes}">
+				<include name="jcu/sal/common/**"/>
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="jar-plugins" depends="compile-plugins">
+		<jar jarfile="${project.dir}/${project.plugins.jar}">
+			<manifest>
+				<attribute name="Class-Path" value="${project.deps.list}"/>
+			</manifest>
+			<fileset dir="${project.plugins.src}">
+				<include name="**"/>
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="jar-all" depends="jar-common, jar-agent, jar-plugins" />
+	
+	<target name="run-rmi-agent" depends="jar-agent, jar-plugins">
+			<java fork="true" failonerror="true" classname="${project.run.rmi.agent.main.class}">
+				<arg value="${project.run.arg1}"/>
+				<arg value="${project.run.arg2}"/>
+				<jvmarg value="-Djava.library.path=${project.lib}:${HAL.lib}:${v4l4j.lib}"/>
+				<classpath refid="run.SAL.classpath" />
+			</java>
+	</target>
+
 <!--	<target name="run" depends="compile">
 			<java fork="true" failonerror="true" classname="${project.run.main.class}">
 				<arg value="${project.run.arg1}"/>
@@ -83,5 +138,8 @@
 	
 	<target name="clean">
 		<delete dir="${project.classes}"/>
+		<delete file="${project.agent.jar}"/>
+		<delete file="${project.common.jar}"/>
+		<delete file="${project.plugins.jar}"/>
 	</target>
      </project>

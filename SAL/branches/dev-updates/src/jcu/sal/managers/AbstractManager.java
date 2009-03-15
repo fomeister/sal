@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.Slog;
 import jcu.sal.common.exceptions.ComponentInstantiationException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
@@ -17,7 +18,6 @@ import jcu.sal.components.HWComponent;
 import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.componentRemovalListener;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 

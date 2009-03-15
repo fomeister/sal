@@ -11,6 +11,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 
+import jcu.sal.common.Slog;
+
 import org.apache.log4j.Logger;
 
 public class PlatformHelper {

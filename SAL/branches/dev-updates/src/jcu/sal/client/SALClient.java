@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
+import jcu.sal.common.XMLhelper;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgentFactory;
 import jcu.sal.common.agents.SALAgent;
@@ -28,7 +29,6 @@ import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
-import jcu.sal.utils.XMLhelper;
 
 public class SALClient implements ClientEventHandler, StreamCallback{
 	private static final long serialVersionUID = -8376295971546676596L;

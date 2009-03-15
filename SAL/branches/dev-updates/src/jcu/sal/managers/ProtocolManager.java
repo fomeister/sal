@@ -7,6 +7,7 @@ import java.lang.reflect.Constructor;
 
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
+import jcu.sal.common.Slog;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.exceptions.ComponentInstantiationException;
@@ -24,10 +25,9 @@ import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.config.FileConfigService;
+import jcu.sal.config.plugins.PluginList;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.ProtocolListEvent;
-import jcu.sal.utils.ProtocolModulesList;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 
@@ -75,7 +75,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		try {
 
 			//logger.debug("building AbstractProtocol type: " + type);
-			String className = ProtocolModulesList.getProtocolClassName(type);
+			String className = PluginList.getProtocolClassName(type);
 
 			Class<?>[] params = {ProtocolID.class, ProtocolConfiguration.class};
 			Constructor<?> c = Class.forName(className).getConstructor(params);

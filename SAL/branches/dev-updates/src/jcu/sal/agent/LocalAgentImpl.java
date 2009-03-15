@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
+import jcu.sal.common.Slog;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.events.ClientEventHandler;
@@ -25,7 +26,6 @@ import jcu.sal.events.EventDispatcher;
 import jcu.sal.events.EventHandler;
 import jcu.sal.managers.ProtocolManager;
 import jcu.sal.managers.SensorManager;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 

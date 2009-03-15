@@ -5,6 +5,7 @@ import java.util.Random;
 import java.util.Vector;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.Slog;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.agents.rmi.RMIAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
@@ -13,8 +14,6 @@ import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
-import jcu.sal.components.protocols.dummy.DummyProtocol;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 
@@ -68,7 +67,7 @@ public class AddSensorAction implements Action {
 			
 		
 		Vector<Parameter> v = new Vector<Parameter>();
-		v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, DummyProtocol.PROTOCOL_TYPE));
+		v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, "DUMMY"));
 		v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, n1));
 		v.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, String.valueOf(r.nextInt())));
 
