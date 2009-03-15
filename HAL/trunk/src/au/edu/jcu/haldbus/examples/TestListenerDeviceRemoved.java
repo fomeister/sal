@@ -1,4 +1,4 @@
-package au.edu.jcu.haldbus.listener;
+package au.edu.jcu.haldbus.examples;
 
 import org.freedesktop.Hal.Manager;
 import org.freedesktop.dbus.DBusConnection;
