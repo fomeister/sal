@@ -132,13 +132,16 @@ You can run the test app with 'ant test'
   
  = U S I N G   H A L =
 To use this package, you need to
- - make sure HAL.jar is in your application's classpath. No need to add HAL's
- dependencies to the classpath as HAL.jar already holds hardcoded paths to
- the JAR files it depends on.
+ - first, install this package's JAR file (HAL.jar) in a standard location.
+  This is done by running "sudo ant install". By default, the standard 
+  location is /usr/share/java.
+ - then make sure HAL.jar is in your application's classpath. No need to add
+ HAL's dependencies to the classpath as HAL.jar already holds hardcoded paths 
+ to the JAR files it depends on.
  - specify the location where libmatthew JNI library is installed. If you 
  followed the installation instructions above, the library is installed in
  /usr/lib/jni.
  
-The above can be done with:
-java -cp path/to/HAL.jar:Your_App_classpath -Djava.library.path=/usr/lib/jni package.youApplication 
+Assuming you have installed HAL.jar, the last two steps can be done with:
+java -cp /usr/share/java/HAL.jar:Your_App_classpath -Djava.library.path=/usr/lib/jni package.youApplication 
 

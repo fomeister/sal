@@ -22,6 +22,8 @@
 		<echo message=""/>
 		<echo message=" all :         Build the JAR file "/>
 		<echo message=" jar :         Build the JAR file"/>
+		<echo message=" install :     Installs the HAL JAR file to ${project.deploy.path} (needs root privileges)"/>
+		<echo message=" uninstall :   Uninstalls the HAL JAR file (needs root privileges)"/>
 		<echo message=" javadoc :     Build the Java documentation"/>
 		<echo message=" jar-src :     Build the JAR file including sources"/>
 		<echo message=" test-signal : Run a simple test to catch DeviceAdded and DeviceRemoved signals from HAL"/>
@@ -54,6 +56,15 @@
 			</fileset>
 		</jar>
 	</target>
+	
+	<target name="install" depends="jar">
+		<copy file="${project.dir}/${project.name}.jar" tofile="${project.deploy.path}" />
+	</target>
+	
+	<target name="uninstall" depends="">
+		<delete file="${project.deploy.path}" />
+	</target>
+
 	
 	<target name="jar-src" depends="compile">
 		<jar jarfile="${project.dir}/${project.name}.jar">
