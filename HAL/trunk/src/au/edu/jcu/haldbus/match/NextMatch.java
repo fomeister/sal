@@ -16,8 +16,8 @@ public class NextMatch extends AbstractMatch {
 	 * This HAL object is referred to either by its name or by a link pointing to its name:
 	 * <ul><li>In the former case, the <code>obj</code> argument contains the name (UDI) of the next HAL object to be
 	 * checked.</li>
-	 * <li>In the latter case, the link is simply the name of a property found preceded by a '@' sign in the
-	 * current HAL object that contains the name of the next HAL object object to be checked.</li></ul>
+	 * <li>In the latter case, the link is simply the name of a property preceded by a '@' sign. This property is found in the
+	 * current HAL object and contains the name(UDI) of the next HAL object object to be checked.</li></ul>
 	 * In both cases, when the next HAL object's properties have been retrieved, they will be matched against the
 	 * given <code>HalMatchInterface n</code> instance.  
 	 * @param obj either the UDI of the next HAL object to be checked, or a link to it ('@' followed by the name

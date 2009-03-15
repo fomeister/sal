@@ -1,6 +1,6 @@
 package au.edu.jcu.haldbus.exceptions;
 
-public class AddRemoveElemException extends DBusException {
+public class AddRemoveElemException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
