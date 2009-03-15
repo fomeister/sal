@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
+import jcu.sal.common.Slog;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
@@ -13,7 +14,6 @@ import jcu.sal.common.cml.ReturnType;
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALRunTimeException;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 

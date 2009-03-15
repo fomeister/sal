@@ -3,15 +3,14 @@ package jcu.sal.client.stressTest.actions;
 import java.rmi.RemoteException;
 import java.util.Set;
 
+import jcu.sal.common.Slog;
 import jcu.sal.common.agents.rmi.RMIAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
-import jcu.sal.components.EndPoints.FSEndPoint;
-import jcu.sal.components.protocols.dummy.DummyProtocol;
-import jcu.sal.utils.Slog;
+
 
 import org.apache.log4j.Logger;
 
@@ -23,7 +22,7 @@ public class AddProtocolAction implements Action {
 	public static String name="Dummy_";
 	public static int MAX_PROTOCOLS=5;
 	
-	private static String type = DummyProtocol.PROTOCOL_TYPE;
+	private static String type = "DUMMY";
 	
 	private RMIAgent agent;
 	
@@ -58,7 +57,7 @@ public class AddProtocolAction implements Action {
 		
 		try {
 			//logger.info("creating protocol "+n1);
-			agent.addProtocol(new ProtocolConfiguration(n1, type, new EndPointConfiguration("fs_"+i, FSEndPoint.ENDPOINT_TYPE)).getXMLString(),false);
+			agent.addProtocol(new ProtocolConfiguration(n1, type, new EndPointConfiguration("fs_"+i, "fs")).getXMLString(),false);
 			//logger.info("protocol "+n1+" created");
 		} catch (ConfigurationException e) {
 			logger.info("cant instanciate protocol "+n1);

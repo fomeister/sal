@@ -5,13 +5,13 @@ package jcu.sal.managers;
 
 import java.lang.reflect.Constructor;
 
+import jcu.sal.common.Slog;
 import jcu.sal.common.exceptions.ComponentInstantiationException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.EndPoints.EndPoint;
 import jcu.sal.components.EndPoints.EndPointID;
-import jcu.sal.utils.EndPointModulesList;
-import jcu.sal.utils.Slog;
+import jcu.sal.config.plugins.PluginList;
 
 import org.apache.log4j.Logger;
 
@@ -50,7 +50,7 @@ public class EndPointManager extends AbstractManager<EndPoint, EndPointConfigura
 		EndPointID i = (EndPointID) id;
 		try {
 			//logger.debug("Building EndPoint type: " +type);
-			String className = EndPointModulesList.getClassName(type);
+			String className = PluginList.getEndPointClassName(type);
 			
 			Class<?>[] p = new Class<?>[2];
 			p[0] = EndPointID.class;

@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Response;
+import jcu.sal.common.Slog;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.agents.rmi.RMIAgent;
 import jcu.sal.common.agents.rmi.RMIEventHandler;
@@ -27,7 +28,6 @@ import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
-import jcu.sal.utils.Slog;
 
 /**
  * This class acts as an adapter around a {@link SALAgent} object and transforms

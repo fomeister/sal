@@ -1,7 +1,7 @@
 package jcu.sal.common.cml;
 
+import jcu.sal.common.Slog;
 import jcu.sal.common.exceptions.SALRunTimeException;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 

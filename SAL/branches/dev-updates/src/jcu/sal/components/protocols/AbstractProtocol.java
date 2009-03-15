@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.Slog;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.cml.CMLDescriptions;
@@ -36,7 +37,6 @@ import jcu.sal.components.sensors.SensorID;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.managers.EndPointManager;
 import jcu.sal.managers.SensorManager;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 

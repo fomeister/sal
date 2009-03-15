@@ -6,12 +6,12 @@ package jcu.sal.components.EndPoints;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import jcu.sal.common.Slog;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.components.AbstractComponent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.components.protocols.ProtocolID;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 

@@ -3,14 +3,14 @@ package jcu.sal.client.stressTest.actions;
 import java.rmi.RemoteException;
 import java.util.Random;
 
+import jcu.sal.common.Slog;
+import jcu.sal.common.XMLhelper;
 import jcu.sal.common.agents.rmi.RMIAgent;
 import jcu.sal.common.agents.rmi.RMICommandFactory;
 import jcu.sal.common.agents.rmi.RMICommandFactory.RMICommand;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.sml.SMLDescriptions;
-import jcu.sal.utils.Slog;
-import jcu.sal.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 

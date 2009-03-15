@@ -11,9 +11,9 @@ import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import jcu.sal.common.Slog;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.utils.Slog;
 
 import org.apache.log4j.Logger;
 

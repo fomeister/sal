@@ -10,6 +10,7 @@ import java.util.Vector;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.XMLhelper;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.agents.rmi.RMIAgent;
 import jcu.sal.common.agents.rmi.RMICommandFactory;
@@ -19,9 +20,6 @@ import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
-import jcu.sal.components.EndPoints.FSEndPoint;
-import jcu.sal.components.protocols.dummy.DummyProtocol;
-import jcu.sal.utils.XMLhelper;
 
 /**
  * This SAL RMI client creates NB_SENSORS dummy sensor on a SAL agent. It then starts NB_CLIENTS
@@ -99,8 +97,8 @@ public class RmiClientDummyStressTest{
 		Vector<Parameter> v = new Vector<Parameter>();
 		Integer id = new Integer(1);
 
-		ProtocolConfiguration p = new ProtocolConfiguration("dummy0", DummyProtocol.PROTOCOL_TYPE,
-															new EndPointConfiguration("fs",FSEndPoint.ENDPOINT_TYPE));
+		ProtocolConfiguration p = new ProtocolConfiguration("dummy0", "DUMMY",
+															new EndPointConfiguration("fs","fs"));
 		try {
 			agent.addProtocol(p.getXMLString(), false);
 		} catch (Exception e) {
@@ -111,7 +109,7 @@ public class RmiClientDummyStressTest{
 		for(int i=0;i<NB_SENSORS; i++) {
 			v.removeAllElements();
 			v.add(new Parameter(SMLConstants.PROTOCOL_NAME_ATTRIBUTE_NODE, "dummy0"));
-			v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, DummyProtocol.PROTOCOL_TYPE));
+			v.add(new Parameter(SMLConstants.PROTOCOL_TYPE_ATTRIBUTE_NODE, "DUMMY"));
 			v.add(new Parameter(SMLConstants.SENSOR_ADDRESS_ATTRIBUTE_NODE, "_"+i));
 			
 			try {
