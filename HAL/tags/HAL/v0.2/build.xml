@@ -1,0 +1,97 @@
+<project name="SAL" default="usage">
+	
+	<property file="build.properties"/>
+
+	<path id="external.libraries">
+		<fileset dir="${project.deps.jar.dir}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+	
+	<path id="build.classpath">
+		<pathelement location="${project.src}"/>
+		<path refid="external.libraries"/>
+	</path>
+	
+	<!-- default target that displays usage -->
+	<target name="usage">
+		<echo message=""/>
+		<echo message="Hardware Abstraction Layer helper"/>
+		<echo message=""/>
+		<echo message="Available targets :"/>
+		<echo message=""/>
+		<echo message=" all :         Build the JAR file "/>
+		<echo message=" jar :         Build the JAR file"/>
+		<echo message=" javadoc :     Build the Java documentation"/>
+		<echo message=" jar-src :     Build the JAR file including sources"/>
+		<echo message=" test-signal : Run a simple test to catch DeviceAdded and DeviceRemoved signals from HAL"/>
+		<echo message=" test-filter : Run a simple test to catch V4L DeviceAdded and DeviceRemoved signals from HAL"/>
+		<echo message=" clean:        Remove all build generated files"/>
+		<echo message=""/>
+	</target>
+	
+	<target name="init">
+		<mkdir dir="${project.classes}"/>
+	</target>
+	
+	<target name="all" depends="jar"/>
+	
+	<target name="compile" depends="init">
+		<javac srcdir="${project.src}" destdir="${project.classes}" deprecation="on" source="${source}" debug="off">
+			<classpath refid="build.classpath"/>
+			<include name="**/*.java"/>
+		</javac>
+	</target>
+	
+	<target name="jar" depends="compile">
+		<jar jarfile="${project.dir}/${project.name}.jar">
+			<manifest>
+				<attribute name="Main-Class" value="${project.test.deviceAdded}"/>
+				<attribute name="Class-Path" value="${project.deps.list}"/>
+			</manifest>
+			<fileset dir="${project.classes}">
+				<include name="**"/>
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="jar-src" depends="compile">
+		<jar jarfile="${project.dir}/${project.name}.jar">
+			<manifest>
+				<attribute name="Main-Class" value="${project.test.deviceAdded}"/>
+				<attribute name="Class-Path" value="${project.deps.list}"/>
+			</manifest>
+			<fileset dir="${project.classes}">
+				<include name="**"/>
+			</fileset>
+			<fileset dir="${project.src}">
+				<include name="**"/>
+			</fileset>
+		</jar>
+	</target>	
+	
+	<target name="javadoc">
+		<javadoc sourcepath="${project.src}" packagenames="au.edu.jcu.haldbus.*" destdir="${project.javadoc.dir}" public="true" use="true" />
+	</target>
+	
+	<target name="test-signal" depends="jar">
+		<java jar="${project.dir}/${project.name}.jar" fork="true" failonerror="true">
+			<jvmarg value="-Djava.library.path=${project.deps.jni.dir}"/>
+		</java>
+	</target>
+	
+	<target name="test-filter" depends="jar">
+		<java classname="${project.test.v4lFilter}" fork="true" failonerror="true">
+			<classpath>
+				<pathelement location="${project.dir}/${project.name}.jar"/>
+			</classpath>
+			<jvmarg value="-Djava.library.path=${project.deps.jni.dir}"/>
+		</java>
+	</target>
+	
+	<target name="clean">
+		<delete file="${project.dir}/${project.name}.jar" />
+		<delete dir="${project.javadoc.dir}"/>
+		<delete dir="${project.classes}"/>
+	</target>
+     </project>
