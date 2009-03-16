@@ -114,14 +114,14 @@
 	<target name="jar-clients" depends="compile-clients">
 		<jar jarfile="${project.clients.jar}">
 			<manifest>
-				<attribute name="Class-Path" value="${project.common.jar}"/>
+				<attribute name="Class-Path" value="${project.deps.list} ${project.common.jar}"/>
 			</manifest>
 			<fileset dir="${project.clients.classes}">
 				<include name="**"/>
 			</fileset>
-			<dirset dir="${project.dir}">
+			<fileset dir="${project.dir}">
 				<include name="resources/**" />
-			</dirset>
+			</fileset>
 		</jar>
 	</target>
 	
@@ -205,5 +205,6 @@
 		<delete file="${project.agent.jar}"/>
 		<delete file="${project.common.jar}"/>
 		<delete file="${project.plugins.jar}"/>
+		<delete file="${project.clients.jar}"/>
 	</target>
      </project>

@@ -1,4 +1,4 @@
-package jcu.sal.utils.test;
+package jcu.sal.common;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -6,7 +6,6 @@ import static org.junit.Assert.fail;
 import java.io.File;
 
 import jcu.sal.common.exceptions.NotFoundException;
-import jcu.sal.utils.XMLhelper;
 
 import org.junit.After;
 import org.junit.Before;

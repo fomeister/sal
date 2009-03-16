@@ -2,7 +2,6 @@ package jcu.sal.common.agents;
 
 import java.rmi.RemoteException;
 
-import jcu.sal.agent.LocalAgentImpl;
 import jcu.sal.common.agents.rmi.RMIClientStub;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.SALRunTimeException;
@@ -28,31 +27,31 @@ public class SALAgentFactory {
 		return factory;
 	}
 	
-	/**
-	 * This method creates a new client stub connecting to a local SAL agent,
-	 * and returns a reference to it.
-	 * @param pc the file to be used as platform configuration file
-	 * @param sc the file to be used as sensor configuration file
-	 * @return a reference to a fully initialised local SAL agent
-	 * @throws ConfigurationException if the given files cannot be written to, parsed,
-	 * or if their content is not valid.
-	 */
-	public SALAgent createLocalAgent(String pc, String sc) throws ConfigurationException{
-		LocalAgentImpl s = new LocalAgentImpl();
-		s.start(pc, sc);
-		return s;
-	}
-	
-	/**
-	 * This method releases a reference to a local SAL agent previously instantiated 
-	 * with {@link #createLocalAgent(String, String)}.
-	 * @param s the local SAL agent to be released
-	 * @throws ClassCastException if the given SAL agent is not a local SAL agent.
-	 */
-	public void releaseLocalAgent(SALAgent s){
-		LocalAgentImpl agent = (LocalAgentImpl) s;
-		agent.stop();
-	}
+//	/**
+//	 * This method creates a new client stub connecting to a local SAL agent,
+//	 * and returns a reference to it.
+//	 * @param pc the file to be used as platform configuration file
+//	 * @param sc the file to be used as sensor configuration file
+//	 * @return a reference to a fully initialised local SAL agent
+//	 * @throws ConfigurationException if the given files cannot be written to, parsed,
+//	 * or if their content is not valid.
+//	 */
+//	public SALAgent createLocalAgent(String pc, String sc) throws ConfigurationException{
+//		LocalAgentImpl s = new LocalAgentImpl();
+//		s.start(pc, sc);
+//		return s;
+//	}
+//	
+//	/**
+//	 * This method releases a reference to a local SAL agent previously instantiated 
+//	 * with {@link #createLocalAgent(String, String)}.
+//	 * @param s the local SAL agent to be released
+//	 * @throws ClassCastException if the given SAL agent is not a local SAL agent.
+//	 */
+//	public void releaseLocalAgent(SALAgent s){
+//		LocalAgentImpl agent = (LocalAgentImpl) s;
+//		agent.stop();
+//	}
 	
 	/**
 	 * This method creates a new client stub connecting to remote SAL agent through RMI 
@@ -90,10 +89,11 @@ public class SALAgentFactory {
 	 */
 	public void releaseAgent(SALAgent s){
 		if(s instanceof RMIClientStub)
-			releaseLocalAgent(s);
-		else if (s instanceof LocalAgentImpl)
 			releaseRMIAgent(s);
-		else
+		else 
+//		if (s instanceof LocalAgentImpl)
+//			releaseLocalAgent(s);
+//		else
 			throw new SALRunTimeException("The given object is not a SAL agent");
 	}
 }

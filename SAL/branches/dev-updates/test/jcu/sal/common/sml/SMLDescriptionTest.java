@@ -18,7 +18,7 @@ import jcu.sal.common.Parameters;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
-import jcu.sal.utils.XMLhelper;
+import jcu.sal.common.XMLhelper;
 
 import org.junit.After;
 import org.junit.Before;

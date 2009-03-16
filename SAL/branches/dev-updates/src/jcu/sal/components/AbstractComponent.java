@@ -9,6 +9,7 @@ import jcu.sal.common.exceptions.ConfigurationException;
 
 import jcu.sal.common.Parameters;
 import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.pcml.HWComponentConfiguration;
 
 /**
  * This class does something

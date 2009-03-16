@@ -45,11 +45,11 @@ public class Context {
 	
 	static{
 		//load icons
-		sensorEnabledIcon = createImageIcon("icons/Symbols-Tips-15x15.png");
-		sensorDisabledIcon = createImageIcon("icons/Symbols-Error-15x15.png");
-		protocolIcon = createImageIcon("icons/folder-orange-scanners-cameras-26x26.png");
-		localAgentIcon = createImageIcon("icons/Hardware-My-Computer-1-26x26.png");
-		remoteAgentIcon = createImageIcon("icons/Network-Remote-Desktop-26x26.png");
+		sensorEnabledIcon = createImageIcon("resources/icons/Symbols-Tips-15x15.png");
+		sensorDisabledIcon = createImageIcon("resources/icons/Symbols-Error-15x15.png");
+		protocolIcon = createImageIcon("resources/icons/folder-orange-scanners-cameras-26x26.png");
+		localAgentIcon = createImageIcon("resources/icons/Hardware-My-Computer-1-26x26.png");
+		remoteAgentIcon = createImageIcon("resources/icons/Network-Remote-Desktop-26x26.png");
 	}
 	
 	
@@ -238,7 +238,7 @@ public class Context {
 	 * @throws SALRunTimeException if the image cannot be loaded
 	 */
 	public static ImageIcon createImageIcon(String path) {
-	    java.net.URL imgURL = Context.class.getResource(path);
+	    java.net.URL imgURL = Context.class.getClassLoader().getResource(path);
 	    if (imgURL != null)
 	        return new ImageIcon(imgURL);
 	  

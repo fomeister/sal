@@ -1,4 +1,4 @@
-package jcu.sal.components;
+package jcu.sal.common.pcml;
 
 import jcu.sal.common.Parameters;
 
