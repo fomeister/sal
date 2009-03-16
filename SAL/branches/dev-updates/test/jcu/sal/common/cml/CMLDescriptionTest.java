@@ -12,7 +12,8 @@ import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
-import jcu.sal.utils.XMLhelper;
+import jcu.sal.common.XMLhelper;
+
 
 import org.junit.Test;
 import org.w3c.dom.Document;

@@ -10,6 +10,7 @@ import jcu.sal.common.Response;
 import jcu.sal.common.Slog;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.events.ProtocolListEvent;
 import jcu.sal.common.exceptions.ComponentInstantiationException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
@@ -27,7 +28,6 @@ import jcu.sal.components.sensors.SensorID;
 import jcu.sal.config.FileConfigService;
 import jcu.sal.config.plugins.PluginList;
 import jcu.sal.events.EventDispatcher;
-import jcu.sal.events.ProtocolListEvent;
 
 import org.apache.log4j.Logger;
 

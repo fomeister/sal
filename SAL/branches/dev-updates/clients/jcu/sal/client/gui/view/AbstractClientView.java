@@ -24,6 +24,9 @@ import jcu.sal.common.cml.ReturnType;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.ClientEventHandler;
 import jcu.sal.common.events.Event;
+import jcu.sal.common.events.ProtocolListEvent;
+import jcu.sal.common.events.SensorNodeEvent;
+import jcu.sal.common.events.SensorStateEvent;
 import jcu.sal.common.exceptions.ClosedStreamException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
@@ -31,9 +34,6 @@ import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLDescription;
-import jcu.sal.events.ProtocolListEvent;
-import jcu.sal.events.SensorNodeEvent;
-import jcu.sal.events.SensorStateEvent;
 
 public abstract class AbstractClientView implements StreamCallback, ClientEventHandler, ClientView {
 

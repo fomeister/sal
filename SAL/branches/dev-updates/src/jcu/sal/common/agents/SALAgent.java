@@ -13,7 +13,6 @@ import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
-import jcu.sal.events.EventHandler;
 
 public interface SALAgent{
 	

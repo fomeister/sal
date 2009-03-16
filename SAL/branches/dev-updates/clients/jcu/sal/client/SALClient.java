@@ -9,12 +9,12 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+import jcu.sal.agent.LocalAgentImpl;
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.XMLhelper;
 import jcu.sal.common.CommandFactory.Command;
-import jcu.sal.common.agents.SALAgentFactory;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
@@ -70,7 +70,7 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 	}
 	
 	private Map<String, JpgMini> viewers;
-	private SALAgent agent;
+	private LocalAgentImpl agent;
 	private BufferedReader b; 
 	
 	public SALClient() {
@@ -78,7 +78,8 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 	}
 	
 	public void start(String pc, String sc) throws ConfigurationException{
-		agent = SALAgentFactory.getFactory().createLocalAgent(pc, sc);
+		agent = new LocalAgentImpl();
+		agent.start(pc, sc);
 		try {
 			agent.registerEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
@@ -234,7 +235,7 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 		} catch (NotFoundException e) {
 			e.printStackTrace();
 		}
-		SALAgentFactory.getFactory().releaseLocalAgent(agent);
+		agent.stop();
 		System.out.println("Main exiting");
 	}
 	

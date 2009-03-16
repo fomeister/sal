@@ -14,8 +14,8 @@ import jcu.sal.common.Slog;
 import jcu.sal.common.exceptions.ComponentInstantiationException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.pcml.HWComponentConfiguration;
 import jcu.sal.components.HWComponent;
-import jcu.sal.components.HWComponentConfiguration;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.componentRemovalListener;
 

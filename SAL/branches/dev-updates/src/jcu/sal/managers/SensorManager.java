@@ -8,6 +8,7 @@ import java.util.Set;
 
 import jcu.sal.common.Constants;
 import jcu.sal.common.Slog;
+import jcu.sal.common.events.SensorNodeEvent;
 import jcu.sal.common.exceptions.ComponentInstantiationException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
@@ -21,7 +22,6 @@ import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.config.FileConfigService;
 import jcu.sal.events.EventDispatcher;
-import jcu.sal.events.SensorNodeEvent;
 
 import org.apache.log4j.Logger;
 

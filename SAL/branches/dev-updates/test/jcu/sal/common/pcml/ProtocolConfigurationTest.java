@@ -6,8 +6,9 @@ import static org.junit.Assert.fail;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Parameters;
+import jcu.sal.common.XMLhelper;
 import jcu.sal.common.exceptions.SALDocumentException;
-import jcu.sal.utils.XMLhelper;
+
 
 import org.junit.Test;
 

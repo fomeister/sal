@@ -1,6 +1,5 @@
-package jcu.sal.events;
+package jcu.sal.common.events;
 
-import jcu.sal.common.events.Event;
 
 public class SensorNodeEvent extends Event {
 	private static final long serialVersionUID = -7000825364492820746L;

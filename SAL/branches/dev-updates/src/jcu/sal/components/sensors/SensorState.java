@@ -5,9 +5,9 @@ package jcu.sal.components.sensors;
 
 import jcu.sal.common.Constants;
 import jcu.sal.common.Slog;
+import jcu.sal.common.events.SensorStateEvent;
 import jcu.sal.components.componentRemovalListener;
 import jcu.sal.events.EventDispatcher;
-import jcu.sal.events.SensorStateEvent;
 
 import org.apache.log4j.Logger;
 
@@ -81,13 +81,13 @@ public class SensorState {
 				logger.error("###############################################################################################");
 				logger.error("###############################################################################################");
 				return false; 
-			} else if(state==SensorConstants.IDLE || state==SensorConstants.DISCONNECTED || state==SensorConstants.DISABLED) {
+			} else if(state==SensorConstants.IDLE || state==SensorConstants.DISCONNECTED) {
 				state=SensorConstants.DISABLED;
 				ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 				return true; 
 			} else {
-				logger.error("trying to disable a non IDLE/INUSE/DISCONNECTED sensor"); 
-				dumpState();
+//				logger.error("trying to disable a non IDLE/INUSE/DISCONNECTED sensor"); 
+//				dumpState();
 				return false; 
 			}
 		}
@@ -95,13 +95,16 @@ public class SensorState {
 	
 	public boolean enable(){
 		synchronized (this) {
-			if(state==SensorConstants.DISABLED || state==SensorConstants.UNASSOCIATED || state==SensorConstants.IDLE) {
+			if(state==SensorConstants.DISABLED || state==SensorConstants.UNASSOCIATED) {
 				if(state!=SensorConstants.UNASSOCIATED) {
 					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 				}
 				state=SensorConstants.IDLE; return true;
 			}
-			else { logger.error("trying to enable a non DISABLED sensor"); dumpState(); return false; }
+			else { 
+				//logger.error("trying to enable a non DISABLED sensor"); dumpState(); 
+				return false; 
+			}
 		}
 	}
 	
