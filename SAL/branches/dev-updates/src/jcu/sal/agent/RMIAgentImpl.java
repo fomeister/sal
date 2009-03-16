@@ -217,6 +217,8 @@ public class RMIAgentImpl implements RMIAgent {
 		} catch (RemoteException e) {
 			System.out.println("Error binding agent to the RMI registry");
 			e.printStackTrace();
+		} catch(Throwable t){
+			t.printStackTrace();
 		} finally {
 			agent.stop();
 			System.exit(0);

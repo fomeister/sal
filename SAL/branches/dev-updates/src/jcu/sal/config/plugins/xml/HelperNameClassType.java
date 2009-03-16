@@ -8,8 +8,6 @@
 
 package jcu.sal.config.plugins.xml;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -17,18 +15,17 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for ProtocolType complex type.
+ * <p>Java class for HelperNameClassType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="ProtocolType">
+ * &lt;complexType name="HelperNameClassType">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="name" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="HelperName" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="class" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="ConfigPlugin" type="{http://sal.jcu.edu.au/schemas/pluginsConfig}HelperNameClassType" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -38,42 +35,39 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "ProtocolType", propOrder = {
-    "name",
-    "clazz",
-    "configPlugin"
+@XmlType(name = "HelperNameClassType", propOrder = {
+    "helperName",
+    "clazz"
 })
-public class ProtocolType {
+public class HelperNameClassType {
 
-    @XmlElement(required = true)
-    protected String name;
+    @XmlElement(name = "HelperName", required = true)
+    protected String helperName;
     @XmlElement(name = "class", required = true)
     protected String clazz;
-    @XmlElement(name = "ConfigPlugin")
-    protected List<HelperNameClassType> configPlugin;
 
     /**
-     * Gets the value of the name property.
+     * Gets the value of the helperName property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getName() {
-        return name;
+    public String getHelperName() {
+        return helperName;
     }
 
     /**
-     * Sets the value of the name property.
+     * Sets the value of the helperName property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setName(String value) {
-        this.name = value;
+    public void setHelperName(String value) {
+        this.helperName = value;
     }
 
     /**
@@ -98,35 +92,6 @@ public class ProtocolType {
      */
     public void setClazz(String value) {
         this.clazz = value;
-    }
-
-    /**
-     * Gets the value of the configPlugin property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the configPlugin property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getConfigPlugin().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link HelperNameClassType }
-     * 
-     * 
-     */
-    public List<HelperNameClassType> getConfigPlugin() {
-        if (configPlugin == null) {
-            configPlugin = new ArrayList<HelperNameClassType>();
-        }
-        return this.configPlugin;
     }
 
 }

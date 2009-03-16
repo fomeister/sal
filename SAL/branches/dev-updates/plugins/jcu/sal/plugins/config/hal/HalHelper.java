@@ -72,9 +72,9 @@ public class HalHelper implements HwProbeInterface{
 			try {
 				v.add(createClient(name));
 			} catch (InstantiationException e) {
-				
+				logger.error("error instantiating filter "+name);
 			} 
-
+		
 		//register it
 		watcher.updateClientList(v);
 	}
@@ -105,5 +105,9 @@ public class HalHelper implements HwProbeInterface{
 			throw new InstantiationException();
 		}
 		return h;		
+	}
+	
+	public static void main(String[] args){
+		
 	}
 }

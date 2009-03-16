@@ -54,7 +54,10 @@ public class HwProbeService{
 		for(String name: m.keySet()){
 			try {
 				h = m.get(name);
-				//logger.debug("Starting "+name);
+				//add filters to probe first
+				//so they are notified during the initial run
+				//which happens when h.start() is invoked
+				h.listChanged();
 				h.start();
 				helperMap.put(name, h);
 			} catch (Exception e) {

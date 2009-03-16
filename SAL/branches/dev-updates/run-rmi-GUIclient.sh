@@ -12,5 +12,5 @@ fi
 
 
 DIR="$(dirname $0)"
-java -classpath ./lib/*:./classes -Djava.rmi.server.codebase="file:${DIR}/classes/" ${DEBUG} -Djava.rmi.server.hostname=$2 jcu.sal.client.gui.view.ClientViewImpl $1
+java -classpath ./lib/*:./clients-classes:./classes -Djava.rmi.server.codebase="file:${DIR}/clients-classes/" ${DEBUG} jcu.sal.client.gui.view.ClientViewImpl $1
 
