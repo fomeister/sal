@@ -23,7 +23,7 @@ public class Slog {
 		if(!l.getAllAppenders().hasMoreElements() ) {
 			//l.setAdditivity(false);
 			l.setLevel(Level.ALL);
-			l.setLevel(Level.DEBUG);
+			//l.setLevel(Level.DEBUG);
 			//l.setLevel(Level.ERROR);
 			l.addAppender(new ConsoleAppender(new PatternLayout(pattern)));
 		}

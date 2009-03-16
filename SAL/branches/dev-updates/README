@@ -36,6 +36,7 @@ requires the HAL package from http://sal.googlecode.com/svn/HAL/trunk
 
 SAL expects to find the following JAR file:
 /usr/share/java/HAL.jar
+
 JNI lib in /usr/lib/jni
 
 

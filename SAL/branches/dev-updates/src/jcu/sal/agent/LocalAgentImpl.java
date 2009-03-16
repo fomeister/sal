@@ -211,6 +211,14 @@ public class LocalAgentImpl implements SALAgent{
 		ev.unregisterEventHandler(new EventHandlerAdapter(eh, this), producerID);
 	}
 	
+	public static void main(String[] args) throws ConfigurationException, InterruptedException{
+		LocalAgentImpl a = new LocalAgentImpl();
+		a.start(args[0], args[1]);
+		Thread.sleep(5000);
+		System.out.println(a.listActiveSensors());
+		a.stop();	
+	}
+	
 	/**
 	 * This class acts as an adapter around a {@link ClientEventHandler} object, and
 	 * transforms it into an {@link EventHandler} object.

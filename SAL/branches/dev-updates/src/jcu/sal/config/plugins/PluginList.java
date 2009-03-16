@@ -10,6 +10,7 @@ import java.util.Vector;
 import jcu.sal.common.Slog;
 import jcu.sal.common.exceptions.XmlException;
 import jcu.sal.components.protocols.AbstractProtocol;
+import jcu.sal.config.plugins.xml.HelperNameClassType;
 import jcu.sal.config.plugins.xml.NameClassType;
 import jcu.sal.config.plugins.xml.ProtocolType;
 import jcu.sal.config.plugins.xml.SalPlugins;
@@ -43,10 +44,14 @@ public class PluginList {
 	private Map<String,String> protocolTable = new Hashtable<String,String>();
 
 	/**
-	 * List of all Device Detection Filter classes
+	 * Map of all configuration plugin names and class names
+	 * ie HalHelper - jcu.sal.plugins.protocols.owfs.HalClient
 	 */
-	private Map<String, List<String>> filterTable = new Hashtable<String,List<String>>();
+	private Map<String, List<String>> configPlugins = new Hashtable<String,List<String>>();
 	
+	/**
+	 * Map of all existing endpoint names and their associated class 
+	 */
 	private Map<String, String> endPointTable = new Hashtable<String,String>();
 	
 	private Map<String, String> configHelperTable = new Hashtable<String,String>();
@@ -65,7 +70,8 @@ public class PluginList {
 				throw e;
 			}
 			parseXML();
-		}
+		} else
+			System.err.println("Can not find the plugin config file, property missing");
 	}
 	
 	private void parseXML(){
@@ -77,11 +83,11 @@ public class PluginList {
 	private void parseProtocols(){
 		for(ProtocolType p: type.getProtocolPlugins().getProtocol()){
 			protocolTable.put(p.getName(), p.getClazz());
-			for(NameClassType n : p.getConfigPlugin()){
-				if(!filterTable.containsKey(n.getName()))
-					filterTable.put(n.getName(), new Vector<String>());
-				
-				filterTable.get(n.getName()).add(n.getClazz());
+			for(HelperNameClassType n : p.getConfigPlugin()){
+				if(!configPlugins.containsKey(n.getHelperName()))
+					configPlugins.put(n.getHelperName(), new Vector<String>());
+
+				configPlugins.get(n.getHelperName()).add(n.getClazz());
 			}
 		}
 	}	
@@ -91,10 +97,16 @@ public class PluginList {
 	}
 	
 	private void parseConfigPlugins(){
-		for(NameClassType n : type.getConfigPlugins().getConfig())
+		for(NameClassType n : type.getConfigHelpers().getHelper())
 			configHelperTable.put(n.getName(), n.getClazz());
 	}
 	
+	/**
+	 * this method returns the class name for a protocol given its name
+	 * @param n the name of the protocol
+	 * @return the class name
+	 * @throws ClassNotFoundException if no protocols have the given name
+	 */
 	public static String getProtocolClassName(String type) throws ClassNotFoundException {	
 		String c = e.protocolTable.get(type);
 		if (c==null) {
@@ -114,23 +126,30 @@ public class PluginList {
 	 * @return a list of class names representing filters for the given hardware detection probe.
 	 */
 	public static List<String> getFilter(String fitlerName) {
-		if(e.filterTable.get(fitlerName)!=null)
-			return new LinkedList<String>(e.filterTable.get(fitlerName));
-		else 
-			return new LinkedList<String>();
+		return new Vector<String>(e.configPlugins.get(fitlerName));
 	}
 	
-	public static String getEndPointClassName(String type) throws ClassNotFoundException
+	/**
+	 * this method returns the class name for an endpoint given its name
+	 * @param n the name of the endpoint 
+	 * @return the class name
+	 * @throws ClassNotFoundException if no endpoints have the given name
+	 */
+	public static String getEndPointClassName(String n) throws ClassNotFoundException
 	{	
-		String c = e.endPointTable.get(type);
+		String c = e.endPointTable.get(n);
 		if (c==null) {
-			logger.error("Cant find the class name from EndPoint type: " + type);
-			throw new ClassNotFoundException("Cant find the class name from EndPoint type: " + type);
+			logger.error("Cant find the class name from EndPoint type: " + n);
+			throw new ClassNotFoundException("Cant find the class name from EndPoint type: " + n);
 		}
 		
 		return c;
 	}
 	
+	/**
+	 * this method returns the class name of hardware detection helpers
+	 * @return a list of class names used to help detecting hardware-related events
+	 */
 	public static List<String> getHelperClassNames(){	
 		return new LinkedList<String>(e.configHelperTable.values());
 	}

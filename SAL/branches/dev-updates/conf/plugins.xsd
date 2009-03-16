@@ -10,16 +10,16 @@
         <xsd:element name="SalPlugins">
         <xsd:complexType>
                 <xsd:sequence>
-                        <xsd:element name="ConfigPlugins" type="tns:ConfigPluginsType" minOccurs="1" maxOccurs="1" />
+                        <xsd:element name="ConfigHelpers" type="tns:ConfigHelpersType" minOccurs="1" maxOccurs="1" />
                         <xsd:element name="ProtocolPlugins" type="tns:ProtocolPluginsType" minOccurs="1" maxOccurs="1" />
                         <xsd:element name="EndPointPlugins" type="tns:EndPointPluginsType" minOccurs="1" maxOccurs="1" />
                 </xsd:sequence>
         </xsd:complexType>
         </xsd:element>
                
-        <xsd:complexType name="ConfigPluginsType">
+        <xsd:complexType name="ConfigHelpersType">
                 <xsd:sequence>
-                        <xsd:element name="Config" type="tns:NameClassType" minOccurs="0" maxOccurs="unbounded"/>
+                        <xsd:element name="Helper" type="tns:NameClassType" minOccurs="0" maxOccurs="unbounded"/>
                 </xsd:sequence>
         </xsd:complexType>
 
@@ -33,9 +33,22 @@
                 <xsd:sequence>
                         <xsd:element name="name" type="xsd:string" minOccurs="1" maxOccurs="1"/>
                         <xsd:element name="class" type="xsd:string" minOccurs="1" maxOccurs="1"/>
-                        <xsd:element name="ConfigPlugin" type="tns:NameClassType" minOccurs="0" maxOccurs="unbounded"/>
+                        <xsd:element name="ConfigPlugin" type="tns:HelperNameClassType" minOccurs="0" maxOccurs="unbounded"/>
                 </xsd:sequence>
         </xsd:complexType>
+        
+        <xsd:complexType name="EndPointPluginsType">
+                <xsd:sequence>
+                        <xsd:element name="EndPoint" type="tns:NameClassType" minOccurs="0" maxOccurs="unbounded"/>
+                </xsd:sequence>
+        </xsd:complexType>
+        
+        <xsd:complexType name="HelperNameClassType">
+                <xsd:sequence>
+                        <xsd:element name="HelperName" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+                        <xsd:element name="class" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+                </xsd:sequence>
+        </xsd:complexType> 
 
         <xsd:complexType name="NameClassType">
                 <xsd:sequence>
@@ -43,12 +56,5 @@
                         <xsd:element name="class" type="xsd:string" minOccurs="1" maxOccurs="1"/>
                 </xsd:sequence>
         </xsd:complexType> 
-        
-        <xsd:complexType name="EndPointPluginsType">
-                <xsd:sequence>
-                        <xsd:element name="EndPoint" type="tns:NameClassType" minOccurs="0" maxOccurs="unbounded"/>
-                </xsd:sequence>
-        </xsd:complexType>
- 
- 
+
 </xsd:schema>

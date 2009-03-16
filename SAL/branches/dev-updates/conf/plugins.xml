@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <SalPlugins xmlns="http://sal.jcu.edu.au/schemas/pluginsConfig">
-	<ConfigPlugins>
-		<Config>
-			<name>hal</name>
+	<ConfigHelpers>
+		<Helper>
+			<name>HalHelper</name>
 			<class>jcu.sal.plugins.config.hal.HalHelper</class>
-		</Config>
-	</ConfigPlugins>
+		</Helper>
+	</ConfigHelpers>
 	<ProtocolPlugins>
 		<Protocol>
 			<name>owfs</name>
 			<class>jcu.sal.plugins.protocols.owfs.OWFSProtocol</class>
 			<ConfigPlugin>
-				<name>hal</name>
+				<HelperName>HalHelper</HelperName>
 				<class>jcu.sal.plugins.protocols.owfs.HalClient</class>
 			</ConfigPlugin>
 		</Protocol>
@@ -23,7 +23,7 @@
 			<name>PlatformData</name>
 			<class>jcu.sal.plugins.protocols.osData.OSDataProtocol</class>
 			<ConfigPlugin>
-				<name>hal</name>
+				<HelperName>HalHelper</HelperName>
 				<class>jcu.sal.plugins.protocols.osData.HalClient</class>
 			</ConfigPlugin>
 		</Protocol>
@@ -31,7 +31,7 @@
 			<name>v4l2</name>
 			<class>jcu.sal.plugins.protocols.v4l2.V4L2Protocol</class>
 			<ConfigPlugin>
-				<name>hal</name>
+				<HelperName>HalHelper</HelperName>
 				<class>jcu.sal.plugins.protocols.v4l2.HalClient</class>
 			</ConfigPlugin>
 		</Protocol>
