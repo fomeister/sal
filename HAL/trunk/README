@@ -7,7 +7,7 @@ specific criteria is received.
 
  = Q U I C K   S T A R T   G U I D E =
 For the impatient, assuming you have the ant package & a Sun JRE 6 installed
-at /usr/lib/jvm/java-6-sun/, the install/build/test instructions are:
+at /usr/lib/jvm/java-6-sun/, the install/build/test instructions for ubuntu are:
 
 wget "http://www.matthew.ath.cx/projects/java/libmatthew-java-0.7.1.tar.gz"
 tar -zxf libmatthew-java-0.7.1.tar.gz && cd libmatthew-java-0.7.1
@@ -18,15 +18,16 @@ cd ..
 wget "http://dbus.freedesktop.org/releases/dbus-java/dbus-java-2.5.1.tar.gz"
 tar -zxf dbus-java-2.5.1.tar.gz
 cd dbus-java-2.5.1
-sudo apt-get install texlive-latex-base docbook-to-man gettext texlive-latex-extra texlive-latex-recommended
+sudo apt-get install texlive-latex-base docbook-to-man gettext texlive-latex-extra texlive-latex-recommended tex4ht
 PREFIX=/usr make
 sudo sh -c 'PREFIX=/usr make install'
+cd ..
 ant test
 
 This will install & compile the dependencies, and run a test app that waits 
 until you plug or unplug a device, and print details about it. If something
-goes wrong, then read on. Otherwise, generate the JavaDoc with "ant javadoc",
-and start coding !
+goes wrong, then read on. Otherwise, install HAL.jar with "sudo ant install",
+generate the JavaDoc with "ant javadoc" and start coding !
 
 
  = I N S T A L L A T I O N =
@@ -57,8 +58,8 @@ required on other platforms
 
 Bottom line is:
 Build & install libmatthew and dbus-java from source if you are not running
-Jaunty. If you are running Jaunty, try the packages and let me know if they 
-work with HAL.
+Jaunty. If you are running Jaunty, try the packages and let me know if HAL 
+works with them.
 
 
 INSTALLING LIBMATTHEW
@@ -104,6 +105,8 @@ sudo sh -c 'PREFIX=/usr make install'
 (uninstall with sudo sh -c 'PREFIX=/usr make uninstall' )
 
  * From package:
+Do not install the following package if you have installed libmatthew from
+source.
 wget "http://mirrors.kernel.org/ubuntu/pool/universe/d/dbus-java/libdbus-java_2.5.1-0ubuntu1_all.deb"
 sudo dpkg -i libdbus-java_2.5.1-0ubuntu1_all.deb 
 
