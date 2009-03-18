@@ -3,7 +3,12 @@ package jcu.sal.client.gui.view;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.rmi.RemoteException;
+import java.util.Enumeration;
+import java.util.Vector;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -70,7 +75,7 @@ public class ClientViewImpl extends AbstractClientView implements ActionListener
 			controller.unregisterEventHandler(a, this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 			controller.unregisterEventHandler(a, this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			controller.unregisterEventHandler(a, this, Constants.SENSOR_STATE_PRODUCER_ID);
-		} catch (NotFoundException e1) {
+		} catch (Throwable e1) {
 			e1.printStackTrace();
 		} 
 	}
@@ -107,26 +112,26 @@ public class ClientViewImpl extends AbstractClientView implements ActionListener
 	 * and updates the GUI 
 	 */
 	public void addRmiAgent(){
-//		Vector<String> v;
-//		try {
-//			v = new Vector<String>();
-//			Enumeration<NetworkInterface> i = NetworkInterface.getNetworkInterfaces();
-//			Enumeration<InetAddress> add;
-//			while(i.hasMoreElements()){
-//				add = i.nextElement().getInetAddresses();
-//				while(add.hasMoreElements())
-//					v.add(add.nextElement().getHostAddress());
-//			}
-//				
-//		} catch (SocketException e1) {
-//			JOptionPane.showMessageDialog(frame,
-//				    "Unable to list the network interfaces.",
-//				    "Network error",
-//				    JOptionPane.ERROR_MESSAGE);
-//			return;
-//		}
-//		String[] ifs = new String[v.size()];		
-//		v.copyInto(ifs);
+		Vector<String> v;
+		try {
+			v = new Vector<String>();
+			Enumeration<NetworkInterface> i = NetworkInterface.getNetworkInterfaces();
+			Enumeration<InetAddress> add;
+			while(i.hasMoreElements()){
+				add = i.nextElement().getInetAddresses();
+				while(add.hasMoreElements())
+					v.add(add.nextElement().getHostAddress());
+			}
+				
+		} catch (SocketException e1) {
+			JOptionPane.showMessageDialog(frame,
+				    "Unable to list the network interfaces.",
+				    "Network error",
+				    JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		String[] ifs = new String[v.size()];		
+		v.copyInto(ifs);
 		
 		String agentIP = (String)JOptionPane.showInputDialog(
                 frame,
@@ -141,12 +146,12 @@ public class ClientViewImpl extends AbstractClientView implements ActionListener
 		
 		String ourIP = (String)JOptionPane.showInputDialog(
                 frame,
-                "Enter the IP address of the RMI SAL agent:\n",
+                "Enter the IP address of this client's RMI registry:\n",
                 "SAL Agent detail",
                 JOptionPane.QUESTION_MESSAGE,
                 null,
-                //ifs,
-                null,
+                ifs,
+                //null,
                 "127.0.0.1");
 		
 		if(ourIP!=null){
@@ -156,10 +161,13 @@ public class ClientViewImpl extends AbstractClientView implements ActionListener
 				tree.addAgent(a);
 			} catch (ConfigurationException e) {
 				addLog("Chosen RMI name '"+name+"' already registered with agent");
+				e.printStackTrace();
 			} catch (RemoteException e) {
 				addLog("RMI error while connecting to agent");
+				e.printStackTrace();
 			} catch (NotFoundException e) {
 				addLog("Error registering event handlers with agent");
+				e.printStackTrace();
 			}
 			
 		}

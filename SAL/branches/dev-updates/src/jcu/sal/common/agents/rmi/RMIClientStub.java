@@ -66,6 +66,7 @@ public class RMIClientStub implements SALAgent{
 			throw e;
 		} catch (NotBoundException e) {
 //			logger.error("Cannot find the SAL agent in its registry");
+			e.printStackTrace();
 			throw new RemoteException("Cannot find the SAL agent in its registry");
 		}
 		
@@ -74,6 +75,7 @@ public class RMIClientStub implements SALAgent{
 			agent.registerClient(rmiName, ourIP);
 		} catch (RemoteException e) {
 //			logger.error("Cannot register with SAL Agent");
+			throw e;
 		}
 	}
 	
