@@ -2,6 +2,7 @@ SAL project-wide dependencies:
 
  * log4j *
 log4j can be obtained from http://logging.apache.org/log4j/1.2
+Debian/Ubuntu package: liblog4j1.2-java
 
 SAL expects to find the following JAR file:
 /usr/share/log4j-1.2.jar
