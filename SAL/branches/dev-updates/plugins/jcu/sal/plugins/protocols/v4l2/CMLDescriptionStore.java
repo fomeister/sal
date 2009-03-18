@@ -44,9 +44,9 @@ public class CMLDescriptionStore extends AbstractStore {
 		 * */
 		key = CCD_KEY;
 		
-		mName = V4L2Protocol.GET_FRAME_METHOD;
-		name = "GetFrame";
-		desc = "Reads a single frame";
+		mName = V4L2Protocol.GET_JPEG_FRAME_METHOD;
+		name = "GetJPEGFrame";
+		desc = "Fetches a single JPEG-encoded frame";
 		t = new Vector<ArgumentType>();
 		argNames = new Vector<String>();
 		argNames.add(WIDTH_VALUE_NAME);

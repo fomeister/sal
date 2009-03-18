@@ -53,21 +53,23 @@ import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
 public class XMLhelper {
 	
 	private static XPath xpath = XPathFactory.newInstance().newXPath();
+	private static DocumentBuilder builder;
+	static {
+		try {
+			builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+		} catch (ParserConfigurationException e) {
+			System.err.println("Cant create the document builder, SAL will not work");
+			e.printStackTrace();
+			throw new DocumentHandlingException("Cant create the document builder, SAL will not work", e);
+		}
+	}
 	
 	/**
      * Creates an empty DOM document
      * @return the empty DOM document
-     * @throws DocumentHandlingException if the empty document cant be created
      */
     public static Document createEmptyDocument(){
-		try {
-	        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-	        return builder.newDocument();
-		} catch (ParserConfigurationException e) {
-			System.err.println("Cant create an empty XML document !!!!");
-			e.printStackTrace();
-			throw new DocumentHandlingException("Can not create an empty XML document", e);
-		}        
+		return builder.newDocument();        
     }
     
     /**
@@ -78,7 +80,6 @@ public class XMLhelper {
      */
     public static Document createDocument(InputStream in) throws SALDocumentException {
     	try {
-	        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 	        return builder.parse(in);
     	} catch (Exception e) {
     		throw new SALDocumentException("Cant parse the input stream to an XML document");
@@ -107,7 +108,6 @@ public class XMLhelper {
      */   
     public static Document createDocument(String xmlstr) throws SALDocumentException {
     	try {
-	        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 	        return builder.parse(new InputSource(new StringReader(xmlstr)));
     	} catch (Exception e) {
     		throw new SALDocumentException("The string cant be parsed to a valid XMl document"	);

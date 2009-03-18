@@ -183,6 +183,18 @@
 				<classpath refid="run.client.classpath" />
 			</java>
 	</target>
+	
+	<target name="run-local-client" depends="jar-all">
+		<delete file="${project.run.local.client.arg1}"/>
+		<delete file="${project.run.local.client.arg2}"/>
+			<java fork="true" classname="${project.run.local.client.main.class}">
+				<arg value="${project.run.local.client.arg1}"/>
+				<arg value="${project.run.local.client.arg2}"/>
+				<classpath refid="run.agent.classpath" />
+				<jvmarg value="-Djava.library.path=${platform.standard.JNIlib.location}"/>
+				<jvmarg value="-Djcu.sal.plugin.configFile=${jcu.sal.plugin.configFile}"/>
+			</java>
+	</target>
 
 <!--	<target name="run" depends="compile">
 			<java fork="true" failonerror="true" classname="${project.run.main.class}">

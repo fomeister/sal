@@ -217,8 +217,8 @@ public class V4L2Protocol extends AbstractProtocol {
 		}
 	}
 	
-	public static String GET_FRAME_METHOD = "getFrame";
-	public byte[] getFrame(Command c, Sensor s) throws SensorControlException{
+	public static String GET_JPEG_FRAME_METHOD = "getJpegFrame";
+	public byte[] getJpegFrame(Command c, Sensor s) throws SensorControlException{
 		if(streaming) {
 			logger.error("Already streaming");
 			throw new InvalidCommandException("The sensor is streaming data");
