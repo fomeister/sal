@@ -35,14 +35,14 @@
 		<pathelement location="${project.agent.classes}" />
 	</path>
 	
-	<!-- define the SAL classpath for running -->
+	<!-- define the agent classpath for running -->
 	<path id="run.agent.classpath">
 		<fileset dir="${project.dir}">
 			<include name="*.jar"/>
 		</fileset>
 	</path>
 	
-	<!-- define the SAL classpath for running -->
+	<!-- define the client classpath for running -->
 	<path id="run.client.classpath">
 		<fileset dir="${project.dir}">
 			<include name="${project.clients.jar}"/>
@@ -63,6 +63,7 @@
 		<echo message=" jar-client:   Create a JAR file with SAL client classes"/>
 		<echo message=" jar-common:   Create a JAR file with classes needed by SAL clients"/>
 		<echo message=" jar-plugins:  Create a JAR file with classes needed by SAL agent plugins"/>
+		<echo message=" jar-all:      Create all 4 JAR files mentioned above"/>
 		<echo message=" clean:        Remove all build generated files"/>
 		<echo message=""/>
 	</target>
@@ -80,7 +81,7 @@
 		</javac>
 	</target>
 	
-	<target name="compile-clients" depends="init, compile-common">
+	<target name="compile-clients" depends="init, compile-common, compile-agent">
 		<javac srcdir="${project.clients.src}" destdir="${project.clients.classes}" deprecation="on" source="${source}" debug="on">
 			<classpath refid="build.clients.classpath" />
 		</javac>
@@ -111,7 +112,7 @@
 		</jar>
 	</target>
 	
-	<target name="jar-clients" depends="compile-clients">
+	<target name="jar-clients" depends="jar-common, compile-clients">
 		<jar jarfile="${project.clients.jar}">
 			<manifest>
 				<attribute name="Class-Path" value="${project.deps.list} ${project.common.jar}"/>
@@ -155,8 +156,12 @@
 				<arg value="${project.run.rmi.agent.arg3}"/>
 				<jvmarg value="-Djava.library.path=${platform.standard.JNIlib.location}"/>
 				<jvmarg value="-Djcu.sal.plugin.configFile=${jcu.sal.plugin.configFile}"/>
-				<jvmarg value="-Djava.rmi.server.codebase=file:${project.common.jar}" />
+				<jvmarg value="-Djava.rmi.server.codebase=file:${basedir}/${project.common.jar}" />
+				<jvmarg value="-Djava.rmi.server.hostname=${project.run.rmi.agent.arg1}" />
 				<classpath refid="run.agent.classpath" />
+				<jvmarg value="-Dcom.sun.management.jmxremote.port=56565" />
+				<jvmarg value="-Dcom.sun.management.jmxremote.authenticate=false" />
+				<jvmarg value="-Dcom.sun.management.jmxremote.ssl=false" />
 			</java>
 	</target>
 	
@@ -174,8 +179,7 @@
 	<target name="run-rmi-client-gui" depends="jar-clients">
 			<java fork="true" classname="${project.run.rmi.client.gui.main.class}">
 				<arg value="${project.run.rmi.client.gui.arg1}"/>
-				<jvmarg value="-Djava.rmi.server.codebase=file:${project.common.jar}" />
-				<!-- <jvmarg value="-Djava.rmi.server.hostname=" /> -->
+				<jvmarg value="-Djava.rmi.server.codebase=file:${basedir}/${project.common.jar}" />
 				<classpath refid="run.client.classpath" />
 			</java>
 	</target>

@@ -240,22 +240,19 @@ public class RmiClient implements ClientEventHandler, StreamCallback{
 	}
 	
 	
-	public static void main(String [] args) throws RemoteException, NotBoundException{
+	public static void main(String [] args) throws RemoteException, NotBoundException, ConfigurationException{
 		if(args.length!=3) {
 			System.out.println("We need three arguments:");
-			System.out.println("1: our RMI name - 2: the IP address of our agentRegistry - 3: the IP address of the Agent agentRegistry");
+			System.out.println("1: our RMI name - 2: the IP address of the SAL agentRegistry - 3: the IP address of our Registry");
 			System.exit(1);
 		}
 		
-		RmiClient c = new RmiClient(args[0], args[2], args[1]);
+		RmiClient c = new RmiClient(args[0], args[1], args[2]);
+		c.start();
 		try {
-			c.start();
 			c.run();
-		} catch (ConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} finally {
-			try{c.stop();} catch(RemoteException e){}
+			try{c.stop();} catch(Throwable e){}
 			System.out.println("Main exiting");
 			System.exit(0);
 		}

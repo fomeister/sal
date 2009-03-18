@@ -76,9 +76,11 @@ public class CommandDataPane implements ActionListener{
 					(i+2), 2, //rows, cols
 	                6, 6,        //initX, initY
 	                6, 6);       //xPad, yPad
+			send.setEnabled(true);
 			mainPane.validate();
 			mainPane.repaint();
-		}
+		} else
+			send.setEnabled(false);
 		cml = c;
 		current = ctx;
 	}

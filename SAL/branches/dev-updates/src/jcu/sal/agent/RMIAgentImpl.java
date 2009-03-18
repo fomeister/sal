@@ -210,9 +210,10 @@ public class RMIAgentImpl implements RMIAgent {
 		RMIAgentImpl agent = new RMIAgentImpl();
 		agent.start(args[1], args[2]);
 		try {
+			//System.out.println("RMI SAL Agent @ "+args[0]+" exporting");
 			RMIAgent stub = (RMIAgent) UnicastRemoteObject.exportObject((RMIAgent) agent, 0);
 			registry.rebind(RMI_STUB_NAME, stub);
-			System.out.println("RMI SAL Agent ready. Press <Enter> to quit");
+			System.out.println("RMI SAL Agent @ "+args[0]+" ready. Press <Enter> to quit");
 			System.in.read();
 		} catch (RemoteException e) {
 			System.out.println("Error binding agent to the RMI registry");
@@ -220,6 +221,7 @@ public class RMIAgentImpl implements RMIAgent {
 		} catch(Throwable t){
 			t.printStackTrace();
 		} finally {
+			//System.out.println("RMI SAL Agent @ "+args[0]+" stopping");
 			agent.stop();
 			System.exit(0);
 		}
