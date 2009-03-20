@@ -1,5 +1,5 @@
 
-package jcu.sal.config.plugins;
+package jcu.sal.common.utils;
 
 import java.util.ArrayList;
 

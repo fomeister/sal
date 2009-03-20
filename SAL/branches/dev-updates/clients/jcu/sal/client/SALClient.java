@@ -1,7 +1,10 @@
 package jcu.sal.client;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -13,26 +16,27 @@ import jcu.sal.agent.LocalAgentImpl;
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
-import jcu.sal.common.XMLhelper;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.agents.SALAgentFactory;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.cml.ResponseType;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.ClientEventHandler;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.exceptions.ArgumentNotFoundException;
+import jcu.sal.common.exceptions.ClosedStreamException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.common.sml.SMLDescriptions;
+import jcu.sal.common.utils.XMLhelper;
 
 public class SALClient implements ClientEventHandler, StreamCallback{
-	private static final long serialVersionUID = -8376295971546676596L;
-	
 	public static class JpgMini {
 		private JLabel l;
 		private JFrame f;
@@ -47,12 +51,14 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 	        f.getContentPane().add(l);
 	        f.setSize(640,480);
 	        f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-	        setVisible();
+	        f.setVisible(true);
 	    }
 	    
 	    public void setImage(byte[] b) {
 	    	l.setIcon(new ImageIcon(b));
-	    	if(System.currentTimeMillis()>start+10000) {
+	    	if(start==0)
+	    		start = System.currentTimeMillis();
+	    	else if(System.currentTimeMillis()>start+10000) {
     			System.out.println("SID: "+sid+" - FPS: "+ (((float) 1000*n/(System.currentTimeMillis()-start))  ));
     			start = System.currentTimeMillis();
     			n = 0;
@@ -64,34 +70,29 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 	    	f.dispose();
 	    }
 	    
-	    public void setVisible(){
-	    	f.setVisible(true);
-	    }
 	}
 	
 	private Map<String, JpgMini> viewers;
-	private LocalAgentImpl agent;
-	private BufferedReader b; 
+	private SALAgent agent;
+	private BufferedReader b;
 	
-	public SALClient() {
+	public SALClient(SALAgent a) throws RemoteException {
 		viewers = new Hashtable<String, JpgMini>();
+		agent = a;
+		b = new BufferedReader(new InputStreamReader(System.in));
 	}
 	
-	public void start(String pc, String sc) throws ConfigurationException{
-		agent = new LocalAgentImpl();
-		agent.start(pc, sc);
+	
+	public void start() throws ConfigurationException{
 		try {
 			agent.registerEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 			agent.registerEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
-		} catch (NotFoundException e2) {
-			e2.printStackTrace();
+		}  catch (NotFoundException e) {
+			//cant register for event, we can keep going
 		}
-		
-		b = new BufferedReader(new InputStreamReader(System.in));
 	}
 	
-
 	public int getAction(){
 		int sid=-1;;
 		boolean ok=false;
@@ -116,6 +117,7 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 		Response res;
 		ArgumentType t;
 		CMLDescriptions cmls;
+		ResponseType r;
 		int j;
 		
 		cmls = new CMLDescriptions(agent.getCML(String.valueOf(sid)));
@@ -123,48 +125,47 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 		System.out.println(cmls.getXMLString());
 		System.out.println("Print human-readable form ?(Y/n)");
 		if(!b.readLine().equals("n")){
-			for(CMLDescription tmp: cmls.getDescriptions()){
+			for(CMLDescription tmp : cmls.getDescriptions()){
 				System.out.print("CID: "+tmp.getCID());
-				System.out.println(" - "+tmp.getDesc());
+				System.out.println(" - "+tmp.getShortDesc());
 			}
 		}
 		System.out.println("Enter a command id:");
 		j=Integer.parseInt(b.readLine());
 		
-		cf = new CommandFactory(cmls.getDescription(j));
+		cf = new CommandFactory(cmls.getDescription(j), this);
+		r = cmls.getDescription(j).getReturnType();
 		boolean argOK=false, argsDone=false;
-		int i = 0;
 		while(!argsDone) {
 			for(String str: cf.listMissingArgNames()){
 				t = cf.getArgType(str);
-				if(!t.equals(ArgumentType.CallbackArgument)) {
-					argOK=false;
-					while(!argOK) {
-						System.out.println("Enter value of type '"+t.getArgType()+"' for argument '"+str+"'");
-						str2 = b.readLine();
-						try {cf.addArgumentValue(str, str2); argOK = true;}
-						catch (ArgumentNotFoundException e1) {System.out.println("Wrong value"); argOK=false;}
-					}
-				} else {
-					cf.addArgumentCallback(str, this);
-					JpgMini jpg = new JpgMini(String.valueOf(sid));
-					viewers.put(String.valueOf(sid), jpg);	
+
+				argOK=false;
+				while(!argOK) {
+					System.out.println("Enter value of type '"+t.getType()+"' for argument '"+str+"'");
+					str2 = b.readLine();
+					try {cf.addArgumentValue(str, str2); argOK = true;}
+					catch (ArgumentNotFoundException e1) {System.out.println("Wrong value"); argOK=false;}
 				}
+
 			}
-			try {c = cf.getCommand(); argsDone=true;}
-			catch (ConfigurationException e1) {System.out.println("Values missing"); argsDone=false;}
-			if(i++>5){
-				System.out.println("Exiting");
+
+			if(r.getContentType().equals(CMLConstants.CONTENT_TYPE_JPEG))
+					viewers.put(String.valueOf(sid), new JpgMini(String.valueOf(sid)));
+			else if(!r.getContentType().equals(CMLConstants.CONTENT_TYPE_TEXT_PLAIN)){
+				System.out.println("Cannot handle content type "+r.getContentType());
 				return;
 			}
+			try {c = cf.getCommand(); argsDone=true;}
+			catch (ConfigurationException e1) {System.out.println("Values missing"); throw e1; }//argsDone=false;}
 		}
 		
 		res = agent.execute(c, String.valueOf(sid));
-
+		
 		if(cmls.getDescription(j).getReturnType().equals(CMLConstants.RET_TYPE_BYTE_ARRAY))
 			new JpgMini(String.valueOf(sid)).setImage(res.getBytes());
 		else
-			System.out.println("Command returned: " + res.getString());					
+			System.out.println("Command returned: " + res.getString());				
 	}
 	
 	public void printSensorList(SMLDescriptions smls){
@@ -183,29 +184,30 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 
 		while((sid=getAction())!=-1) {
 			try {
+	
 				if(sid>=0)
-					doActionSensor(sid);
+					doActionSensor(sid);										
 				else if(sid==-2)
 					System.out.println(agent.listActiveSensors());
 				else if(sid==-3)
 					printSensorList(new SMLDescriptions(agent.listActiveSensors()));
-				else if (sid==-4)	{
+				else if(sid==-4) {
 					System.out.println("Enter the XML doc for the new procotol:");
 					sb.delete(0, sb.length());
 					while(!(str=b.readLine()).equals(""))
 						sb.append(str);
-					System.out.println("Load associated sensors from config file ? (yes-no)");
+					System.out.println("Load associated sensors from config file ? (yes-NO)");
 					str2=b.readLine();
 					agent.addProtocol(sb.toString(), (str2.equals("yes"))?true:false);
 					sb.delete(0, sb.length());
 				}else if(sid==-5) {
 					System.out.println("Enter the ID of the protocol to be removed:");
 					str=b.readLine();
-					System.out.println("Remove associated sensors from config file ? (yes-no)");
+					System.out.println("Remove associated sensors from config file ? (yes-NO)");
 					str2=b.readLine();
 					agent.removeProtocol(str, (str2.equals("yes"))?true:false);
 				} else if(sid==-6)
-					System.out.println(XMLhelper.toString(agent.listProtocols())); 
+					System.out.println(XMLhelper.toString(agent.listProtocols()));				
 				else if(sid==-7) {
 					System.out.println("Enter the XML doc for the new sensor:");
 					sb.delete(0, sb.length());
@@ -219,60 +221,42 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 					agent.removeSensor(str);
 				} else if(sid==-9)
 					System.out.println(agent.listSensors());
-				else if(sid==-10) 
+				else if(sid==-10)
 					printSensorList(new SMLDescriptions(agent.listSensors()));
 			} catch (Exception e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
 	
-	public void stop(){
+	public void stop() throws RemoteException{
 		try {
 			agent.unregisterEventHandler(this, Constants.SENSOR_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(this, Constants.PROTOCOL_MANAGER_PRODUCER_ID);
 			agent.unregisterEventHandler(this, Constants.SENSOR_STATE_PRODUCER_ID);
 		} catch (NotFoundException e) {
-			e.printStackTrace();
+			//cant unregister our event handler, keep going
 		}
-		agent.stop();
-		System.out.println("Main exiting");
-	}
 	
-	
-	public static void main(String [] args){
-		String pc, sc;
-		if(args.length!=2) {
-			pc="conf/platformConfig-empty.xml";
-			sc="conf/sensorsConfig-empty.xml";
-		} else {
-			pc = args[0];
-			sc = args[1];
-		}
-		SALClient c = new SALClient();
-		try {
-			c.start(pc, sc);
-			c.run();
-		} catch (ConfigurationException e) {
-			e.printStackTrace();
-		} finally {
-			c.stop();
-		}
+		SALAgentFactory.getFactory().releaseRMIAgent(agent);	
 	}
-
-	public String getName() {
-		return "SAL user";
-	}
-
-	public void handle(Event e, SALAgent a) {
-		System.out.println("Received "+e.toString());
-	}
-
 
 	private int n;
 	private long ts;
 	
 	public void collect(Response r) {
+		if(viewers.get(r.getSID())==null){
+			try {
+				System.out.println("Command returned: "+r.getString());
+			} catch (SensorControlException e) {
+				if(e.getClass().equals(ClosedStreamException.class))
+					System.out.println("Stream from sensor "+r.getSID()+" terminated");
+				else
+					System.out.println("Stream from sensor "+r.getSID()+" returned an error");
+			}
+			return;
+		}
 		if(ts==0)
 			ts = System.currentTimeMillis();
 		else if((ts+10000)<System.currentTimeMillis()){
@@ -281,12 +265,55 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 			n=0;
 		} else
 			n++;
+		
 		try {
 			viewers.get(r.getSID()).setImage(r.getBytes());
 		} catch (SensorControlException e) {
-			System.out.println("Stream from sensor "+r.getSID()+" returned an error");
-			viewers.remove(r.getSID()).close();
+			if(e.getClass().equals(ClosedStreamException.class))
+				System.out.println("Stream from sensor "+r.getSID()+" terminated");
+			else
+				System.out.println("Stream from sensor "+r.getSID()+" returned an error");
+			viewers.get(r.getSID()).close();
+			viewers.remove(r.getSID());
 		}
 	}
 
+	@Override
+	public void handle(Event e, SALAgent a) throws IOException {
+		System.out.println("Received "+e.toString());
+	}
+	
+	
+	
+	public static void main(String [] args) throws RemoteException, NotBoundException, ConfigurationException{
+		SALClient c;
+		if(args.length==3){
+			SALAgent agent = SALAgentFactory.getFactory().createRMIAgent(args[1], args[2], args[0]);
+			c = new SALClient(agent);
+		} else if(args.length==2){
+			LocalAgentImpl agent = new LocalAgentImpl();
+			agent.start(args[0], args[1]);
+			c = new SALClient(agent);
+		} else {
+			printUsage();			
+			return;
+		}
+		
+		c.start();
+		try {
+			c.run();
+		} finally {
+			try{c.stop();} catch(Throwable e){}
+			System.out.println("Main exiting");
+			System.exit(0);
+		}
+	}
+	
+	public static void printUsage(){
+		System.out.println("Usage:");
+		System.out.println("To create a SAL client connecting to a local agent, use the following arguments:");
+		System.out.println("1: the platform config file - 2: the sensor config file");
+		System.out.println("To create a SAL client connecting to an RMI SAL Agent, provide the following arguments:");
+		System.out.println("1: our RMI name - 2: the IP address of the SAL agentRegistry - 3: the IP address of our Registry");
+	}
 }

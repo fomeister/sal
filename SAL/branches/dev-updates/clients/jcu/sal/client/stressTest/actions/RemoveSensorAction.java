@@ -1,10 +1,9 @@
 package jcu.sal.client.stressTest.actions;
 
-import java.rmi.RemoteException;
 import java.util.Random;
 
 import jcu.sal.common.Slog;
-import jcu.sal.common.agents.rmi.RMIAgent;
+import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.sml.SMLDescriptions;
 
@@ -17,10 +16,10 @@ public class RemoveSensorAction implements Action {
 	}
 	public static String name="Dummy_";
 	
-	private RMIAgent agent;
+	private SALAgent agent;
 	private Random r;
 	
-	public RemoveSensorAction(RMIAgent a){
+	public RemoveSensorAction(SALAgent a){
 		agent = a;
 		r = new Random();
 	}
@@ -56,10 +55,6 @@ public class RemoveSensorAction implements Action {
 			//logger.info("sensor "+name+" removed");
 		} catch (NotFoundException e) {
 			logger.info("sensor "+name+" cant be removed");
-			e.printStackTrace();
-		} catch (RemoteException e) {
-			logger.info("sensor "+name+" cant be removed");
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
 	}

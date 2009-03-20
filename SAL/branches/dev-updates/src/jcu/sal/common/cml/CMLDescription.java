@@ -7,12 +7,15 @@ import java.util.List;
 import java.util.Vector;
 
 import jcu.sal.common.Slog;
-import jcu.sal.common.XMLhelper;
+import jcu.sal.common.cml.xml.Argument;
+import jcu.sal.common.cml.xml.CommandDescription;
+import jcu.sal.common.cml.xml.ObjectFactory;
+import jcu.sal.common.cml.xml.CommandDescription.Arguments;
 import jcu.sal.common.exceptions.ArgumentNotFoundException;
-import jcu.sal.common.exceptions.ConfigurationException;
-import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SALRunTimeException;
+import jcu.sal.common.utils.JaxbHelper;
+import jcu.sal.common.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -26,46 +29,48 @@ public class CMLDescription {
 	private static Logger logger = Logger.getLogger(CMLDescription.class);
 	static {Slog.setupLogger(logger);}
 	
-	private static String XPATH_CMD_DESC = "//"+CMLConstants.CMD_DESCRIPTION_TAG;
-	private static String XPATH_CMD_DESC_SHORT_DESC = XPATH_CMD_DESC+"/"+CMLConstants.SHORT_DESCRIPTION_TAG;
-	private static String XPATH_CMD_DESC_NAME = XPATH_CMD_DESC+"/"+CMLConstants.NAME_TAG;
-	private static String XPATH_CMD_DESC_ARGUMENTS = XPATH_CMD_DESC+"/"+CMLConstants.ARGUMENTS_TAG;
-	private static String XPATH_CMD_DESC_ARGUMENT = XPATH_CMD_DESC_ARGUMENTS + "/" + CMLConstants.ARGUMENT_TAG;
-	private static String XPATH_CMD_DESC_RETURN_TYPE = XPATH_CMD_DESC+"/"+CMLConstants.RETURN_TYPE_TAG;
-
-	private Integer cid;
-	private String name;
+	private CommandDescription commandDescription;
+	private static final ObjectFactory factory = new ObjectFactory();
 	private String methodName;
-	private String desc;
-	private List<ArgumentType> argTypes;
-	private List<String> argNames;
-	private ReturnType returnType;
 	
+	private CMLDescription(String m){
+		methodName = m!=null ? m : "";
+		commandDescription = factory.createCommandDescription();
+	}
 	
+	/**
+	 * This package-private constructor is meant to be used only by 
+	 * {@link CMLDescriptions} objects
+	 * @param c
+	 */
+	CMLDescription(CommandDescription c) {
+		commandDescription = c;
+		methodName="";
+	}
 	/**
 	 * This method constructs a CML description object
 	 * @param mName the name of the method which should be called when a command instance matching this description is received
 	 * @param id the command id
 	 * @param name the name of the command
-	 * @param desc the description of the command
-	 * @param argTypes an array containing the argument types
-	 * @param argNames an array containing the argNames of the arguments
+	 * @param desc the short description of the command
+	 * @param args a list of {@link CMLArgument}s representing the arguments to this command
 	 * @param returnType the type of the return result
-	 * @throws SALRunTimeException if the three arrays have different lengths,   
+	 * @throws SALRunTimeException if any of the argument is invalid   
 	 */
-	public CMLDescription(String methodName, Integer id, String name, String desc, List<ArgumentType> argTypes,
-			List<String> argNames, ReturnType returnType){
-		if(argTypes.size()!=argNames.size()) {
-			logger.error("Error creating the CML doc: arguments number unequals somewhere");
-			throw new SALRunTimeException("number of argument types different from number of argument names");
-		}
-		cid=id;
-		this.name = name;
-		this.desc = desc;
-		this.argTypes = new Vector<ArgumentType>(argTypes);
-		this.argNames = new Vector<String>(argNames);
-		this.returnType = returnType;
-		this.methodName = methodName!=null ? methodName : "";
+	public CMLDescription(String methodName, Integer id, String name, String desc, List<CMLArgument> args, ResponseType returnType){
+		this(methodName);
+		commandDescription.setCid(id.toString());
+		commandDescription.setName(name);
+		commandDescription.setLongDescription("");
+		commandDescription.setShortDescription(desc);
+		commandDescription.setResponse(returnType.getResponse());
+		commandDescription.setArguments(factory.createCommandDescriptionArguments());
+		Arguments a = commandDescription.getArguments();
+
+		if(args!=null)
+			for(CMLArgument c: args)
+				a.getArgument().add(c.getArgument());
+		
 
 	}
 	
@@ -77,172 +82,15 @@ public class CMLDescription {
 	 * @param existing the existing description whose description, argument types & argNames and return type will be reused
 	 */
 	public CMLDescription(Integer id, String name, CMLDescription existing){
-		this(existing.getMethodName(), id, name,existing.getDesc(), existing.getArgTypes(), existing.getArgNames(), existing.getReturnType() );
+		this(existing.methodName, id, name,existing.getShortDesc(), existing.getArguments(), existing.getReturnType() );
 	}
-	
-	/**
-	 * This method creates a new a CML description object based on a given CML description document.
-	 * @param existing the existing description
-	 * @throws SALDocumentException if the existing document cant be parsed or contains more than one CML description, ie
-	 * it is a CML descriptions document
-	 */
-	public CMLDescription(Document existing) throws SALDocumentException{
-		
-		checkDocument(existing);
-		parseName(existing);
-		parseCID(existing);
-		parseShortDescription(existing);
-		parseArguments(existing);
-		parseReturnType(existing);
-		
-		methodName = "";
-		
-	}
-	
-	/**
-	 * This method checks that there is only one CML description in the provided document
-	 * @param d the document to be checked
-	 * @throws SALDocumentException if the number of CML descriptions is not 1
-	 */
-	private void checkDocument(Document d) throws SALDocumentException{
-		try {
-			int nb = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_CMD_DESC+")", d));
-			if(nb!=1){
-				logger.error("There are too many CML descriptions ("+nb+") in this document");
-				logger.error(XMLhelper.toString(d));
-				throw new SALDocumentException("Too many CML descriptions ("+nb+") in this document, expected 1 only");
-			}
-		} catch (Throwable t) {
-			logger.error("Cant check how many CML descriptions are in this document");
-			throw new SALDocumentException("Unable to check the CML description sections in this document", t);
-		}
-	}
-	
-	/**
-	 * This method parses the given CML description document and extracts the CID
-	 * @param d the CML description document
-	 * @throws SALDocumentException if the CID cant be parsed
-	 */
-	private void parseCID(Document d) throws SALDocumentException {
-		try {
-			cid = Integer.parseInt(XMLhelper.getAttributeFromName(XPATH_CMD_DESC, CMLConstants.CID_ATTRIBUTE, d));
-		} catch (NumberFormatException e) {
-			logger.error("CID is not a number");
-			throw new SALDocumentException("CID is not a number",e);
-		} catch (Exception e) {
-			logger.error("Cant find CID in CMLdescription XML doc");
-			throw new SALDocumentException("Cant find CID in CML doc", e);
-		}
-		
-	}
-	
-	/**
-	 * This method parses the given CML description document and extracts the description
-	 * @param d the CML description document
-	 * @throws ConfigurationException if the description cant be parsed
-	 */
-	private void parseShortDescription(Document d) throws SALDocumentException {
-		try {
-			desc = XMLhelper.getTextValue(XPATH_CMD_DESC_SHORT_DESC, d);
-		} catch (Exception e) {
-			logger.error("Cant parse the descrption in CMLdescription XML doc");
-			throw new SALDocumentException("Cant parse the descrption in CML doc", e);
-		}
-		
-	}
-	
-	/**
-	 * This method parses the given CML description document and extracts the name
-	 * @param d the CML description document
-	 * @throws SALDocumentException if the name cant be parsed
-	 */
-	private void parseName(Document d) throws SALDocumentException {
-		try {
-			name = XMLhelper.getTextValue(XPATH_CMD_DESC_NAME, d);
-		} catch (Exception e) {
-			logger.error("Cant parse the name in CMLdescription XML doc");
-			throw new SALDocumentException("Cant parse the name in cML doc",e) ;
-		}
-	}
-	
-	/**
-	 * This method parses the given CML description document and extracts the return type
-	 * @param d the CML description document
-	 * @throws SALDocumentException if the return type cant be parsed
-	 */
-	private void parseReturnType(Document d) throws SALDocumentException {
-		try {
-			returnType = new ReturnType(XMLhelper.getAttributeFromName(XPATH_CMD_DESC_RETURN_TYPE,CMLConstants.TYPE_ATTRIBUTE,  d));
-		} catch (Exception e) {
-			logger.error("Cant parse the return type in CMLdescription XML doc");
-			throw new SALDocumentException("Cant parse the return type in CML doc",e);
-		}
-	}
-	
-	/**
-	 * This method parses the given CML description document and extracts the argument types and argNames
-	 * @param d the CML description document
-	 * @throws SALDocumentException if the arguments cant be parsed
-	 */
-	private void parseArguments(Document d) throws SALDocumentException {
-		int nbArgs;
-		
-		try {
-			nbArgs = Integer.parseInt(XMLhelper.getTextValue("count("+XPATH_CMD_DESC_ARGUMENT+")", d));
-		} catch (NumberFormatException e) {
-			logger.error("Cant count how many arguments are needed for this command");
-			throw new SALDocumentException("Arguments section malformed", e);
-		} catch (NotFoundException e) {
-			/*
-			 * The <arguments> section is not mandatory if there are no argument
-			 */
-			logger.debug("Cant find the arguments in CMLdescription XML doc");
-			nbArgs = 0;
-		}
-		
-		argTypes = new Vector<ArgumentType>(nbArgs);
-		argNames = new Vector<String>(nbArgs);
-		for(int i=0; i<nbArgs; i++) {
-			try {
-				argNames.add(XMLhelper.getAttributeFromName(XPATH_CMD_DESC_ARGUMENT+"["+(i+1)+"]", CMLConstants.NAME_ATTRIBUTE, d));
-			} catch (Exception e) {
-//				logger.error("Cant parse the argument name for argument "+i+" in CMLdescription XML doc");
-//				logger.error("XPATH: "+XPATH_CMD_DESC_ARGUMENT+"["+(i+1)+"]");
-//				logger.error("Document: "+XMLhelper.toString(d));
-//				e.printStackTrace();
-				throw new SALDocumentException("Cant parse the argument name for argument '"+i+"'",e);
-			}
-			
-			try {
-				argTypes.add(new ArgumentType(XMLhelper.getAttributeFromName(XPATH_CMD_DESC_ARGUMENT+"["+(i+1)+"]", CMLConstants.TYPE_ATTRIBUTE, d)));
-			} catch (Exception e) {
-//				logger.error("Cant parse the argument type for argument "+i+" in CMLdescription XML doc");
-//				logger.error("XPATH: "+XPATH_CMD_DESC_ARGUMENT+"["+(i+1)+"]");
-//				logger.error("Document: "+XMLhelper.toString(d));
-//				e.printStackTrace();
-				throw new SALDocumentException("Cant parse the argument type (or invalid argument type) for argument '"+i+"'",e);
-			}
-		}
-	}
-
 	
 	/**
 	 * This method returns this CML description's document as a String
 	 * @return the CML description document as a String
 	 */
 	public String getXMLString(){
-		String cml = "<"+CMLConstants.CMD_DESCRIPTION_TAG+" "+CMLConstants.CID_ATTRIBUTE+"=\""+cid.toString()+"\">\n"
-				+"\t<"+CMLConstants.NAME_TAG+">"+name+"</"+CMLConstants.NAME_TAG+">\n"
-				+"\t<"+CMLConstants.SHORT_DESCRIPTION_TAG+">"+desc+"</"+CMLConstants.SHORT_DESCRIPTION_TAG+">\n"
-				+"\t<"+CMLConstants.ARGUMENTS_TAG+">\n";
-		for (int i = 0; i < argTypes.size(); i++)
-			cml += "\t\t<"+CMLConstants.ARGUMENT_TAG+" "+CMLConstants.TYPE_ATTRIBUTE+"=\""+argTypes.get(i).getArgType()+
-					"\" "+CMLConstants.NAME_ATTRIBUTE+"=\""+argNames.get(i)+"\" />\n";
-
-		cml +=	"\t</"+CMLConstants.ARGUMENTS_TAG+">\n"
-				+"\t<"+CMLConstants.RETURN_TYPE_TAG+" "+CMLConstants.TYPE_ATTRIBUTE+"=\""+returnType.getReturnType()+"\" />\n"
-				+"</"+CMLConstants.CMD_DESCRIPTION_TAG+">\n";
-		return cml;
+		return JaxbHelper.toXmlString(commandDescription);
 	}
 	
 	/**
@@ -263,7 +111,7 @@ public class CMLDescription {
 	 * @return this CML description's CID
 	 */
 	public Integer getCID(){
-		return cid;
+		return new Integer(commandDescription.getCid());
 	}
 	
 	/**
@@ -271,7 +119,7 @@ public class CMLDescription {
 	 * @return this CML description's name
 	 */
 	public String getName(){
-		return name;
+		return commandDescription.getName();
 	}
 	
 	/**
@@ -281,73 +129,127 @@ public class CMLDescription {
 	public String getMethodName(){
 		return methodName;
 	}
-
+	
 	/**
-	 * This method returns an array of argument types for this  CML description
-	 * @return an array of argument types for this  CML description
+	 * This method returns this CML description's short description
+	 * @return an this CML description's short description
 	 */
-	public List<ArgumentType> getArgTypes() {
-		return new Vector<ArgumentType>(argTypes);
+	public String getShortDesc() {
+		return commandDescription.getShortDescription();
 	}
 	
 	/**
-	 * This method returns the number of arguments for this  CML description
-	 * @return the number of arguments for this  CML description
+	 * This method returns this CML description's long description
+	 * @return an this CML description's long description
 	 */
-	public int getArgCount() {
-		return argTypes.size();
+	public String getLongDesc() {
+		return commandDescription.getLongDescription();
 	}
 
 	/**
-	 * This method returns this CML description's description
-	 * @return an this CML description's description
+	 * This method returns a list of {@link CMLArgument} for all
+	 * arguments in this description. 
+	 * @return a list of {@link CMLArgument}.
 	 */
-	public String getDesc() {
-		return desc;
+	public List<CMLArgument> getArguments(){
+		Vector<CMLArgument> v = new Vector<CMLArgument>();
+		if(commandDescription.getArguments()!=null)
+			for(Argument a: commandDescription.getArguments().getArgument())
+				v.add(new CMLArgument(a));
+		return v;
 	}
-
+	
 	/**
-	 * This method returns an array of argument argNames for this  CML description
-	 * @return an array of argument argNames for this  CML description
+	 * This method returns a list of argument names in this object.
+	 * @return a list of argument names in this object.
 	 */
-	public List<String> getArgNames() {
-		return new Vector<String>(argNames);
+	public List<String> getArgNames(){
+		Vector<String> n = new Vector<String>();
+		if(commandDescription.getArguments().getArgument()!=null)
+			for(Argument a: commandDescription.getArguments().getArgument())
+				n.add(a.getName());
+		return n;
 	}
-
+	
+	/**
+	 * This method returns a list of {@link ArgumentType}s for all
+	 * argument in this object.
+	 * @return a list of {@link ArgumentType}s in this object.
+	 */
+	public List<ArgumentType> getArgTypes(){
+		Vector<ArgumentType> n = new Vector<ArgumentType>();
+		if(commandDescription.getArguments()!=null)
+			for(Argument a: commandDescription.getArguments().getArgument())
+				n.add(new ArgumentType(a.getType()));
+		return n;
+	}
+	
+	/**
+	 * This method returns the {@link ArgumentType} of an argument given its name
+	 * @param name the name of the argument whose {@link ArgumentType} is to
+	 * be returned
+	 * @return the {@link ArgumentType} of an argument.
+	 * @throws ArgumentNotFoundException if no argument matches the given name.
+	 */
+	public ArgumentType getArgType(String name){
+		if(commandDescription.getArguments()!=null)
+			for(Argument a: commandDescription.getArguments().getArgument())
+				if(a.getName().equals(name))
+					return new ArgumentType(a.getType());
+		
+		throw new ArgumentNotFoundException("Cant find argument named "+name);
+	}
+	
+	/**
+	 * This method returns the {@link CMLArgument} of an argument given its name
+	 * @param name the name of the argument whose {@link CMLArgument} is
+	 * to be returned
+	 * @return the {@link CMLArgument} of the argument.
+	 * @throws ArgumentNotFoundException if no argument matches the given name.
+	 */
+	public CMLArgument getArgument(String name){
+		if(commandDescription.getArguments()!=null)
+			for(Argument a: commandDescription.getArguments().getArgument())
+				if(a.getName().equals(name))
+					return new CMLArgument(a);
+		
+		throw new ArgumentNotFoundException("Cant find argument named "+name);
+	}
+	
 	/**
 	 * This method returns the return type for this  CML description
 	 * @return the return type for this  CML description
 	 */
-	public ReturnType getReturnType() {
-		return returnType;
+	public ResponseType getReturnType() {
+		return new ResponseType(commandDescription.getResponse());
 	}
 	
 	/**
-	 * This method returns the argument type for a given argument.
-	 * @param name the name of the argument whose the type will be returned 
-	 * @return the argument type for a given argument.
-	 * @throws ArgumentNotFoundException if the argument <code>"name"</code> does not exist
+	 * This package-private methods is meant to be used
+	 * only internally.
+	 * @return
 	 */
-	public ArgumentType getArgType(String name) throws ArgumentNotFoundException{
-		int pos = argNames.indexOf(name);
-		if(pos>=0)
-			return argTypes.get(pos);
-		throw new ArgumentNotFoundException("Argument '"+name+"' not found");
+	CommandDescription getCommandDescription(){
+		return commandDescription;
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
 	public int hashCode() {
-		final int PRIME = 31;
+		final int prime = 31;
 		int result = 1;
-		result = PRIME * result + ((argNames == null) ? 0 : argNames.hashCode());
-		result = PRIME * result + ((argTypes == null) ? 0 : argTypes.hashCode());
-		result = PRIME * result + ((cid == null) ? 0 : cid.hashCode());
-		result = PRIME * result + ((desc == null) ? 0 : desc.hashCode());
-		result = PRIME * result + ((name == null) ? 0 : name.hashCode());
-		result = PRIME * result + ((returnType == null) ? 0 : returnType.hashCode());
+		result = prime
+				* result
+				+ ((commandDescription == null) ? 0 : commandDescription
+						.hashCode());
 		return result;
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -356,37 +258,13 @@ public class CMLDescription {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		final CMLDescription other = (CMLDescription) obj;
-		if (argNames == null) {
-			if (other.argNames != null)
+		CMLDescription other = (CMLDescription) obj;
+		if (commandDescription == null) {
+			if (other.commandDescription != null)
 				return false;
-		} else if (!argNames.equals(other.argNames))
-			return false;
-		if (argTypes == null) {
-			if (other.argTypes != null)
-				return false;
-		} else if (!argTypes.equals(other.argTypes))
-			return false;
-		if (cid == null) {
-			if (other.cid != null)
-				return false;
-		} else if (!cid.equals(other.cid))
-			return false;
-		if (desc == null) {
-			if (other.desc != null)
-				return false;
-		} else if (!desc.equals(other.desc))
-			return false;
-		if (name == null) {
-			if (other.name != null)
-				return false;
-		} else if (!name.equals(other.name))
-			return false;
-		if (returnType == null) {
-			if (other.returnType != null)
-				return false;
-		} else if (!returnType.equals(other.returnType))
+		} else if (!commandDescription.equals(other.commandDescription))
 			return false;
 		return true;
 	}
+	
 }

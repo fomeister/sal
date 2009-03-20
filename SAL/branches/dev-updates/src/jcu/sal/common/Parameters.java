@@ -8,6 +8,7 @@ import java.util.Set;
 
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;

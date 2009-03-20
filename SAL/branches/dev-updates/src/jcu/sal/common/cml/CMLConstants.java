@@ -1,37 +1,113 @@
 package jcu.sal.common.cml;
 
 public interface CMLConstants {
-	public static String CMD_DESCRIPTIONS_TAG = 		"commandDescriptions";
-	public static String CMD_DESCRIPTION_TAG = 			"CommandDescription";
-	public static String CMD_INSTANCE_TAG = 			"CommandInstance";
-	public static String CID_ATTRIBUTE = 				"cid";
-	public static String NAME_TAG = 					"Name";
-	public static String SHORT_DESCRIPTION_TAG = 		"ShortDescription";
-	public static String ARGUMENTS_TAG = 				"arguments";
-	public static String ARGUMENT_TAG = 				"Argument";
-	public static String NAME_ATTRIBUTE = 				"name";
-	public static String TYPE_ATTRIBUTE = 				"type";
-	public static String RETURN_TYPE_TAG = 				"ReturnType";
+	/**
+	 * 
+	 * A R G U M E N T   T Y P E S
+	 * 
+	 */
+	/*
+	 * The strings below must match the possible "type" attribute
+	 * in the CML schema. Additions and removals must be also
+	 * updated in the ARG_TYPES array
+	 */
+	public static final String ARG_TYPE_STRING="string";
+	public static final String ARG_TYPE_INT="int";
+	public static final String ARG_TYPE_FLOAT="float";
+	public static final String ARG_TYPE_LIST="list";
+	public static final String ARG_TYPE_BUTTON="button";
 	
-	public static String XPATH_CMD_DESC = 				"/"+CMD_DESCRIPTIONS_TAG+"/"+CMD_DESCRIPTION_TAG;
-	public static String XPATH_CMD_DESC_NAME = 			XPATH_CMD_DESC+"/"+NAME_TAG;
-	public static String XPATH_CMD_DESC_SHORT_DESC = 	XPATH_CMD_DESC+"/"+SHORT_DESCRIPTION_TAG;
-	public static String XPATH_CMD_DESC_ARGUMENTS = 	XPATH_CMD_DESC+"/"+ARGUMENTS_TAG;
-	public static String XPATH_CMD_DESC_ARGUMENT = 		XPATH_CMD_DESC_ARGUMENTS+"/"+ARGUMENT_TAG;
-	public static String XPATH_CMD_DESC_RETURN_TYPE= 	XPATH_CMD_DESC+"/"+RETURN_TYPE_TAG;
+	/*
+	 * Update the array below with additions/removals of argument types
+	 */
+	public static final String[] ARG_TYPES={
+		ARG_TYPE_STRING,
+		ARG_TYPE_INT,
+		ARG_TYPE_FLOAT,
+		ARG_TYPE_LIST,
+		ARG_TYPE_BUTTON
+	};
 	
-	public static String XPATH_CMD_INST = 				"/"+CMD_INSTANCE_TAG;
-	public static String XPATH_CMD_INST_ARGUMENTS = 	XPATH_CMD_INST+"/"+ARGUMENTS_TAG;
-	public static String XPATH_CMD_INST_ARGUMENT = 		XPATH_CMD_INST_ARGUMENTS+"/"+ARGUMENT_TAG;
 	
-	public static String ARG_TYPE_STRING="string";
-	public static String ARG_TYPE_INT="int";
-	public static String ARG_TYPE_FLOAT="float";
-	public static String ARG_TYPE_CALLBACK="callback";
 	
-	public static String RET_TYPE_INT="int";
-	public static String RET_TYPE_FLOAT="float";
-	public static String RET_TYPE_STRING="string";
-	public static String RET_TYPE_BYTE_ARRAY="byte array";
-	public static String RET_TYPE_VOID="void";
+	
+	/**
+	 * 
+	 * R E T U R N   T Y P E S
+	 * 
+	 */
+	/*
+	 * Additions and removals must be also
+	 * updated in the RET_TYPE array
+	 */
+	public static final String RET_TYPE_INT="int";
+	public static final String RET_TYPE_FLOAT="float";
+	public static final String RET_TYPE_STRING="string";
+	public static final String RET_TYPE_BYTE_ARRAY="byte array";
+	public static final String RET_TYPE_VOID="void";
+	
+	/*
+	 * Update the array below with additions/removals of return types
+	 */
+	public static final String[] RET_TYPES={
+		RET_TYPE_INT,
+		RET_TYPE_FLOAT,
+		RET_TYPE_STRING,
+		RET_TYPE_BYTE_ARRAY,
+		RET_TYPE_VOID
+	};
+	
+	
+	
+	
+	/**
+	 * 
+	 * C O N T E N T   T Y P E S
+	 * 
+	 */
+	/*
+	 * Additions and removals must be also
+	 * updated in the CONTENT_TYPES array
+	 */
+	public static final String CONTENT_TYPE_JPEG="image/jpeg";
+	public static final String CONTENT_TYPE_RGB23="image/x-rgb";
+	public static final String CONTENT_TYPE_IMAGE_RAW="image/raw";
+	public static final String CONTENT_TYPE_TEXT_PLAIN="text/plain";
+	
+	/*
+	 * Update the array below with additions/removals of content types
+	 */
+	public static final String[] CONTENT_TYPES={
+		CONTENT_TYPE_JPEG,
+		CONTENT_TYPE_RGB23,
+		CONTENT_TYPE_TEXT_PLAIN,
+		CONTENT_TYPE_IMAGE_RAW
+	};
+	
+	/**
+	 * 
+	 * U N I T S
+	 * 
+	 */
+	/*
+	 * Additions and removals must be also
+	 * updated in the UNITS array
+	 */
+	public static final String UNIT_NONE="none";
+	public static final String UNIT_PERCENT="%";
+	public static final String UNIT_DEGREE_C="degree C";
+	public static final String UNIT_MBYTES="MBytes";
+	public static final String UNIT_VOLTS="Volts";
+	
+	/*
+	 * Update the array below with additions/removals of units
+	 */
+	public static final String[] UNITS={
+		UNIT_NONE,
+		UNIT_PERCENT,
+		UNIT_DEGREE_C,
+		UNIT_MBYTES,
+		UNIT_VOLTS
+	};
+
 }

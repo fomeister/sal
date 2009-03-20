@@ -2,6 +2,7 @@ package jcu.sal.common;
 
 import java.io.Serializable;
 
+import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.exceptions.SensorControlException;
 
 /**
@@ -21,6 +22,7 @@ public class Response implements Serializable {
 	private int cid;
 	private SensorControlException exception;
 	private long timeStamp;
+	private SALAgent agent;
 	
 	public Response(byte[] bb, int cid, String sid) {
 		timeStamp = System.currentTimeMillis();
@@ -123,5 +125,27 @@ public class Response implements Serializable {
 	 */
 	public boolean hasException(){
 		return (b==null && exception !=null);
+	}
+	
+	/**
+	 * This method sets the {@link SALAgent} where this response originates from.
+	 * Clients should not use this method.	 * 
+	 * @param a the SALAgent which generated this response.
+	 */
+	public void setAgent(SALAgent a){
+		agent = a;
+	}
+	
+	/**
+	 * This method returns a reference to the {@link SALAgent} which creates this
+	 * response.
+	 * @return a reference to the SAL agent which generated this response
+	 */
+	public SALAgent getAgent(){
+		return agent;
+	}
+	
+	public String getID(){
+		return agent.getID()+sid+cid;
 	}
 }

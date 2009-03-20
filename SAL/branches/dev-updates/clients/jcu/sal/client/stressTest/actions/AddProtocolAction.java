@@ -1,16 +1,14 @@
 package jcu.sal.client.stressTest.actions;
 
-import java.rmi.RemoteException;
 import java.util.Set;
 
 import jcu.sal.common.Slog;
-import jcu.sal.common.agents.rmi.RMIAgent;
+import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
-
 
 import org.apache.log4j.Logger;
 
@@ -24,9 +22,9 @@ public class AddProtocolAction implements Action {
 	
 	private static String type = "DUMMY";
 	
-	private RMIAgent agent;
+	private SALAgent agent;
 	
-	public AddProtocolAction(RMIAgent a){
+	public AddProtocolAction(SALAgent a){
 		agent = a;
 	}
 
@@ -61,11 +59,7 @@ public class AddProtocolAction implements Action {
 			//logger.info("protocol "+n1+" created");
 		} catch (ConfigurationException e) {
 			logger.info("cant instanciate protocol "+n1);
-		} catch (RemoteException e) {
-			logger.info("Cant create protocol "+n1);
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}  catch (SALDocumentException e) {
+		} catch (SALDocumentException e) {
 			logger.info("we shoulnt be here - Cant create protocol "+n1);
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -1,5 +1,5 @@
 
-package jcu.sal.utils;
+package jcu.sal.common.utils;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -10,7 +10,6 @@ import javax.xml.validation.Validator;
 import javax.xml.transform.stream.StreamSource;
 
 import jcu.sal.common.exceptions.ValidationException;
-import jcu.sal.config.plugins.ErrorCollector;
 
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;

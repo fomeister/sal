@@ -69,7 +69,7 @@ public class CommandDataPane implements ActionListener{
 		if(c!=null){
 			int i;
 			
-			addDescription(c.getDesc());
+			addDescription(c.getShortDesc());
 			addRetType(c.getReturnType().toString());
 			i = addArg(c.getArgNames(), c.getArgTypes());
 			SpringLayoutHelper.makeCompactGrid(dataPane,
@@ -119,10 +119,7 @@ public class CommandDataPane implements ActionListener{
 		int i, nb=0;
 		argValues.clear();
 		for(i=0; i<names.size(); i++){
-			
-			//skip callbacks
-			if(types.get(i).equals(ArgumentType.CallbackArgument))
-				continue;
+
 			
 			JLabel l = new JLabel(names.get(i));
 			dataPane.add(l);

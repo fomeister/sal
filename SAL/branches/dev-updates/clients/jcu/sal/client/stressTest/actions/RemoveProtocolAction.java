@@ -1,10 +1,9 @@
 package jcu.sal.client.stressTest.actions;
 
-import java.rmi.RemoteException;
 import java.util.Random;
 
 import jcu.sal.common.Slog;
-import jcu.sal.common.agents.rmi.RMIAgent;
+import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 
@@ -17,10 +16,10 @@ public class RemoveProtocolAction implements Action {
 	}
 	public static String name="Dummy_";
 	
-	private RMIAgent agent;
+	private SALAgent agent;
 	private Random r;
 	
-	public RemoveProtocolAction(RMIAgent a){
+	public RemoveProtocolAction(SALAgent a){
 		agent = a;
 		r = new Random();
 	}
@@ -56,11 +55,7 @@ public class RemoveProtocolAction implements Action {
 			//logger.info("protocol "+name+" removed");
 		} catch (NotFoundException e) {
 			logger.info("protocol "+name+" doesnt exist");
-		} catch (RemoteException e) {
-			logger.info("Cant remove protocol "+name);
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} 
 	}
 
 }

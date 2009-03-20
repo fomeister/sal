@@ -5,11 +5,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jcu.sal.common.Slog;
-import jcu.sal.common.XMLhelper;
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SALRunTimeException;
+import jcu.sal.common.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;

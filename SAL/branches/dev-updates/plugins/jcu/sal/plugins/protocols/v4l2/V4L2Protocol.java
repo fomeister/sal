@@ -4,14 +4,14 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import jcu.sal.common.Response;
 import jcu.sal.common.Slog;
 import jcu.sal.common.CommandFactory.Command;
-import jcu.sal.common.cml.ArgumentType;
-import jcu.sal.common.cml.CMLConstants;
-import jcu.sal.common.cml.ReturnType;
+import jcu.sal.common.cml.CMLArgument;
+import jcu.sal.common.cml.ResponseType;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.ClosedStreamException;
@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 import au.edu.jcu.v4l4j.Control;
 import au.edu.jcu.v4l4j.FrameGrabber;
 import au.edu.jcu.v4l4j.JPEGFrameGrabber;
+import au.edu.jcu.v4l4j.V4L4JConstants;
 import au.edu.jcu.v4l4j.VideoDevice;
 import au.edu.jcu.v4l4j.exceptions.V4L4JException;
 
@@ -40,6 +41,7 @@ public class V4L2Protocol extends AbstractProtocol {
 	
 	private static Logger logger = Logger.getLogger(V4L2Protocol.class);
 	static {Slog.setupLogger(logger);}
+	
 	public final static String PROTOCOL_TYPE = "v4l2";
 	public final static String DEVICE_ATTRIBUTE_TAG= "deviceFile";
 	public final static String WIDTH_ATTRIBUTE_TAG= "width";
@@ -78,7 +80,6 @@ public class V4L2Protocol extends AbstractProtocol {
 	@Override
 	protected void internal_parseConfig() throws ConfigurationException {
 		String dev;
-		int cid;
 		//Check config directives:
 		try {
 			dev = getParameter(DEVICE_ATTRIBUTE_TAG);
@@ -105,49 +106,86 @@ public class V4L2Protocol extends AbstractProtocol {
 			throw new ConfigurationException();
 		}
 		
+		//creates the CML descriptions for all controls
+		updateCMLStore();
+
+	}
+	
+	private void updateCMLStore(){
 		cmls = CMLDescriptionStore.getStore();
 		//get the V4L2 controls
 		List<Control> v4l2c = vd.getControlList().getList();
 		ctrls = new Hashtable<String, Control>();
-		String key = CMLDescriptionStore.CCD_KEY, name, ctrlName, desc;
-		List<String> argNamesEmpty = new Vector<String>();
-		List<String> argNamesValue = new Vector<String>();
-		argNamesValue.add(CMLDescriptionStore.CONTROL_VALUE_NAME);
 		
-		List<ArgumentType> tEmpty = new Vector<ArgumentType>();
-		List<ArgumentType> tValue = new Vector<ArgumentType>();
-		tValue.add(new ArgumentType(CMLConstants.ARG_TYPE_INT));
+		for(Control c: v4l2c)
+			createCMLs(c, CMLDescriptionStore.CCD_KEY);
+	}
+	
+	private void createCMLs(Control c, String key){
+		String name, ctrlName, desc;
+		List<CMLArgument> args = new Vector<CMLArgument>();
+		ctrlName = c.getName();
 		
-		ReturnType retInt = new ReturnType(CMLConstants.RET_TYPE_INT);
-		ReturnType retVoid = new ReturnType(CMLConstants.RET_TYPE_VOID);
-		for (Control c: v4l2c) {
-			ctrlName = c.getName();
-			//add two commands to the CCD sensor for this control
-			//(one to set its value, the other to get its value)
-			//getValue command
+		if(c.getType()==V4L4JConstants.CTRL_TYPE_BUTTON){
+			//setValue command
+			name = "Activate"+ctrlName.replace(" ", "");
+			desc = "Activates the button '"+ctrlName+"'";
+			addControl(c, key, SET_CONTROL_METHOD, name, desc, null, ResponseType.Void);
+		} else if (c.getType()==V4L4JConstants.CTRL_TYPE_SLIDER){
+			//getValue
 			name = "Get"+ctrlName.replace(" ", "");
 			desc = "Fetches the value of "+ctrlName;
-			try {
-				cid = cmls.addPrivateCMLDesc(key, GET_CONTROL_METHOD, name, desc, tEmpty, argNamesEmpty , retInt);
-			} catch (AlreadyPresentException e) {
-				logger.error("we shouldnt be here - trying to insert a duplicate element in CML table");
-				e.printStackTrace();
-				throw new SALRunTimeException("trying to insert a duplicate element in CML table",e);
-			}
-			ctrls.put(String.valueOf(cid), c);
+			addControl(c, key, GET_CONTROL_METHOD, name, desc, null, ResponseType.Integer);
 			
 			//setValue command
 			name = "Set"+ctrlName.replace(" ", "");
 			desc = "Sets the value of "+ctrlName;
-			try {
-				cid = cmls.addPrivateCMLDesc(key, SET_CONTROL_METHOD, name, desc, tValue, argNamesValue , retVoid);
-			} catch (AlreadyPresentException e) {
-				logger.error("we shouldnt be here - trying to insert a duplicate element in CML table");
-				e.printStackTrace();
-				throw new SALRunTimeException("trying to insert a duplicate element in CML table",e);
-			}
-			ctrls.put(String.valueOf(cid), c);
+			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, true, c.getMinValue(), c.getMaxValue(), c.getStepValue()));
+			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void);
+		} else if (c.getType()==V4L4JConstants.CTRL_TYPE_SWITCH){
+			//getValue
+			name = "Get"+ctrlName.replace(" ", "");
+			desc = "Fetches the state of "+ctrlName;
+			addControl(c, key, GET_CONTROL_METHOD, name, desc, null, ResponseType.Integer);
+			
+			//setValue command
+			name = "Set"+ctrlName.replace(" ", "");
+			desc = "Enable/disable  "+ctrlName;
+			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, true, 0, 1));
+			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void);
+		} else if (c.getType()==V4L4JConstants.CTRL_TYPE_DISCRETE){
+			Map<String,String> map = new Hashtable<String,String>();
+			List<String> discreteNames = c.getDiscreteValueNames();
+			List<Integer> discreteValues = c.getDiscreteValues();
+			//getValue
+			name = "Get"+ctrlName.replace(" ", "");
+			desc = "Fetches the state of "+ctrlName;
+			addControl(c, key, GET_DISCRETE_CONTROL_METHOD, name, desc, null, ResponseType.String);
+			
+			//setValue command
+			name = "Set"+ctrlName.replace(" ", "");
+			desc = "Set the value of "+ctrlName;
+			for(int i=0; i<discreteNames.size();i++)
+				map.put(discreteValues.get(i).toString(), discreteNames.get(i));
+			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, map, true));
+			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void);
+		} else {
+			logger.error("unknown control type '"+c.getType()+"'");
+			throw new SALRunTimeException("unknown control type");
 		}
+
+	}
+	
+	private void addControl(Control c, String key, String mName, String name, String shortDesc, List<CMLArgument> args, ResponseType r){
+		int cid;
+		try {
+			cid = cmls.addPrivateCMLDesc(key, mName, name, shortDesc, args, r);
+		} catch (AlreadyPresentException e) {
+			logger.error("we shouldnt be here - trying to insert a duplicate element in CML table");
+			e.printStackTrace();
+			throw new SALRunTimeException("trying to insert a duplicate element in CML table",e);
+		}
+		ctrls.put(String.valueOf(cid), c);
 	}
 
 	@Override
@@ -184,7 +222,7 @@ public class V4L2Protocol extends AbstractProtocol {
 	 * COMMAND HANDLING METHODS
 	 */
 	
-	public static String GET_CONTROL_METHOD = "getControl";
+	public static final String GET_CONTROL_METHOD = "getControl";
 	public byte[] getControl(Command c, Sensor s) throws SensorControlException{
 		Control ctrl = ctrls.get(String.valueOf(c.getCID()));
 		if(ctrl!=null) {
@@ -199,8 +237,24 @@ public class V4L2Protocol extends AbstractProtocol {
 			throw new SensorIOException("Error finding the control to read from (CID:'"+c.getCID()+"')");
 		}
 	}
+	
+	public static final String GET_DISCRETE_CONTROL_METHOD = "getDiscreteControl";
+	public byte[] getDiscreteControl(Command c, Sensor s) throws SensorControlException{
+		Control ctrl = ctrls.get(String.valueOf(c.getCID()));
+		if(ctrl!=null) {
+			try {
+				return ctrl.getDiscreteValueNames().get(ctrl.getDiscreteValues().indexOf(ctrl.getValue())).getBytes();
+			} catch (V4L4JException e) {
+				logger.error("Could NOT read the value for control "+ctrl.getName());
+				throw new SensorIOException("Error reading the contol value (CID:'"+c.getCID()+"')",e);
+			}			
+		} else {
+			logger.error("Could NOT find the control matching command ID "+c.getCID());
+			throw new SensorIOException("Error finding the control to read from (CID:'"+c.getCID()+"')");
+		}
+	}
 
-	public static String SET_CONTROL_METHOD = "setControl";
+	public static final String SET_CONTROL_METHOD = "setControl";
 	public byte[] setControl(Command c, Sensor s) throws SensorControlException{
 		Control ctrl = ctrls.get(String.valueOf(c.getCID()));
 		if(ctrl!=null) {
@@ -217,7 +271,7 @@ public class V4L2Protocol extends AbstractProtocol {
 		}
 	}
 	
-	public static String GET_JPEG_FRAME_METHOD = "getJpegFrame";
+	public static final String GET_JPEG_FRAME_METHOD = "getJpegFrame";
 	public byte[] getJpegFrame(Command c, Sensor s) throws SensorControlException{
 		if(streaming) {
 			logger.error("Already streaming");
@@ -258,7 +312,7 @@ public class V4L2Protocol extends AbstractProtocol {
 		return b;
 	}
 	
-	public static String START_STREAM_METHOD = "startStream";
+	public static final String START_STREAM_METHOD = "startStream";
 	public byte[] startStream(Command c, Sensor s) throws SensorControlException{
 		JPEGFrameGrabber fg;
 		if(streaming)
@@ -274,13 +328,13 @@ public class V4L2Protocol extends AbstractProtocol {
 			vd.releaseFrameGrabber();
 			throw new SensorIOException("Error while starting capture", e);
 		}
-		st = new StreamingThread(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s, fg, c.getCID());
+		st = new StreamingThread(c.getStreamCallBack(), s, fg, c.getCID());
 
 		streaming = true;
 		return new byte[0];
 	}
 	
-	public static String STOP_STREAM_METHOD = "stopStream";
+	public static final String STOP_STREAM_METHOD = "stopStream";
 	public byte[] stopStream(Command c, Sensor s) throws SensorControlException{
 		if(!streaming)
 			throw new InvalidCommandException("The sensor is not streaming");
@@ -292,18 +346,18 @@ public class V4L2Protocol extends AbstractProtocol {
 		return new byte[0];
 	}
 	
-	public static String START_STREAM_FAKE_METHOD = "startStreamFake";
+	public static final String START_STREAM_FAKE_METHOD = "startStreamFake";
 	public byte[] startStreamFake(Command c, Sensor s) throws SensorControlException{
 		if(streaming)
 			throw new InvalidCommandException("The sensor is already streaming");
 		
-		stf = new StreamingThreadFake(c.getStreamCallBack(CMLDescriptionStore.CALLBACK_ARG_NAME), s,c.getCID());
+		stf = new StreamingThreadFake(c.getStreamCallBack(), s,c.getCID());
 
 		streaming = true;
 		return new byte[0];
 	}
 	
-	public static String STOP_STREAM_FAKE_METHOD = "stopStreamFake";
+	public static final String STOP_STREAM_FAKE_METHOD = "stopStreamFake";
 	public byte[] stopStreamFake(Command c, Sensor s) throws SensorControlException{
 		if(!streaming)
 			throw new InvalidCommandException("The sensor is not streaming");

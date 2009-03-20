@@ -7,11 +7,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.log4j.Logger;
 
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Response;
@@ -28,6 +25,8 @@ import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SensorControlException;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class acts as an adapter around a {@link SALAgent} object and transforms
@@ -94,17 +93,12 @@ public class RMIAgentImpl implements RMIAgent {
 
 	@Override
 	public Response execute(RMICommand c, String sid) throws RemoteException, NotFoundException, SensorControlException {
-		Map<String,List<String>> src = c.getRMIStreamCallBack();
-		Map<String, StreamCallback> target = new Hashtable<String, StreamCallback>();
-		Iterator<String> i = src.keySet().iterator();
-		List<String> l;
-		String name;
-		
-		while(i.hasNext()){
-			name = i.next();
-			l = src.get(name);
-			target.put(name, new ProxyStreamCallback((RMIStreamCallback )clients.get(l.get(0)).getRef(l.get(1)), l.get(0), l.get(1) ));
-		}
+		List<String> l = c.getRMIStreamCallBack();
+		StreamCallback target = new ProxyStreamCallback(
+				(RMIStreamCallback )clients.get(l.get(0)).getRef(l.get(1)), 
+				l.get(0), 
+				l.get(1) );
+
 		return agent.execute(CommandFactory.getCommand(c.getCommand(), target), sid);
 	}
 

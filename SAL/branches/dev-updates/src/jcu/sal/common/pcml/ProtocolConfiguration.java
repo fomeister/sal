@@ -2,9 +2,9 @@ package jcu.sal.common.pcml;
 
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Slog;
-import jcu.sal.common.XMLhelper;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SALRunTimeException;
+import jcu.sal.common.utils.XMLhelper;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;

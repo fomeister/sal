@@ -1,20 +1,22 @@
 package jcu.sal.client;
 
+import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.util.Random;
 import java.util.Vector;
 
 import javax.naming.ConfigurationException;
 
+import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Parameters;
-import jcu.sal.common.XMLhelper;
+import jcu.sal.common.Response;
+import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.Parameters.Parameter;
-import jcu.sal.common.agents.rmi.RMIAgent;
-import jcu.sal.common.agents.rmi.RMICommandFactory;
-import jcu.sal.common.agents.rmi.RMICommandFactory.RMICommand;
+import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.agents.SALAgentFactory;
+import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.pcml.EndPointConfiguration;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLConstants;
@@ -29,22 +31,21 @@ import jcu.sal.common.sml.SMLDescriptions;
  * @author gilles
  *
  */
-public class RmiClientDummyStressTest{
+public class RmiClientDummyStressTest implements StreamCallback{
 	public static int RUN_LENGTH=120*1000;
 	public static int NB_SENSORS = 5000;
 	public static int NB_CLIENTS[] = {1, 10, 25, 50, 100};
 	private String[] sids = new String[NB_SENSORS];
 	private Vector<Thread> threads;
-	private RMIAgent agent;
-	private Registry agentRegistry;
+	private SALAgent agent;
 	private long sumAvgExe = 0, sumCounts;
 	
 	private class Control implements Runnable{
-		private RMICommand command;
+		private Command command;
 		private long  executionTotal;
 		private int count;
 		
-		public Control(RMICommand c){
+		public Control(Command c){
 			command = c;
 			count = 0;
 			executionTotal = 0;
@@ -71,10 +72,9 @@ public class RmiClientDummyStressTest{
 	}	
 	
 	public RmiClientDummyStressTest(String rmiName, String agentRMIRegIP, String ourIP) throws RemoteException {
-		agentRegistry = LocateRegistry.getRegistry(agentRMIRegIP);
 		threads = new Vector<Thread>();
 		try {
-			agent = (RMIAgent) agentRegistry.lookup(RMIAgent.RMI_STUB_NAME);
+			agent = SALAgentFactory.getFactory().createRMIAgent(agentRMIRegIP, ourIP, rmiName);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RemoteException();
@@ -121,10 +121,12 @@ public class RmiClientDummyStressTest{
 	}
 	
 	public void createClients(int nb){
-		RMICommandFactory cf;
+		CommandFactory cf;
 		threads.removeAllElements();
+
 		try {
-			cf = new RMICommandFactory(XMLhelper.createDocument(agent.getCML(sids[0])),100);
+			CMLDescriptions cmls = new CMLDescriptions(agent.getCML(sids[0]));
+			cf = new CommandFactory(cmls.getDescription(100), this);
 			
 			for(int i=0; i<nb; i++) 
 				threads.add(new Thread(new Control(cf.getCommand())));
@@ -196,5 +198,8 @@ public class RmiClientDummyStressTest{
 		
 		System.out.println("Main exiting");
 	}
+
+	@Override
+	public void collect(Response r) throws IOException {}
 }
 
