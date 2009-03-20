@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Vector;
 
 import jcu.sal.common.Slog;
-import jcu.sal.common.cml.ArgumentType;
+import jcu.sal.common.cml.CMLArgument;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
-import jcu.sal.common.cml.ReturnType;
+import jcu.sal.common.cml.ResponseType;
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALRunTimeException;
@@ -19,9 +19,9 @@ import org.apache.log4j.Logger;
 
 /**
  * Defines the base behaviour of AbstractStore objects
- * Each CML store (class which stores tables of CML docs for each valid command of a sensor managed by a protocol)
- * must extend this class. CMLstores should be instanciated by protocols in order to avoid duplicates,
- * and save memory
+ * Each CML store (class which stores tables of CML docs for each valid command 
+ * of a sensor managed by a protocol) must extend this class. CMLstores should be 
+ * instantiated by protocols in order to avoid duplicates, and save memory
  * @author gilles
  *
  */
@@ -31,21 +31,21 @@ public abstract class AbstractStore {
 	static{Slog.setupLogger(logger);}
 	
 
-	public static String GENERIC_ENABLE="enable";			//10
-	public static String GENERIC_DISABLE="disable";		//11
-	public static String GENERIC_GETREADING="getReading";	//100
-	public static String GENERIC_STARTSTREAM="startStream";	//102
-	public static String GENERIC_STOPSTREAM="stopStream";	//103
-	public static String GENERIC_GETTEMP="getTemperature";	//110
-	public static String GENERIC_GETHUM="getHumidity";		//111
+	public static final String GENERIC_ENABLE="enable";			//10
+	public static final String GENERIC_DISABLE="disable";		//11
+	public static final String GENERIC_GETREADING="getReading";	//100
+	public static final String GENERIC_STARTSTREAM="startStream";	//102
+	public static final String GENERIC_STOPSTREAM="stopStream";	//103
+	public static final String GENERIC_GETTEMP="getTemperature";	//110
+	public static final String GENERIC_GETHUM="getHumidity";		//111
 	
-	public static int GENERIC_ENABLE_CID=10;
-	public static int GENERIC_DISABLE_CID=11;
-	public static int GENERIC_GETREADING_CID=100;
-	public static int GENERIC_STARTSTREAM_CID=102;
-	public static int GENERIC_STOPSTREAM_CID=103;
-	public static int GENERIC_GETTEMP_CID=110;
-	public static int GENERIC_GETHUM_CID=111;
+	public static final int GENERIC_ENABLE_CID=10;
+	public static final int GENERIC_DISABLE_CID=11;
+	public static final int GENERIC_GETREADING_CID=100;
+	public static final int GENERIC_STARTSTREAM_CID=102;
+	public static final int GENERIC_STOPSTREAM_CID=103;
+	public static final int GENERIC_GETTEMP_CID=110;
+	public static final int GENERIC_GETHUM_CID=111;
 	
 	private static int PRIVATE_CID_START = 1000;
 	
@@ -75,7 +75,7 @@ public abstract class AbstractStore {
 	 * @return the CML command descriptions doc 
 	 * @throws NotFoundException if the key can not be found 
 	 */
-	public CMLDescriptions getCMLDescriptions(String k) throws NotFoundException{
+	public final CMLDescriptions getCMLDescriptions(String k) throws NotFoundException{
 		if(!cmls.containsKey(k)) {
 			logger.error("Cant find key "+k);
 			throw new NotFoundException("Cant find key "+k);
@@ -97,7 +97,7 @@ public abstract class AbstractStore {
 	 * @return the method name
 	 * @throws NotFoundException if the method can not be found 
 	 */
-	public String getMethodName(String k, int cid) throws NotFoundException{
+	public final String getMethodName(String k, int cid) throws NotFoundException{
 		Hashtable<Integer, CMLDescription> t = cmls.get(k);
 		if(t==null) {
 			logger.error("Cant find key "+k);
@@ -116,31 +116,31 @@ public abstract class AbstractStore {
 	 * @param k the key with which the fragment is to be associated
 	 * @param mName the name of the method to be called when this command is received
 	 * @param name the name of the command
-	 * @param desc the description of the command
-	 * @param argTypes an array containing the types (CMLDescription.*_TYPE) of the arguments
-	 * @param names an array containing the names of the arguments
+	 * @param desc the short description of the command
+	 * @param args the list of {@link CMLArgument} for this command description, can be <code>null</code>
 	 * @return the cid associated with this command
 	 * @throws AlreadyPresentException if the given key already has a CML table
 	 */
-	public final int addPrivateCMLDesc(String k, String mName, String name, String desc, List<ArgumentType> argTypes,
-			List<String> names, ReturnType returnType) throws AlreadyPresentException {
+	public final int addPrivateCMLDesc(String k, String mName, String name, 
+			String desc, List<CMLArgument> args, ResponseType returnType) throws AlreadyPresentException {
 		//computes the CID
 		Integer cid = priv_cid.get(k);
 		if(cid==null)
 			cid = new Integer(PRIVATE_CID_START);
 		//builds the CML desc doc
+		
 		//logger.debug("Adding private CML for key "+k+", method: "+mName+", CID: "+cid.intValue());
-		addCML(k, new CMLDescription(mName,cid, name, desc, argTypes, names, returnType));
+		addCML(k, new CMLDescription(mName,cid, name, desc, args, returnType));
 		priv_cid.put(k, new Integer(cid.intValue()+1));
 				
 		return cid.intValue();
 	}
 	
 	/**
-	 * This method adds an alias to a previously created Command Description document fragment identifier by its cid
+	 * This method adds an alias to a previously created private Command Description identifier by its cid
 	 * @param k the key with which the alias is to be associated
 	 * @param name the name of the alias (AbstractStore.GENERIC_*)
-	 * @param cid the previously created command
+	 * @param cid the previously created private command
 	 * @return the cid associated with this command 
 	 * @throws AlreadyPresentException if a command with the same cid already exists
 	 * @throws NotFoundException if the given aliasNAme doesnt exist, if it doesnt refer to an existing command or if the key is invalid
@@ -149,16 +149,15 @@ public abstract class AbstractStore {
 		//computes the CID
 		Integer c;
 		CMLDescription cml;
-		List<ArgumentType> t = new Vector<ArgumentType>();
-		List<String> s = new Vector<String>();
+
 		//logger.debug("Adding generic CML for key "+k+", alias: "+aliasName);
 		if(aliasName.equals(GENERIC_ENABLE)){
 			c = new Integer(GENERIC_ENABLE_CID);
-			addCML(k, new CMLDescription(null, c, GENERIC_ENABLE, "Enables the sensor", t, s, new ReturnType(CMLConstants.RET_TYPE_VOID)));
+			addCML(k, new CMLDescription(null, c, GENERIC_ENABLE, "Enables the sensor", new Vector<CMLArgument>(), new ResponseType(CMLConstants.RET_TYPE_VOID)));
 			return c.intValue();
 		} else if(aliasName.equals(GENERIC_DISABLE)){
 			c = new Integer(GENERIC_DISABLE_CID);
-			addCML(k, new CMLDescription(null, c, GENERIC_DISABLE, "Disables the sensor", t, s, new ReturnType(CMLConstants.RET_TYPE_VOID)));
+			addCML(k, new CMLDescription(null, c, GENERIC_DISABLE, "Disables the sensor", new Vector<CMLArgument>(), new ResponseType(CMLConstants.RET_TYPE_VOID)));
 			return c.intValue();
 		} else if(aliasName.equals(GENERIC_GETREADING)){
 			c = new Integer(GENERIC_GETREADING_CID);

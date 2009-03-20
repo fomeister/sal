@@ -1,13 +1,9 @@
 package jcu.sal.plugins.protocols.owfs;
 
-import java.util.List;
-import java.util.Vector;
-
 import javax.naming.ConfigurationException;
 
-import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLConstants;
-import jcu.sal.common.cml.ReturnType;
+import jcu.sal.common.cml.ResponseType;
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.components.protocols.AbstractStore;
@@ -31,9 +27,7 @@ public class CMLDescriptionStore extends AbstractStore {
 	private CMLDescriptionStore() throws ConfigurationException, NotFoundException, AlreadyPresentException{
 		int i;
 		String key, name, mName, desc;
-		List<String> argNames;
-		List<ArgumentType> t;
-		ReturnType r;
+		ResponseType r;
 		
 		/* 
 		 * Family 10. 
@@ -42,10 +36,8 @@ public class CMLDescriptionStore extends AbstractStore {
 		mName = OWFSProtocol.GET_TEMPERATURE_METHOD;
 		name = "ReadTemperature";
 		desc = "Reads the temperature";
-		t = new Vector<ArgumentType>();
-		argNames = new Vector<String>();
-		r = new ReturnType(CMLConstants.RET_TYPE_FLOAT);
-		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
+		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_DEGREE_C);
+		i = addPrivateCMLDesc(key, mName, name, desc, null, r);
 		//generic GetReading command
 		addGenericCMLDesc(OWFSProtocol.DS_10_FAMILY, GENERIC_GETREADING, i);
 		//generic GetTemp command
@@ -58,7 +50,8 @@ public class CMLDescriptionStore extends AbstractStore {
 		mName = OWFSProtocol.GET_HUMIDITY_METHOD;
 		name = "ReadHumidity";
 		desc = "Reads the humidity";
-		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
+		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_PERCENT);
+		i = addPrivateCMLDesc(key, mName, name, desc, null, r);
 		//generic GetReading command
 		addGenericCMLDesc(OWFSProtocol.DS_26_FAMILY, GENERIC_GETREADING, i);
 		//generic GetHUMIDITY command
@@ -68,7 +61,8 @@ public class CMLDescriptionStore extends AbstractStore {
 		mName = OWFSProtocol.GET_TEMPERATURE_METHOD;
 		name = "ReadTemperature";
 		desc = "Reads the temperature";
-		i = addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
+		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_DEGREE_C);
+		i = addPrivateCMLDesc(key, mName, name, desc, null, r);
 		//generic GetTemp command
 		addGenericCMLDesc(OWFSProtocol.DS_26_FAMILY, GENERIC_GETTEMP, i);
 
@@ -77,34 +71,36 @@ public class CMLDescriptionStore extends AbstractStore {
 		mName = OWFSProtocol.GET_HIH400_METHOD;
 		name = "ReadHIH400Humidity";
 		desc = "Reads the humidity from a HIH4000 sensor";
-		addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
+		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_PERCENT);
+		addPrivateCMLDesc(key, mName, name, desc, null, r);
 		
 		//private GetHumidityHTM1735 command
 		key = OWFSProtocol.DS_26_FAMILY;
 		mName = OWFSProtocol.GET_HTM1735_METHOD;
 		name = "ReadHTM1735Humidity";
 		desc = "Reads the humidity from a HTM1735 sensor";
-		addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
+		addPrivateCMLDesc(key, mName, name, desc, null, r);
 		
 		//private GetVAD command
 		key = OWFSProtocol.DS_26_FAMILY;
 		mName = OWFSProtocol.GET_VAD_METHOD;
 		name = "ReadVAD";
 		desc = "Reads the Vad voltage";
-		addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
+		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_VOLTS);
+		addPrivateCMLDesc(key, mName, name, desc, null, r);
 		
 		//private GetVDD command
 		key = OWFSProtocol.DS_26_FAMILY;
 		mName = OWFSProtocol.GET_VDD_METHOD;
 		name = "ReadVDD";
 		desc = "Reads the Vdd voltage";
-		addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
+		addPrivateCMLDesc(key, mName, name, desc, null, r);
 		
 		//private GetVis command
 		key = OWFSProtocol.DS_26_FAMILY;
 		mName = OWFSProtocol.GET_VIS_METHOD;
 		name = "ReadVIS";
 		desc = "Reads the Vis voltage";
-		addPrivateCMLDesc(key, mName, name, desc, t, argNames, r);
+		addPrivateCMLDesc(key, mName, name, desc, null, r);
 	}
 }

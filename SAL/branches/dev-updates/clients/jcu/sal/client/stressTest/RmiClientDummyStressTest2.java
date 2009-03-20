@@ -2,8 +2,6 @@ package jcu.sal.client.stressTest;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,7 +13,8 @@ import jcu.sal.client.stressTest.actions.ExecuteSensorAction;
 import jcu.sal.client.stressTest.actions.RemoveProtocolAction;
 import jcu.sal.client.stressTest.actions.RemoveSensorAction;
 import jcu.sal.common.Slog;
-import jcu.sal.common.agents.rmi.RMIAgent;
+import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.agents.SALAgentFactory;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
@@ -48,8 +47,7 @@ public class RmiClientDummyStressTest2{
 	public static int SLEEP = 0;
 	
 	private Vector<Client> clients;
-	private RMIAgent agent;
-	private Registry agentRegistry;
+	private SALAgent agent;
 	private AtomicBoolean setupFlag;
 	private ProtocolConfigurations protocolState;
 	private SMLDescriptions sensorState;
@@ -110,11 +108,10 @@ public class RmiClientDummyStressTest2{
 	}	
 	
 	public RmiClientDummyStressTest2(String rmiName, String agentRMIRegIP, String ourIP) throws RemoteException {
-		agentRegistry = LocateRegistry.getRegistry(agentRMIRegIP);
 		clients = new Vector<Client>();
 		setupFlag = new AtomicBoolean(false);
 		try {
-			agent = (RMIAgent) agentRegistry.lookup(RMIAgent.RMI_STUB_NAME);
+			agent = SALAgentFactory.getFactory().createRMIAgent(agentRMIRegIP, ourIP, rmiName);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RemoteException();

@@ -4,7 +4,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.rmi.RemoteException;
 import java.util.Hashtable;
-import java.util.List;
 
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
@@ -16,18 +15,15 @@ import javax.swing.WindowConstants;
 
 import jcu.sal.client.gui.ClientController;
 import jcu.sal.common.CommandFactory;
-import jcu.sal.common.Response;
 import jcu.sal.common.agents.SALAgent;
-import jcu.sal.common.cml.ArgumentType;
+import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
-import jcu.sal.common.cml.ReturnType;
-import jcu.sal.common.cml.StreamCallback;
+import jcu.sal.common.cml.ResponseType;
 import jcu.sal.common.events.ClientEventHandler;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.events.ProtocolListEvent;
 import jcu.sal.common.events.SensorNodeEvent;
 import jcu.sal.common.events.SensorStateEvent;
-import jcu.sal.common.exceptions.ClosedStreamException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
@@ -35,14 +31,13 @@ import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLDescription;
 
-public abstract class AbstractClientView implements StreamCallback, ClientEventHandler, ClientView {
+public abstract class AbstractClientView implements ClientEventHandler, ClientView {
 
 	protected JFrame frame;
 	protected SensorTree tree;
 	protected JTextArea log;
 	protected ActionPanel actionPane;
 	protected ClientController controller;
-	protected Hashtable<String, VideoViewer> viewers;
 	
 	/**
 	 * This method initialises all the attributes
@@ -54,7 +49,6 @@ public abstract class AbstractClientView implements StreamCallback, ClientEventH
 		tree = new SensorTree(this);
 		log = new JTextArea(10,80);
 		frame = new JFrame("SAL Client");
-		viewers = new Hashtable<String, VideoViewer>();
 	}
 	
 	/**
@@ -106,59 +100,54 @@ public abstract class AbstractClientView implements StreamCallback, ClientEventH
 	@Override
 	public void sendCommand(Hashtable<String, String> values,
 			final CMLDescription cml, final Context c) {
+		
+		final ResponseHandler handler = createResponseHandler(cml, c);
+		if(handler==null)
+			return;
 
-		final CommandFactory cf = new CommandFactory(cml);
+		final CommandFactory cf = new CommandFactory(cml, handler);
 		
 		//put all arg-values in 
 		for(String name: values.keySet())
 			cf.addArgumentValue(name, values.get(name));
-		
-		//check for callbacks
-		if(cml.getArgTypes().contains(ArgumentType.CallbackArgument)){
-			SMLDescription sml = tree.getSelectedLabel().getSMLDescription();
-			List<String> names = cml.getArgNames();
-			cf.addArgumentCallback(names.get(cml.getArgTypes().indexOf(ArgumentType.CallbackArgument)), this);
-			viewers.put(c.getSMLDescription().getID(), new JPEGViewer(sml.getProtocolName()+" - "+sml.getID()));
-		}
+
+
 		//Must be sent in a separate thread. Otherwise, race condition occur
 		//with v4l sensors which stream video handled by the AWT event dispatcher thread
 		//it also makes the GUI more responsive for slow sensor, aka 1-wire
 		new Thread(new Runnable(){
 			public void run(){
-				Response r;
 				try {
-					r = controller.execute(c.getAgent(), cf.getCommand(), c.getSMLDescription().getID());
-					if(cml.getReturnType().equals(ReturnType.ByteArray)){
-						new JPEGViewer(tree.getSelectedLabel().toString()).setImage(r.getBytes());
-					} else if (r.getLength()>0)
-						addLog("Command returned: "+r.getString());
-					
+					controller.execute(c.getAgent(), cf.getCommand(), c.getSMLDescription().getID());
 				} catch (SensorControlException e) {
 					addLog("Error executing command:\n"+e.getMessage()+"("+e.getCause().getMessage()+")");
+					handler.close();
 				} catch (NotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
+					handler.close();
 				} catch (ConfigurationException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
+					handler.close();
 				}
 			}
 		}).start();
 	
-	}	
-
-	@Override
-	public void collect(Response r) throws RemoteException {
-		try {
-			viewers.get(r.getSID()).setImage(r.getBytes());
-		} catch (SensorControlException e) {
-			addLog("Stream from sensor "+r.getSID()+" terminated");
-			if(!e.getClass().equals(ClosedStreamException.class))
-				addLog("Error: "+e.getMessage());
-			viewers.get(r.getSID()).close();
-			viewers.remove(r.getSID());
-		}		
 	}
+	
+	private ResponseHandler createResponseHandler(CMLDescription cml, Context c){
+		ResponseType t = cml.getReturnType();
+		if(t.getContentType().equals(CMLConstants.CONTENT_TYPE_JPEG))
+			return new JPEGViewer(c, this);
+		if(t.getContentType().equals(CMLConstants.CONTENT_TYPE_TEXT_PLAIN))
+			return new TextResponseHandler(c,this);
+		else {
+			addLog("Cannot send the command - unhandled content type '"+cml.getReturnType().getContentType()+"'");
+			return null;
+		}
+	}
+
 
 	@Override
 	public void handle(Event e, SALAgent a) throws RemoteException {

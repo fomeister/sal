@@ -8,8 +8,17 @@
  		<Argument type="int" name="channel" />
  		<Argument type="int" name="standard" />
  		<Argument type="int" name="quality" />
+ 		<Argument type="list" name="format" optional="true">
+ 			<list>
+ 				<item value="3">RGB24</item>
+ 				<item value="2">JPEG</item>
+ 			</list>
+ 		</Argument>
+ 		<Argument type="button" name="resetParams" optional="true">0</Argument>
+ 		
+ 	
  	</arguments>
- 	<ReturnType type="byte array" />
+ 	<Result type="byte array" contents="image/jpeg"/>
  </CommandDescription>
  <CommandDescription cid="1008">
  	<Name>SetPan/Tiltreset</Name>

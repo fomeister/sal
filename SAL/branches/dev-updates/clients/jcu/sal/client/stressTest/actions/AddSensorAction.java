@@ -1,13 +1,12 @@
 package jcu.sal.client.stressTest.actions;
 
-import java.rmi.RemoteException;
 import java.util.Random;
 import java.util.Vector;
 
 import jcu.sal.common.Parameters;
 import jcu.sal.common.Slog;
 import jcu.sal.common.Parameters.Parameter;
-import jcu.sal.common.agents.rmi.RMIAgent;
+import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfigurations;
@@ -25,10 +24,10 @@ public class AddSensorAction implements Action {
 	public static String name="Dummy_";
 	public static int MAX_SENSORS = 100;
 	
-	private RMIAgent agent;
+	private SALAgent agent;
 	private Random r;
 	
-	public AddSensorAction(RMIAgent a){
+	public AddSensorAction(SALAgent a){
 		agent = a;
 		r = new Random();
 	}
@@ -78,11 +77,7 @@ public class AddSensorAction implements Action {
 		} catch (ConfigurationException e) {
 			logger.info("sensor cant be instanciated");
 			e.printStackTrace();
-		} catch (RemoteException e) {
-			logger.info("sensor cant be created");
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}catch (SALDocumentException e) {
+		} catch (SALDocumentException e) {
 			logger.info("we shouldnt be here - sensor cant be created");
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -8,13 +8,13 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.agents.rmi.RMICommandFactory.RMICommand;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.ClientEventHandler;
 import jcu.sal.common.events.Event;
@@ -125,7 +125,7 @@ public class RMIClientStub implements SALAgent{
 			SensorControlException {
 		try {
 			return agent.execute(
-					RMICommandFactory.getCommand(c, adjustCallbacks(c.getStreamCallBack()))
+					RMICommandFactory.getCommand(c, createProxyCallback(c.getStreamCallBack()))
 					, sid);
 		} catch (RemoteException e) {
 			e.printStackTrace();
@@ -235,29 +235,21 @@ public class RMIClientStub implements SALAgent{
 	}
 
 	/**
-	 * This method returns a list of string representing an RMI callback argument. The returned
-	 * value is as follow
-	 * The key of the map is the argument name.
+	 * This method creates an adapter around a {@link StreamCallback} object and returns
+	 * an {@link RMICallbackProxy} object. The returned
+	 * value is as follow:
 	 * The string at position 0 in the list is the rmiName (the name the Client used when calling RMISALAgent.registerClient()). 
 	 * The string at position 1 in the list is the objName (the name of the object in the RMI registry representing the callback object).
-	 * @param cb a map of argument names and associated {@link StreamCallback} objects
+	 * Those values are suitable for {@link RMICommand}s' where an {@link RMIStreamCallback} is needed.
+	 * @param cb the {@link StreamCallback} object to be turned into an {@link RMICallbackProxy} object
 	 * @return (see above)
 	 * @throws RemoteException if there is an error registering an {@link RMIStreamCallback} object with RMI
 	 */
-	private Map<String, List<String>> adjustCallbacks(Map<String, StreamCallback> cb) throws RemoteException{
-		Hashtable<String, List<String>> map = new Hashtable<String, List<String>>();
-		Vector<String> v;
-		//for each stream callback object
-		for(String name : cb.keySet()){
-			//create a CallBackProxy object (registration with RMI is 
-			//handled by the object itself)
-			v = new Vector<String>();
-			v.add(0, rmiName);
-			v.add(1, new RMICallbackProxy(cb.get(name), ourRegistry).getRMIName());
-			map.put(name, v);
-		}
-		
-		return map;
+	private List<String> createProxyCallback(StreamCallback cb) throws RemoteException{
+		List<String> list = new Vector<String>();
+		list.add(0, rmiName);
+		list.add(1, new RMICallbackProxy(cb, ourRegistry, this).getRMIName());
+		return list;
 	}
 	
 	/**
@@ -328,6 +320,7 @@ public class RMIClientStub implements SALAgent{
 		private StreamCallback c;
 		private String name;
 		private Registry registry;
+		private SALAgent agent;
 
 		/**
 		 * This method builds an {@link RMIStreamCallback} object from a
@@ -336,10 +329,11 @@ public class RMIClientStub implements SALAgent{
 		 * @throws RemoteException if there is an error registering
 		 * the new {@link RMIStreamCallback} object with the RMI registry.
 		 */
-		public RMICallbackProxy(StreamCallback cb,Registry r) throws RemoteException{
+		public RMICallbackProxy(StreamCallback cb,Registry r, SALAgent a) throws RemoteException{
 			c = cb;
 			name = toString();
 			registry = r;
+			agent = a;
 
 			//register ourselves with our registry
 //			logger.debug("Binding RMI callback "+name);
@@ -351,6 +345,7 @@ public class RMIClientStub implements SALAgent{
 			try {
 				if(r.hasException())
 					removeRMIStreamCallBack();
+				r.setAgent(agent);
 				c.collect(r);
 			} catch (IOException e) {
 //				logger.debug("Error collecting response");

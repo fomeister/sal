@@ -9,7 +9,7 @@ package jcu.sal.common.exceptions;
  * @author gilles
  *
  */
-public class SALDocumentException extends SALAgentException {
+public class SALDocumentException extends SALRunTimeException{
 
 	/**
 	 * 

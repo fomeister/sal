@@ -90,7 +90,8 @@ public interface SALAgent{
 	 * This method instructs a sensor identified by sid to execute the command c 
 	 * @param c the command to be executed
 	 * @param sid the target sensor identifier
-	 * @return the result
+	 * @return a response, which does not contain the result of the command, but which
+	 * contains the stream ID  {@link Response#getID()}. 
 	 * @throws NotFoundException if the given sensor id does not match any existing sensor
 	 * @throws SensorControlException if there is an error controlling the sensor. If this exception is raised,
 	 * the cause of this exception will be linked to it and can be retrieved using <code>getCause()</code>  

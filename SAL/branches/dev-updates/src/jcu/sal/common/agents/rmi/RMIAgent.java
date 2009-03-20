@@ -95,7 +95,8 @@ public interface RMIAgent extends Remote{
 	 * This method instructs a sensor identified by sid to execute the command c 
 	 * @param c the command to be executed
 	 * @param sid the target sensor identifier
-	 * @return the result
+	 * @return the response which contains the stream id ( {@link Response#getID()} ). It
+	 * doesnt contain the result of the command. The result will be given to the callback method.
 	 * @throws NotFoundException if the given sensor id doesnt match any existing sensor
 	 * @throws SensorControlException if there is an error controlling the sensor. If this exception is raised,
 	 * the cause of this exception will be linked to it and can be retrieved using <code>getCause()</code>  

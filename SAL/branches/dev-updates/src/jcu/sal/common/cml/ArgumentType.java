@@ -17,7 +17,8 @@ public class ArgumentType {
 	public static ArgumentType StringArgument = new ArgumentType(CMLConstants.ARG_TYPE_STRING);
 	public static ArgumentType IntegerArgument = new ArgumentType(CMLConstants.ARG_TYPE_INT);
 	public static ArgumentType FloatArgument = new ArgumentType(CMLConstants.ARG_TYPE_FLOAT);
-	public static ArgumentType CallbackArgument = new ArgumentType(CMLConstants.ARG_TYPE_CALLBACK);
+	public static ArgumentType ListArgument = new ArgumentType(CMLConstants.ARG_TYPE_LIST);
+	public static ArgumentType ButtonArgument = new ArgumentType(CMLConstants.ARG_TYPE_BUTTON);
 	
 	/**
 	 * The type itself
@@ -30,7 +31,10 @@ public class ArgumentType {
 	 * @throws SALRunTimeExceptions if the type is invalid
 	 */
 	public ArgumentType(String s){
-		if(!s.equals(CMLConstants.ARG_TYPE_STRING) && !s.equals(CMLConstants.ARG_TYPE_INT) && !s.equals(CMLConstants.ARG_TYPE_FLOAT) && !s.equals(CMLConstants.ARG_TYPE_CALLBACK)) {
+		if(!s.equals(CMLConstants.ARG_TYPE_STRING) && !s.equals(CMLConstants.ARG_TYPE_INT) && 
+				!s.equals(CMLConstants.ARG_TYPE_FLOAT) && !s.equals(CMLConstants.ARG_TYPE_LIST) &&
+				!s.equals(CMLConstants.ARG_TYPE_BUTTON)
+				) {
 			logger.error("Unknown argument type: "+s);
 			throw new SALRunTimeException("Wrong argument type '"+s+"'");
 		}
@@ -40,21 +44,12 @@ public class ArgumentType {
 	 * Returns the argument type (CMLConstants.ARG_TYPE_*)
 	 * @return the argument type (CMLConstants.ARG_TYPE_*)
 	 */
-	public String getArgType() {
+	public String getType() {
 		return t; 
 	}
 	
 	public String toString(){
-		if(t.equals(CMLConstants.ARG_TYPE_CALLBACK))
-			return "Callback";
-		else if(t.equals(CMLConstants.ARG_TYPE_FLOAT))
-			return "Float";
-		else if(t.equals(CMLConstants.ARG_TYPE_INT))
-			return "Int";
-		else if(t.equals(CMLConstants.ARG_TYPE_STRING))
-			return "String";
-
-		return ""; 
+		return t; 
 	}
 	@Override
 	public int hashCode() {

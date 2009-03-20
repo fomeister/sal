@@ -1,4 +1,4 @@
-package jcu.sal.common;
+package jcu.sal.common.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,7 +26,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import jcu.sal.common.exceptions.DocumentHandlingException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.XpathException;
@@ -60,7 +59,7 @@ public class XMLhelper {
 		} catch (ParserConfigurationException e) {
 			System.err.println("Cant create the document builder, SAL will not work");
 			e.printStackTrace();
-			throw new DocumentHandlingException("Cant create the document builder, SAL will not work", e);
+			throw new SALDocumentException("Cant create the document builder, SAL will not work", e);
 		}
 	}
 	
@@ -118,7 +117,7 @@ public class XMLhelper {
      * Creates a DOM document from a Node
      * @param node the XML node
      * @return the DOM document 
-     * @throws DocumentHandlingException if the document cant be created
+     * @throws SALDocumentException if the document cant be created
      */   
     public static Document createDocument(Node node) {
     	Document d = XMLhelper.createEmptyDocument();
@@ -126,7 +125,7 @@ public class XMLhelper {
     	catch (Exception e) {
     		System.err.println("Cant create a document from the node !!!!");
     		e.printStackTrace();
-    		throw new DocumentHandlingException("Can not create a document from the node", e);
+    		throw new SALDocumentException("Can not create a document from the node", e);
     	}
         return d;
     }

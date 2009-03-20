@@ -8,13 +8,13 @@ import java.util.Map;
 import java.util.Vector;
 
 import jcu.sal.common.Slog;
-import jcu.sal.common.exceptions.XmlException;
+import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.utils.JaxbHelper;
 import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.config.plugins.xml.HelperNameClassType;
 import jcu.sal.config.plugins.xml.NameClassType;
 import jcu.sal.config.plugins.xml.ProtocolType;
 import jcu.sal.config.plugins.xml.SalPlugins;
-import jcu.sal.utils.JaxbHelper;
 
 import org.apache.log4j.Logger;
 
@@ -34,7 +34,7 @@ public class PluginList {
 	static{
 		try {
 			e = new PluginList();
-		} catch (XmlException e) {}
+		} catch (SALDocumentException e) {}
 	}
 	
 	
@@ -60,11 +60,11 @@ public class PluginList {
 	
 
 
-	private PluginList() throws XmlException {
+	private PluginList() throws SALDocumentException {
 		if(System.getProperty("jcu.sal.plugin.configFile")!=null) {
 			try {
 				type = JaxbHelper.fromFile(SalPlugins.class , new File(System.getProperty("jcu.sal.plugin.configFile")));
-			} catch (XmlException e) {
+			} catch (SALDocumentException e) {
 				logger.error("Cant parse plugin XML config");
 				e.printStackTrace();
 				throw e;
