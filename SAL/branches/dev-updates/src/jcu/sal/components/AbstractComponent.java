@@ -84,12 +84,6 @@ public abstract class AbstractComponent<T extends Identifier, U extends HWCompon
 	public abstract void parseConfig() throws ConfigurationException;
 	
 	/**
-	 * returns whether a component is started
-	 * @return whether a component is started
-	 */
-	public abstract boolean isStarted();
-	
-	/**
 	 * returns a textual representation of a component
 	 * @return the textual representation of the component
 	 */

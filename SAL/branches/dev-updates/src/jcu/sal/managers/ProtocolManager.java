@@ -150,9 +150,9 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 */	
 	
 	/**
-	 * This method removes the protocol configuration objbect from the platform configuration file.
+	 * This method removes the protocol configuration object from the platform configuration file.
 	 * @param pid the protocol ID to be removed 
-	 * @param removeSensors whether or not to remove the sensors configuraion associate with this protocol too
+	 * @param removeSensors whether or not to remove the sensors configuration associate with this protocol too
 	 * @throws ConfigurationException if the protocol is still active, ie it hasnt been removed first.
 	 * @throws NotFoundException if the protocol ID doesnt match any existing protocol
 	 */

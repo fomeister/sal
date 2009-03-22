@@ -73,15 +73,16 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	protected boolean multipleInstances;
 	
 	/**
-	 * The CML store associated with this protocol. This field must be instanciated by the
-	 *  subclass in <code>internal_parseConfig()</code>
+	 * The CML store associated with this protocol. This field must be instantiated by the
+	 *  subclass in {@link #internal_parseConfig()}
 	 */
 	protected AbstractStore cmls=null;
 	
 	/**
-	 * Is this protocol started ?
+	 * Is this protocol started ? removed ?
 	 */
 	private AtomicBoolean started;
+	protected AtomicBoolean removed;
 	
 	
 	/**
@@ -106,10 +107,9 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 */
 	protected String[] epIds = null;
 	
-	protected AtomicBoolean removed;
 	
 	/**
-	 * Construct a new protocol gien its ID, configuration object and its type.
+	 * Construct a new protocol given its ID, configuration object and its type.
 	 * This constructor checks that the configuration obejct is of type 't'. If not, a ConfigurationException
 	 * is thrown
 	 * @param i the protocol identifier
@@ -142,13 +142,16 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		
 		try { autoDetectionInterval = Integer.parseInt(getParameter(PCMLConstants.AUTODETECTSENSORS_TAG));}
 		catch (NotFoundException e) {}
+		catch (NumberFormatException e){
+			throw new ConfigurationException("The value of '"+PCMLConstants.AUTODETECTSENSORS_TAG+"' attribute cannot be parsed to an int.");
+		}
 		//keep default value supplied by the Protocol subclass if not found in config
 		
-		/* check if we have already instancicated CMl store (we shouldnt, CML store instanciation msut be done in
+		/* check if we have already instancicated CMl store (we shouldnt, CML store instanciation must be done in
 		 * (internal_)parse_config() 
 		 */
 		if(cmls!=null)
-			throw new ConfigurationException();
+			throw new ConfigurationException("CML store already instantied by subclass ?");
 
 		/*
 		 * check if the endpoint type is one of the supported types
@@ -171,7 +174,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			
 		try { internal_parseConfig(); }
 		catch (ConfigurationException e) {
-			logger.error("Error configuring the protocol, destroying the endpoint");
+			//logger.error("Error configuring the protocol, destroying the endpoint");
 			try {
 				EndPointManager.getEndPointManager().destroyComponent(ep.getID());
 			} catch (NotFoundException e1) {
@@ -179,7 +182,13 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 				throw new SALRunTimeException("cant destroy newly created endpoint",e1);
 			}
 			throw e;
-		} 
+		}
+		
+		/* check if we have already instantiated CMl store (we shouldnt, CML store instantiation must be done in
+		 * (internal_)parse_config() 
+		 */
+		if(cmls==null)
+			throw new ConfigurationException("CML store must be instantied by subclass ?");
 	}
 	
 	/* (non-Javadoc)
@@ -191,7 +200,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			ep.start();
 			/* Start the ourselves */
 			internal_start();
-			/* Probe associted sensors */
+			/* Probe associated sensors */
 			//logger.debug("Probing associated sensors for AbstractProtocol " + toString());
 			synchronized(sensors) {
 				for(Sensor s: sensors.values())
@@ -340,9 +349,9 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		Sensor s;
 		//prevent other changes to sensors
 		synchronized(sensors) {
-			if(sensors.containsKey(i)) {
+			s = sensors.get(i);
+			if(s!=null) {
 				//make sure no command is being run on the sensor
-				s = sensors.get(i);
 				synchronized(s) {
 					sensors.remove(i);
 				}
@@ -394,15 +403,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params);
 								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
 								ret_val = (byte[]) m.invoke(this,c, s);
-							} catch (SecurityException e) {
-								logger.error("Not allowed to execute the method matching this command");
-								s.finishRunCmd();
-								throw new SALRunTimeException("Programming error in the protocol subclass",e);
-							} catch (NoSuchMethodException e) {
-								logger.error("Could NOT find the method matching the command");
-								s.finishRunCmd();
-								throw new SALRunTimeException("Programming error in the protocol subclass",e);
-							} catch (InvocationTargetException e) {
+							}catch (InvocationTargetException e) {
 								//logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
 								//e.printStackTrace();
 								if(e.getCause() instanceof SensorDisconnectedException){
@@ -410,13 +411,12 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 									s.disconnect();
 								} else 
 									s.finishRunCmd();
-
 								throw new SensorControlException("Sensor control error",e.getCause());
-							} catch (Exception e) {
+							} catch (Throwable t) {
 								logger.error("Could NOT run the command (error with invoke() )");
-								e.printStackTrace();
+								t.printStackTrace();
 								s.finishRunCmd();
-								throw new SALRunTimeException("Programming error in the protocol subclass",e);
+								throw new SALRunTimeException("Programming error in the protocol subclass",t);
 							}
 							s.finishRunCmd();
 						} else {
@@ -567,6 +567,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * (non-Javadoc)
 	 * @see jcu.sal.components.EndPoints.DeviceListener#adapterChange(int)
 	 */
+	@Override
 	public void adapterChange(int n, String id){}
 	
 	protected final synchronized void startAutodetectThread(){
@@ -591,13 +592,6 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			}
 			//logger.debug("autodetect thread stopped");
 		}
-	}
-	
-	/**
-	 * Is the protocol started ? 
-	 */
-	public final boolean isStarted() {
-		return started.get();
 	}
 	
 	private class Autodetection implements Runnable {
