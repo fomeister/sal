@@ -6,9 +6,7 @@ import static org.junit.Assert.fail;
 import javax.naming.ConfigurationException;
 
 import jcu.sal.common.Parameters;
-import jcu.sal.common.XMLhelper;
 import jcu.sal.common.exceptions.SALDocumentException;
-
 
 import org.junit.Test;
 
@@ -175,7 +173,7 @@ public class ProtocolConfigurationTest {
 			+params2 + "</" + PCMLConstants.ENDPOINT_NODE+">"
 			+params1
 			+"</"+PCMLConstants.PROTOCOL_NODE+">";
-		System.out.println("GetParameters" + XMLhelper.toString(XMLhelper.createDocument(ep)));
+		System.out.println("GetParameters" + jcu.sal.common.utils.XMLhelper.toString(jcu.sal.common.utils.XMLhelper.createDocument(ep)));
 		ProtocolConfiguration pc = new ProtocolConfiguration(ep);
 		System.out.println("done");
 		assertTrue(pc.getParameters().equals(pa1));

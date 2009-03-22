@@ -105,14 +105,6 @@ public abstract class EndPoint extends AbstractComponent<EndPointID, EndPointCon
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see jcu.sal.components.AbstractComponent#isStarted()
-	 */
-	@Override
-	public boolean isStarted() {
-		return enabled;
-	}
 	
 	/**
 	 * Stops the endpoint.

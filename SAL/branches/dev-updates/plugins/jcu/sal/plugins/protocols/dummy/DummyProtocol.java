@@ -3,7 +3,6 @@
  */
 package jcu.sal.plugins.protocols.dummy;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Vector;
 
@@ -109,9 +108,8 @@ public class DummyProtocol extends AbstractProtocol {
 	/*
 	 * Command handling methods
 	 */
-	// TODO create an exception class for this instead of Exception
 	public static String GET_READING_METHOD = "getReading";
-	public  byte[] getReading(Command c, Sensor s) throws IOException{
+	public  byte[] getReading(Command c, Sensor s){
 		return reading;
 	}
 

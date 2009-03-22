@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 import java.io.File;
 
 import jcu.sal.common.exceptions.NotFoundException;
+import jcu.sal.common.utils.XMLhelper;
 
 import org.junit.After;
 import org.junit.Before;

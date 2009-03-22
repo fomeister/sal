@@ -147,14 +147,6 @@ public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 		return "Sensor " + id.getName() + " (" + getNativeAddress() +") State: "+state.toString()+" AbstractProtocol: "+id.getPIDName().toString();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see jcu.sal.components.AbstractComponent#isStarted()
-	 */
-	@Override
-	public boolean isStarted() {
-		return state.isStarted();
-	}
 	
 	public boolean isDisconnected() {
 		return state.isDisconnectedDisabled();

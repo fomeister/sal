@@ -30,6 +30,8 @@ import org.apache.log4j.Logger;
  *
  */
 public class OSDataProtocol extends AbstractProtocol implements Runnable{
+	private static Logger logger = Logger.getLogger(OSDataProtocol.class);
+	static {Slog.setupLogger(logger);}
 	
 	class OSdata {
 		public String file;
@@ -45,9 +47,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 			this.translate = translate;
 		}
 	}
-	
-	private static Logger logger = Logger.getLogger(OSDataProtocol.class);
-	static {Slog.setupLogger(logger);}
+
 	private Thread update_counters = null;
 	private Hashtable<String,String> lastValues;
 	private static Hashtable<String,OSdata> supportedSensors = new Hashtable<String,OSdata>();
@@ -92,6 +92,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.Protocol#internal_parseConfig()
 	 */
+	@Override
 	protected void internal_parseConfig(){
 		cmls = CMLDescriptionStore.getStore();
 		try {
@@ -111,18 +112,20 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.Protocol#internal_stop()
 	 */
+	@Override
 	protected void internal_stop() {stopCounterThread();}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.Protocol#internal_start()
 	 */
+	@Override
 	protected void internal_start() {startCounterThread();}
 
 	/* (non-Javadoc)
 	 * @see jcu.sal.components.Protocol#internal_remove()
 	 */
-	protected void internal_remove() {
-	}
+	@Override
+	protected void internal_remove() {}
 	
 	/*
 	 * (non-Javadoc)
@@ -206,6 +209,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 		return s.getNativeAddress();
 	}
 	
+	@Override
 	public void run(){
 		OSdata d;
 		double u, n, s, i, pu=-1, pn=0, ps=0, pi=0, sum;
@@ -261,8 +265,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	 * command handling methods
 	 */
 
-	// TODO create an exception class for this instead of Exception
-	public static String GET_READING_METHOD = "getReading";
+	public final static String GET_READING_METHOD = "getReading";
 	public byte[] getReading(Command c, Sensor s) throws SensorControlException{
 		OSdata d;
 		String ret;
