@@ -151,7 +151,7 @@ public class SensorTree implements TreeSelectionListener{
 		}
 	}
 	
-	public void toggleSensor(SALAgent a, String sid){
+	public void toggleSensor(SALAgent a, String sid, int state){
 		synchronized(rootNode){
 			toggleSensor(findSensorNode(a, sid));
 		}

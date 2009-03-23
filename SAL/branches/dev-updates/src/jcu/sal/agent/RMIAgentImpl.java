@@ -13,6 +13,7 @@ import java.util.Map;
 import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Response;
 import jcu.sal.common.Slog;
+import jcu.sal.common.StreamID;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.agents.rmi.RMIAgent;
 import jcu.sal.common.agents.rmi.RMIEventHandler;
@@ -92,14 +93,24 @@ public class RMIAgentImpl implements RMIAgent {
 	}
 
 	@Override
-	public Response execute(RMICommand c, String sid) throws RemoteException, NotFoundException, SensorControlException {
+	public StreamID setupStream(RMICommand c, String sid) throws RemoteException, NotFoundException, SensorControlException {
 		List<String> l = c.getRMIStreamCallBack();
 		StreamCallback target = new ProxyStreamCallback(
 				(RMIStreamCallback )clients.get(l.get(0)).getRef(l.get(1)), 
 				l.get(0), 
 				l.get(1) );
 
-		return agent.execute(CommandFactory.getCommand(c.getCommand(), target), sid);
+		return agent.setupStream(CommandFactory.getCommand(c.getCommand(), target), sid);
+	}
+	
+	@Override
+	public void startStream(StreamID sid) throws RemoteException, NotFoundException {
+		agent.startStream(sid);
+	}
+	
+	@Override
+	public void terminateStream(StreamID sid) throws RemoteException, NotFoundException {
+		agent.terminateStream(sid);
 	}
 
 	@Override

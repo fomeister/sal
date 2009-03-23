@@ -56,7 +56,7 @@ public class RmiClientDummyStressTest implements StreamCallback{
 			Random r = new Random();
 			while(!Thread.interrupted()){ 
 				t = System.currentTimeMillis();
-				try {agent.execute(command, sids[r.nextInt(sids.length)]);} catch(Exception e) {}
+				try {agent.setupStream(command, sids[r.nextInt(sids.length)]);} catch(Exception e) {}
 				executionTotal += (System.currentTimeMillis() - t);
 				count++;
 			}

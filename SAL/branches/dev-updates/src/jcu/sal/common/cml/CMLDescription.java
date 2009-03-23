@@ -11,7 +11,6 @@ import jcu.sal.common.cml.xml.Argument;
 import jcu.sal.common.cml.xml.CommandDescription;
 import jcu.sal.common.cml.xml.ObjectFactory;
 import jcu.sal.common.cml.xml.CommandDescription.Arguments;
-import jcu.sal.common.exceptions.ArgumentNotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.common.utils.JaxbHelper;
@@ -158,64 +157,7 @@ public class CMLDescription {
 				v.add(new CMLArgument(a));
 		return v;
 	}
-	
-	/**
-	 * This method returns a list of argument names in this object.
-	 * @return a list of argument names in this object.
-	 */
-	public List<String> getArgNames(){
-		Vector<String> n = new Vector<String>();
-		if(commandDescription.getArguments().getArgument()!=null)
-			for(Argument a: commandDescription.getArguments().getArgument())
-				n.add(a.getName());
-		return n;
-	}
-	
-	/**
-	 * This method returns a list of {@link ArgumentType}s for all
-	 * argument in this object.
-	 * @return a list of {@link ArgumentType}s in this object.
-	 */
-	public List<ArgumentType> getArgTypes(){
-		Vector<ArgumentType> n = new Vector<ArgumentType>();
-		if(commandDescription.getArguments()!=null)
-			for(Argument a: commandDescription.getArguments().getArgument())
-				n.add(new ArgumentType(a.getType()));
-		return n;
-	}
-	
-	/**
-	 * This method returns the {@link ArgumentType} of an argument given its name
-	 * @param name the name of the argument whose {@link ArgumentType} is to
-	 * be returned
-	 * @return the {@link ArgumentType} of an argument.
-	 * @throws ArgumentNotFoundException if no argument matches the given name.
-	 */
-	public ArgumentType getArgType(String name){
-		if(commandDescription.getArguments()!=null)
-			for(Argument a: commandDescription.getArguments().getArgument())
-				if(a.getName().equals(name))
-					return new ArgumentType(a.getType());
 		
-		throw new ArgumentNotFoundException("Cant find argument named "+name);
-	}
-	
-	/**
-	 * This method returns the {@link CMLArgument} of an argument given its name
-	 * @param name the name of the argument whose {@link CMLArgument} is
-	 * to be returned
-	 * @return the {@link CMLArgument} of the argument.
-	 * @throws ArgumentNotFoundException if no argument matches the given name.
-	 */
-	public CMLArgument getArgument(String name){
-		if(commandDescription.getArguments()!=null)
-			for(Argument a: commandDescription.getArguments().getArgument())
-				if(a.getName().equals(name))
-					return new CMLArgument(a);
-		
-		throw new ArgumentNotFoundException("Cant find argument named "+name);
-	}
-	
 	/**
 	 * This method returns the return type for this  CML description
 	 * @return the return type for this  CML description

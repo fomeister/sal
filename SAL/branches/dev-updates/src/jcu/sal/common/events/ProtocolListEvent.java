@@ -4,13 +4,8 @@ package jcu.sal.common.events;
 public class ProtocolListEvent extends Event {
 
 	private static final long serialVersionUID = 4394564002895838509L;
-	public static int PROTOCOL_ADDED = 1;
-	public static int PROTOCOL_REMOVED = 2;
-	public static int PROTOCOL_MASK = (PROTOCOL_ADDED | PROTOCOL_REMOVED); 
-	
-	static {
-		MAX_TYPE_VALUE = PROTOCOL_MASK;
-	}
+	public static final int PROTOCOL_ADDED = 1;
+	public static final int PROTOCOL_REMOVED = 2;
 	
 	public ProtocolListEvent(int t, String sid, String p){
 		super(t, sid, p);

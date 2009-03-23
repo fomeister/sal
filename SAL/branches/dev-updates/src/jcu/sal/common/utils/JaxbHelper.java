@@ -99,8 +99,8 @@ public class JaxbHelper {
 			String xmlString = writer.toString();
 
 			validateString(getSchema(o.getClass()), xmlString);
-
-			return xmlString;
+			
+			return XMLhelper.toString(xmlString);
 		} catch (Exception je) {
 			throw new SALDocumentException(je);
 		}

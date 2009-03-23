@@ -74,7 +74,7 @@ public class ExecuteSensorAction implements Action, StreamCallback {
 
 		try {
 			//logger.info("executing command on sensor "+name+" ("+protocol+")");
-			agent.execute(cmd, name.toString());
+			agent.setupStream(cmd, name.toString());
 			//logger.info("command executed by sensor "+name);
 		} catch (NotFoundException e) {
 			logger.info("we shouldnt be here");

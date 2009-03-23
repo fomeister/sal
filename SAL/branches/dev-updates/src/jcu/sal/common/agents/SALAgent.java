@@ -1,13 +1,16 @@
 package jcu.sal.common.agents;
 
+import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
+import jcu.sal.common.StreamID;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.events.ClientEventHandler;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
+import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
@@ -87,16 +90,42 @@ public interface SALAgent{
 	public String listSensor(String sid) throws NotFoundException;
 	
 	/**
-	 * This method instructs a sensor identified by sid to execute the command c 
-	 * @param c the command to be executed
+	 * This method sets up a stream given a sensor and a command.
+	 * The command will be sent to the sensor at fixed intervals in time (as specified
+	 * in the {@link Command} object), creating a stream of {@link Response}s, sent
+	 * back to the client. After setting up the stream, the {@link #startStream(StreamID)}
+	 * method must be called with the returned value of this method (a {@link StreamID}), to start
+	 * streaming, EXCEPT if the command is to be run only once, in which case, 
+	 * the returned {@link StreamID} is null and {@link #startStream(StreamID)} 
+	 * will be called automatically. 
+	 * @param c the command to be executed. {@link Command}s are created using a 
+	 * {@link CommandFactory} object.
 	 * @param sid the target sensor identifier
-	 * @return a response, which does not contain the result of the command, but which
-	 * contains the stream ID  {@link Response#getID()}. 
+	 * @return a {@link StreamID} which uniquely identifies this stream, or <code>null</codE>
+	 * if the command will run only once, in which case, this method will also call 
+	 * {@link #startStream(StreamID)}.
 	 * @throws NotFoundException if the given sensor id does not match any existing sensor
 	 * @throws SensorControlException if there is an error controlling the sensor. If this exception is raised,
 	 * the cause of this exception will be linked to it and can be retrieved using <code>getCause()</code>  
 	 */
-	public Response execute(Command c, String sid) throws NotFoundException, SensorControlException;
+	public StreamID setupStream(Command c, String sid) throws NotFoundException, SensorControlException;
+	
+	/**
+	 * This method starts a stream previously setup using {@link #setupStream(Command, String)}.
+	 * @param streamId the id of the stream as returned by {@link #setupStream(Command, String)}.
+	 * @throws NotFoundException if the given stream Id has not been setup prior
+	 * to calling this method.
+	 * @throws SALRunTimeException if the stream has already been started once before.
+	 */
+	public void startStream(StreamID streamId) throws NotFoundException;
+	
+	/**
+	 * This method stops and deletes a stream previously setup using {@link #setupStream(Command, String)}.
+	 * @param streamId the id of the stream as returned by {@link #setupStream(Command, String)}.
+	 * @throws NotFoundException if the given stream Id has not been setup prior
+	 * to calling this method.
+	 */
+	public void terminateStream(StreamID streamId) throws NotFoundException;
 	
 	/**
 	 * This method returns the a string representation of the CML descriptions document for a given sensor.
@@ -148,7 +177,7 @@ public interface SALAgent{
 	 */
 	/**
 	 * This method registers an event handler. Whenever the producer <code>producerID</code> generates an event, the method
-	 * {@link EventHandler#handle(jcu.sal.common.events.Event)} will be called on the given EventHandler <code>eh</code>.
+	 * {@link ClientEventHandler#handle(jcu.sal.common.events.Event)} will be called on the given EventHandler <code>eh</code>.
 	 * A Producers ID is usually a protocol name. However, three special producers also exist:
 	 *  {@link Constants#SENSOR_MANAGER_PRODUCER_ID} which generates
 	 * <code>SensorNodeEvent</code> events when sensors are created and deleted, {@link Constants#SENSOR_MANAGER_PRODUCER_ID} which

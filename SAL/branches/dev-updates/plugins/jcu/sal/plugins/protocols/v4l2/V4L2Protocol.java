@@ -1,29 +1,31 @@
 package jcu.sal.plugins.protocols.v4l2;
 
-import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import jcu.sal.common.Response;
 import jcu.sal.common.Slog;
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLArgument;
+import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.ResponseType;
-import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.exceptions.AlreadyPresentException;
-import jcu.sal.common.exceptions.ClosedStreamException;
 import jcu.sal.common.exceptions.ConfigurationException;
-import jcu.sal.common.exceptions.InvalidCommandException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.exceptions.SensorIOException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.protocols.AbstractProtocol;
+import jcu.sal.components.protocols.DefaultStreamingThread;
+import jcu.sal.components.protocols.LocalStreamID;
 import jcu.sal.components.protocols.ProtocolID;
+import jcu.sal.components.protocols.StreamingThread;
+import jcu.sal.components.protocols.StreamingThreadListener;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.plugins.endpoints.PCIEndPoint;
 import jcu.sal.plugins.endpoints.UsbEndPoint;
@@ -32,7 +34,7 @@ import org.apache.log4j.Logger;
 
 import au.edu.jcu.v4l4j.Control;
 import au.edu.jcu.v4l4j.FrameGrabber;
-import au.edu.jcu.v4l4j.JPEGFrameGrabber;
+import au.edu.jcu.v4l4j.InputInfo;
 import au.edu.jcu.v4l4j.V4L4JConstants;
 import au.edu.jcu.v4l4j.VideoDevice;
 import au.edu.jcu.v4l4j.exceptions.V4L4JException;
@@ -52,10 +54,8 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	
 	private VideoDevice vd = null;
+	private FrameGrabber fg = null;
 	private Hashtable<String,Control> ctrls = null;
-	private boolean streaming;
-	private StreamingThread st;
-	private StreamingThreadFake stf;
 	
 
 	public V4L2Protocol(ProtocolID i, ProtocolConfiguration c) throws ConfigurationException{
@@ -63,7 +63,6 @@ public class V4L2Protocol extends AbstractProtocol {
 		autoDetectionInterval = -1; //run only once
 		supportedEndPointTypes.add(PCIEndPoint.ENDPOINT_TYPE);
 		supportedEndPointTypes.add(UsbEndPoint.ENDPOINT_TYPE);
-		streaming = false;
 	}
 
 	@Override
@@ -113,12 +112,78 @@ public class V4L2Protocol extends AbstractProtocol {
 	
 	private void updateCMLStore(){
 		cmls = CMLDescriptionStore.getStore();
+		
+		//add CML for CCD
+		createCCDCML();
+		
 		//get the V4L2 controls
 		List<Control> v4l2c = vd.getControlList().getList();
 		ctrls = new Hashtable<String, Control>();
 		
 		for(Control c: v4l2c)
 			createCMLs(c, CMLDescriptionStore.CCD_KEY);
+	}
+	
+	private void createCCDCML(){
+		int i;
+		String key, name, mName, desc;
+		Map<String,String> values = new Hashtable<String, String>();
+		List<CMLArgument> args;
+		ResponseType r;
+		
+		/* 
+		 * CCD sensor
+		 * */
+		key = CMLDescriptionStore.CCD_KEY;
+		
+		mName = V4L2Protocol.GET_JPEG_FRAME_METHOD;
+		name = "GetJPEGFrame";
+		desc = "Fetches a single JPEG-encoded frame";
+		args = new Vector<CMLArgument>();
+		args.add(new CMLArgument(CMLDescriptionStore.WIDTH_VALUE_NAME, ArgumentType.IntegerArgument, false));
+		args.add(new CMLArgument(CMLDescriptionStore.HEIGHT_VALUE_NAME, ArgumentType.IntegerArgument, false));
+		
+		
+		for(InputInfo input: vd.getDeviceInfo().getInputs())
+			values.put(String.valueOf(input.getIndex()), input.getName()+" - "+(input.getType()==V4L4JConstants.INPUT_TYPE_CAMERA?"Camera":"Tuner"));
+		
+		args.add(
+				new CMLArgument(CMLDescriptionStore.CHANNEL_VALUE_NAME, 
+						values, 
+						false)
+				);
+		values.clear();
+		
+		values.put(String.valueOf(V4L4JConstants.STANDARD_WEBCAM), "Webcam");
+		values.put(String.valueOf(V4L4JConstants.STANDARD_PAL), "PAL");
+		values.put(String.valueOf(V4L4JConstants.STANDARD_NTSC), "NTSC");
+		values.put(String.valueOf(V4L4JConstants.STANDARD_SECAM), "SECAM");
+		args.add(
+				new CMLArgument(CMLDescriptionStore.STANDARD_VALUE_NAME,
+						values,
+						false)
+				);
+		values.clear();		
+		
+		args.add(
+				new CMLArgument(CMLDescriptionStore.QUALITY_VALUE_NAME,
+						false,
+						V4L4JConstants.MIN_JPEG_QUALITY,
+						V4L4JConstants.MAX_JPEG_QUALITY
+						)
+				);
+		r = new ResponseType(CMLConstants.RET_TYPE_BYTE_ARRAY,CMLConstants.CONTENT_TYPE_JPEG);
+		try {
+			i = cmls.addPrivateCMLDesc(key, mName, name, desc, args, r);
+			//generic GetReading
+			cmls.addGenericCMLDesc(CMLDescriptionStore.CCD_KEY, CMLDescriptionStore.GENERIC_GETREADING, i);
+		} catch (AlreadyPresentException e) {
+			//we shouldnt be here
+			e.printStackTrace();
+		} catch (NotFoundException e) {
+			//we shouldnt be here
+			e.printStackTrace();
+		}
 	}
 	
 	private void createCMLs(Control c, String key){
@@ -140,7 +205,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			//setValue command
 			name = "Set"+ctrlName.replace(" ", "");
 			desc = "Sets the value of "+ctrlName;
-			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, true, c.getMinValue(), c.getMaxValue(), c.getStepValue()));
+			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, false, c.getMinValue(), c.getMaxValue(), c.getStepValue()));
 			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void);
 		} else if (c.getType()==V4L4JConstants.CTRL_TYPE_SWITCH){
 			//getValue
@@ -151,7 +216,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			//setValue command
 			name = "Set"+ctrlName.replace(" ", "");
 			desc = "Enable/disable  "+ctrlName;
-			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, true, 0, 1));
+			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, false, 0, 1));
 			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void);
 		} else if (c.getType()==V4L4JConstants.CTRL_TYPE_DISCRETE){
 			Map<String,String> map = new Hashtable<String,String>();
@@ -167,7 +232,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			desc = "Set the value of "+ctrlName;
 			for(int i=0; i<discreteNames.size();i++)
 				map.put(discreteValues.get(i).toString(), discreteNames.get(i));
-			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, map, true));
+			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, map, false));
 			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void);
 		} else {
 			logger.error("unknown control type '"+c.getType()+"'");
@@ -199,8 +264,6 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	@Override
 	protected void internal_stop() {
-		if(streaming)
-			st.stop();
 		vd.releaseControlList();
 		vd.release();
 	}
@@ -217,6 +280,41 @@ public class V4L2Protocol extends AbstractProtocol {
 		return v; 
 	}
 
+	@Override
+	protected StreamingThread createStreamingThread(
+			Command c, Sensor s, LocalStreamID lid) throws SensorControlException {
+		StreamingThread st;
+		String mName;
+		
+		
+		try {
+			mName = cmls.getMethodName(CMLDescriptionStore.CCD_KEY, c.getCID());
+		} catch (NotFoundException e) {
+			logger.error("We shouldnt be here - error creating the streaming thread");
+			e.printStackTrace();
+			throw new SensorControlException("error creating the streaming thread");
+		}
+		
+		
+		if(mName.equals(GET_JPEG_FRAME_METHOD)){
+			//setup JPEG image stream
+			getJPEGFrameGrabber(c, s);
+			try {
+				st = new V4lStreamingThread(
+						getClass().getDeclaredMethod("getFrame", new Class<?>[] {Command.class,Sensor.class}),
+						this, s, c, this, lid);
+			} catch (Throwable e) {
+				logger.error("We shouldnt be here - error creating the streaming thread");
+				e.printStackTrace();
+				putFrameGrabber();
+				throw new SensorControlException("Error creating the streaming thread");
+			} 
+		} else 
+			st = super.createStreamingThread(c, s, lid);
+
+		
+		return st;
+	}
 	
 	/*
 	 * COMMAND HANDLING METHODS
@@ -271,16 +369,7 @@ public class V4L2Protocol extends AbstractProtocol {
 		}
 	}
 	
-	public static final String GET_JPEG_FRAME_METHOD = "getJpegFrame";
-	public byte[] getJpegFrame(Command c, Sensor s) throws SensorControlException{
-		if(streaming) {
-			logger.error("Already streaming");
-			throw new InvalidCommandException("The sensor is streaming data");
-		}
-		
-		byte[] b;
-		ByteBuffer bb;
-		JPEGFrameGrabber fg;
+	public void getJPEGFrameGrabber(Command c, Sensor s) throws SensorControlException{
 		try {
 			fg = vd.getJPEGFrameGrabber(c.getIntValue(CMLDescriptionStore.WIDTH_VALUE_NAME),
 					c.getIntValue(CMLDescriptionStore.HEIGHT_VALUE_NAME), c.getIntValue(CMLDescriptionStore.CHANNEL_VALUE_NAME),
@@ -297,6 +386,12 @@ public class V4L2Protocol extends AbstractProtocol {
 			vd.releaseFrameGrabber();
 			throw new SensorIOException("Error starting capture",e);
 		}
+	}
+	
+	public byte[] getFrame(Command c, Sensor s) throws SensorControlException{
+		
+		byte[] b;
+		ByteBuffer bb;
 		
 		try {
 			bb = fg.getFrame();
@@ -305,193 +400,67 @@ public class V4L2Protocol extends AbstractProtocol {
 		} catch (V4L4JException e1) {
 			logger.error("Error while capturing frame");
 			throw new SensorIOException("Error while capturing frame",e1);
-		} finally {
-			fg.stopCapture();
-			vd.releaseFrameGrabber();
 		}
 		return b;
 	}
 	
-	public static final String START_STREAM_METHOD = "startStream";
-	public byte[] startStream(Command c, Sensor s) throws SensorControlException{
-		JPEGFrameGrabber fg;
-		if(streaming)
-			throw new InvalidCommandException("The sensor is streaming data");
-
-		try {
-			fg = vd.getJPEGFrameGrabber(c.getIntValue(CMLDescriptionStore.WIDTH_VALUE_NAME),
-					c.getIntValue(CMLDescriptionStore.HEIGHT_VALUE_NAME), c.getIntValue(CMLDescriptionStore.CHANNEL_VALUE_NAME),
-					c.getIntValue(CMLDescriptionStore.STANDARD_VALUE_NAME), c.getIntValue(CMLDescriptionStore.QUALITY_VALUE_NAME));
-			fg.startCapture();
-		} catch (V4L4JException e) {
-			logger.error("Error while starting capture");
-			vd.releaseFrameGrabber();
-			throw new SensorIOException("Error while starting capture", e);
-		}
-		st = new StreamingThread(c.getStreamCallBack(), s, fg, c.getCID());
-
-		streaming = true;
-		return new byte[0];
-	}
-	
-	public static final String STOP_STREAM_METHOD = "stopStream";
-	public byte[] stopStream(Command c, Sensor s) throws SensorControlException{
-		if(!streaming)
-			throw new InvalidCommandException("The sensor is not streaming");
-		
-		
-		st.stop();
+	public void putFrameGrabber(){
+		fg.stopCapture();
 		vd.releaseFrameGrabber();
-		streaming = false;
-		return new byte[0];
 	}
 	
-	public static final String START_STREAM_FAKE_METHOD = "startStreamFake";
-	public byte[] startStreamFake(Command c, Sensor s) throws SensorControlException{
-		if(streaming)
-			throw new InvalidCommandException("The sensor is already streaming");
-		
-		stf = new StreamingThreadFake(c.getStreamCallBack(), s,c.getCID());
+	public static final String GET_JPEG_FRAME_METHOD = "getJPEGFrame";
+	public byte[] getJpegFrame(Command c, Sensor s) throws SensorControlException{
+		byte[] b;
+		getJPEGFrameGrabber(c, s);
+		try{b = getFrame(c,s);}
+		finally{putFrameGrabber();}
+		return b;
+	}
 
-		streaming = true;
-		return new byte[0];
-	}
-	
-	public static final String STOP_STREAM_FAKE_METHOD = "stopStreamFake";
-	public byte[] stopStreamFake(Command c, Sensor s) throws SensorControlException{
-		if(!streaming)
-			throw new InvalidCommandException("The sensor is not streaming");
+	/**
+	 * This class creates a streaming thread for v4l
+	 * @author gilles
+	 *
+	 */
+	private class V4lStreamingThread implements StreamingThread, StreamingThreadListener{
+		private DefaultStreamingThread thread;
+		private StreamingThreadListener listener;
 		
-		stf.stop();
-		streaming = false;
-		return new byte[0];
-	}
-	
-	private class StreamingThread implements Runnable{
-		private StreamCallback cb;
-		private FrameGrabber fg;
-		private Thread t;
-		private Sensor s;
-		private int cid;
-		private boolean error=false;
-		private boolean stop = false;
-		
-		public StreamingThread(StreamCallback c, Sensor s, FrameGrabber f, int cid){
-			cb = c;
-			fg = f;
-			this.s = s;
-			this.cid = cid;
-			t = new Thread(this, "V4L streaming thread");
-			stop = false;
-			t.start();
+		/**
+		 * This methods build a new {@link V4lStreamingThread}. The FrameGrabber <code>fg</code> must be setup before
+		 * calling this method.
+		 * @param m the method to call to stream images
+		 * @param o the object where this method belongs
+		 * @param s the Sensor
+		 * @param c the command
+		 * @param l the listener to be notified when this thread exits
+		 * @param id the LocalStreamId
+		 */
+		public V4lStreamingThread(Method m, AbstractProtocol o, Sensor s, Command c, StreamingThreadListener l, LocalStreamID id){
+			listener = l; 
+			thread = new DefaultStreamingThread(m, o, s, c, this, id);
 		}
 		
-		public void stop(){
-			//t.interrupt();
-			stop = true;
-			try { t.join();} catch (InterruptedException e) {}
+		@Override
+		public synchronized void stop(){
+			thread.stop();
 		}
 
-		public void run() {
-			byte[] b;
-			ByteBuffer bb;
-			String sid = s.getID().getName();
-//			long ts, ts2, ts3;
-			//while(!error && !Thread.interrupted()){
-			while(!error && !stop){
-				try {
-					//ts = System.currentTimeMillis();
-					bb = fg.getFrame();
-					//ts2 = System.currentTimeMillis();;
-					//logger.debug("getFrame: "+(ts2 - ts)+" ms");
-					b = new byte[bb.limit()];
-					bb.get(b);
-					bb.position(0);
-					//ts3 = System.currentTimeMillis();
-					//logger.debug("prepFrame: "+(ts3 - ts2)+" ms");
-					cb.collect(new Response(b, cid, sid));
-					//logger.debug("collect: "+(System.currentTimeMillis()- ts3)+" ms");
-					//logger.debug("total: "+(System.currentTimeMillis()- ts)+" ms");
-				} catch (IOException e1) {
-					logger.error("Callback error");
-					error=true;
-				} catch (Throwable e) {
-					logger.error("Error while capturing frame");
-					e.printStackTrace();
-					
-					try {
-						//PrintWriter pw = new PrintWriter(new StringWriter());
-						//e.printStackTrace(pw);
-						cb.collect(new Response(sid, cid, new SensorIOException("Error while capturing frame."+e.getMessage())));
-					} catch (IOException e1) {
-						logger.error("Error notifying the client");
-						e1.printStackTrace();
-					}				
-					error=true;
-				}
-			}
-			fg.stopCapture();
-			vd.releaseFrameGrabber();
-			
-			if(!error)
-				try {cb.collect(new Response(sid, cid, new ClosedStreamException()));} catch (IOException e) {}
-				
-			//logger.debug("Capture thread stopped");
-			streaming = false;
-		}		
-	}
-	
-	private class StreamingThreadFake implements Runnable{
-		private StreamCallback cb;
-		private Thread t;
-		private Sensor s;
-		private int cid;
-		private boolean error=false;
-		private byte[] b;
-		private int FAKE_ARRAY_SIZE=100000;
-		
-		
-		public StreamingThreadFake(StreamCallback c, Sensor s, int cid){
-			cb = c;
-			this.s = s;
-			this.cid = cid;
-			t = new Thread(this, "V4L streaming thread fake");
-			t.start();
-		}
-		
-		public void stop(){
-			t.interrupt();
-		}
-		
-		public void join(){
-			try { t.join();	} catch (InterruptedException e) {}
+		@Override
+		public void threadExited(LocalStreamID lid) {
+			putFrameGrabber();
+			listener.threadExited(lid);
 		}
 
-		public void run() {
-			String sid = s.getID().getName();
-			//long before;
-			while(error==false && !Thread.interrupted()){
-				try {
-					//before = System.currentTimeMillis();
-					b = new byte[FAKE_ARRAY_SIZE];
-					for(int i=0; i<FAKE_ARRAY_SIZE; i++)
-						b[i]=(byte) (i%100);
-					cb.collect(new Response(b, cid, sid));
-					//logger.debug("collect: "+(System.currentTimeMillis()- before2)+" ms");
-					//logger.debug("total: "+(System.currentTimeMillis()- before)+" ms");
-				} catch (IOException e1) {
-					logger.error("Callback error");
-					error=true;
-				}  catch (Exception e) {
-					try {cb.collect(new Response(sid, cid, new SensorIOException("Error while capturing frame", e)));} catch (IOException e1) {}
-					e.printStackTrace();
-					error=true;
-				}
-			}
-			if(!error)
-				try {cb.collect(new Response(sid, cid, new ClosedStreamException()));} catch (IOException e) {}
-			logger.debug("Capture thread fake stopped");
-		}		
+		@Override
+		public synchronized void start() {
+			thread.start();
+		}
+
+		@Override
+		public void update(int i) {
+			thread.update(i);
+		}
 	}
-	
 }

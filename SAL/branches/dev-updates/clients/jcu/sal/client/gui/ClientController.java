@@ -2,8 +2,10 @@ package jcu.sal.client.gui;
 
 import java.rmi.RemoteException;
 
+import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
+import jcu.sal.common.StreamID;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.events.ClientEventHandler;
@@ -101,16 +103,41 @@ public interface ClientController {
 	public String listSensor(SALAgent a, String sid) throws NotFoundException;
 	
 	/**
-	 * This method instructs a sensor identified by sid to execute a given command c
-	 * @param a the SAL agent where the command must be sent
-	 * @param c the command
+	 * This method sets up a stream given a sensor and a command.
+	 * The command will be sent to the sensor at fixed intervals in time (as specified
+	 * in the {@link Command} object), creating a stream of {@link Response}s, sent
+	 * back to the client. After setting up the stream, the {@link #startStream(StreamID)}
+	 * method must be called with the returned value of this method (a {@link StreamID}), to start
+	 * streaming, EXCEPT if the command is to be run only once, in which case, 
+	 * the returned {@link StreamID} is null and {@link #startStream(StreamID)} 
+	 * will be called automatically. 
+	 * @param c the command to be executed. {@link Command}s are created using a 
+	 * {@link CommandFactory} object.
 	 * @param sid the target sensor identifier
-	 * @return the result
-	 * @throws NotFoundException if the given sensor id doesnt match any existing sensor
+	 * @return a {@link StreamID} which uniquely identifies this stream, or <code>null</codE>
+	 * if the command will run only once, in which case, this method will also call 
+	 * {@link #startStream(StreamID)}.
+	 * @throws NotFoundException if the given sensor id does not match any existing sensor
 	 * @throws SensorControlException if there is an error controlling the sensor. If this exception is raised,
 	 * the cause of this exception will be linked to it and can be retrieved using <code>getCause()</code>  
 	 */
-	public Response execute(SALAgent a, Command c, String sid) throws NotFoundException, SensorControlException;
+	public StreamID setupStream(SALAgent a, Command c, String sid) throws NotFoundException, SensorControlException;
+	
+	/**
+	 * This method starts a stream previously setup using {@link #setupStream(Command, String)}.
+	 * @param streamId the id of the stream as returned by {@link #setupStream(Command, String)}.
+	 * @throws NotFoundException if the given stream Id has not been setup prior
+	 * to calling this method.
+	 */
+	public void startStream(SALAgent a, StreamID streamId) throws NotFoundException;
+	
+	/**
+	 * This method stops and deletes a stream previously setup using {@link #setupStream(Command, String)}.
+	 * @param streamId the id of the stream as returned by {@link #setupStream(Command, String)}.
+	 * @throws NotFoundException if the given stream Id has not been setup prior
+	 * to calling this method.
+	 */
+	public void terminateStream(SALAgent a, StreamID streamId) throws NotFoundException;
 	
 	/**
 	 * This method returns the a string representation of the CML descriptions document for a given sensor.

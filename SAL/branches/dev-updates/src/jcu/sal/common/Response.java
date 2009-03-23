@@ -18,16 +18,19 @@ import jcu.sal.common.exceptions.SensorControlException;
 public class Response implements Serializable {
 	private static final long serialVersionUID = -4090794353146528167L;
 	private byte[] b;
-	private String sid;
-	private int cid;
+	private StreamID sid;
 	private SensorControlException exception;
 	private long timeStamp;
 	private SALAgent agent;
 	
-	public Response(byte[] bb, int cid, String sid) {
+	/**
+	 * This method builds a new response with data, and no exception
+	 * @param bb the data
+	 * @param sid the stream id it belongs to
+	 */
+	public Response(byte[] bb, StreamID sid) {
 		timeStamp = System.currentTimeMillis();
 		this.sid = sid;
-		this.cid = cid;
 		exception = null;
 		if(bb==null)
 			b= new byte[0];
@@ -38,12 +41,12 @@ public class Response implements Serializable {
 	/**
 	 * This constructor builds a response object with either the error or the end flag set. It is only intended to be used
 	 * by streaming threads returning a response via a callback method 
-	 * @param sid the sensor id
+	 * @param sid the stream id
 	 * @param cid the command id of the command which generated this reponse
 	 * @param e whether there was an error or not (normal end of stream)
 	 */
-	public Response(String sid, int cid, SensorControlException e){
-		this(null,cid, sid);
+	public Response(StreamID sid, SensorControlException e){
+		this(null, sid);
 		b=null;
 		exception = e;
 	}
@@ -53,7 +56,7 @@ public class Response implements Serializable {
 	 * @return the sensor identifier of the sensor which generated this response
 	 */
 	public String getSID() {
-		return sid;
+		return sid.getSID();
 	}
 	
 	/**
@@ -61,7 +64,7 @@ public class Response implements Serializable {
 	 * @return the sensor identifier of the sensor which generated this response
 	 */
 	public int getCID() {
-		return cid;
+		return Integer.parseInt(sid.getCID());
 	}
 	
 	/**
@@ -129,11 +132,13 @@ public class Response implements Serializable {
 	
 	/**
 	 * This method sets the {@link SALAgent} where this response originates from.
-	 * Clients should not use this method.	 * 
+	 * Clients should not use this method.
 	 * @param a the SALAgent which generated this response.
 	 */
-	public void setAgent(SALAgent a){
+	public Response setAgent(SALAgent a){
 		agent = a;
+		sid.setAgent(a);
+		return this;
 	}
 	
 	/**
@@ -145,7 +150,11 @@ public class Response implements Serializable {
 		return agent;
 	}
 	
-	public String getID(){
-		return agent.getID()+sid+cid;
+	/**
+	 * This method returns the {@link StreamID} this response belongs to.
+	 * @return the {@link StreamID} this response belongs to.
+	 */
+	public StreamID getStreamID(){
+		return sid;
 	}
 }

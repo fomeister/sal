@@ -4,13 +4,10 @@ package jcu.sal.common.events;
 public class SensorStateEvent extends Event {
 
 	private static final long serialVersionUID = 6308401724433999891L;
-	public static int SENSOR_STATE_CONNECTED = 1;
-	public static int SENSOR_STATE_DISCONNECTED = 2;
-	public static int SENSOR_STATE_MASK = (SENSOR_STATE_CONNECTED | SENSOR_STATE_DISCONNECTED);
-	
-	static {
-		MAX_TYPE_VALUE = SENSOR_STATE_MASK;
-	}
+	public static final int SENSOR_STATE_IDLE_CONNECTED = 1;
+	public static final int SENSOR_STATE_DISCONNECTED = 2;
+	public static final int SENSOR_STATE_STREAMING = 3;
+	public static final int SENSOR_STATE_DISABLED = 4;
 	
 	public SensorStateEvent(int t, String sid, String p) {
 		super(t, sid, p);
@@ -21,8 +18,9 @@ public class SensorStateEvent extends Event {
 	}
 	
 	public String toString(){
-		if(type==SENSOR_STATE_CONNECTED) return super.toString() + " Sensor connected";
-		else return super.toString() + "  Sensor disconnected";
+		if(type==SENSOR_STATE_IDLE_CONNECTED) return super.toString() + " Sensor connected & idle";
+		else if(type==SENSOR_STATE_STREAMING) return super.toString() + " Sensor streaming"; 
+			return super.toString() + "  Sensor disconnected";
 	}
 
 }

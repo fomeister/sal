@@ -3,13 +3,18 @@
  */
 package jcu.sal.managers;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.Slog;
+import jcu.sal.common.StreamID;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.ProtocolListEvent;
 import jcu.sal.common.exceptions.ComponentInstantiationException;
 import jcu.sal.common.exceptions.ConfigurationException;
@@ -22,6 +27,7 @@ import jcu.sal.common.sml.SMLConstants;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.Identifier;
 import jcu.sal.components.protocols.AbstractProtocol;
+import jcu.sal.components.protocols.LocalStreamID;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
@@ -40,6 +46,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	static {Slog.setupLogger(logger);}
 	
 	private static ProtocolManager p = new ProtocolManager();
+	private static ResponseDispatcherThread dispatcher = new ResponseDispatcherThread();
 
 	private FileConfigService conf;
 	private EventDispatcher ev;
@@ -194,6 +201,7 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	 */
 	public void stop() {
 		conf.stop();
+		dispatcher.stop();
 	}
 	
 	/**
@@ -230,17 +238,35 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 	}
 	
 	/**
-	 * Sends a command to a sensor
+	 * Setup a stream given a command and a sensor
 	 * @param c the command
 	 * @param sid the sensor
-	 * @return the result  
+	 * @return a {@link StreamID}
 	 * @throws SensorControlException if there is an error controlling the sensor
 	 * @throws NotFoundException if the given sensor id doesnt match any existing sensor
 	 */
-	public Response execute(Command c, SensorID sid) throws SensorControlException, NotFoundException {
-		return new Response(getProtocol(sid).execute(c, sid), c.getCID(), sid.getName());
+	public LocalStreamID setupStream(Command c, SensorID sid) throws SensorControlException, NotFoundException {
+		return getProtocol(sid).setupStream(c, sid);
 	}
 	
+	/**
+	 * STarts the given stream
+	 * @param sid the stream id0
+	 * @throws NotFoundException if the given stream id does not exit
+	 */
+	public void startStream(LocalStreamID lid) throws  NotFoundException {
+		getProtocol(new SensorID(lid.getSID())).startStream(lid);
+	}
+	
+	/**
+	 * Stops the given stream
+	 * @param sid the stream id0
+	 * @throws NotFoundException if the given stream id does not exit
+	 */
+	public void stopStream(LocalStreamID sid) throws  NotFoundException {
+		getProtocol(new SensorID(sid.getSID())).stopStream(sid);
+	}
+
 	/**
 	 * Retrieves the CML doc for a given sensor
 	 * @param sid the sensorID
@@ -348,5 +374,52 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 			return p;
 	}
 	
-
+	public static void queueResponse(Response r, StreamCallback c){
+		dispatcher.queueResponse(r, c);
+	}
+	
+	private static class ResponseDispatcherThread implements Runnable{
+		private static class Data{
+			public Response r;
+			public StreamCallback c;
+			public Data(Response r, StreamCallback c){
+				this.r = r;
+				this.c = c;
+			}
+		}
+		private int QUEUE_SIZE = 5000;
+		Thread t;
+		private BlockingQueue<Data> queue;
+		
+		public ResponseDispatcherThread(){
+			t = new Thread(this, "Response dispatcher");
+			queue = new LinkedBlockingQueue<Data>(QUEUE_SIZE);
+			t.start();
+		}
+		
+		public void stop() {
+			t.interrupt();
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		public void queueResponse(Response r, StreamCallback c){
+			if(!queue.offer(new Data(r,c)))
+				logger.error("Cant queue event, queue full");
+		}
+		
+		public void run(){
+			Data d;
+			try {
+				while(!Thread.interrupted()){
+					d = queue.take();
+					try {d.c.collect(d.r);} catch (IOException e) {}
+				}
+			} catch (InterruptedException e1) {}
+		}
+	}
 }

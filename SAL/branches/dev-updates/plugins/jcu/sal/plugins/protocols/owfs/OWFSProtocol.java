@@ -417,7 +417,7 @@ public class OWFSProtocol extends AbstractProtocol{
 	 * Gets a raw reading from an OWFS file
 	 * @param f the file within OWFSMOUNTPOINTATTRIBUTE which should be read
 	 * @return the reading
-	 * @throws IOException if something goes wrong
+	 * @throws SensorControlException if something goes wrong
 	 */
 	private byte[] getRawReading(String f) throws SensorControlException {
 		try {

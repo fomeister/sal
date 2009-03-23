@@ -18,7 +18,6 @@ public class ArgumentType {
 	public static ArgumentType IntegerArgument = new ArgumentType(CMLConstants.ARG_TYPE_INT);
 	public static ArgumentType FloatArgument = new ArgumentType(CMLConstants.ARG_TYPE_FLOAT);
 	public static ArgumentType ListArgument = new ArgumentType(CMLConstants.ARG_TYPE_LIST);
-	public static ArgumentType ButtonArgument = new ArgumentType(CMLConstants.ARG_TYPE_BUTTON);
 	
 	/**
 	 * The type itself
@@ -32,8 +31,7 @@ public class ArgumentType {
 	 */
 	public ArgumentType(String s){
 		if(!s.equals(CMLConstants.ARG_TYPE_STRING) && !s.equals(CMLConstants.ARG_TYPE_INT) && 
-				!s.equals(CMLConstants.ARG_TYPE_FLOAT) && !s.equals(CMLConstants.ARG_TYPE_LIST) &&
-				!s.equals(CMLConstants.ARG_TYPE_BUTTON)
+				!s.equals(CMLConstants.ARG_TYPE_FLOAT) && !s.equals(CMLConstants.ARG_TYPE_LIST)
 				) {
 			logger.error("Unknown argument type: "+s);
 			throw new SALRunTimeException("Wrong argument type '"+s+"'");
