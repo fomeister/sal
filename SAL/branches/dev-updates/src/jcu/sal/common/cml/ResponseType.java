@@ -166,16 +166,18 @@ public class ResponseType {
 	}
 	
 	public String toString(){
+		String t;
 		if(getReturnType().equals(CMLConstants.RET_TYPE_INT))
-			return "integer";
+			t =  "integer";
 		else if(getReturnType().equals(CMLConstants.RET_TYPE_BYTE_ARRAY))
-			return "byte array";
+			t = "byte array";
 		else if(getReturnType().equals(CMLConstants.RET_TYPE_FLOAT))
-			return "float";
+			t = "float";
 		else if(getReturnType().equals(CMLConstants.RET_TYPE_STRING))
-			return "string";
+			t = "string";
 		else
-			return "none";				
+			t = "none";
+		return t;
 	}
 	
 	/* (non-Javadoc)

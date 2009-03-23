@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import jcu.sal.common.cml.ArgumentType;
+import jcu.sal.common.cml.CMLArgument;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.exceptions.ArgumentNotFoundException;
@@ -37,39 +38,92 @@ public class CommandFactory {
 	static {
 		Slog.setupLogger(logger);
 	}
+	
+	public static final int CONTINUOUS_STREAM=0;
+	public static final int ONLY_ONCE=-1;
 
 	private Map<String, String> argValues;
 	private CMLDescription cml;
+	private Map<String,CMLArgument> args;
 	private List<String> missingArgs;
 	private StreamCallback callback;
+	private int interval;
+	
+	/**
+	 * This constructor creates a empty command template based on the CML description object.
+	 * A {@link StreamCallback} where command replies will be delivered must be set using
+	 * {@link #addCallBack(StreamCallback)}. The command is run only once.
+	 * @param desc the {@link CMLDescription} for which a {@link Command} must be created
+	 * @param c the callback method that will be invoked to collect the results of the command
+	 * @param i the command's period (how often in ms, the command should be run)
+	 */
+	public CommandFactory(CMLDescription desc){
+		this(desc,null,ONLY_ONCE);
+	}
+		
+	/**
+	 * This constructor creates a empty command template based on the CML description object.
+	 * A {@link StreamCallback} where command replies will be delivered must be set using
+	 * {@link #addCallBack(StreamCallback)}. The command is run every <code>i</code> 
+	 * milliseconds, until stopped.
+	 * @param desc the {@link CMLDescription} for which a {@link Command} must be created
+	 * @param c the callback method that will be invoked to collect the results of the command
+	 * @param i the command's period (how often in ms, the command should be run)
+	 */
+	public CommandFactory(CMLDescription desc, int i){
+		this(desc,null,i);
+	}
+	
+	/**
+	 * This constructor creates a empty command template based on the CML description object
+	 * and the given {@link StreamCallback} where the command reply will be delivered.
+	 * The command is run only once.
+	 * @param desc the {@link CMLDescription} for which a {@link Command} must be created
+	 * @param c the callback method that will be invoked to collect the results of the command
+	 * @param i the command's period (how often in ms, the command should be run)
+	 */
+	public CommandFactory(CMLDescription desc, StreamCallback c){
+		this(desc,c,ONLY_ONCE);
+	}
 		
 	/**
 	 * This constructor creates a empty command template based on the CML description object
 	 * and the given {@link StreamCallback} where command replies will be delivered.
+	 * The command is run every <code>i</code> milliseconds, until stopped.
 	 * @param desc the {@link CMLDescription} for which a {@link Command} must be created
 	 * @param c the callback method that will be invoked to collect the results of the command
+	 * @param i the command's period (how often in ms, the command should be run)
 	 */
-	public CommandFactory(CMLDescription desc, StreamCallback c){
+	public CommandFactory(CMLDescription desc, StreamCallback c, int i){
 		argValues = new Hashtable<String, String>();
 		missingArgs = new Vector<String>();
+		args = new Hashtable<String,CMLArgument>();
 		callback = c;
 		cml = desc;
-		missingArgs = cml.getArgNames();
+		interval = i;
+		for(CMLArgument a: desc.getArguments()){
+			args.put(a.getName(), a);
+			missingArgs.add(a.getName());
+		}
+
 	}
 	
 	/**
-	 * This method returns the type of a given argument
+	 * This method returns the {@link CMLArgument} for a given argument
 	 * @param name the name of the argument
-	 * @return the type of the argument
-	 * @throws ArgumentNotFoundException if the argument cant be found
+	 * @return the {@link CMLArgument} for an argument, which contains meta-data
+	 * about this argument
+	 * @throws ArgumentNotFoundException if the argument cannot be found
 	 */
-	public ArgumentType getArgType(String name) {
-		return cml.getArgType(name);
-	}	
+	public CMLArgument getArg(String name) {
+		return args.get(name);
+	}
 	
 	/**
-	 * This method returns an Enumeration<String> of the argument names for which a value is missing 
-	 * @return an Enumeration<String> of the argument names for which a value is missing
+	 * This method returns an Enumeration<String> of the argument names for which a 
+	 * value is missing. Some arguments in the list may be optional. Check the {@link CMLArgument}
+	 * associated with each argument.  
+	 * @return a List<String> of the argument names for which a value is missing
 	 */
 	public List<String> listMissingArgNames() {
 		return new Vector<String>(missingArgs);
@@ -84,14 +138,14 @@ public class CommandFactory {
 	 * or is not a multiple of the step.
 	 */
 	public void addArgumentValueFloat(String name, float val) {
-		if(!cml.getArgType(name).equals(ArgumentType.FloatArgument)) {
-			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getType()+"' not 'float'");
-			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+cml.getArgType(name).getType()+"' not 'float'");
+		if(!args.get(name).getType().equals(ArgumentType.FloatArgument)) {
+			logger.error("Type of argument '"+name+"' is '"+args.get(name).getType()+"' not 'float'");
+			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+args.get(name).getType()+"' not 'float'");
 		}
 		
-		if(cml.getArgument(name).hasBounds())
-			checkValue(val, cml.getArgument(name).getMinFloat(), 
-					cml.getArgument(name).getMaxFloat(), cml.getArgument(name).getStepFloat());
+		if(args.get(name).hasBounds())
+			checkValue(val, args.get(name).getMinFloat(), 
+					args.get(name).getMaxFloat(), args.get(name).getStepFloat());
 
 		addValue(name, String.valueOf(val));
 	}
@@ -105,14 +159,14 @@ public class CommandFactory {
 	 * or is not a multiple of the step.
 	 */
 	public void addArgumentValueInt(String name, int val) {
-		if(!cml.getArgType(name).equals(ArgumentType.IntegerArgument)) {
-			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getType()+"' not 'int'");
-			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+cml.getArgType(name).getType()+"' not 'int'");
+		if(!args.get(name).getType().equals(ArgumentType.IntegerArgument)) {
+			logger.error("Type of argument '"+name+"' is '"+args.get(name).getType().getType()+"' not 'int'");
+			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+args.get(name).getType().getType()+"' not 'int'");
 		}
 		
-		if(cml.getArgument(name).hasBounds())
-			checkValue(val, cml.getArgument(name).getMinInt(), 
-					cml.getArgument(name).getMaxInt(), cml.getArgument(name).getStepInt());
+		if(args.get(name).hasBounds())
+			checkValue(val, args.get(name).getMinInt(), 
+					args.get(name).getMaxInt(), args.get(name).getStepInt());
 		
 		addValue(name, String.valueOf(val));
 	}
@@ -125,9 +179,9 @@ public class CommandFactory {
 	 * if the argument <code>name</code> is not of type string
 	 */
 	public void addArgumentValueString(String name, String val) {
-		if(!cml.getArgType(name).equals(ArgumentType.StringArgument)) {
-			logger.error("Type of argument '"+name+"' is '"+cml.getArgType(name).getType()+"' not 'string'");
-			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+cml.getArgType(name).getType()+"' not 'string'");
+		if(!args.get(name).getType().equals(ArgumentType.StringArgument)) {
+			logger.error("Type of argument '"+name+"' is '"+args.get(name).getType().getType()+"' not 'string'");
+			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+args.get(name).getType().getType()+"' not 'string'");
 		}		
 		addValue(name, val);
 	}
@@ -142,7 +196,7 @@ public class CommandFactory {
 	 * if the value cannot be converted, the argument <code>name</code> cannot be found.
 	 */
 	public void addArgumentValue(String name, String val){
-		ArgumentType t = cml.getArgType(name);
+		ArgumentType t = args.get(name).getType();
 		if(t.equals(ArgumentType.FloatArgument)){
 			try {
 				addArgumentValueFloat(name, Float.parseFloat(val));
@@ -166,20 +220,32 @@ public class CommandFactory {
 	}
 	
 	/**
+	 * This method adds the value for an string argument and overwrites any previous values.
+	 * @param c the callback object
+	 */
+	public void addCallBack(StreamCallback c) {
+		callback = c;
+	}
+	
+	/**
 	 * This method creates a new {@link Command} object, only if all the mandatory arguments have 
-	 * been assigned a value.
+	 * been assigned a value, and there is a {@link StreamCallback} object.
 	 * @return a new {@link Command} object
 	 * @throws ConfigurationException if some of the mandatory arguments still do not have a value
 	 */
 	public Command getCommand() throws ConfigurationException{
+		//make sure the callback is there
+		if(callback==null)
+			throw new ConfigurationException("Callback object missing");
+		
 		//Make sure we have all the args and their values
-		for(String name: cml.getArgNames()){
-			if(argValues.get(name)==null) {
-				logger.error("Value for argument '"+name+"' missing");
-				throw new ConfigurationException("value for argument '"+name+"' missing");
+		for(String name: args.keySet()){
+			if(!args.get(name).isOptional() && argValues.get(name)==null) {
+				logger.error("Value for mandatory argument '"+name+"' missing");
+				throw new ConfigurationException("value for mandatory argument '"+name+"' missing");
 			}
 		}
-		return new Command(cml.getCID().intValue(), argValues, callback);
+		return new Command(cml.getCID().intValue(), interval, argValues, callback);
 	}
 	
 	/**
@@ -226,6 +292,7 @@ public class CommandFactory {
 	}
 	
 	/**
+	 * This method is meant to be used internally only.
 	 * This method updates the current {@link StreamCallback} object associated
 	 * with the given {@link Command} with the given one.
 	 * @param c the {@link Command} to be updates
@@ -238,33 +305,30 @@ public class CommandFactory {
 	
 	/**
 	 * This class encapsulates data related to a SAL command, mainly
-	 * a {@link StreamCallback} object which will reveive the command's
+	 * a {@link StreamCallback} object which will receive the command's
 	 * result, and a list of arguments & their values.
-	 * Instanciating command is done using a {@link CommandFactory} object
+	 * Instantiating command is done using a {@link CommandFactory} object
 	 * which will make sure the command is correct.
 	 * 
 	 * @author gilles
 	 *
 	 */
 	public static class Command implements Serializable{
-
 		private static final long serialVersionUID = -8361578743898576812L;
 		private int cid;
-		private static Logger logger = Logger.getLogger(Command.class);
-		static{
-			Slog.setupLogger(logger);
-		}
+		private int interval;
 		private Map<String,String> parameters;
 		private StreamCallback streamc;
 
-		private Command(int cid, Map<String, String> values, StreamCallback c){
+		private Command(int cid, int i, Map<String, String> values, StreamCallback c){
 			this.cid = cid;
+			interval = i;
 			parameters = values;
 			streamc = c;		
 		}
 		
 		private Command(Command cmd, StreamCallback c){
-			this(cmd.cid, cmd.parameters, c);
+			this(cmd.cid, cmd.interval, cmd.parameters, c);
 		}
 
 		/**
@@ -289,6 +353,14 @@ public class CommandFactory {
 		 */
 		public int getCID(){
 			return cid; 
+		}
+		
+		/**
+		 * This method returns the interval of this command
+		 * @return
+		 */
+		public int getInterval(){
+			return interval; 
 		}
 
 		/**

@@ -4,7 +4,8 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 import jcu.sal.common.Constants;
-import jcu.sal.common.Response;
+import jcu.sal.common.StreamID;
+import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.rmi.RMICommandFactory.RMICommand;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
@@ -95,13 +96,28 @@ public interface RMIAgent extends Remote{
 	 * This method instructs a sensor identified by sid to execute the command c 
 	 * @param c the command to be executed
 	 * @param sid the target sensor identifier
-	 * @return the response which contains the stream id ( {@link Response#getID()} ). It
-	 * doesnt contain the result of the command. The result will be given to the callback method.
+	 * @return a {@link StreamID}
 	 * @throws NotFoundException if the given sensor id doesnt match any existing sensor
 	 * @throws SensorControlException if there is an error controlling the sensor. If this exception is raised,
 	 * the cause of this exception will be linked to it and can be retrieved using <code>getCause()</code>  
 	 */
-	public Response execute(RMICommand c, String sid) throws NotFoundException, SensorControlException, RemoteException;
+	public StreamID setupStream(RMICommand c, String sid) throws NotFoundException, SensorControlException, RemoteException;
+	
+	/**
+	 * This method starts a stream previously setup using {@link #setupStream(Command, String)}.
+	 * @param streamId the id of the stream as returned by {@link #setupStream(Command, String)}.
+	 * @throws NotFoundException if the given stream Id has not been setup prior
+	 * to calling this method.
+	 */
+	public void startStream(StreamID streamId) throws NotFoundException, RemoteException;
+	
+	/**
+	 * This method stops and deletes a stream previously setup using {@link #setupStream(Command, String)}.
+	 * @param streamId the id of the stream as returned by {@link #setupStream(Command, String)}.
+	 * @throws NotFoundException if the given stream Id has not been setup prior
+	 * to calling this method.
+	 */
+	public void terminateStream(StreamID streamId) throws NotFoundException, RemoteException;
 	
 	/**
 	 * This method returns the a string representation of the CML descriptions document for a given sensor.

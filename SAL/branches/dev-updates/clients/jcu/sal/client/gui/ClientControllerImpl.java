@@ -2,7 +2,7 @@ package jcu.sal.client.gui;
 
 import java.rmi.RemoteException;
 
-import jcu.sal.common.Response;
+import jcu.sal.common.StreamID;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.agents.SALAgentFactory;
@@ -45,9 +45,19 @@ public class ClientControllerImpl implements ClientController {
 	}
 
 	@Override
-	public Response execute(SALAgent a, Command c, String sid) throws NotFoundException,
+	public StreamID setupStream(SALAgent a, Command c, String sid) throws NotFoundException,
 			SensorControlException {
-		return a.execute(c, sid);
+		return a.setupStream(c, sid);
+	}
+	
+	@Override
+	public void startStream(SALAgent a,StreamID s) throws NotFoundException {
+		a.startStream(s);
+	}
+	
+	@Override
+	public void terminateStream(SALAgent a,StreamID s) throws NotFoundException {
+		a.terminateStream(s);
 	}
 
 	@Override

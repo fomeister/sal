@@ -71,6 +71,14 @@ public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 		return state.runCommand();
 	}
 	
+	public boolean startStream() {
+		return state.startStream();
+	}
+	
+	public boolean stopStream() {
+		return state.stopStream();
+	}
+	
 	public boolean disable() {
 /*		logger.debug("Disabling sensor " + toString());*/
 		return state.disable();
@@ -150,6 +158,10 @@ public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 	
 	public boolean isDisconnected() {
 		return state.isDisconnectedDisabled();
+	}
+	
+	public boolean isStreaming() {
+		return state.isStreaming();
 	}
 	
 	public String getStateToString() {

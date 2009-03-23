@@ -32,6 +32,8 @@ import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLDescription;
 
 public abstract class AbstractClientView implements ClientEventHandler, ClientView {
+	
+	public static final String INTERVAL_NAME="INTERVAL_SLIDER";
 
 	protected JFrame frame;
 	protected SensorTree tree;
@@ -118,7 +120,7 @@ public abstract class AbstractClientView implements ClientEventHandler, ClientVi
 		new Thread(new Runnable(){
 			public void run(){
 				try {
-					controller.execute(c.getAgent(), cf.getCommand(), c.getSMLDescription().getID());
+					controller.setupStream(c.getAgent(), cf.getCommand(), c.getSMLDescription().getID());
 				} catch (SensorControlException e) {
 					addLog("Error executing command:\n"+e.getMessage()+"("+e.getCause().getMessage()+")");
 					handler.close();
@@ -186,10 +188,12 @@ public abstract class AbstractClientView implements ClientEventHandler, ClientVi
 
 		} else if(e instanceof SensorStateEvent){
 			SensorStateEvent sse = (SensorStateEvent) e;
-			if(sse.getType()==SensorStateEvent.SENSOR_STATE_CONNECTED)
-				tree.toggleSensor(a,sse.getSourceID());
+			if(sse.getType()==SensorStateEvent.SENSOR_STATE_IDLE_CONNECTED)
+				tree.toggleSensor(a,sse.getSourceID(), sse.getType());
 			else if(sse.getType()==SensorStateEvent.SENSOR_STATE_DISCONNECTED)
-				tree.toggleSensor(a,sse.getSourceID());
+				tree.toggleSensor(a,sse.getSourceID(), sse.getType());
+			else if(sse.getType()==SensorStateEvent.SENSOR_STATE_STREAMING)
+				tree.toggleSensor(a,sse.getSourceID(), sse.getType());
 
 		} else {
 			addLog("Inknown event type");

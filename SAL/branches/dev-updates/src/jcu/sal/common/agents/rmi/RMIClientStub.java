@@ -12,6 +12,7 @@ import java.util.Vector;
 
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
+import jcu.sal.common.StreamID;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.agents.rmi.RMICommandFactory.RMICommand;
@@ -121,12 +122,34 @@ public class RMIClientStub implements SALAgent{
 	}
 
 	@Override
-	public Response execute(Command c, String sid) throws NotFoundException,
+	public StreamID setupStream(Command c, String sid) throws NotFoundException,
 			SensorControlException {
+		StreamID id;
 		try {
-			return agent.execute(
+			id = agent.setupStream(
 					RMICommandFactory.getCommand(c, createProxyCallback(c.getStreamCallBack()))
-					, sid);
+					, sid).setAgent(this);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+			throw new SALRunTimeException("RMI exception "+e.getMessage());
+		}
+		return id == null ? null : id.setAgent(this);
+	}
+	
+	@Override
+	public void startStream(StreamID sid) throws NotFoundException {
+		try {
+			agent.startStream(sid);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+			throw new SALRunTimeException("RMI exception "+e.getMessage());
+		}
+	}
+	
+	@Override
+	public void terminateStream(StreamID sid) throws NotFoundException {
+		try {
+			agent.terminateStream(sid);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 			throw new SALRunTimeException("RMI exception "+e.getMessage());

@@ -5,11 +5,14 @@ package jcu.sal.agent;
 
 import java.io.IOException;
 
+import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Constants;
 import jcu.sal.common.Response;
 import jcu.sal.common.Slog;
+import jcu.sal.common.StreamID;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.events.ClientEventHandler;
 import jcu.sal.common.events.Event;
 import jcu.sal.common.exceptions.ConfigurationException;
@@ -19,6 +22,7 @@ import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLDescription;
 import jcu.sal.components.protocols.AbstractProtocol;
+import jcu.sal.components.protocols.LocalStreamID;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.config.HwProbeService;
@@ -99,6 +103,7 @@ public class LocalAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgent#addSensor(java.lang.String)
 	 */
+	@Override
 	public synchronized String addSensor(String xml) throws SALDocumentException, ConfigurationException {
 		return sm.createComponent(new SMLDescription(xml)).getID().getName();
 	}
@@ -107,6 +112,7 @@ public class LocalAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#removeSensor(java.lang.String)
 	 */
+	@Override
 	public synchronized void removeSensor(String sid) throws NotFoundException {
 		SensorID s = new SensorID(sid);
 		sm.destroyComponent(s);
@@ -122,6 +128,7 @@ public class LocalAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#listActiveSensors()
 	 */
+	@Override
 	public String listActiveSensors() {
 		return sm.listSensors(true).getXMLString();		
 	}
@@ -130,6 +137,7 @@ public class LocalAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#listSensors()
 	 */
+	@Override
 	public String listSensors() {
 		return sm.listSensors(false).getXMLString();
 	}
@@ -138,22 +146,38 @@ public class LocalAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#listSensor(java.lang.String)
 	 */
+	@Override
 	public String listSensor(String sid) throws NotFoundException {
 		return sm.listSensor(new SensorID(sid)).getXMLString();
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * @see jcu.sal.agent.SALAgentInterface#execute(jcu.sal.components.Command, java.lang.String)
+	 * @see jcu.sal.agent.SALAgentInterface#setupStream(jcu.sal.components.Command, java.lang.String)
 	 */
-	public Response execute(Command c, String sid) throws NotFoundException, SensorControlException{
-		return pm.execute(c,new SensorID(sid));
+	@Override
+	public StreamID setupStream(Command c, String sid) throws NotFoundException, SensorControlException{
+		LocalStreamID lid = pm.setupStream(
+				CommandFactory.getCommand(c, new StreamCallbackAdapter(c.getStreamCallBack(),this)),
+				new SensorID(sid));
+		return lid==null ? null : new StreamID(lid.getSID(),lid.getCID(),lid.getPID()).setAgent(this);	
+	}
+	
+	@Override
+	public void startStream(StreamID streamId) throws NotFoundException{
+		pm.startStream(new LocalStreamID(streamId));
+	}
+	
+	@Override
+	public void terminateStream(StreamID streamId) throws NotFoundException{
+		pm.stopStream(new LocalStreamID(streamId));
 	}
 	
 	/*
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#getCML(java.lang.String)
 	 */
+	@Override
 	public String  getCML(String sid) throws NotFoundException{
 		return pm.getCML(new SensorID(sid)).getXMLString();
 	}
@@ -166,6 +190,7 @@ public class LocalAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#addProtocol(java.lang.String, boolean)
 	 */
+	@Override
 	public void addProtocol(String xml, boolean loadSensors) throws ConfigurationException, SALDocumentException {
 		synchronized (this) {
 			AbstractProtocol p = pm.createComponent(new ProtocolConfiguration(xml));
@@ -178,6 +203,7 @@ public class LocalAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#removeProtocol(java.lang.String, boolean)
 	 */
+	@Override
 	public void removeProtocol(String pid, boolean removeSensors) throws NotFoundException {
 		ProtocolID p = new ProtocolID(pid);
 		synchronized (this) {
@@ -195,6 +221,7 @@ public class LocalAgentImpl implements SALAgent{
 	 * (non-Javadoc)
 	 * @see jcu.sal.agent.SALAgentInterface#listProtocol()
 	 */
+	@Override
 	public String listProtocols() {
 		return pm.listProtocols().getXMLString();
 	}
@@ -202,11 +229,12 @@ public class LocalAgentImpl implements SALAgent{
 	/*
 	 * Event-related methods
 	 */
-	
+	@Override
 	public void registerEventHandler(ClientEventHandler eh, String producerID) throws NotFoundException {
 		ev.registerEventHandler(new EventHandlerAdapter(eh, this), producerID);
 	}
 
+	@Override
 	public void unregisterEventHandler(ClientEventHandler eh, String producerID) throws NotFoundException {
 		ev.unregisterEventHandler(new EventHandlerAdapter(eh, this), producerID);
 	}
@@ -280,6 +308,39 @@ public class LocalAgentImpl implements SALAgent{
 				return false;
 			
 			return true;
+		}
+	}
+	
+	/**
+	 * This class acts as an adapter around a {@link StreamCallback} object, and
+	 * transforms it into another {@link StreamCallback} object.
+	 * @author gilles
+	 *
+	 */
+	private static class StreamCallbackAdapter implements StreamCallback{
+		private StreamCallback c;
+		private SALAgent a;
+		
+		/**
+		 * this method builds an {@link StreamCallbackAdapter} object from 
+		 * another one;
+		 * @param r a {@link StreamCallback} object
+		 * @param a the {@link SALAgent} from which the reponse appear to originate
+		 */
+		public StreamCallbackAdapter(StreamCallback c, SALAgent a){
+			this.a = a;
+			this.c = c;
+		}
+
+		@Override
+		public void collect(Response r) throws IOException {
+			try {
+				c.collect(r.setAgent(a));
+			} catch (Throwable e1) {
+				logger.error("Error dispatching reponse to client:\n"+e1.getMessage());
+				throw new IOException("Error dispatching response to client");
+				
+			}
 		}
 	}
 }

@@ -6,18 +6,28 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
+import java.util.Vector;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SpringLayout;
+import javax.swing.SwingConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import jcu.sal.common.cml.ArgumentType;
+import jcu.sal.common.cml.CMLArgument;
 import jcu.sal.common.cml.CMLDescription;
+import jcu.sal.common.cml.ResponseType;
 
 public class CommandDataPane implements ActionListener{
 	
@@ -26,7 +36,7 @@ public class CommandDataPane implements ActionListener{
 	private JPanel mainPane, dataPane;
 	private JButton send;
 	private JLabel title;
-	private Hashtable<String, JTextField> argValues;
+	private Hashtable<String, ArgumentValueHolder> argValues;
 	private CMLDescription cml;
 	private Context current;
 	
@@ -36,7 +46,7 @@ public class CommandDataPane implements ActionListener{
 		mainPane = new JPanel();
 		send = new JButton("Send command");
 		title = new JLabel("Command detail");
-		argValues = new Hashtable<String, JTextField>();
+		argValues = new Hashtable<String, ArgumentValueHolder>();
 	}
 	
 	public void init(){
@@ -70,8 +80,8 @@ public class CommandDataPane implements ActionListener{
 			int i;
 			
 			addDescription(c.getShortDesc());
-			addRetType(c.getReturnType().toString());
-			i = addArg(c.getArgNames(), c.getArgTypes());
+			addRetType(c.getReturnType());
+			i = addArgs(c.getArguments());
 			SpringLayoutHelper.makeCompactGrid(dataPane,
 					(i+2), 2, //rows, cols
 	                6, 6,        //initX, initY
@@ -89,10 +99,10 @@ public class CommandDataPane implements ActionListener{
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource().equals(send)){
-			final Hashtable<String,String> values = new Hashtable<String,String>();
+			Hashtable<String,String> values = new Hashtable<String,String>();
 			//put entered values in a table
 			for(String name: argValues.keySet())
-				values.put(name, argValues.get(name).getText());
+				values.put(name, argValues.get(name).getValue());
 						
 			//send table to view
 			view.sendCommand(values, cml, current);
@@ -110,29 +120,267 @@ public class CommandDataPane implements ActionListener{
 		dataPane.add(s);
 	}
 	
-	private void addRetType(String r){
+	private void addRetType(ResponseType r){
 		dataPane.add(new JLabel("Return Type:"));
-		dataPane.add(new JLabel(r));
+		dataPane.add(new JLabel(r.getReturnType()));
+		dataPane.add(new JLabel("Content Type:"));
+		dataPane.add(new JLabel(r.getContentType()));
+		dataPane.add(new JLabel("Unit:"));
+		dataPane.add(new JLabel(r.getUnit()));
 	}
 	
-	private int addArg(List<String> names, List<ArgumentType> types){
-		int i, nb=0;
+	private void addInterval(){
+		ArgumentValueHolder v = new IntervalArgument(-1,3600);
+		JLabel l = new JLabel("Sampling frequency");
+		dataPane.add(l);
+		argValues.put(AbstractClientView.INTERVAL_NAME, v);
+		l.setLabelFor(v.getComponent());
+		dataPane.add(v.getComponent());
+	}
+	
+	private int addArgs(List<CMLArgument> args){
+		int nb=0;
 		argValues.clear();
-		for(i=0; i<names.size(); i++){
 
+		for(CMLArgument arg: args){
+			ArgumentValueHolder v;
+			if(arg.getType().equals(ArgumentType.IntegerArgument) || 
+				arg.getType().equals(ArgumentType.FloatArgument)	)
+				v = createNumberArgHolder(arg);
+			else if(arg.getType().equals(ArgumentType.ListArgument))
+				v = createListArgHolder(arg);
+			else //if(arg.getType().equals(ArgumentType.StringArgument))
+				v = createStringArgHolder(arg);
 			
-			JLabel l = new JLabel(names.get(i));
+			JLabel l = new JLabel(arg.getName()+(arg.isOptional()?" (Optional)":""));
 			dataPane.add(l);
-			JTextField t = new JTextField(25);
-			argValues.put(names.get(i), t);
-			t.setPreferredSize(new Dimension(200,30));
-			t.setMaximumSize(new Dimension(800,30));
-			l.setLabelFor(t);
-			dataPane.add(t);
+			argValues.put(arg.getName(), v);
+			l.setLabelFor(v.getComponent());
+			dataPane.add(v.getComponent());
+			
 			nb++;
 		}
-		return nb;
+		addInterval();
+		return ++nb;
 	}
+	
+	private ArgumentValueHolder createNumberArgHolder(CMLArgument arg){
+		if(arg.hasBounds()){
+			if (arg.getType().equals(ArgumentType.FloatArgument))
+				return new BoundedArgument(arg.getMinFloat(), arg.getMaxFloat(), arg.getStepFloat());
+			else
+				return new BoundedArgument(arg.getMinInt(), arg.getMaxInt(), arg.getStepInt());
+		}else
+			return new StringArgument();
+	}
+	
+	private ArgumentValueHolder createListArgHolder(CMLArgument arg){
+		return new ListArgument(arg.getList());
+	}
+		
+	private ArgumentValueHolder createStringArgHolder(CMLArgument arg){
+		return new StringArgument();
+	}
+	
+	private static class BoundedArgument implements ArgumentValueHolder, ChangeListener{
+		private JPanel mainPane;
+		private JSlider slider;
+		private JTextField text;
+		private JLabel label;
+		private float minf,maxf,stepf;
+		/**
+		 * 0: int, 1:float
+		 */
+		private enum Type {INT, FLOAT};
+		private Type type;
+
+		private BoundedArgument(Type t){
+			type = t;
+			mainPane = new JPanel();
+			mainPane.setLayout(new BoxLayout(mainPane, BoxLayout.LINE_AXIS));
+		}
+		
+		public BoundedArgument(float min, float max, float step){
+			this(Type.FLOAT);
+			minf = min;
+			maxf = max;
+			stepf = step;
+			text = new JTextField();
+			text.setPreferredSize(new Dimension(100,30));
+			text.setMaximumSize(new Dimension(400,30));
+			text.setAlignmentX(Component.CENTER_ALIGNMENT);
+			mainPane.add(text);
+			label = new JLabel("Min: "+min+" , Max: "+max+" , Step: "+step);
+			label.setAlignmentX(Component.CENTER_ALIGNMENT);
+			mainPane.add(label);			
+		}
+		
+		public BoundedArgument(int min, int max, int step){
+			this(Type.INT);
+			slider = new JSlider(SwingConstants.HORIZONTAL, min, max, min);
+			slider.setAlignmentX(Component.CENTER_ALIGNMENT);
+			slider.addChangeListener(this);
+			slider.setSnapToTicks(true);
+			mainPane.add(slider);
+			label = new JLabel("Value: "+min);
+			label.setMinimumSize(new Dimension(100,30));
+			label.setMaximumSize(new Dimension(200,30));
+			label.setSize(label.getMinimumSize());
+			label.setPreferredSize(label.getMinimumSize());
+			label.setAlignmentX(Component.CENTER_ALIGNMENT);
+			mainPane.add(label);
+		}
+		
+		@Override
+		public void stateChanged(ChangeEvent e) {
+			 label.setText("Value: "+slider.getValue());			
+		}
+
+		@Override
+		public String getValue() {
+			if(type.equals(Type.FLOAT)){
+				if(!validateFloat())
+					return null;
+				
+				return text.getText();
+			} else
+				return String.valueOf(slider.getValue());
+		}
+		
+		public JPanel getComponent(){
+			return mainPane;
+		}
+		
+		private boolean validateFloat(){
+			float val;
+			try{val = Float.parseFloat(text.getText());}
+			catch(NumberFormatException e){
+				JOptionPane.showMessageDialog(mainPane,
+						"The value "+text.getText()+" is not a float",
+						"Incorrect value",
+						JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
+
+			if(val<minf) {
+				JOptionPane.showMessageDialog(mainPane,
+						"The value "+text.getText()+" is below the minimum "+minf,
+						"Incorrect value",
+						JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
+			
+			if(val>maxf) {
+				JOptionPane.showMessageDialog(mainPane,
+						"The value "+text.getText()+" is above the maximum "+maxf,
+						"Incorrect value",
+						JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
+			
+			if((val-minf)%stepf!=0){
+				JOptionPane.showMessageDialog(mainPane,
+						"The value "+text.getText()+" is not a multiple of the step "+stepf,
+						"Incorrect value",
+						JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
+			return true;
+		}
+	}
+	
+	
+	private static class ListArgument implements ArgumentValueHolder{
+		private JComboBox list;
+		private Vector<String> ids;
+		private Vector<String> values;
+		
+		public ListArgument(Map<String,String> val){
+			ids = new Vector<String>();
+			values = new Vector<String>();
+			for(String n: val.keySet()){
+				ids.add(n);
+				values.add(val.get(n));
+			}
+			list = new JComboBox(values);
+			list.setMinimumSize(new Dimension(100,30));
+			list.setMaximumSize(new Dimension(200,30));
+			list.setSize(list.getMinimumSize());
+			list.setPreferredSize(list.getMinimumSize());
+		}
+
+		@Override
+		public String getValue() {
+			return ids.get(list.getSelectedIndex());
+		}
+		
+		public JComboBox getComponent(){
+			return list;
+		}
+	}
+	
+	private static class StringArgument implements ArgumentValueHolder{
+		private JTextField text;
+		
+		public StringArgument(){
+			text = new JTextField();
+			text.setPreferredSize(new Dimension(200,30));
+			text.setMaximumSize(new Dimension(800,30));
+		}
+
+		@Override
+		public String getValue() {
+			return text.getText();
+		}
+		
+		public JTextField getComponent(){
+			return text;
+		}	
+	}
+	
+	private static class IntervalArgument implements ArgumentValueHolder, ChangeListener{
+		private JPanel mainPane;
+		private JSlider slider;
+		private JLabel label;
+		private int min,max;
 
 
+		public IntervalArgument(int mi, int ma){
+			mainPane = new JPanel();
+			mainPane.setLayout(new BoxLayout(mainPane, BoxLayout.LINE_AXIS));
+			min = mi;
+			max = ma;
+			slider = new JSlider(SwingConstants.HORIZONTAL, min, max, min);
+			slider.setAlignmentX(Component.CENTER_ALIGNMENT);
+			slider.addChangeListener(this);
+			slider.setSnapToTicks(true);
+			mainPane.add(slider);
+			label = new JLabel("Only once");
+			label.setMinimumSize(new Dimension(100,30));
+			label.setMaximumSize(new Dimension(200,30));
+			label.setSize(label.getMinimumSize());
+			label.setPreferredSize(label.getMinimumSize());
+			label.setAlignmentX(Component.CENTER_ALIGNMENT);
+			mainPane.add(label);
+		}
+		
+		@Override
+		public void stateChanged(ChangeEvent e) {
+			if(slider.getValue()==-1)
+				label.setText("Only once");
+			else if(slider.getValue()==0)
+				label.setText("Continous");
+			else
+				label.setText("every "+slider.getValue()+" ms");			
+		}
+
+		@Override
+		public String getValue() {
+			return String.valueOf(slider.getValue());
+		}
+		
+		public JPanel getComponent(){
+			return mainPane;
+		}
+	}
 }

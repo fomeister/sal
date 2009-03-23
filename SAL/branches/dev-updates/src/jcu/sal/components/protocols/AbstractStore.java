@@ -34,16 +34,13 @@ public abstract class AbstractStore {
 	public static final String GENERIC_ENABLE="enable";			//10
 	public static final String GENERIC_DISABLE="disable";		//11
 	public static final String GENERIC_GETREADING="getReading";	//100
-	public static final String GENERIC_STARTSTREAM="startStream";	//102
-	public static final String GENERIC_STOPSTREAM="stopStream";	//103
+
 	public static final String GENERIC_GETTEMP="getTemperature";	//110
 	public static final String GENERIC_GETHUM="getHumidity";		//111
 	
 	public static final int GENERIC_ENABLE_CID=10;
 	public static final int GENERIC_DISABLE_CID=11;
 	public static final int GENERIC_GETREADING_CID=100;
-	public static final int GENERIC_STARTSTREAM_CID=102;
-	public static final int GENERIC_STOPSTREAM_CID=103;
 	public static final int GENERIC_GETTEMP_CID=110;
 	public static final int GENERIC_GETHUM_CID=111;
 	
@@ -161,10 +158,6 @@ public abstract class AbstractStore {
 			return c.intValue();
 		} else if(aliasName.equals(GENERIC_GETREADING)){
 			c = new Integer(GENERIC_GETREADING_CID);
-		} else if(aliasName.equals(GENERIC_STARTSTREAM)){
-			c = new Integer(GENERIC_STARTSTREAM_CID);
-		} else if(aliasName.equals(GENERIC_STOPSTREAM)){
-			c = new Integer(GENERIC_STOPSTREAM_CID);
 		} else if(aliasName.equals(GENERIC_GETTEMP)){
 			c = new Integer(GENERIC_GETTEMP_CID);
 		} else if(aliasName.equals(GENERIC_GETHUM)){

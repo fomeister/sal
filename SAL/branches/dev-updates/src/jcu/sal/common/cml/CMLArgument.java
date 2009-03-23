@@ -28,8 +28,8 @@ public class CMLArgument {
 	}
 	
 	/**
-	 * This package-private constuctor is meant to be used only
-	 * by {@link CMLDescription} object
+	 * This package-private constructor is meant to be used only
+	 * by {@link CMLDescription} objects
 	 * @param a
 	 */
 	CMLArgument(Argument a) {
@@ -50,7 +50,7 @@ public class CMLArgument {
 	
 	/**
 	 * This method build a CMLArgument of a given type which must be either
-	 * {@link CMLConstants#ARG_TYPE_BUTTON}, {@link CMLConstants#ARG_TYPE_FLOAT},
+	 * {@link CMLConstants#ARG_TYPE_FLOAT},
 	 * {@link CMLConstants#ARG_TYPE_INT} or {@link CMLConstants#ARG_TYPE_STRING}.
 	 * Any other value will throw a {@link SALRunTimeException}.    
 	 * @param name the name of this argument.
@@ -59,8 +59,9 @@ public class CMLArgument {
 	 */
 	public CMLArgument(String name, ArgumentType type, boolean optional){
 		this(name,optional);
-		if(!type.equals(ArgumentType.ButtonArgument) && !type.equals(ArgumentType.FloatArgument)
-				&& !type.equals(ArgumentType.StringArgument) && !type.equals(ArgumentType.IntegerArgument))
+		if(!type.equals(ArgumentType.FloatArgument)	&& 
+				!type.equals(ArgumentType.StringArgument) && 
+				!type.equals(ArgumentType.IntegerArgument))
 			throw new SALRunTimeException("The given type ("+type+") is invalid");
 		
 		argument.setType(type.getType());
@@ -101,7 +102,8 @@ public class CMLArgument {
 	 * if the step value is negative
 	 */
 	public CMLArgument(String name, boolean optional, int min, int max, int step){
-		this(name,optional, (float) min, (float)max, (float)step);
+		this(name, optional, (float) min, (float)max, (float)step);
+		argument.setType(CMLConstants.ARG_TYPE_INT);
 	}
 	
 	/**
@@ -115,6 +117,7 @@ public class CMLArgument {
 	 */
 	public CMLArgument(String name, boolean optional, int min, int max){
 		this(name,optional, (float) min, (float)max, 1);
+		argument.setType(CMLConstants.ARG_TYPE_INT);
 	}
 	
 	/**
@@ -180,7 +183,7 @@ public class CMLArgument {
 		if(!argument.getType().equals(CMLConstants.ARG_TYPE_INT))
 			throw new SALRunTimeException("this argument is not of type integer");
 		
-		return Integer.parseInt(argument.getBounds().getMin());
+		return (int) Float.parseFloat(argument.getBounds().getMin());
 	}
 	
 	/**
@@ -196,7 +199,7 @@ public class CMLArgument {
 		if(!argument.getType().equals(CMLConstants.ARG_TYPE_INT))
 			throw new SALRunTimeException("this argument is not of type integer");
 		
-		return Integer.parseInt(argument.getBounds().getMax());
+		return (int) Float.parseFloat(argument.getBounds().getMax());
 	}
 	
 	/**
@@ -212,7 +215,7 @@ public class CMLArgument {
 		if(!argument.getType().equals(CMLConstants.ARG_TYPE_INT))
 			throw new SALRunTimeException("this argument is not of type integer");
 		
-		return Integer.parseInt(argument.getBounds().getStep());
+		return (int) Float.parseFloat(argument.getBounds().getStep());
 	}
 	
 	/**
@@ -281,8 +284,8 @@ public class CMLArgument {
 	 * {@link CMLConstants#ARG_TYPE_LIST}
 	 */
 	private void addList(Map<String,String> items){
-		Argument.List l = factory.createArgumentList();
-		List<Item> i = l.getItem();
+		argument.setList(factory.createArgumentList());
+		List<Item> i = argument.getList().getItem();
 		Item item;
 		for(String id: items.keySet()){
 			item = factory.createArgumentListItem(); 

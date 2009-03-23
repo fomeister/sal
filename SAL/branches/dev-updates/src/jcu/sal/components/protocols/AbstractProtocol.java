@@ -12,9 +12,11 @@ import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
+import jcu.sal.common.CommandFactory;
 import jcu.sal.common.Parameters;
+import jcu.sal.common.Response;
 import jcu.sal.common.Slog;
+import jcu.sal.common.StreamID;
 import jcu.sal.common.CommandFactory.Command;
 import jcu.sal.common.Parameters.Parameter;
 import jcu.sal.common.cml.CMLDescriptions;
@@ -36,6 +38,7 @@ import jcu.sal.components.sensors.Sensor;
 import jcu.sal.components.sensors.SensorID;
 import jcu.sal.events.EventDispatcher;
 import jcu.sal.managers.EndPointManager;
+import jcu.sal.managers.ProtocolManager;
 import jcu.sal.managers.SensorManager;
 
 import org.apache.log4j.Logger;
@@ -46,7 +49,7 @@ import org.apache.log4j.Logger;
  *
  */
 public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, ProtocolConfiguration>
-										implements DeviceListener {
+										implements DeviceListener, StreamingThreadListener {
 
 	private static Logger logger = Logger.getLogger(AbstractProtocol.class);
 	static {	Slog.setupLogger(logger); }
@@ -107,6 +110,11 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 */
 	protected String[] epIds = null;
 	
+	/**
+	 * A table of streamIDs and their associated streaming threads 
+	 */
+	protected Hashtable<LocalStreamID, StreamingThread> streams;
+	
 	
 	/**
 	 * Construct a new protocol given its ID, configuration object and its type.
@@ -127,6 +135,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 
 		supportedEndPointTypes = new Vector<String>();
 		sensors = new Hashtable<SensorID, Sensor>();
+		streams = new Hashtable<LocalStreamID, StreamingThread>();
 		multipleInstances = true;
 		
 	
@@ -247,12 +256,22 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			 */
 			stopAutodetectThread();
 			
+			/*
+			 * stop all streaming threads 
+			 */
+			//copy values because of concurrent modification
+			Vector<StreamingThread> v = new Vector<StreamingThread>(streams.values());
+			for(StreamingThread t: v)
+				t.stop();
+			
 			/* disable all associated sensors 
 			 * IN BETWEEN commands (synchronized (s))
 			 */
-			synchronized(sensors) {
+			synchronized(sensors) {				
 				for(Sensor s: sensors.values()){
-					synchronized(s){s.disable();}
+					synchronized(s){
+						s.disable();
+					}
 				}
 			}
 			/*At this stage, we are sure no commands are being run or will be on our sensors */
@@ -354,6 +373,11 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 				//make sure no command is being run on the sensor
 				synchronized(s) {
 					sensors.remove(i);
+					if(s.isStreaming())
+						//find all streaming threads for this sensor
+						for(StreamingThread t: findThreads(s))
+							t.stop();
+					
 				}
 			} else {
 				logger.error("Sensor " + i.toString()+ " doesnt exist and can NOT be unassociated");
@@ -371,17 +395,24 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 
 	}
 
+	
+	/*
+	 * 
+	 * COMMAND EXECUTION METHODS
+	 * 
+	 */
+	
 	/**
-	 * Sends a command to a sensor
+	 * Setups a stream given a command and a sensor.
 	 * @param c the command
 	 * @param sid the sensorID
-	 * @return the result
+	 * @return a {@link StreamID} or <code>null</code> if the command is run only once
 	 * @throws NotFoundException if the sensor ID doesnt match any existing sensor
 	 * @throws SensorControlException if anything went wrong 
 	 * @throws SALRunTimeException if a programming error occurs
 	 */
-	public final byte[] execute(Command c, SensorID sid) throws SensorControlException, NotFoundException{
-		byte[] ret_val = {};
+	public final LocalStreamID setupStream(Command c, SensorID sid) throws SensorControlException, NotFoundException{
+		LocalStreamID lid = null;
 		Sensor s = sensors.get(sid);
 		if(started.get()) {
 			//Check if we have the sensor
@@ -395,33 +426,13 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 						s.enable();
 					else {
 						//sensor specific command
-						//Check if it s idle
-						if(s.startRunCmd()) {
-							try {
-								Class<?>[] params = {Command.class,Sensor.class};
-								//logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()));
-								Method m = this.getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params);
-								logger.debug("Running method: "+ m.getName()+" on sensor ID:"+sid.getName() );
-								ret_val = (byte[]) m.invoke(this,c, s);
-							}catch (InvocationTargetException e) {
-								//logger.error("The command returned an exception:" + e.getClass() + " - " +e.getMessage());
-								//e.printStackTrace();
-								if(e.getCause() instanceof SensorDisconnectedException){
-									logger.debug("Disconnecting sensor '"+sid.getName()+"("+s.getNativeAddress()+")'");
-									s.disconnect();
-								} else 
-									s.finishRunCmd();
-								throw new SensorControlException("Sensor control error",e.getCause());
-							} catch (Throwable t) {
-								logger.error("Could NOT run the command (error with invoke() )");
-								t.printStackTrace();
-								s.finishRunCmd();
-								throw new SALRunTimeException("Programming error in the protocol subclass",t);
-							}
-							s.finishRunCmd();
+						//check how often we need to run the command
+						if(c.getInterval()==CommandFactory.ONLY_ONCE){
+							//only once so run it now, and put the result in the dispatcher thread
+							runOnce(c,s);
 						} else {
-							//logger.error("Sensor "+sid.getName()+" not available to run the command");
-							throw new SensorControlException("sensor unavailable", new SensorDisconnectedException("Sensor "+sid.getName()+" not available to run the command"));
+							//stream setup
+							lid = runMultiple(c,s);
 						}
 					}
 				}
@@ -433,7 +444,140 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			logger.error("protocol not started.Cannot execute the command");
 			throw new SALRunTimeException("protocol not started - cant run the command");
 		}
-		return ret_val;
+		return lid;		
+	}
+	
+	/**
+	 * this private method is called when a command must be run only
+	 * once on a sensor. It runs the command, and puts the {@link Response}
+	 * in the response dispatcher thread.
+	 * @param c the command to be run
+	 * @param s the sensor
+	 * @throws SensorControlException if the command cannot be executed
+	 */
+	private void runOnce(Command c, Sensor s) throws SensorControlException{
+		Response r;
+		//Check if it s idle
+		if(s.startRunCmd()) {
+			try {
+				r = new Response((byte[]) findMethod(s, c).invoke(this,c, s), new StreamID(s.getID().getName(), String.valueOf(c.getCID()), id.getName()));
+			}catch (InvocationTargetException e) {
+				//method threw an exception
+				if(e.getCause() instanceof SensorDisconnectedException){
+					logger.debug("Disconnecting sensor '"+s.getID().getName()+"("+s.getNativeAddress()+")'");
+					s.disconnect();
+				} else 
+					s.finishRunCmd();
+				throw new SensorControlException("Sensor control error",e.getCause());
+			} catch (Throwable t) {
+				logger.error("Could NOT run the command (error with invoke() )");
+				t.printStackTrace();
+				s.finishRunCmd();
+				throw new SALRunTimeException("Programming error in the protocol subclass",t);
+			}
+			s.finishRunCmd();
+			ProtocolManager.queueResponse(r, c.getStreamCallBack());
+		} else {
+			//logger.error("Sensor "+sid.getName()+" not available to run the command");
+			throw new SensorControlException("sensor unavailable", new SensorDisconnectedException("Sensor "+s.getID().getName()+" not available to run the command"));
+		}
+	}
+	
+	/**
+	 * This private method is called when a command must be run multiple times,
+	 * ie to setup a stream. it creates a {@link StreamingThread} object, and updates
+	 * the local map of streaming threads.
+	 * @param c the command 
+	 * @param s the sensor
+	 * @return the stream id
+	 * @throws SensorControlException
+	 */
+	private LocalStreamID runMultiple(Command c, Sensor s) throws SensorControlException{
+		LocalStreamID lid;
+		if(s.startStream()){
+			lid = new LocalStreamID(s.getID().getName(),String.valueOf(c.getCID()), id.getName());
+			streams.put(lid, createStreamingThread(c, s, lid));
+		} else 
+			throw new SensorControlException("sensor unavailable", new SensorDisconnectedException("Sensor "+s.getID().getName()+" not available to run the command"));
+		return lid;
+	}
+	
+	
+	/**
+	 * this method starts a previously setup stream given its id. A stream can only be started once,
+	 * after that it must be terminated.
+	 * @param lid the local stream id
+	 * @throws NotFoundException if there are no streams with this id
+	 * @throws SALRunTimeException if the stream has already been started once before.
+	 */
+	public final void startStream(LocalStreamID lid) throws NotFoundException{
+		StreamingThread t = streams.get(lid);
+		if(t==null)
+			throw new NotFoundException("No such stream");
+
+		t.start();
+	}
+	
+	/**
+	 * this method starts a previously started stream given its id
+	 * @param lid the local stream id
+	 * @throws NotFoundException if there are no streams with this id 
+	 */
+	public final void stopStream(LocalStreamID lid) throws NotFoundException{
+		StreamingThread t = streams.get(lid);
+		if(t==null)
+			throw new NotFoundException("No such stream");
+
+		t.stop();
+	}
+
+	/**
+	 * finds the method for a given command and sensor
+	 * @param s the sensor
+	 * @param c the command
+	 * @return the method
+	 * @throws NoSuchMethodException if the method is not found
+	 * @throws NotFoundException 
+	 * @throws SecurityException 
+	 */
+	protected Method findMethod(Sensor s, Command c) throws SecurityException, NotFoundException, NoSuchMethodException{
+		Class<?>[] params = {Command.class,Sensor.class};
+		//logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()));
+		Method m = getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params); 
+		logger.debug("Running method: "+ m.getName()+" on sensor ID:"+s.getID().getName() );
+		return m;
+	}
+	
+	/**
+	 * This method is called whenever the thread exits, either because of an error
+	 * of because the {@link #stopStream(LocalStreamID)} method has been called.
+	 * It removes the {@link StreamingThread} from the local map, and changes
+	 * the associated sensor state to idle.
+	 * @param lid the {@link LocalStreamID} of the thread
+	 */
+	@Override
+	public final void threadExited(LocalStreamID lid){
+		streams.remove(lid);
+	}
+	
+	/**
+	 * This method is called whenever a new stream must be setup.
+	 * The subclass creates an instance of a thread object that implements the
+	 * {@link StreamingThread} interface.
+	 * @param c the command for whihc the stream is to be setup 
+	 * @param s the sensor which will receive the command
+	 * @param id the local stream id
+	 * @return the {@link StreamingThread}
+	 * @throws SensorControlException if there is an error creating the thread
+	 */
+	protected StreamingThread createStreamingThread(Command c, Sensor s, LocalStreamID id) throws SensorControlException{
+		try {
+			return new DefaultStreamingThread(findMethod(s, c), this, s, c ,this, id);
+		} catch (Throwable e) {
+			logger.error("we shouldnt be here");
+			e.printStackTrace();
+			throw new SensorControlException("Error creating the streaming thread");
+		} 
 	}
 	
 	/**
@@ -517,6 +661,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * will be changed to that of the "AutoDetecSensor" parameter if present (If not present, the value is untouched).
 	 */
 	protected abstract void internal_parseConfig() throws ConfigurationException;
+
 	
 	
 	/**
@@ -592,6 +737,24 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 			}
 			//logger.debug("autodetect thread stopped");
 		}
+	}
+	
+	/**
+	 * This method finds all the currently active {@link StreamingThread}s
+	 * for a given sensor
+	 * @param s the sensor for which we need the list of streaming threads
+	 * @return all the currently active {@link StreamingThread}s
+	 * for a given sensor
+	 */
+	private List<StreamingThread> findThreads(Sensor s){
+		List<StreamingThread> l = new Vector<StreamingThread>();
+		synchronized(streams){
+			for(LocalStreamID id: streams.keySet())
+				if(id.getSID().equals(s.getID()))
+					l.add(streams.get(id));
+
+		}
+		return l;
 	}
 	
 	private class Autodetection implements Runnable {

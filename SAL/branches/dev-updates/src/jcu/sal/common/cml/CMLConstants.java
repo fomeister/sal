@@ -15,7 +15,6 @@ public interface CMLConstants {
 	public static final String ARG_TYPE_INT="int";
 	public static final String ARG_TYPE_FLOAT="float";
 	public static final String ARG_TYPE_LIST="list";
-	public static final String ARG_TYPE_BUTTON="button";
 	
 	/*
 	 * Update the array below with additions/removals of argument types
@@ -25,7 +24,6 @@ public interface CMLConstants {
 		ARG_TYPE_INT,
 		ARG_TYPE_FLOAT,
 		ARG_TYPE_LIST,
-		ARG_TYPE_BUTTON
 	};
 	
 	
