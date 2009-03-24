@@ -154,7 +154,7 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 		j=Integer.parseInt(b.readLine());
 		
 		cf = new CommandFactory(cmls.getDescription(i), j);
-		r = cmls.getDescription(i).getReturnType();
+		r = cmls.getDescription(i).getResponseType();
 		boolean argOK=false, argsDone=false;
 		while(!argsDone) {			
 			for(String str: cf.listMissingArgNames()){

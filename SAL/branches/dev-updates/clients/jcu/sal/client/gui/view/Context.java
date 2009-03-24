@@ -4,6 +4,7 @@ import javax.swing.ImageIcon;
 
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.cml.CMLDescriptions;
+import jcu.sal.common.events.SensorStateEvent;
 import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.sml.SMLDescription;
@@ -38,7 +39,9 @@ public class Context {
 	public static final int SENSOR_TYPE = 3;
 	
 	public static ImageIcon sensorEnabledIcon;
+	public static ImageIcon sensorStreamingIcon;
 	public static ImageIcon sensorDisabledIcon;
+	public static ImageIcon sensorDisconnectedIcon;
 	public static ImageIcon protocolIcon;
 	public static ImageIcon localAgentIcon;
 	public static ImageIcon remoteAgentIcon;
@@ -47,6 +50,8 @@ public class Context {
 		//load icons
 		sensorEnabledIcon = createImageIcon("resources/icons/Symbols-Tips-15x15.png");
 		sensorDisabledIcon = createImageIcon("resources/icons/Symbols-Error-15x15.png");
+		sensorDisconnectedIcon = createImageIcon("resources/icons/eject-15x15.png");
+		sensorStreamingIcon = createImageIcon("resources/icons/record-15x15.png");
 		protocolIcon = createImageIcon("resources/icons/folder-orange-scanners-cameras-26x26.png");
 		localAgentIcon = createImageIcon("resources/icons/Hardware-My-Computer-1-26x26.png");
 		remoteAgentIcon = createImageIcon("resources/icons/Network-Remote-Desktop-26x26.png");
@@ -80,7 +85,7 @@ public class Context {
 	 */
 	private Context parent;
 	
-	private boolean isEnabled;
+	private int state;
 	
 	
 	/**
@@ -121,6 +126,7 @@ public class Context {
 			stringVal = new String(((SMLDescription) o).getSensorAddress()+
 					" - "+((SMLDescription) o).getID());
 			parent = p;
+			state = SensorStateEvent.SENSOR_STATE_IDLE_CONNECTED;
 		} else if (o instanceof SALAgent){
 			//agent context
 			if(p.getType()!=ROOT_NODE)
@@ -131,7 +137,6 @@ public class Context {
 		} else
 			throw new SALRunTimeException("Inavlid context object");
 		obj = o;
-		isEnabled = true;
 		//dump();
 	}
 	
@@ -204,12 +209,16 @@ public class Context {
 	}
 	
 	
-	public void toggleState(){
-		isEnabled = !isEnabled;
+	public void toggleSensorState(int s){
+		if(type!=SENSOR_TYPE)
+			throw new SALRunTimeException("This context does not refer to a sensor");
+		state = s;
 	}
 	
-	public boolean isEnabled(){
-		return isEnabled;
+	public int getSensorState(){
+		if(type!=SENSOR_TYPE)
+			throw new SALRunTimeException("This context does not refer to a sensor");
+		return state;
 	}
 
 	public void dump(){

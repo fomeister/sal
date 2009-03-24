@@ -6,10 +6,12 @@ import jcu.sal.common.exceptions.SALRunTimeException;
 /**
  * Objects implementing this interface are streaming threads, used to send 
  * a command to a sensor regularly until stopped. The interval of time between
- * two command can be changed while the thread is running. Once the thread has exited
- * it must not be started again.
+ * two command can be changed while the thread is running.
  * A streaming thread can only be started once. Subsequent calls {@link #start()} must 
- * throw a {@link SALRunTimeException}. It may be {@link #stop()}ped multiple times.
+ * throw a {@link SALRunTimeException}. It may be {@link #stop()}ped multiple times, 
+ * although {@link StreamingThreadListener}s will be notified only once when the thread
+ * exits: either when the thread exits on its own, or on the first call to {@link #stop()}.
+ * 
  * @author gilles
  *
  */

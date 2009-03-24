@@ -8,6 +8,7 @@ import java.util.Vector;
 
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLArgument;
+import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.exceptions.ArgumentNotFoundException;
@@ -182,7 +183,26 @@ public class CommandFactory {
 		if(!args.get(name).getType().equals(ArgumentType.StringArgument)) {
 			logger.error("Type of argument '"+name+"' is '"+args.get(name).getType().getType()+"' not 'string'");
 			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+args.get(name).getType().getType()+"' not 'string'");
-		}		
+		}
+		addValue(name, val);
+	}
+	
+	/**
+	 * This method adds the value for a list argument and overwrites any previous value.
+	 * @param val the value
+	 * @param name the name of the argument for which the value is to be added
+	 * @throws ArgumentNotFoundException if no argument matches the given name or
+	 * if the argument <code>name</code> is not of type list
+	 */
+	public void addArgumentValueList(String name, String val) {
+		if(!args.get(name).getType().equals(ArgumentType.ListArgument)) {
+			logger.error("Type of argument '"+name+"' is '"+args.get(name).getType().getType()+"' not 'list'");
+			throw new ArgumentNotFoundException("Type of argument '"+name+"' is '"+args.get(name).getType().getType()+"' not 'list'");
+		}
+		if(!args.get(name).getList().containsKey(val)){
+			logger.error("Incorrect value for argument '"+name+"': not in the list");
+			throw new ArgumentNotFoundException("Incorrect value for argument '"+name+"': not in the list");
+		}
 		addValue(name, val);
 	}
 	
@@ -213,6 +233,8 @@ public class CommandFactory {
 			}
 		} else if(t.equals(ArgumentType.StringArgument))
 			addArgumentValueString(name, val);
+		else if(t.equals(ArgumentType.ListArgument))
+			addArgumentValueList(name, val);
 		else {
 			logger.error("Unknown argument type '"+t.getType()+"'");
 			throw new ArgumentNotFoundException("Unknown argument type '"+t.getType()+"'");
@@ -229,13 +251,13 @@ public class CommandFactory {
 	
 	/**
 	 * This method creates a new {@link Command} object, only if all the mandatory arguments have 
-	 * been assigned a value, and there is a {@link StreamCallback} object.
+	 * been assigned a value, and there is a {@link StreamCallback} object (if the ResponseType is not void).
 	 * @return a new {@link Command} object
 	 * @throws ConfigurationException if some of the mandatory arguments still do not have a value
 	 */
 	public Command getCommand() throws ConfigurationException{
 		//make sure the callback is there
-		if(callback==null)
+		if(callback==null && !cml.getResponseType().getType().equals(CMLConstants.RET_TYPE_VOID))
 			throw new ConfigurationException("Callback object missing");
 		
 		//Make sure we have all the args and their values

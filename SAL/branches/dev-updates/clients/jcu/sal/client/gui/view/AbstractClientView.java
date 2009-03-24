@@ -15,6 +15,7 @@ import javax.swing.WindowConstants;
 
 import jcu.sal.client.gui.ClientController;
 import jcu.sal.common.CommandFactory;
+import jcu.sal.common.StreamID;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
@@ -33,8 +34,6 @@ import jcu.sal.common.sml.SMLDescription;
 
 public abstract class AbstractClientView implements ClientEventHandler, ClientView {
 	
-	public static final String INTERVAL_NAME="INTERVAL_SLIDER";
-
 	protected JFrame frame;
 	protected SensorTree tree;
 	protected JTextArea log;
@@ -82,6 +81,7 @@ public abstract class AbstractClientView implements ClientEventHandler, ClientVi
 		     * @param e
 		     */
 			public void windowClosing(WindowEvent e) {
+				TextResponseFrame.getFrame().close();
 		    	frame.dispose();
 		    	release();
 				System.exit(0);
@@ -100,14 +100,20 @@ public abstract class AbstractClientView implements ClientEventHandler, ClientVi
 	protected abstract JMenuBar createMenu();
 	
 	@Override
+	public void terminateStream(SALAgent a, StreamID s){
+		try {
+			controller.terminateStream(a, s);
+		} catch (NotFoundException e) {
+			System.out.println("cant stop stream - stream id not found");
+		}
+	}
+	
+	@Override
 	public void sendCommand(Hashtable<String, String> values,
 			final CMLDescription cml, final Context c) {
-		
 		final ResponseHandler handler = createResponseHandler(cml, c);
-		if(handler==null)
-			return;
 
-		final CommandFactory cf = new CommandFactory(cml, handler);
+		final CommandFactory cf = new CommandFactory(cml, handler,Integer.parseInt(values.remove(CommandDataPane.INTERVAL_NAME)));
 		
 		//put all arg-values in 
 		for(String name: values.keySet())
@@ -119,8 +125,13 @@ public abstract class AbstractClientView implements ClientEventHandler, ClientVi
 		//it also makes the GUI more responsive for slow sensor, aka 1-wire
 		new Thread(new Runnable(){
 			public void run(){
+				StreamID id;
 				try {
-					controller.setupStream(c.getAgent(), cf.getCommand(), c.getSMLDescription().getID());
+					id = controller.setupStream(c.getAgent(), cf.getCommand(), c.getSMLDescription().getID());
+					if(id!=null) {
+						controller.startStream(c.getAgent(), id);
+						handler.setStreamID(id);
+					}
 				} catch (SensorControlException e) {
 					addLog("Error executing command:\n"+e.getMessage()+"("+e.getCause().getMessage()+")");
 					handler.close();
@@ -139,15 +150,16 @@ public abstract class AbstractClientView implements ClientEventHandler, ClientVi
 	}
 	
 	private ResponseHandler createResponseHandler(CMLDescription cml, Context c){
-		ResponseType t = cml.getReturnType();
-		if(t.getContentType().equals(CMLConstants.CONTENT_TYPE_JPEG))
-			return new JPEGViewer(c, this);
-		if(t.getContentType().equals(CMLConstants.CONTENT_TYPE_TEXT_PLAIN))
-			return new TextResponseHandler(c,this);
-		else {
-			addLog("Cannot send the command - unhandled content type '"+cml.getReturnType().getContentType()+"'");
-			return null;
+		ResponseType t = cml.getResponseType();
+		if(!t.getType().equals(CMLConstants.RET_TYPE_VOID)){
+			if(t.getContentType().equals(CMLConstants.CONTENT_TYPE_JPEG))
+				return new JPEGViewer(c, this);
+			if(t.getContentType().equals(CMLConstants.CONTENT_TYPE_TEXT_PLAIN))
+				return new TextResponseHandler(c,this);
+			else
+				addLog("Cannot send the command - unhandled content type '"+cml.getResponseType().getContentType()+"'");
 		}
+		return null;
 	}
 
 
@@ -188,13 +200,7 @@ public abstract class AbstractClientView implements ClientEventHandler, ClientVi
 
 		} else if(e instanceof SensorStateEvent){
 			SensorStateEvent sse = (SensorStateEvent) e;
-			if(sse.getType()==SensorStateEvent.SENSOR_STATE_IDLE_CONNECTED)
-				tree.toggleSensor(a,sse.getSourceID(), sse.getType());
-			else if(sse.getType()==SensorStateEvent.SENSOR_STATE_DISCONNECTED)
-				tree.toggleSensor(a,sse.getSourceID(), sse.getType());
-			else if(sse.getType()==SensorStateEvent.SENSOR_STATE_STREAMING)
-				tree.toggleSensor(a,sse.getSourceID(), sse.getType());
-
+			tree.toggleSensor(a,sse.getSourceID(), sse.getType());
 		} else {
 			addLog("Inknown event type");
 		}

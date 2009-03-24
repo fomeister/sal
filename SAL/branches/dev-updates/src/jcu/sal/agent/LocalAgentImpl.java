@@ -160,7 +160,7 @@ public class LocalAgentImpl implements SALAgent{
 		LocalStreamID lid = pm.setupStream(
 				CommandFactory.getCommand(c, new StreamCallbackAdapter(c.getStreamCallBack(),this)),
 				new SensorID(sid));
-		return lid==null ? null : new StreamID(lid.getSID(),lid.getCID(),lid.getPID()).setAgent(this);	
+		return lid==null ? null : new StreamID(lid.getSID(),lid.getCID(),lid.getPID()).setAgentID(getID());	
 	}
 	
 	@Override
@@ -335,9 +335,10 @@ public class LocalAgentImpl implements SALAgent{
 		@Override
 		public void collect(Response r) throws IOException {
 			try {
-				c.collect(r.setAgent(a));
+				c.collect(r.setAgentID(a.getID()));
 			} catch (Throwable e1) {
 				logger.error("Error dispatching reponse to client:\n"+e1.getMessage());
+				e1.printStackTrace();
 				throw new IOException("Error dispatching response to client");
 				
 			}

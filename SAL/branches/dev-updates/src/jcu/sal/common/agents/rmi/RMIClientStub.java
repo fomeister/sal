@@ -128,12 +128,12 @@ public class RMIClientStub implements SALAgent{
 		try {
 			id = agent.setupStream(
 					RMICommandFactory.getCommand(c, createProxyCallback(c.getStreamCallBack()))
-					, sid).setAgent(this);
+					, sid);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 			throw new SALRunTimeException("RMI exception "+e.getMessage());
 		}
-		return id == null ? null : id.setAgent(this);
+		return id == null ? null : id.setAgentID(getID());
 	}
 	
 	@Override
@@ -269,6 +269,9 @@ public class RMIClientStub implements SALAgent{
 	 * @throws RemoteException if there is an error registering an {@link RMIStreamCallback} object with RMI
 	 */
 	private List<String> createProxyCallback(StreamCallback cb) throws RemoteException{
+		if (cb==null)
+			return null;
+		
 		List<String> list = new Vector<String>();
 		list.add(0, rmiName);
 		list.add(1, new RMICallbackProxy(cb, ourRegistry, this).getRMIName());
@@ -368,7 +371,7 @@ public class RMIClientStub implements SALAgent{
 			try {
 				if(r.hasException())
 					removeRMIStreamCallBack();
-				r.setAgent(agent);
+				r.setAgentID(agent.getID());
 				c.collect(r);
 			} catch (IOException e) {
 //				logger.debug("Error collecting response");

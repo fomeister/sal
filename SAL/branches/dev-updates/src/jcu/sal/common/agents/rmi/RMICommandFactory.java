@@ -46,6 +46,9 @@ public class RMICommandFactory {
 		 * @return
 		 */
 		public List<String> getRMIStreamCallBack(){
+			if(callbacks==null)
+				return null;
+			
 			return new Vector<String>(callbacks);
 		}
 

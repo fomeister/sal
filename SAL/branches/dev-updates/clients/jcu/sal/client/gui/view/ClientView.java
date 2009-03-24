@@ -3,6 +3,8 @@ package jcu.sal.client.gui.view;
 import java.util.Hashtable;
 
 import jcu.sal.client.gui.ClientController;
+import jcu.sal.common.StreamID;
+import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 
@@ -23,6 +25,13 @@ public interface ClientView {
 	 * @param c the context of the selected sensor
 	 */
 	public void sendCommand(Hashtable<String,String> values, CMLDescription cml, Context c);
+	
+	/**
+	 * This method is invoked by {@link ResponseHandler}s when a stream must be closed
+	 * @param a the sal agent
+	 * @param s te stream id to close
+	 */
+	public void terminateStream(SALAgent a, StreamID s);
 	
 	/**
 	 * This method is called by {@link SensorTree} when a component (sensor, protocol, agent)

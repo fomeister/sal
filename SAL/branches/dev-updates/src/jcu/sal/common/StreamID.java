@@ -2,8 +2,6 @@ package jcu.sal.common;
 
 import java.io.Serializable;
 
-import jcu.sal.common.agents.SALAgent;
-
 public class StreamID implements Serializable{
 	private static final long serialVersionUID = 6136196943298834985L;
 	//the sensor id, command id, protocol id & agent id
@@ -59,8 +57,8 @@ public class StreamID implements Serializable{
 	 * Any modification to this class must also be done in
 	 * jcu.sal.componenents.protocol.LocalStreamID
 	 */
-	public StreamID setAgent(SALAgent a){
-		aid= a.getID();
+	public StreamID setAgentID(String id){
+		aid= id;
 		return this;
 	}
 	

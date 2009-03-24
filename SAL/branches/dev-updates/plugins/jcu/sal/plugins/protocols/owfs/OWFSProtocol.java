@@ -259,7 +259,11 @@ public class OWFSProtocol extends AbstractProtocol{
 			}
 
 			while(++attempt<=OWFSSTART_MAX_ATTEMPTS && !started) {
-				c = PlatformHelper.captureOutputs(getParameter(OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+" -uall --timeout_directory 1 --timeout_presence 1 "+w1MountPoint, false);
+				c = PlatformHelper.captureOutputs(
+						getParameter(
+								OWFSProtocol.OWFSLOCATIONATTRIBUTE_TAG)+
+								" -uall --timeout_directory 1 --timeout_presence 1 --timeout_volatile 1 "+w1MountPoint,
+						false);
 				BufferedReader r[] = c.getBuffers(); 
 				try {Thread.sleep(100);} catch (InterruptedException e) {}
 				//check stdout & stderr
