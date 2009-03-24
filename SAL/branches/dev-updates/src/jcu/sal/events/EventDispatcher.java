@@ -128,7 +128,7 @@ public class EventDispatcher implements Runnable{
 				try {
 					ev.handle(e);
 				} catch (IOException e1) {
-					logger.debug("Error dispatching event to handler - unregistering handler "+ev+" for producer "+e.getProducer());
+					logger.debug("Error dispatching event '"+e.toString()+"' to handler - unregistering handler "+ev+" for producer "+e.getProducer());
 					i.remove();
 				}
 			}

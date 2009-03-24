@@ -32,6 +32,7 @@ import jcu.sal.common.cml.CMLArgument;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.ResponseType;
+import jcu.sal.common.cml.CMLDescription.SamplingBounds;
 
 public class CommandDataPane implements ActionListener{
 	
@@ -87,6 +88,9 @@ public class CommandDataPane implements ActionListener{
 			i += addDescription(c.getShortDesc());
 			i += addRetType(c.getResponseType());
 			i += addArgs(c.getArguments());
+			if(c.isStreamable())
+				i += addInterval(c.getSamplingBounds());
+			
 			SpringLayoutHelper.makeCompactGrid(dataPane,
 					i, 2, //rows, cols
 	                6, 6,        //initX, initY
@@ -139,8 +143,8 @@ public class CommandDataPane implements ActionListener{
 			return 1;
 	}
 	
-	private int  addInterval(){
-		ArgumentValueHolder v = new IntervalArgument();
+	private int  addInterval(SamplingBounds b){
+		ArgumentValueHolder v = new IntervalArgument(b);
 		JLabel l = new JLabel("Sampling frequency");
 		dataPane.add(l);
 		argValues.put(CommandDataPane.INTERVAL_NAME, v);
@@ -171,26 +175,25 @@ public class CommandDataPane implements ActionListener{
 			
 			nb++;
 		}
-		nb += addInterval();
 		return nb;
 	}
 	
 	private ArgumentValueHolder createNumberArgHolder(CMLArgument arg){
 		if(arg.hasBounds()){
 			if (arg.getType().equals(ArgumentType.FloatArgument))
-				return new BoundedArgument(arg.getMinFloat(), arg.getMaxFloat(), arg.getStepFloat());
+				return new BoundedArgument(arg.getMinFloat(), arg.getMaxFloat(), arg.getStepFloat(), arg.getDefaultValue());
 			else
-				return new BoundedArgument(arg.getMinInt(), arg.getMaxInt(), arg.getStepInt());
+				return new BoundedArgument(arg.getMinInt(), arg.getMaxInt(), arg.getStepInt(), arg.getDefaultValue());
 		}else
-			return new StringArgument();
+			return new StringArgument(arg.getDefaultValue());
 	}
 	
 	private ArgumentValueHolder createListArgHolder(CMLArgument arg){
-		return new ListArgument(arg.getList());
+		return new ListArgument(arg.getList(), arg.getDefaultValue());
 	}
 		
 	private ArgumentValueHolder createStringArgHolder(CMLArgument arg){
-		return new StringArgument();
+		return new StringArgument(arg.getDefaultValue());
 	}
 	
 	private static class BoundedArgument implements ArgumentValueHolder, ChangeListener{
@@ -211,12 +214,12 @@ public class CommandDataPane implements ActionListener{
 			mainPane.setLayout(new BoxLayout(mainPane, BoxLayout.LINE_AXIS));
 		}
 		
-		public BoundedArgument(float min, float max, float step){
+		public BoundedArgument(float min, float max, float step, String def){
 			this(Type.FLOAT);
 			minf = min;
 			maxf = max;
 			stepf = step;
-			text = new JTextField();
+			text = new JTextField(def);
 			text.setPreferredSize(new Dimension(100,30));
 			text.setMaximumSize(new Dimension(400,30));
 			text.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -226,14 +229,15 @@ public class CommandDataPane implements ActionListener{
 			mainPane.add(label);			
 		}
 		
-		public BoundedArgument(int min, int max, int step){
+		public BoundedArgument(int min, int max, int step, String def){
 			this(Type.INT);
 			slider = new JSlider(SwingConstants.HORIZONTAL, min, max, min);
 			slider.setAlignmentX(Component.CENTER_ALIGNMENT);
-			slider.addChangeListener(this);
 			slider.setSnapToTicks(true);
+			if(def!=null) slider.setValue(Integer.parseInt(def));
+			slider.addChangeListener(this);
 			mainPane.add(slider);
-			label = new JLabel("Value: "+min);
+			label = new JLabel("Value: "+String.valueOf(slider.getValue()));
 			label.setMinimumSize(new Dimension(100,30));
 			label.setMaximumSize(new Dimension(200,30));
 			label.setSize(label.getMinimumSize());
@@ -306,7 +310,7 @@ public class CommandDataPane implements ActionListener{
 		private Vector<String> ids;
 		private Vector<String> values;
 		
-		public ListArgument(Map<String,String> val){
+		public ListArgument(Map<String,String> val, String def){
 			ids = new Vector<String>();
 			values = new Vector<String>();
 			for(String n: val.keySet()){
@@ -318,6 +322,8 @@ public class CommandDataPane implements ActionListener{
 			list.setMaximumSize(new Dimension(200,30));
 			list.setSize(list.getMinimumSize());
 			list.setPreferredSize(list.getMinimumSize());
+			if(def!=null)
+				list.setSelectedItem(def);
 		}
 
 		@Override
@@ -333,8 +339,8 @@ public class CommandDataPane implements ActionListener{
 	private static class StringArgument implements ArgumentValueHolder{
 		private JTextField text;
 		
-		public StringArgument(){
-			text = new JTextField();
+		public StringArgument(String def){
+			text = new JTextField(def);
 			text.setPreferredSize(new Dimension(200,30));
 			text.setMaximumSize(new Dimension(800,30));
 		}
@@ -360,7 +366,7 @@ public class CommandDataPane implements ActionListener{
 		private JLabel label;
 
 
-		public IntervalArgument(){
+		public IntervalArgument(SamplingBounds b){
 		
 			mainPane = new JPanel();
 			dataPane = new JPanel();
@@ -374,14 +380,17 @@ public class CommandDataPane implements ActionListener{
 			once.addActionListener(this);
 			continuous = new JRadioButton(CONTINUOUS_LABEL);
 			continuous.setActionCommand(CONTINUOUS_LABEL);
-			continuous.addActionListener(this);
+			continuous.addActionListener(this);				
 			custom = new JRadioButton(CUSTOM_LABEL);
 			custom.setActionCommand(CUSTOM_LABEL);
 			custom.addActionListener(this);
 			ButtonGroup group = new ButtonGroup();
 			group.add(custom);
 			group.add(continuous);
-			group.add(once);			
+			group.add(once);
+			
+			if(!b.isContinuous())
+				continuous.setEnabled(false);
 			
 			once.setSelected(true);
 			buttonPane.add(custom);
@@ -389,10 +398,13 @@ public class CommandDataPane implements ActionListener{
 			buttonPane.add(once);
 			dataPane.add(buttonPane);
 			
-			slider = new JSlider(SwingConstants.HORIZONTAL, 1, 10000, 1);
-			slider.setValue(1000);
+			slider = new JSlider(SwingConstants.HORIZONTAL, b.getMin(), b.getMax(), b.getMin());
 			slider.setAlignmentX(Component.CENTER_ALIGNMENT);
 			slider.addChangeListener(this);
+			if(b.getStep()!=1){
+				slider.setMinorTickSpacing(b.getStep());
+				slider.setPaintTicks(false);
+			}			
 			slider.setSnapToTicks(true);
 			slider.setEnabled(false);
 			dataPane.add(slider);

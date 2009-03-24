@@ -11,6 +11,7 @@ import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.CMLDescriptions;
 import jcu.sal.common.cml.ResponseType;
+import jcu.sal.common.cml.CMLDescription.SamplingBounds;
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALRunTimeException;
@@ -115,11 +116,12 @@ public abstract class AbstractStore {
 	 * @param name the name of the command
 	 * @param desc the short description of the command
 	 * @param args the list of {@link CMLArgument} for this command description, can be <code>null</code>
+	 * @param b the sampling frequency bounds, or null if this command cannot be streamed
 	 * @return the cid associated with this command
 	 * @throws AlreadyPresentException if the given key already has a CML table
 	 */
 	public final int addPrivateCMLDesc(String k, String mName, String name, 
-			String desc, List<CMLArgument> args, ResponseType returnType) throws AlreadyPresentException {
+			String desc, List<CMLArgument> args, ResponseType returnType, SamplingBounds b) throws AlreadyPresentException {
 		//computes the CID
 		Integer cid = priv_cid.get(k);
 		if(cid==null)
@@ -127,7 +129,7 @@ public abstract class AbstractStore {
 		//builds the CML desc doc
 		
 		//logger.debug("Adding private CML for key "+k+", method: "+mName+", CID: "+cid.intValue());
-		addCML(k, new CMLDescription(mName,cid, name, desc, args, returnType));
+		addCML(k, new CMLDescription(mName,cid, name, desc, args, returnType, b));
 		priv_cid.put(k, new Integer(cid.intValue()+1));
 				
 		return cid.intValue();

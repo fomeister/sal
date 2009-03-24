@@ -18,9 +18,14 @@ public class SensorStateEvent extends Event {
 	}
 	
 	public String toString(){
-		if(type==SENSOR_STATE_IDLE_CONNECTED) return super.toString() + " Sensor connected & idle";
-		else if(type==SENSOR_STATE_STREAMING) return super.toString() + " Sensor streaming"; 
-			return super.toString() + "  Sensor disconnected";
+		if(type==SENSOR_STATE_IDLE_CONNECTED) 
+			return super.toString() + " Sensor connected & idle";
+		else if(type==SENSOR_STATE_STREAMING) 
+			return super.toString() + " Sensor streaming";
+		else if(type==SENSOR_STATE_DISABLED) 
+			return super.toString() + " Sensor disabled";
+		else
+			return super.toString() + " Sensor disconnected";
 	}
 
 }

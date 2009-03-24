@@ -269,9 +269,6 @@ public class RMIClientStub implements SALAgent{
 	 * @throws RemoteException if there is an error registering an {@link RMIStreamCallback} object with RMI
 	 */
 	private List<String> createProxyCallback(StreamCallback cb) throws RemoteException{
-		if (cb==null)
-			return null;
-		
 		List<String> list = new Vector<String>();
 		list.add(0, rmiName);
 		list.add(1, new RMICallbackProxy(cb, ourRegistry, this).getRMIName());

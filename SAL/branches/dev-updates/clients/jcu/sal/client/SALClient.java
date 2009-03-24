@@ -135,6 +135,7 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 		StreamID id;
 		CMLArgument arg;
 		CMLDescriptions cmls;
+		CMLDescription cml;
 		ResponseType r;
 		int i, j;
 		
@@ -150,11 +151,23 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 		}
 		System.out.println("Enter a command id:");
 		i=Integer.parseInt(b.readLine());
-		System.out.println("How often the command should be run (ms):");
-		j=Integer.parseInt(b.readLine());
+		cml = cmls.getDescription(i);
 		
-		cf = new CommandFactory(cmls.getDescription(i), j);
-		r = cmls.getDescription(i).getResponseType();
+		cf = new CommandFactory(cml);
+		
+		if(cml.isStreamable()){
+			System.out.println("How often the command should be run (ms) ?(min:"+
+					cml.getSamplingBounds().getMin()+"-max:"+cml.getSamplingBounds().getMax()+") ");
+			j=Integer.parseInt(b.readLine());
+			if(j<cml.getSamplingBounds().getMin() || j>cml.getSamplingBounds().getMax()){
+				System.out.println("Invalid value - using "+cml.getSamplingBounds().getMax());
+				j = cml.getSamplingBounds().getMax();
+			}
+			cf.setInterval(j);			
+		}
+		
+		
+		r = cml.getResponseType();
 		boolean argOK=false, argsDone=false;
 		while(!argsDone) {			
 			for(String str: cf.listMissingArgNames()){
@@ -162,7 +175,7 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 				argOK=false;
 				while(!argOK) {
 					System.out.println("Enter a value of type '"+arg.getType()+
-							"' for argument '"+str+"'"+(arg.isOptional()?" (Optional)":""));
+							"' for argument '"+str+"'"+(arg.isOptional()?" (Optional)":"") + (arg.hasDefaultValue()?"(default:"+arg.getDefaultValue()+")":""));
 					str2 = b.readLine();
 					try {cf.addArgumentValue(str, str2); argOK = true;}
 					catch (ArgumentNotFoundException e1) {

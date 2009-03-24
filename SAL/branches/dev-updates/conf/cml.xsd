@@ -18,6 +18,22 @@
         		<xsd:element name="Name" type="xsd:string" minOccurs="1" maxOccurs="1" />
 	        	<xsd:element name="ShortDescription" type="xsd:string" minOccurs="1" maxOccurs="1" />
 	        	<xsd:element name="LongDescription" type="xsd:string" minOccurs="0" maxOccurs="1" />
+	        	<xsd:element name="Streaming" minOccurs="0" maxOccurs="1">
+	        		<xsd:complexType>
+	        			<xsd:all>
+	        				<xsd:element name="bounds">
+			        			<xsd:complexType>
+									<xsd:all>
+										<xsd:element name="min" type="xsd:int" />
+										<xsd:element name="max" type="xsd:int" />
+										<xsd:element name="step" type="xsd:int" minOccurs="0" />
+									</xsd:all>
+									<xsd:attribute name="continuous" type="xsd:boolean" use="required"/>
+								</xsd:complexType>
+			        		</xsd:element>
+	        			</xsd:all>
+	        		</xsd:complexType>
+	        	</xsd:element>
 	        	<xsd:element name="Response" type="tns:Response" minOccurs="1" maxOccurs="1" />
        			<xsd:element name="arguments" minOccurs="1" maxOccurs="1">
        				<xsd:complexType>
@@ -84,6 +100,9 @@
         	</xsd:attribute>
         	<xsd:attribute name="name" type="xsd:string" use="required"/>
         	<xsd:attribute name="optional" type="xsd:boolean" use="optional" default="false"/>
+        	<xsd:attribute name="defaultValue" type="xsd:string" use="optional"/>
         </xsd:complexType>
+        
+        
         
 </xsd:schema>

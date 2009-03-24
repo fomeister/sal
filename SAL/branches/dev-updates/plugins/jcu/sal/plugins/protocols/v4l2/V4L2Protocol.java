@@ -13,6 +13,7 @@ import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLArgument;
 import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.ResponseType;
+import jcu.sal.common.cml.CMLDescription.SamplingBounds;
 import jcu.sal.common.exceptions.AlreadyPresentException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
@@ -140,8 +141,8 @@ public class V4L2Protocol extends AbstractProtocol {
 		name = "GetJPEGFrame";
 		desc = "Fetches a single JPEG-encoded frame";
 		args = new Vector<CMLArgument>();
-		args.add(new CMLArgument(CMLDescriptionStore.WIDTH_VALUE_NAME, ArgumentType.IntegerArgument, false));
-		args.add(new CMLArgument(CMLDescriptionStore.HEIGHT_VALUE_NAME, ArgumentType.IntegerArgument, false));
+		args.add(new CMLArgument(CMLDescriptionStore.WIDTH_VALUE_NAME, ArgumentType.IntegerArgument, false, null));
+		args.add(new CMLArgument(CMLDescriptionStore.HEIGHT_VALUE_NAME, ArgumentType.IntegerArgument, false, null));
 		
 		
 		for(InputInfo input: vd.getDeviceInfo().getInputs())
@@ -150,7 +151,8 @@ public class V4L2Protocol extends AbstractProtocol {
 		args.add(
 				new CMLArgument(CMLDescriptionStore.CHANNEL_VALUE_NAME, 
 						values, 
-						false)
+						false,
+						null)
 				);
 		values.clear();
 		
@@ -161,7 +163,8 @@ public class V4L2Protocol extends AbstractProtocol {
 		args.add(
 				new CMLArgument(CMLDescriptionStore.STANDARD_VALUE_NAME,
 						values,
-						false)
+						false,
+						null)
 				);
 		values.clear();		
 		
@@ -174,7 +177,7 @@ public class V4L2Protocol extends AbstractProtocol {
 				);
 		r = new ResponseType(CMLConstants.RET_TYPE_BYTE_ARRAY,CMLConstants.CONTENT_TYPE_JPEG);
 		try {
-			i = cmls.addPrivateCMLDesc(key, mName, name, desc, args, r);
+			i = cmls.addPrivateCMLDesc(key, mName, name, desc, args, r, new SamplingBounds(50,10*1000,true));
 			//generic GetReading
 			cmls.addGenericCMLDesc(CMLDescriptionStore.CCD_KEY, CMLDescriptionStore.GENERIC_GETREADING, i);
 		} catch (AlreadyPresentException e) {
@@ -195,29 +198,29 @@ public class V4L2Protocol extends AbstractProtocol {
 			//setValue command
 			name = "Activate"+ctrlName.replace(" ", "");
 			desc = "Activates the button '"+ctrlName+"'";
-			addControl(c, key, SET_CONTROL_METHOD, name, desc, null, ResponseType.Void);
+			addControl(c, key, SET_CONTROL_METHOD, name, desc, null, ResponseType.Void, null);
 		} else if (c.getType()==V4L4JConstants.CTRL_TYPE_SLIDER){
 			//getValue
 			name = "Get"+ctrlName.replace(" ", "");
 			desc = "Fetches the value of "+ctrlName;
-			addControl(c, key, GET_CONTROL_METHOD, name, desc, null, ResponseType.Integer);
+			addControl(c, key, GET_CONTROL_METHOD, name, desc, null, ResponseType.Integer, new SamplingBounds(100,10*1000,false));
 			
 			//setValue command
 			name = "Set"+ctrlName.replace(" ", "");
 			desc = "Sets the value of "+ctrlName;
-			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, false, c.getMinValue(), c.getMaxValue(), c.getStepValue()));
-			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void);
+			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, false, c.getMinValue(), c.getMaxValue(), c.getStepValue(), c.getDefaultValue()));
+			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void, null);
 		} else if (c.getType()==V4L4JConstants.CTRL_TYPE_SWITCH){
 			//getValue
 			name = "Get"+ctrlName.replace(" ", "");
 			desc = "Fetches the state of "+ctrlName;
-			addControl(c, key, GET_CONTROL_METHOD, name, desc, null, ResponseType.Integer);
+			addControl(c, key, GET_CONTROL_METHOD, name, desc, null, ResponseType.Integer, new SamplingBounds(100,10*1000,false));
 			
 			//setValue command
 			name = "Set"+ctrlName.replace(" ", "");
 			desc = "Enable/disable  "+ctrlName;
 			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, false, 0, 1));
-			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void);
+			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void, null);
 		} else if (c.getType()==V4L4JConstants.CTRL_TYPE_DISCRETE){
 			Map<String,String> map = new Hashtable<String,String>();
 			List<String> discreteNames = c.getDiscreteValueNames();
@@ -225,15 +228,15 @@ public class V4L2Protocol extends AbstractProtocol {
 			//getValue
 			name = "Get"+ctrlName.replace(" ", "");
 			desc = "Fetches the state of "+ctrlName;
-			addControl(c, key, GET_DISCRETE_CONTROL_METHOD, name, desc, null, ResponseType.String);
+			addControl(c, key, GET_DISCRETE_CONTROL_METHOD, name, desc, null, ResponseType.String, new SamplingBounds(100,10*1000,false));
 			
 			//setValue command
 			name = "Set"+ctrlName.replace(" ", "");
 			desc = "Set the value of "+ctrlName;
 			for(int i=0; i<discreteNames.size();i++)
 				map.put(discreteValues.get(i).toString(), discreteNames.get(i));
-			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, map, false));
-			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void);
+			args.add(new CMLArgument(CMLDescriptionStore.CONTROL_VALUE_NAME, map, false, null));
+			addControl(c, key, SET_CONTROL_METHOD, name, desc, args, ResponseType.Void, null);
 		} else {
 			logger.error("unknown control type '"+c.getType()+"'");
 			throw new SALRunTimeException("unknown control type");
@@ -241,10 +244,10 @@ public class V4L2Protocol extends AbstractProtocol {
 
 	}
 	
-	private void addControl(Control c, String key, String mName, String name, String shortDesc, List<CMLArgument> args, ResponseType r){
+	private void addControl(Control c, String key, String mName, String name, String shortDesc, List<CMLArgument> args, ResponseType r, SamplingBounds b){
 		int cid;
 		try {
-			cid = cmls.addPrivateCMLDesc(key, mName, name, shortDesc, args, r);
+			cid = cmls.addPrivateCMLDesc(key, mName, name, shortDesc, args, r, b);
 		} catch (AlreadyPresentException e) {
 			logger.error("we shouldnt be here - trying to insert a duplicate element in CML table");
 			e.printStackTrace();
@@ -461,6 +464,11 @@ public class V4L2Protocol extends AbstractProtocol {
 		@Override
 		public void update(int i) {
 			thread.update(i);
+		}
+
+		@Override
+		public LocalStreamID getLocalStreamID() {
+			return thread.getLocalStreamID();
 		}
 	}
 }

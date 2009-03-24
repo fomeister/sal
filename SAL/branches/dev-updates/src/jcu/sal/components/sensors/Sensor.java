@@ -63,14 +63,6 @@ public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 		}
 	}
 		
-	/*
-	 * Start of state management methods
-	 */
-	public boolean startRunCmd() {
-/*		logger.debug("Running cmd on sensor " + toString());*/
-		return state.runCommand();
-	}
-	
 	public boolean startStream() {
 		return state.startStream();
 	}
@@ -99,14 +91,22 @@ public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 		return state.enable();
 	}
 	
-	public boolean finishRunCmd() {
-/*		logger.debug("Finished running cmd on sensor " + toString());*/
-		return state.doneCommand();
+	public boolean isAvailableForCommand() {
+		return state.isAvailableForCommand();
 	}
 	
-	public long getDisconnectTimestamp(){
-		return state.getDisconnectTimestamp();
+	public boolean isDisconnected() {
+		return state.isDisconnectedDisabled();
 	}
+	
+	public boolean isStreaming() {
+		return state.isStreaming();
+	}
+	
+	public String getStateToString() {
+		return state.toString();
+	}
+
 	/*
 	 * End of state management methods
 	 */
@@ -153,19 +153,6 @@ public class Sensor extends AbstractComponent<SensorID, SMLDescription> {
 	@Override
 	public String toString() {
 		return "Sensor " + id.getName() + " (" + getNativeAddress() +") State: "+state.toString()+" AbstractProtocol: "+id.getPIDName().toString();
-	}
-
-	
-	public boolean isDisconnected() {
-		return state.isDisconnectedDisabled();
-	}
-	
-	public boolean isStreaming() {
-		return state.isStreaming();
-	}
-	
-	public String getStateToString() {
-		return state.toString();
 	}
 }
 

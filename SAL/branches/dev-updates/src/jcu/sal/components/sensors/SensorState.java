@@ -25,19 +25,12 @@ public class SensorState {
 
 	private static final EventDispatcher ev = EventDispatcher.getInstance();
 	private int state;
-	/*
-	 * disconnect_timestamp is the timestamp at which the disconnect method has been called.
-	 */
-	private long disconnect_timestamp;
+	private int streamingCount;
 
 	public SensorState(SensorID i) { 
 		state=SensorConstants.UNASSOCIATED;
-		disconnect_timestamp=-1;
+		streamingCount=0;
 		this.i = i;
-	}
-	
-	public long getDisconnectTimestamp() {
-		return disconnect_timestamp;
 	}
 	
 	public boolean isStarted() {
@@ -52,9 +45,12 @@ public class SensorState {
 		return (state==SensorConstants.DISCONNECTED || state==SensorConstants.DISABLED);
 	}
 	
+	public boolean isAvailableForCommand() {
+		return (state==SensorConstants.IDLE || state==SensorConstants.STREAMING);
+	}
+	
 	public boolean remove(componentRemovalListener c){
 		synchronized (this) {
-			if(state==SensorConstants.INUSE) { state=SensorConstants.STOPPED; l =c;}
 			if(state==SensorConstants.STREAMING) { state=SensorConstants.STOPPED; l =c;} 
 			else { state=SensorConstants.REMOVED; c.componentRemovable(i);}
 			return true;
@@ -64,99 +60,96 @@ public class SensorState {
 
 	public boolean startStream(){
 		synchronized (this) {
-			if(state==SensorConstants.IDLE) { 
+			switch(state){
+			case SensorConstants.IDLE:
 				state=SensorConstants.STREAMING;
 				ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_STREAMING,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
-				return true; 
-			} else 
-				return false;	
+			case SensorConstants.STREAMING:
+				streamingCount++;
+				return true;
+			default:
+				return false;
+			}
 		}
 	}
 	
 	public boolean stopStream(){
 		synchronized (this) {
-			if(state==SensorConstants.STREAMING) { 
-				state=SensorConstants.IDLE;
-				ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_IDLE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
-				return true; 
-			} else if(state==SensorConstants.STOPPED) { state=SensorConstants.REMOVED; l.componentRemovable(i); return true;}
-			else { logger.error("trying to stop streaming on a non STREAMING/DISABLED sensor"); dumpState(); return false; }	
-		}
-	}
-	
-	public boolean runCommand(){
-		synchronized (this) {
-			if(state==SensorConstants.IDLE) { state=SensorConstants.INUSE; return true; }
-			else return false;	
-		}
-	}
-	
-	public boolean doneCommand(){
-		synchronized (this) {
-			if(state==SensorConstants.INUSE) { state=SensorConstants.IDLE; return true; }
-			else if(state==SensorConstants.STOPPED) { state=SensorConstants.REMOVED; l.componentRemovable(i); return true;}
-			else { logger.error("trying to finish running a command on a non INUSE/DISABLED sensor"); dumpState(); return false; }	
+			switch(state){
+				case SensorConstants.STREAMING:
+					if(--streamingCount==0){
+						state=SensorConstants.IDLE;
+						ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_IDLE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
+					}
+					return true;
+				case SensorConstants.STOPPED:
+					state = SensorConstants.REMOVED; 
+					l.componentRemovable(i);
+					return true;
+				default:
+					return false;
+			}
 		}
 	}
 
 	public boolean disable(){
 		synchronized (this) {
-			if(state==SensorConstants.IDLE || state==SensorConstants.DISCONNECTED) {
+			switch(state){
+			case SensorConstants.IDLE:
+			case SensorConstants.DISCONNECTED:
+			case SensorConstants.STREAMING:
 				state=SensorConstants.DISABLED;
 				ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISABLED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
-				return true; 
-			} else {
-//				logger.error("trying to disable a non IDLE/INUSE/DISCONNECTED sensor"); 
-//				dumpState();
-				return false; 
+				return true;
+			default:
+				return false;
 			}
 		}
 	}
 	
 	public boolean enable(){
 		synchronized (this) {
-			if(state==SensorConstants.DISABLED || state==SensorConstants.UNASSOCIATED) {
-				if(state!=SensorConstants.UNASSOCIATED) {
-					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_IDLE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
-				}
-				state=SensorConstants.IDLE; return true;
-			}
-			else { 
-				//logger.error("trying to enable a non DISABLED sensor"); dumpState(); 
-				return false; 
+			switch(state){
+			case SensorConstants.DISABLED:
+				ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_IDLE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
+			case SensorConstants.UNASSOCIATED:
+				state=SensorConstants.IDLE;
+				return true;
+			default:
+				return false;
 			}
 		}
 	}
 	
 	public boolean disconnect(){
 		synchronized (this) {
-			if(state==SensorConstants.IDLE || state==SensorConstants.INUSE || state==SensorConstants.STREAMING ||
-					state==SensorConstants.DISCONNECTED || state==SensorConstants.UNASSOCIATED) {
-				if(state!=SensorConstants.DISCONNECTED) {
-					ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
-				}
+			switch(state){
+			case SensorConstants.IDLE:
+			case SensorConstants.STREAMING:
+			case SensorConstants.UNASSOCIATED:
 				state=SensorConstants.DISCONNECTED;
-				disconnect_timestamp = System.currentTimeMillis();
-/*				logger.error("Sensor has had "+(timeout+1)+ " disconnections");
-				if(++timeout>DISCONNECT_TIMEOUT) {
-					logger.error("MAX disconnections, removing it.");
-					ProtocolManager.getProcotolManager().removeSensor(i);
-				}*/
+				ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_DISCONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
 				return true;
-			} else { logger.error("trying to disconnect a non-IDLE,DISABLED or INUSE sensor"); dumpState(); return false; }
+			default:
+				return false;
+			}
 		}
 	}
 
 	public boolean reconnect(){
 		synchronized (this) {
-			if(state==SensorConstants.DISCONNECTED) { 
-				disconnect_timestamp = -1;
+			switch(state){
+			case SensorConstants.DISCONNECTED:
 				state=SensorConstants.IDLE;
 				ev.queueEvent(new SensorStateEvent(SensorStateEvent.SENSOR_STATE_IDLE_CONNECTED,i.getName(),Constants.SENSOR_STATE_PRODUCER_ID));
+				return true;
+			case SensorConstants.IDLE:
+			case SensorConstants.DISABLED:
+			case SensorConstants.STREAMING:
 				return true; 
+			default:
+				return false;
 			}
-			else if(state==SensorConstants.IDLE || state==SensorConstants.DISABLED || state==SensorConstants.INUSE || state==SensorConstants.STREAMING) {return true; }//already connected 
-			else { logger.error("trying to reconnect a non-DISCONNECTED sensor"); dumpState(); return false; }
 		}
 	}
 	
@@ -169,8 +162,6 @@ public class SensorState {
 				return "IDLE";
 			case SensorConstants.DISABLED:
 				return "DISABLED";
-			case SensorConstants.INUSE:
-				return "INUSE";
 			case SensorConstants.DISCONNECTED:
 				return "DISCONNECTED";
 			case SensorConstants.STOPPED:

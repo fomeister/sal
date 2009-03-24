@@ -34,4 +34,10 @@ public interface StreamingThread {
 	 * has exited. Once the thread has exited, it must not be started again.
 	 */
 	public void stop();
+	
+	/**
+	 * This method returns the local stream id of this thread 
+	 * @return the local stream id of this thread
+	 */
+	public LocalStreamID getLocalStreamID();
 }
