@@ -273,9 +273,7 @@ public class LocalAgentImpl implements SALAgent{
 			try {
 				r.handle(e, s);
 			} catch (Throwable e1) {
-				logger.error("Error dispatching event to client:\n"+e1.getMessage());
 				throw new IOException("Error dispatching event to client");
-				
 			}
 		}
 		/* (non-Javadoc)

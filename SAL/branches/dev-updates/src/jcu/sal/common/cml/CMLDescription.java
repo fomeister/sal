@@ -11,6 +11,7 @@ import jcu.sal.common.cml.xml.Argument;
 import jcu.sal.common.cml.xml.CommandDescription;
 import jcu.sal.common.cml.xml.ObjectFactory;
 import jcu.sal.common.cml.xml.CommandDescription.Arguments;
+import jcu.sal.common.cml.xml.CommandDescription.Streaming.Bounds;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.common.utils.JaxbHelper;
@@ -74,6 +75,25 @@ public class CMLDescription {
 	}
 	
 	/**
+	 * This method constructs a CML description object
+	 * @param mName the name of the method which should be called when a command instance matching this description is received
+	 * @param id the command id
+	 * @param name the name of the command
+	 * @param desc the short description of the command
+	 * @param args a list of {@link CMLArgument}s representing the arguments to this command
+	 * @param bounds the smapling frequency bounds, or null if the command cannot be streamed
+	 * @param returnType the type of the return result
+	 * @throws SALRunTimeException if any of the argument is invalid   
+	 */
+	public CMLDescription(String methodName, Integer id, String name, String desc, List<CMLArgument> args, ResponseType returnType, SamplingBounds bounds){
+		this(methodName, id, name, desc, args, returnType);
+		if(bounds!=null){
+			commandDescription.setStreaming(factory.createCommandDescriptionStreaming());
+			commandDescription.getStreaming().setBounds(bounds.getBounds());
+		}
+	}
+	
+	/**
 	 * This method creates a new a CML description object re-using the same description, argument types & argNames and return type
 	 * as an existing description.
 	 * @param id the command id of the new description
@@ -81,7 +101,7 @@ public class CMLDescription {
 	 * @param existing the existing description whose description, argument types & argNames and return type will be reused
 	 */
 	public CMLDescription(Integer id, String name, CMLDescription existing){
-		this(existing.methodName, id, name,existing.getShortDesc(), existing.getArguments(), existing.getResponseType() );
+		this(existing.methodName, id, name,existing.getShortDesc(), existing.getArguments(), existing.getResponseType(), existing.getSamplingBounds());
 	}
 	
 	/**
@@ -167,6 +187,27 @@ public class CMLDescription {
 	}
 	
 	/**
+	 * This method specifies whether this command can be run multiple
+	 * times to create a stream of results.
+	 * @return whether or not this command can be streamed.
+	 */
+	public boolean isStreamable(){
+		return commandDescription.getStreaming()!=null;
+	}
+	
+	/**
+	 * This method returns the sampling frequency bounds, if this command
+	 * can be streamed. Otherwise, it will throw a {@link SALRunTimeException}.
+	 * @return the sampling frequency bounds or null if this command cannot be streamed
+	 */
+	public SamplingBounds getSamplingBounds(){
+		if(!isStreamable())
+			return null;
+		
+		return new SamplingBounds(commandDescription.getStreaming().getBounds());
+	}
+	
+	/**
 	 * This package-private methods is meant to be used
 	 * only internally.
 	 * @return
@@ -207,6 +248,78 @@ public class CMLDescription {
 		} else if (!commandDescription.equals(other.commandDescription))
 			return false;
 		return true;
+	}
+	
+
+	/**
+	 * This class encapsulates sampling frequency bounds
+	 * @author gilles
+	 *
+	 */
+	public static class SamplingBounds{
+		private static final ObjectFactory factory = new ObjectFactory();
+		private Bounds bounds;
+		
+		private SamplingBounds(Bounds b){
+			bounds = b;
+		}
+		
+		/**
+		 * This method build new sampling frequency bounds with
+		 * the given minimum, maximum & step values.
+		 * @param min the minimum sampling frequency
+		 * @param max the maximum sampling frequency
+		 * @param step the step
+		 * @param cont whether or not continuous sampling is permitted
+		 */
+		public SamplingBounds(int min, int max, int step, boolean cont){
+			bounds = factory.createCommandDescriptionStreamingBounds();
+			bounds.setMin(min);
+			bounds.setMax(max);
+			bounds.setStep(0);
+			bounds.setContinuous(cont);
+		}
+		
+		private Bounds getBounds(){
+			return bounds;
+		}
+		
+		/**
+		 * This method build new sampling frequency bounds with
+		 * the given minimum & maximum values. The step value is set to 1.
+		 * @param min the minimum sampling frequency
+		 * @param max the maximum sampling frequency
+		 * @param cont whether or not continuous sampling is permitted
+		 */
+		public SamplingBounds(int min, int max, boolean cont){
+			this(min,max,1,cont);
+		}
+		
+		/**
+		 * @return the min
+		 */
+		public int getMin() {
+			return bounds.getMin();
+		}
+		/**
+		 * @return the max
+		 */
+		public int getMax() {
+			return bounds.getMax();
+		}
+		/**
+		 * @return the step
+		 */
+		public int getStep() {
+			return bounds.getStep();
+		}
+		/**
+		 * @return the continuous
+		 */
+		public boolean isContinuous() {
+			return bounds.isContinuous();
+		}
+		
 	}
 	
 }

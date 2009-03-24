@@ -94,14 +94,11 @@ public class RMIAgentImpl implements RMIAgent {
 
 	@Override
 	public StreamID setupStream(RMICommand c, String sid) throws RemoteException, NotFoundException, SensorControlException {
-		StreamCallback target =null;
-		if(c.getRMIStreamCallBack()!=null){
-			List<String> l = c.getRMIStreamCallBack();
-			target = new ProxyStreamCallback(
-					(RMIStreamCallback )clients.get(l.get(0)).getRef(l.get(1)), 
-					l.get(0), 
-					l.get(1) );
-		}
+		List<String> l = c.getRMIStreamCallBack();
+		StreamCallback target = new ProxyStreamCallback(
+				(RMIStreamCallback )clients.get(l.get(0)).getRef(l.get(1)), 
+				l.get(0), 
+				l.get(1) );
 
 		return agent.setupStream(CommandFactory.getCommand(c.getCommand(), target), sid);
 	}
@@ -143,7 +140,7 @@ public class RMIAgentImpl implements RMIAgent {
 				throw new ConfigurationException();
 			clients.put(name, c);
 		}
-		System.out.println("Client '"+name+"' registered");
+		System.out.println("Client '"+name+"'@"+ipAddress+" registered");
 	}
 
 	@Override

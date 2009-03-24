@@ -2,10 +2,6 @@ package jcu.sal.components.sensors;
 
 public interface SensorConstants {
 
-	/**
-	 * Currently used for streaming
-	 */
-	public static final int STREAMING=7;
 	
 	/**
 	 * Removed, waiting for agent to exit
@@ -23,9 +19,9 @@ public interface SensorConstants {
 	public static final int DISCONNECTED=4;
 	
 	/**
-	 * Currently running a command (single mode, not streaming)
+	 * Currently  streaming)
 	 */
-	public static final int INUSE=3;
+	public static final int STREAMING=3;
 	
 	/**
 	 * Disabled by user

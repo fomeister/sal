@@ -374,9 +374,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 				synchronized(s) {
 					sensors.remove(i);
 					//find all setup streaming threads for this sensor
-					for(StreamingThread t: findThreads(s))
-						t.stop();
-					
+					stopThreads(s);					
 				}
 			} else {
 				logger.error("Sensor " + i.toString()+ " doesnt exist and can NOT be unassociated");
@@ -419,9 +417,10 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 				//sync with respect to other commands
 				synchronized(s){
 					//Catch the generic commands enable & disable
-					if(c.getCID()==AbstractStore.GENERIC_DISABLE_CID)
+					if(c.getCID()==AbstractStore.GENERIC_DISABLE_CID){
+						stopThreads(s);
 						s.disable();
-					else if(c.getCID()==AbstractStore.GENERIC_ENABLE_CID)
+					}else if(c.getCID()==AbstractStore.GENERIC_ENABLE_CID)
 						s.enable();
 					else {
 						//sensor specific command
@@ -455,28 +454,27 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * @throws SensorControlException if the command cannot be executed
 	 */
 	private void runOnce(Command c, Sensor s) throws SensorControlException{
-		Response r;
+		byte[] b;
 		//Check if it s idle
-		if(s.startRunCmd()) {
+		if(s.isAvailableForCommand()) {
 			try {
 				logger.debug("Running command "+c.getCID()+" - method "+findMethod(s, c).getName()+" - ONCE");
-				r = new Response((byte[]) findMethod(s, c).invoke(this,c, s), new StreamID(s.getID().getName(), String.valueOf(c.getCID()), id.getName()));
+				b = (byte[]) findMethod(s, c).invoke(this,c, s);
 			}catch (InvocationTargetException e) {
 				//method threw an exception
 				if(e.getCause() instanceof SensorDisconnectedException){
 					logger.debug("Disconnecting sensor '"+s.getID().getName()+"("+s.getNativeAddress()+")'");
 					s.disconnect();
-				} else 
-					s.finishRunCmd();
+				} 
 				throw new SensorControlException("Sensor control error",e.getCause());
 			} catch (Throwable t) {
 				logger.error("Could NOT run the command (error with invoke() )");
 				t.printStackTrace();
-				s.finishRunCmd();
 				throw new SALRunTimeException("Programming error in the protocol subclass",t);
 			}
-			s.finishRunCmd();
-			ProtocolManager.queueResponse(r, c.getStreamCallBack());
+			ProtocolManager.queueResponse(
+					new Response(b, new StreamID(s.getID().getName(), String.valueOf(c.getCID()), id.getName())),
+					c.getStreamCallBack());
 		} else {
 			//logger.error("Sensor "+sid.getName()+" not available to run the command");
 			throw new SensorControlException("sensor unavailable", new SensorDisconnectedException("Sensor "+s.getID().getName()+" not available to run the command"));
@@ -752,11 +750,24 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		List<StreamingThread> l = new Vector<StreamingThread>();
 		synchronized(streams){
 			for(LocalStreamID id: streams.keySet())
-				if(id.getSID().equals(s.getID()))
+				if(id.getSID().equals(s.getID().getName()))
 					l.add(streams.get(id));
 
 		}
 		return l;
+	}
+	
+	/**
+	 * This method stops all the {@link StreamingThread}s
+	 * for a given sensor which have been setup. Must be called 
+	 * with lock on s held.
+	 * @param s the sensor for which we need the list of streaming threads
+	 * @return all the {@link StreamingThread}s
+	 * for a given sensor which have been setup
+	 */
+	private void stopThreads(Sensor s){
+		for(StreamingThread t: findThreads(s))
+			t.stop();
 	}
 		
 	private class Autodetection implements Runnable {

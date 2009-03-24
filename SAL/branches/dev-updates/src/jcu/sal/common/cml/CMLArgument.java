@@ -41,11 +41,14 @@ public class CMLArgument {
 	 * @param type the type of this argument (see {@link CMLConstants}).
 	 * @param items a map of possible values and their textual names
 	 * @param optional if the argument is optional
+	 * @param def the default value, or null if there is no default
 	 */
-	public CMLArgument(String name, Map<String,String> items, boolean optional){
+	public CMLArgument(String name, Map<String,String> items, boolean optional, String def){
 		this(name,optional);
 		argument.setType(CMLConstants.ARG_TYPE_LIST);
 		addList(items);
+		if(def!=null)
+			argument.setDefaultValue(def);
 	}
 	
 	/**
@@ -56,15 +59,31 @@ public class CMLArgument {
 	 * @param name the name of this argument.
 	 * @param type the type of this argument (see {@link CMLConstants}).
 	 * @param optional whether or not this argument is optional.
+	 * @param def the default value, or null if there is no default
 	 */
-	public CMLArgument(String name, ArgumentType type, boolean optional){
+	public CMLArgument(String name, ArgumentType type, boolean optional, String def){
 		this(name,optional);
 		if(!type.equals(ArgumentType.FloatArgument)	&& 
 				!type.equals(ArgumentType.StringArgument) && 
 				!type.equals(ArgumentType.IntegerArgument))
 			throw new SALRunTimeException("The given type ("+type+") is invalid");
 		
+		if(def!=null){
+			if(type.equals(ArgumentType.FloatArgument))
+				try{Float.parseFloat(def);}
+				catch(NumberFormatException e){ 
+					throw new SALRunTimeException("The default value is not of type float"); 
+				}
+			else if(type.equals(ArgumentType.IntegerArgument))
+				try{Integer.parseInt(def);}
+			catch(NumberFormatException e){ 
+				throw new SALRunTimeException("The default value is not of type int"); 
+			} 	
+			argument.setDefaultValue(def);
+		}
+		
 		argument.setType(type.getType());
+		
 	}
 	
 	/**
@@ -92,7 +111,23 @@ public class CMLArgument {
 	}
 	
 	/**
-	 * This method build an bounded argument of type {@link CMLConstants#ARG_TYPE_INT}
+	 * This method build a bounded argument of type {@link CMLConstants#ARG_TYPE_FLOAT}
+	 * @param name the name of this argument
+	 * @param optional whether this argument is optional or not
+	 * @param min the min value
+	 * @param max the max value
+	 * @param step the step value, can be equal to 0, which means any value between min and max are valid
+	 * @param def the default value, or null if there is no default
+	 * @throws SALRunTimeException if the minimum is greater than the maximum or
+	 * if the step value is negative
+	 */
+	public CMLArgument(String name, boolean optional, float min, float max, float step, float def){
+		this(name,optional,min,max,step);
+		argument.setDefaultValue(String.valueOf(def));
+	}
+	
+	/**
+	 * This method build a bounded argument of type {@link CMLConstants#ARG_TYPE_INT}
 	 * @param name the name of this argument
 	 * @param optional whether this argument is optional or not
 	 * @param min the min value
@@ -107,7 +142,22 @@ public class CMLArgument {
 	}
 	
 	/**
-	 * This method build an bounded argument of type {@link CMLConstants#ARG_TYPE_INT}
+	 * This method build a bounded argument of type {@link CMLConstants#ARG_TYPE_INT}
+	 * @param name the name of this argument
+	 * @param optional whether this argument is optional or not
+	 * @param min the min value
+	 * @param max the max value
+	 * @param step the step value
+	 * @throws SALRunTimeException if the minimum is greater than the maximum or
+	 * if the step value is negative
+	 */
+	public CMLArgument(String name, boolean optional, int min, int max, int step, int def){
+		this(name, optional, min, max, step);
+		argument.setDefaultValue(String.valueOf(def));
+	}
+	
+	/**
+	 * This method build a bounded argument of type {@link CMLConstants#ARG_TYPE_INT}
 	 * The step value is set to 1.
 	 * @param name the name of this argument
 	 * @param optional whether this argument is optional or not
@@ -171,6 +221,22 @@ public class CMLArgument {
 	}
 	
 	/**
+	 * This method returns whether this argument has a default value
+	 * @return whether this argument has a default value
+	 */
+	public boolean hasDefaultValue(){
+		return argument.getDefaultValue()!=null;
+	}
+	
+	/**
+	 * This method returns the default value for this argument
+	 * @return the default value for this argument 
+	 */
+	public String getDefaultValue(){
+		return argument.getDefaultValue();
+	}
+	
+	/**
 	 * This method returns the minimum value for this argument
 	 * if this argument is of type {@link CMLConstants#ARG_TYPE_INT}.
 	 * @return the minimum value for this argument
@@ -184,6 +250,22 @@ public class CMLArgument {
 			throw new SALRunTimeException("this argument is not of type integer");
 		
 		return (int) Float.parseFloat(argument.getBounds().getMin());
+	}
+	
+	/**
+	 * This method returns the default value for this argument
+	 * if this argument is of type {@link CMLConstants#ARG_TYPE_INT}.
+	 * @return the default value for this argument
+	 * @throw {@link SALRunTimeException} if this argument is not an int 
+	 */
+	public int getDefaultValueInt(){
+		if(!argument.getType().equals(CMLConstants.ARG_TYPE_INT))
+			throw new SALRunTimeException("this argument is not of type integer");
+		
+		if(!hasDefaultValue())
+			throw new SALRunTimeException("this argument does not have a default value");
+		
+		return (int) Float.parseFloat(argument.getDefaultValue());
 	}
 	
 	/**
@@ -232,6 +314,22 @@ public class CMLArgument {
 			throw new SALRunTimeException("this argument is not of type integer");
 		
 		return Float.parseFloat(argument.getBounds().getMin());
+	}
+	
+	/**
+	 * This method returns the default value for this argument
+	 * if this argument is of type {@link CMLConstants#ARG_TYPE_INT}.
+	 * @return the default value for this argument
+	 * @throw {@link SALRunTimeException} if this argument is not an int 
+	 */
+	public float getDefaultValueFloat(){
+		if(!argument.getType().equals(CMLConstants.ARG_TYPE_FLOAT))
+			throw new SALRunTimeException("this argument is not of type float");
+		
+		if(!hasDefaultValue())
+			throw new SALRunTimeException("this argument does not have a default value");
+		
+		return Float.parseFloat(argument.getDefaultValue());
 	}
 	
 	/**

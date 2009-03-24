@@ -15,6 +15,7 @@ import javax.swing.WindowConstants;
 
 import jcu.sal.client.gui.ClientController;
 import jcu.sal.common.CommandFactory;
+import jcu.sal.common.Response;
 import jcu.sal.common.StreamID;
 import jcu.sal.common.agents.SALAgent;
 import jcu.sal.common.cml.CMLConstants;
@@ -25,6 +26,7 @@ import jcu.sal.common.events.Event;
 import jcu.sal.common.events.ProtocolListEvent;
 import jcu.sal.common.events.SensorNodeEvent;
 import jcu.sal.common.events.SensorStateEvent;
+import jcu.sal.common.exceptions.ClosedStreamException;
 import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
@@ -32,7 +34,7 @@ import jcu.sal.common.exceptions.SensorControlException;
 import jcu.sal.common.pcml.ProtocolConfigurations;
 import jcu.sal.common.sml.SMLDescription;
 
-public abstract class AbstractClientView implements ClientEventHandler, ClientView {
+public abstract class AbstractClientView implements ClientEventHandler, ClientView, ResponseHandler {
 	
 	protected JFrame frame;
 	protected SensorTree tree;
@@ -112,9 +114,16 @@ public abstract class AbstractClientView implements ClientEventHandler, ClientVi
 	public void sendCommand(Hashtable<String, String> values,
 			final CMLDescription cml, final Context c) {
 		final ResponseHandler handler = createResponseHandler(cml, c);
-
-		final CommandFactory cf = new CommandFactory(cml, handler,Integer.parseInt(values.remove(CommandDataPane.INTERVAL_NAME)));
+		final CommandFactory cf;
 		
+		if(handler==null)
+			return;
+
+		cf = new CommandFactory(cml, handler);
+		
+		if(values.containsKey(CommandDataPane.INTERVAL_NAME))
+			cf.setInterval(Integer.parseInt(values.remove(CommandDataPane.INTERVAL_NAME)));
+			
 		//put all arg-values in 
 		for(String name: values.keySet())
 			cf.addArgumentValue(name, values.get(name));
@@ -156,10 +165,13 @@ public abstract class AbstractClientView implements ClientEventHandler, ClientVi
 				return new JPEGViewer(c, this);
 			if(t.getContentType().equals(CMLConstants.CONTENT_TYPE_TEXT_PLAIN))
 				return new TextResponseHandler(c,this);
-			else
+			else{
 				addLog("Cannot send the command - unhandled content type '"+cml.getResponseType().getContentType()+"'");
-		}
-		return null;
+				return null;
+			}
+		} else
+			return this;
+		
 	}
 
 
@@ -218,13 +230,44 @@ public abstract class AbstractClientView implements ClientEventHandler, ClientVi
 			l += "\n";
 		log.append(l);
 		log.setCaretPosition(log.getDocument().getLength());
-
 	}
+	
+	@Override
+	public void collect(Response r){
+		try {
+			r.getBytes();
+		} catch (SensorControlException e) {
+			if(!e.getClass().equals(ClosedStreamException.class))
+				addLog("Error: "+e.getMessage());
+		}
+	}
+	
 		
 	/**
 	 * This method is called after the frame has been disposed, when the application exits.
 	 * It gives subclasses a chance to do some cleanup before exiting.
 	 */
 	public void release(){}
+	
+	/*
+	 * method of the ResponseHandler supertype
+	 */
+	/**
+	 * This method is invoked on the handler whenever the handler must close
+	 */
+	public void close(){}
+	
+	/**
+	 * This method is invoked on the handler whenever the stream ID
+	 * for a stream is known.
+	 * @param sid
+	 */
+	public void setStreamID(StreamID sid){}
+	
+	/**
+	 * This method returns the StreamID or null if there is none
+	 * @return the StreamID or null if there is none 
+	 */
+	public StreamID getStreamID(){return null;}
 
 }

@@ -8,6 +8,7 @@ import jcu.sal.common.Response;
 import jcu.sal.common.Slog;
 import jcu.sal.common.StreamID;
 import jcu.sal.common.CommandFactory.Command;
+import jcu.sal.common.cml.StreamCallback;
 import jcu.sal.common.exceptions.ClosedStreamException;
 import jcu.sal.common.exceptions.SALRunTimeException;
 import jcu.sal.common.exceptions.SensorControlException;
@@ -30,11 +31,13 @@ public class DefaultStreamingThread implements StreamingThread, Runnable {
 	private LocalStreamID lid;
 	private StreamID sid;
 	private boolean stop;
+	private StreamCallback cb;
 	
 	public DefaultStreamingThread(Method m, AbstractProtocol o, Sensor s, Command c, StreamingThreadListener l, LocalStreamID id){
 		stop = false;
 		sensor = s;
 		method = m;
+		cb = c.getStreamCallBack();
 		protocol = o;
 		lid = id;
 		interval = c.getInterval();
@@ -118,7 +121,7 @@ public class DefaultStreamingThread implements StreamingThread, Runnable {
 				}
 				
 				try {
-					cmd.getStreamCallBack().collect(r);
+					cb.collect(r);
 				} catch (Throwable e) {
 					error = true;
 					logger.debug("Error calling stream callback - terminating stream");
@@ -135,11 +138,16 @@ public class DefaultStreamingThread implements StreamingThread, Runnable {
 		if(!error){
 			sensor.stopStream();
 			try {
-				cmd.getStreamCallBack().collect(new Response(sid, new ClosedStreamException()));
+				cb.collect(new Response(sid, new ClosedStreamException()));
 			} catch (IOException e) {}
 		}
 		//logger.debug("streaming thread "+sid.getID()+" exiting");
 		listener.threadExited(lid);
+	}
+
+	@Override
+	public LocalStreamID getLocalStreamID() {
+		return lid;
 	}
 
 }

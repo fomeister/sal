@@ -22,6 +22,4 @@ public class CMLDescriptionStore extends AbstractStore {
 			return null;
 		}
 	}
-	
-	private CMLDescriptionStore(){}
 }
