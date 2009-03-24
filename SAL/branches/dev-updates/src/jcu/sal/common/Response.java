@@ -21,7 +21,7 @@ public class Response implements Serializable {
 	private StreamID sid;
 	private SensorControlException exception;
 	private long timeStamp;
-	private SALAgent agent;
+	//private SALAgent agent;
 	
 	/**
 	 * This method builds a new response with data, and no exception
@@ -135,20 +135,19 @@ public class Response implements Serializable {
 	 * Clients should not use this method.
 	 * @param a the SALAgent which generated this response.
 	 */
-	public Response setAgent(SALAgent a){
-		agent = a;
-		sid.setAgent(a);
+	public Response setAgentID(String id){
+		sid.setAgentID(id);
 		return this;
 	}
 	
-	/**
-	 * This method returns a reference to the {@link SALAgent} which creates this
-	 * response.
-	 * @return a reference to the SAL agent which generated this response
-	 */
-	public SALAgent getAgent(){
-		return agent;
-	}
+//	/**
+//	 * This method returns a reference to the {@link SALAgent} which creates this
+//	 * response.
+//	 * @return a reference to the SAL agent which generated this response
+//	 */
+//	public SALAgent getAgent(){
+//		return agent;
+//	}
 	
 	/**
 	 * This method returns the {@link StreamID} this response belongs to.

@@ -24,6 +24,8 @@ import javax.swing.tree.TreePath;
 import jcu.sal.client.gui.ClientController;
 import jcu.sal.common.Constants;
 import jcu.sal.common.agents.SALAgent;
+import jcu.sal.common.events.SensorStateEvent;
+import jcu.sal.common.exceptions.ArgumentNotFoundException;
 import jcu.sal.common.exceptions.SALDocumentException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.common.pcml.ProtocolConfigurations;
@@ -151,9 +153,15 @@ public class SensorTree implements TreeSelectionListener{
 		}
 	}
 	
+	/**
+	 * This method toggles the sensor state
+	 * @param a the sal agent
+	 * @param sid the sensor id
+	 * @param state the new state (SensorStateEvent#SENSOR_STATE_*)
+	 */
 	public void toggleSensor(SALAgent a, String sid, int state){
 		synchronized(rootNode){
-			toggleSensor(findSensorNode(a, sid));
+			toggleSensor(findSensorNode(a, sid), state);
 		}
 	}
 	
@@ -212,19 +220,29 @@ public class SensorTree implements TreeSelectionListener{
             			setIcon(Context.localAgentIcon);
             		else
             			setIcon(Context.remoteAgentIcon);
+            		setToolTipText(null);
             		break;
             	case Context.PROTOCOL_TYPE:
             		setIcon(Context.protocolIcon);
+            		setToolTipText(null);
             		break;
             	case Context.SENSOR_TYPE:
-                    if(l.isEnabled()) {
+                    if(l.getSensorState()==SensorStateEvent.SENSOR_STATE_IDLE_CONNECTED) {
                     	setIcon(Context.sensorEnabledIcon);
                         setToolTipText("Sensor enabled");
                         setFont(enabledFont);
-                    } else {
+                    } else if(l.getSensorState()==SensorStateEvent.SENSOR_STATE_DISABLED) {
                     	setIcon(Context.sensorDisabledIcon);
                     	setToolTipText("Sensor disabled");
                     	setFont(disabledFont);
+                    } else if(l.getSensorState()==SensorStateEvent.SENSOR_STATE_DISCONNECTED) {
+                    	setIcon(Context.sensorDisconnectedIcon);
+                    	setToolTipText("Sensor disconnected");
+                    	setFont(disabledFont);
+                    } else if(l.getSensorState()==SensorStateEvent.SENSOR_STATE_STREAMING) {
+                    	setIcon(Context.sensorStreamingIcon);
+                    	setToolTipText("Sensor streaming");
+                    	setFont(enabledFont);
                     }
             		break;            
             }
@@ -349,10 +367,11 @@ public class SensorTree implements TreeSelectionListener{
 	/**
 	 * This method toggles the state of a sensor node in this tree
 	 * @param n the sensor node
+	 * @param state the new sensor state (
 	 */
-	private void toggleSensor(final DefaultMutableTreeNode n){
+	private void toggleSensor(final DefaultMutableTreeNode n, int state){
 		Context stl = (Context) n.getUserObject();
-		stl.toggleState();
+		stl.toggleSensorState(state);
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run(){
 				treeModel.reload(n);
@@ -385,9 +404,11 @@ public class SensorTree implements TreeSelectionListener{
 			//add protocol node
 			proto = addNode(p, parent);
 			//for all sensor under this protocol ...
+			try{
 			for(SMLDescription s : smls.getDescriptions(p.getID()))
 				//add them
 				addNode(s,proto);
+			} catch (ArgumentNotFoundException e){}
 		}
 	}
 }

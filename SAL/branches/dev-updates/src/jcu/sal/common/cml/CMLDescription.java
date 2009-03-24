@@ -81,7 +81,7 @@ public class CMLDescription {
 	 * @param existing the existing description whose description, argument types & argNames and return type will be reused
 	 */
 	public CMLDescription(Integer id, String name, CMLDescription existing){
-		this(existing.methodName, id, name,existing.getShortDesc(), existing.getArguments(), existing.getReturnType() );
+		this(existing.methodName, id, name,existing.getShortDesc(), existing.getArguments(), existing.getResponseType() );
 	}
 	
 	/**
@@ -162,7 +162,7 @@ public class CMLDescription {
 	 * This method returns the return type for this  CML description
 	 * @return the return type for this  CML description
 	 */
-	public ResponseType getReturnType() {
+	public ResponseType getResponseType() {
 		return new ResponseType(commandDescription.getResponse());
 	}
 	

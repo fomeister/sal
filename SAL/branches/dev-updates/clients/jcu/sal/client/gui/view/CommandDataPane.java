@@ -10,11 +10,13 @@ import java.util.Map;
 import java.util.Vector;
 
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JTextArea;
@@ -24,8 +26,10 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import jcu.sal.common.CommandFactory;
 import jcu.sal.common.cml.ArgumentType;
 import jcu.sal.common.cml.CMLArgument;
+import jcu.sal.common.cml.CMLConstants;
 import jcu.sal.common.cml.CMLDescription;
 import jcu.sal.common.cml.ResponseType;
 
@@ -39,6 +43,7 @@ public class CommandDataPane implements ActionListener{
 	private Hashtable<String, ArgumentValueHolder> argValues;
 	private CMLDescription cml;
 	private Context current;
+	public static final String INTERVAL_NAME="INTERVAL_SLIDER";
 	
 	public CommandDataPane(ClientView v){
 		view = v;
@@ -77,13 +82,13 @@ public class CommandDataPane implements ActionListener{
 		dataPane.repaint();
 
 		if(c!=null){
-			int i;
+			int i=0;
 			
-			addDescription(c.getShortDesc());
-			addRetType(c.getReturnType());
-			i = addArgs(c.getArguments());
+			i += addDescription(c.getShortDesc());
+			i += addRetType(c.getResponseType());
+			i += addArgs(c.getArguments());
 			SpringLayoutHelper.makeCompactGrid(dataPane,
-					(i+2), 2, //rows, cols
+					i, 2, //rows, cols
 	                6, 6,        //initX, initY
 	                6, 6);       //xPad, yPad
 			send.setEnabled(true);
@@ -110,7 +115,7 @@ public class CommandDataPane implements ActionListener{
 		}
 	}
 	
-	private void addDescription(String d){
+	private int addDescription(String d){
 		dataPane.add(new JLabel("Description:"));
 		JTextArea t = new JTextArea(d);
 		t.setEditable(false);
@@ -118,24 +123,30 @@ public class CommandDataPane implements ActionListener{
 		s.setPreferredSize(new Dimension(200,75));
 		s.setMaximumSize(new Dimension(800,75));
 		dataPane.add(s);
+		return 1;
 	}
 	
-	private void addRetType(ResponseType r){
+	private int addRetType(ResponseType r){
 		dataPane.add(new JLabel("Return Type:"));
-		dataPane.add(new JLabel(r.getReturnType()));
-		dataPane.add(new JLabel("Content Type:"));
-		dataPane.add(new JLabel(r.getContentType()));
-		dataPane.add(new JLabel("Unit:"));
-		dataPane.add(new JLabel(r.getUnit()));
+		dataPane.add(new JLabel(r.getType()));
+		if(!r.getType().equals(CMLConstants.RET_TYPE_VOID)){
+			dataPane.add(new JLabel("Content Type:"));
+			dataPane.add(new JLabel(r.getContentType()));
+			dataPane.add(new JLabel("Unit:"));
+			dataPane.add(new JLabel(r.getUnit()));
+			return 3;
+		} else 
+			return 1;
 	}
 	
-	private void addInterval(){
-		ArgumentValueHolder v = new IntervalArgument(-1,3600);
+	private int  addInterval(){
+		ArgumentValueHolder v = new IntervalArgument();
 		JLabel l = new JLabel("Sampling frequency");
 		dataPane.add(l);
-		argValues.put(AbstractClientView.INTERVAL_NAME, v);
+		argValues.put(CommandDataPane.INTERVAL_NAME, v);
 		l.setLabelFor(v.getComponent());
 		dataPane.add(v.getComponent());
+		return 1;
 	}
 	
 	private int addArgs(List<CMLArgument> args){
@@ -160,8 +171,8 @@ public class CommandDataPane implements ActionListener{
 			
 			nb++;
 		}
-		addInterval();
-		return ++nb;
+		nb += addInterval();
+		return nb;
 	}
 	
 	private ArgumentValueHolder createNumberArgHolder(CMLArgument arg){
@@ -338,49 +349,96 @@ public class CommandDataPane implements ActionListener{
 		}	
 	}
 	
-	private static class IntervalArgument implements ArgumentValueHolder, ChangeListener{
-		private JPanel mainPane;
+	private static class IntervalArgument implements ArgumentValueHolder, ChangeListener, ActionListener{
+		private static final String ONCE_LABEL="Once";
+		private static final String CONTINUOUS_LABEL="Continuous";
+		private static final String CUSTOM_LABEL="Predefined";
+		
+		private JPanel mainPane, dataPane, buttonPane;
 		private JSlider slider;
+		private JRadioButton once, continuous, custom;
 		private JLabel label;
-		private int min,max;
 
 
-		public IntervalArgument(int mi, int ma){
+		public IntervalArgument(){
+		
 			mainPane = new JPanel();
+			dataPane = new JPanel();
+			buttonPane = new JPanel();
 			mainPane.setLayout(new BoxLayout(mainPane, BoxLayout.LINE_AXIS));
-			min = mi;
-			max = ma;
-			slider = new JSlider(SwingConstants.HORIZONTAL, min, max, min);
+			dataPane.setLayout(new BoxLayout(dataPane, BoxLayout.PAGE_AXIS));
+			buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.LINE_AXIS));
+			
+			once = new JRadioButton(ONCE_LABEL);
+			once.setActionCommand(ONCE_LABEL);
+			once.addActionListener(this);
+			continuous = new JRadioButton(CONTINUOUS_LABEL);
+			continuous.setActionCommand(CONTINUOUS_LABEL);
+			continuous.addActionListener(this);
+			custom = new JRadioButton(CUSTOM_LABEL);
+			custom.setActionCommand(CUSTOM_LABEL);
+			custom.addActionListener(this);
+			ButtonGroup group = new ButtonGroup();
+			group.add(custom);
+			group.add(continuous);
+			group.add(once);			
+			
+			once.setSelected(true);
+			buttonPane.add(custom);
+			buttonPane.add(continuous);
+			buttonPane.add(once);
+			dataPane.add(buttonPane);
+			
+			slider = new JSlider(SwingConstants.HORIZONTAL, 1, 10000, 1);
+			slider.setValue(1000);
 			slider.setAlignmentX(Component.CENTER_ALIGNMENT);
 			slider.addChangeListener(this);
 			slider.setSnapToTicks(true);
-			mainPane.add(slider);
-			label = new JLabel("Only once");
+			slider.setEnabled(false);
+			dataPane.add(slider);
+			
+			label = new JLabel("Value: run once");
 			label.setMinimumSize(new Dimension(100,30));
 			label.setMaximumSize(new Dimension(200,30));
 			label.setSize(label.getMinimumSize());
 			label.setPreferredSize(label.getMinimumSize());
 			label.setAlignmentX(Component.CENTER_ALIGNMENT);
+			mainPane.add(dataPane);
 			mainPane.add(label);
 		}
 		
 		@Override
 		public void stateChanged(ChangeEvent e) {
-			if(slider.getValue()==-1)
-				label.setText("Only once");
-			else if(slider.getValue()==0)
-				label.setText("Continous");
-			else
-				label.setText("every "+slider.getValue()+" ms");			
+			label.setText("Value: "+slider.getValue()+" ms");		
 		}
 
 		@Override
 		public String getValue() {
-			return String.valueOf(slider.getValue());
+			if(once.isSelected()){
+				return String.valueOf(CommandFactory.ONLY_ONCE);
+			} else if(continuous.isSelected()){
+				return String.valueOf(CommandFactory.CONTINUOUS_STREAM);
+			} else {
+				return String.valueOf(slider.getValue());
+			}
 		}
 		
 		public JPanel getComponent(){
 			return mainPane;
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			if(e.getActionCommand().equals(ONCE_LABEL)){
+				label.setText("Value: once");
+				slider.setEnabled(false);
+			} else if(e.getActionCommand().equals(CONTINUOUS_LABEL)){
+				label.setText("Value: continuous");
+				slider.setEnabled(false);				
+			} else if(e.getActionCommand().equals(CUSTOM_LABEL)){
+				label.setText("Value: "+slider.getValue()+" ms");
+				slider.setEnabled(true);
+			} 
 		}
 	}
 }

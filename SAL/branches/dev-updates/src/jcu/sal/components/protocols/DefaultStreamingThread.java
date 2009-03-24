@@ -41,20 +41,25 @@ public class DefaultStreamingThread implements StreamingThread, Runnable {
 		cmd = c;
 		listener = l;
 		sid = new StreamID(id.getSID(),id.getCID(),id.getPID());
+		logger.debug("init streaming thread "+sid.getID()+" interval: "+interval);
+		t = new Thread(this, "Streaming thread");
 	}
 
 	@Override
 	public synchronized void start(){
-		if(t==null){
-			t = new Thread(this, "Streaming thread");
-			t.start();
-		} else
+		if(t==null)
+			throw new SALRunTimeException("This thread has already been stopped ");
+		
+		if(t.isAlive())
 			throw new SALRunTimeException("This thread has already been started");
+		
+		t.start();
 	}
 
 	@Override
 	public synchronized void stop() {
 		if(t!=null && t.isAlive()){
+			//thread was started
 			stop = true;
 			t.interrupt();
 			try {
@@ -63,7 +68,15 @@ public class DefaultStreamingThread implements StreamingThread, Runnable {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
+			//set t to null so the thread cant be started or stopped anymore
+			t=null;
+		} else if(t!=null && !t.isAlive()){
+			//thread was never started
+			listener.threadExited(lid);
+			//set t to null so the thread cant be started or stopped anymore
+			t=null;
+		} //else 
+		//t==null, thread already stopped once before.
 	}
 
 	@Override
@@ -75,12 +88,14 @@ public class DefaultStreamingThread implements StreamingThread, Runnable {
 	public void run(){
 		Response r;
 		boolean error = false;
+		//logger.debug("streaming thread "+sid.getID()+" starting");
 		try {
 			while(!stop && !error){
 				try {
 					r = new Response((byte[]) method.invoke(protocol, cmd, sensor),sid);
 				}catch (InvocationTargetException e) {
 					//method threw an exception
+					logger.debug("Stream "+sid.getID()+": error while running command");
 					e.printStackTrace();
 					error = true;
 					r = new Response(sid, new SensorControlException("Sensor control error:\n"+e.getCause().getMessage()));
@@ -104,7 +119,7 @@ public class DefaultStreamingThread implements StreamingThread, Runnable {
 				
 				try {
 					cmd.getStreamCallBack().collect(r);
-				} catch (IOException e) {
+				} catch (Throwable e) {
 					error = true;
 					logger.debug("Error calling stream callback - terminating stream");
 					e.printStackTrace();
@@ -123,6 +138,7 @@ public class DefaultStreamingThread implements StreamingThread, Runnable {
 				cmd.getStreamCallBack().collect(new Response(sid, new ClosedStreamException()));
 			} catch (IOException e) {}
 		}
+		//logger.debug("streaming thread "+sid.getID()+" exiting");
 		listener.threadExited(lid);
 	}
 

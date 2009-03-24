@@ -373,10 +373,9 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 				//make sure no command is being run on the sensor
 				synchronized(s) {
 					sensors.remove(i);
-					if(s.isStreaming())
-						//find all streaming threads for this sensor
-						for(StreamingThread t: findThreads(s))
-							t.stop();
+					//find all setup streaming threads for this sensor
+					for(StreamingThread t: findThreads(s))
+						t.stop();
 					
 				}
 			} else {
@@ -460,6 +459,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		//Check if it s idle
 		if(s.startRunCmd()) {
 			try {
+				logger.debug("Running command "+c.getCID()+" - method "+findMethod(s, c).getName()+" - ONCE");
 				r = new Response((byte[]) findMethod(s, c).invoke(this,c, s), new StreamID(s.getID().getName(), String.valueOf(c.getCID()), id.getName()));
 			}catch (InvocationTargetException e) {
 				//method threw an exception
@@ -496,6 +496,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		LocalStreamID lid;
 		if(s.startStream()){
 			lid = new LocalStreamID(s.getID().getName(),String.valueOf(c.getCID()), id.getName());
+			logger.debug("Setting up stream: "+lid.getID());
 			streams.put(lid, createStreamingThread(c, s, lid));
 		} else 
 			throw new SensorControlException("sensor unavailable", new SensorDisconnectedException("Sensor "+s.getID().getName()+" not available to run the command"));
@@ -544,7 +545,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		Class<?>[] params = {Command.class,Sensor.class};
 		//logger.debug("Looking for method name for command ID "+c.getCID()+" - got: "+cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()));
 		Method m = getClass().getDeclaredMethod(cmls.getMethodName(internal_getCMLStoreKey(s), c.getCID()), params); 
-		logger.debug("Running method: "+ m.getName()+" on sensor ID:"+s.getID().getName() );
+		//logger.debug("Running method: "+ m.getName()+" on sensor ID:"+s.getID().getName() );
 		return m;
 	}
 	
@@ -557,6 +558,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 */
 	@Override
 	public final void threadExited(LocalStreamID lid){
+		logger.debug("stream "+lid.getID()+" exited");
 		streams.remove(lid);
 	}
 	
@@ -564,7 +566,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * This method is called whenever a new stream must be setup.
 	 * The subclass creates an instance of a thread object that implements the
 	 * {@link StreamingThread} interface.
-	 * @param c the command for whihc the stream is to be setup 
+	 * @param c the command for which the stream is to be setup 
 	 * @param s the sensor which will receive the command
 	 * @param id the local stream id
 	 * @return the {@link StreamingThread}
@@ -740,11 +742,11 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	}
 	
 	/**
-	 * This method finds all the currently active {@link StreamingThread}s
-	 * for a given sensor
+	 * This method finds all the {@link StreamingThread}s
+	 * for a given sensor which have been setup.
 	 * @param s the sensor for which we need the list of streaming threads
-	 * @return all the currently active {@link StreamingThread}s
-	 * for a given sensor
+	 * @return all the {@link StreamingThread}s
+	 * for a given sensor which have been setup
 	 */
 	private List<StreamingThread> findThreads(Sensor s){
 		List<StreamingThread> l = new Vector<StreamingThread>();
@@ -756,7 +758,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 		}
 		return l;
 	}
-	
+		
 	private class Autodetection implements Runnable {
 		Thread t;
 		
