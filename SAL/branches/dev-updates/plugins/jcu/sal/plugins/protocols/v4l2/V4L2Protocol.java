@@ -172,7 +172,9 @@ public class V4L2Protocol extends AbstractProtocol {
 				new CMLArgument(CMLDescriptionStore.QUALITY_VALUE_NAME,
 						false,
 						V4L4JConstants.MIN_JPEG_QUALITY,
-						V4L4JConstants.MAX_JPEG_QUALITY
+						V4L4JConstants.MAX_JPEG_QUALITY,
+						1,
+						80
 						)
 				);
 		r = new ResponseType(CMLConstants.RET_TYPE_BYTE_ARRAY,CMLConstants.CONTENT_TYPE_JPEG);

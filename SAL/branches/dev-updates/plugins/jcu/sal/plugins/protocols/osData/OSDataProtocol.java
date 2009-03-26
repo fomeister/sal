@@ -54,7 +54,7 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	/**
 	 * User, System, Nice and idle tiem counter update interval in millisecond
 	 */
-	private int UPDATE_INTERVAL = 10 * 1000;
+	private int UPDATE_INTERVAL = 2 * 1000;
 	
 	
 	/**
