@@ -331,7 +331,7 @@ public class V4L2Protocol extends AbstractProtocol {
 				return String.valueOf(ctrl.getValue()).getBytes();
 			} catch (V4L4JException e) {
 				logger.error("Could NOT read the value for control "+ctrl.getName());
-				throw new SensorIOException("Error reading the contol value (CID:'"+c.getCID()+"')",e);
+				throw new SensorIOException("Error reading the contol value (CID:'"+c.getCID()+"'): "+e.getMessage());
 			}			
 		} else {
 			logger.error("Could NOT find the control matching command ID "+c.getCID());
@@ -347,7 +347,7 @@ public class V4L2Protocol extends AbstractProtocol {
 				return ctrl.getDiscreteValueNames().get(ctrl.getDiscreteValues().indexOf(ctrl.getValue())).getBytes();
 			} catch (V4L4JException e) {
 				logger.error("Could NOT read the value for control "+ctrl.getName());
-				throw new SensorIOException("Error reading the contol value (CID:'"+c.getCID()+"')",e);
+				throw new SensorIOException("Error reading the contol value (CID:'"+c.getCID()+"'): "+e.getMessage());
 			}			
 		} else {
 			logger.error("Could NOT find the control matching command ID "+c.getCID());
@@ -364,7 +364,7 @@ public class V4L2Protocol extends AbstractProtocol {
 				return null;
 			} catch (V4L4JException e) {
 				logger.error("Could NOT set the value for control "+ctrl.getName());
-				throw new SensorIOException("Error setting the value on the control (CID:'"+c.getCID()+"')", e);
+				throw new SensorIOException("Error setting the value on the control (CID:'"+c.getCID()+"'): "+e.getMessage());
 			}			
 		} else {
 			logger.error("Could NOT find the control matching command ID "+c.getCID());
@@ -379,7 +379,7 @@ public class V4L2Protocol extends AbstractProtocol {
 					c.getIntValue(CMLDescriptionStore.STANDARD_VALUE_NAME), c.getIntValue(CMLDescriptionStore.QUALITY_VALUE_NAME));
 		} catch (V4L4JException e) {
 			logger.error("Error getting JPEG frame grabber");
-			throw new SensorIOException("Error getting JPEG frame grabber",e);
+			throw new SensorIOException("Error getting JPEG frame grabber: "+e.getMessage());
 		}
 		
 		try {
@@ -387,7 +387,7 @@ public class V4L2Protocol extends AbstractProtocol {
 		} catch (V4L4JException e) {
 			logger.error("Error starting capture");
 			vd.releaseFrameGrabber();
-			throw new SensorIOException("Error starting capture",e);
+			throw new SensorIOException("Error starting capture: "+e.getMessage());
 		}
 	}
 	
@@ -402,7 +402,7 @@ public class V4L2Protocol extends AbstractProtocol {
 			bb.get(b);
 		} catch (V4L4JException e1) {
 			logger.error("Error while capturing frame");
-			throw new SensorIOException("Error while capturing frame",e1);
+			throw new SensorIOException("Error while capturing frame: "+e1.getMessage());
 		}
 		return b;
 	}
