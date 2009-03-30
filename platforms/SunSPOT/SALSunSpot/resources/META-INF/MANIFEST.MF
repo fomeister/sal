@@ -1,0 +1,6 @@
+MIDlet-Name: SALSunSpot
+MIDlet-Version: 1.0.0
+MIDlet-Vendor: Sun Microsystems Inc
+MIDlet-1: SALApp, , jcu.sal.plugins.sunspot.Spot.SALApp
+MicroEdition-Profile: IMP-1.0
+MicroEdition-Configuration: CLDC-1.1
