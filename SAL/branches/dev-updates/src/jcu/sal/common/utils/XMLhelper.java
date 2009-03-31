@@ -67,7 +67,7 @@ public class XMLhelper {
      * Creates an empty DOM document
      * @return the empty DOM document
      */
-    public static Document createEmptyDocument(){
+    public synchronized static Document createEmptyDocument(){
 		return builder.newDocument();        
     }
     
@@ -77,7 +77,7 @@ public class XMLhelper {
      * @return the DOM document
      * @throws SALDocumentException if the given stream isnt a valid XML document
      */
-    public static Document createDocument(InputStream in) throws SALDocumentException {
+    public synchronized static Document createDocument(InputStream in) throws SALDocumentException {
     	try {
 	        return builder.parse(in);
     	} catch (Exception e) {
@@ -91,7 +91,7 @@ public class XMLhelper {
      * @return the DOM document
      * @throws SALDocumentException if the file cant be parsed to a valid XML document
      */
-    public static Document createDocument(File f) throws SALDocumentException{
+    public synchronized static Document createDocument(File f) throws SALDocumentException{
     	try {
 			return createDocument(new FileInputStream(f));
 		} catch (FileNotFoundException e) {
@@ -105,7 +105,7 @@ public class XMLhelper {
      * @return the DOM document
      * @throws SALDocumentException If the string doesnt parse to a valid XML document
      */   
-    public static Document createDocument(String xmlstr) throws SALDocumentException {
+    public synchronized static Document createDocument(String xmlstr) throws SALDocumentException {
     	try {
 	        return builder.parse(new InputSource(new StringReader(xmlstr)));
     	} catch (Exception e) {
@@ -119,7 +119,7 @@ public class XMLhelper {
      * @return the DOM document 
      * @throws SALDocumentException if the document cant be created
      */   
-    public static Document createDocument(Node node) {
+    public synchronized static Document createDocument(Node node) {
     	Document d = XMLhelper.createEmptyDocument();
     	try { XMLhelper.transform(new DOMSource(node), new DOMResult(d)); }
     	catch (Exception e) {

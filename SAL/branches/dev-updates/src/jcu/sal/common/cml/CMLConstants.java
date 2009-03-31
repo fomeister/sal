@@ -96,6 +96,8 @@ public interface CMLConstants {
 	public static final String UNIT_DEGREE_C="degree C";
 	public static final String UNIT_MBYTES="MBytes";
 	public static final String UNIT_VOLTS="Volts";
+	public static final String UNIT_ACCCEL_G="G";
+	public static final String UNIT_LUX="Lux";
 	
 	/*
 	 * Update the array below with additions/removals of units
@@ -105,7 +107,9 @@ public interface CMLConstants {
 		UNIT_PERCENT,
 		UNIT_DEGREE_C,
 		UNIT_MBYTES,
-		UNIT_VOLTS
+		UNIT_VOLTS,
+		UNIT_ACCCEL_G,
+		UNIT_LUX
 	};
 
 }

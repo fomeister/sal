@@ -159,7 +159,7 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 			System.out.println("How often the command should be run (ms) ?(min:"+
 					cml.getSamplingBounds().getMin()+"-max:"+cml.getSamplingBounds().getMax()+") ");
 			j=Integer.parseInt(b.readLine());
-			if(j<cml.getSamplingBounds().getMin() || j>cml.getSamplingBounds().getMax()){
+			if(j!=-1 && j<cml.getSamplingBounds().getMin() || j>cml.getSamplingBounds().getMax()){
 				System.out.println("Invalid value - using "+cml.getSamplingBounds().getMax());
 				j = cml.getSamplingBounds().getMax();
 			}
@@ -358,7 +358,8 @@ public class SALClient implements ClientEventHandler, StreamCallback{
 		}
 		
 		System.out.println("Main exiting");
-		//System.exit(0);
+		//required for RMI client
+		System.exit(0);
 	}
 	
 	public static void printUsage(){

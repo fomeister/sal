@@ -202,6 +202,7 @@ public class SMLDescriptions {
 			return XMLhelper.createDocument(getXMLString());
 		} catch (SALDocumentException e) {
 			logger.error("error creating XML SML doc");
+			logger.error(getXMLString());
 			throw new SALRunTimeException("Cant create the SML document",e);
 		}
 	}

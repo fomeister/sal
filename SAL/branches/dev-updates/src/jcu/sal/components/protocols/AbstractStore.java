@@ -38,12 +38,16 @@ public abstract class AbstractStore {
 
 	public static final String GENERIC_GETTEMP="getTemperature";	//110
 	public static final String GENERIC_GETHUM="getHumidity";		//111
+	public static final String GENERIC_GETACCEL="getAccel";		//112
+	public static final String GENERIC_GETLUX="getLux";		//113
 	
 	public static final int GENERIC_ENABLE_CID=10;
 	public static final int GENERIC_DISABLE_CID=11;
 	public static final int GENERIC_GETREADING_CID=100;
 	public static final int GENERIC_GETTEMP_CID=110;
 	public static final int GENERIC_GETHUM_CID=111;
+	public static final int GENERIC_GETACCEL_CID=112;
+	public static final int GENERIC_GETLUX_CID=113;
 	
 	private static int PRIVATE_CID_START = 1000;
 	
@@ -110,8 +114,8 @@ public abstract class AbstractStore {
 	}
 	
 	/**
-	 * This method adds a new private Command Description document fragment to the CML doc for a given key.
-	 * @param k the key with which the fragment is to be associated
+	 * This method adds a new private command to the CML doc for a given key.
+	 * @param k the key with which the new command is to be associated
 	 * @param mName the name of the method to be called when this command is received
 	 * @param name the name of the command
 	 * @param desc the short description of the command
@@ -120,7 +124,7 @@ public abstract class AbstractStore {
 	 * @return the cid associated with this command
 	 * @throws AlreadyPresentException if the given key already has a CML table
 	 */
-	public final int addPrivateCMLDesc(String k, String mName, String name, 
+	public final int addPrivateCommand(String k, String mName, String name, 
 			String desc, List<CMLArgument> args, ResponseType returnType, SamplingBounds b) throws AlreadyPresentException {
 		//computes the CID
 		Integer cid = priv_cid.get(k);
@@ -136,7 +140,8 @@ public abstract class AbstractStore {
 	}
 	
 	/**
-	 * This method adds an alias to a previously created private Command Description identifier by its cid
+	 * This method adds an alias to a previously created private command 
+	 * identified by its cid
 	 * @param k the key with which the alias is to be associated
 	 * @param name the name of the alias (AbstractStore.GENERIC_*)
 	 * @param cid the previously created private command
@@ -144,7 +149,7 @@ public abstract class AbstractStore {
 	 * @throws AlreadyPresentException if a command with the same cid already exists
 	 * @throws NotFoundException if the given aliasNAme doesnt exist, if it doesnt refer to an existing command or if the key is invalid
 	 */
-	public final int addGenericCMLDesc(String k, String aliasName, int cid) throws NotFoundException, AlreadyPresentException{
+	public final int addGenericCommand(String k, String aliasName, int cid) throws NotFoundException, AlreadyPresentException{
 		//computes the CID
 		Integer c;
 		CMLDescription cml;
@@ -164,6 +169,10 @@ public abstract class AbstractStore {
 			c = new Integer(GENERIC_GETTEMP_CID);
 		} else if(aliasName.equals(GENERIC_GETHUM)){
 			c = new Integer(GENERIC_GETHUM_CID);
+		} else if(aliasName.equals(GENERIC_GETACCEL)){
+			c = new Integer(GENERIC_GETACCEL_CID);
+		} else if(aliasName.equals(GENERIC_GETLUX)){
+			c = new Integer(GENERIC_GETLUX_CID);
 		} else {
 			logger.error("We shouldnt be here - Cant create an alias, no such name");
 			throw new SALRunTimeException("No such alias name '"+aliasName+"'");
@@ -226,7 +235,7 @@ public abstract class AbstractStore {
 		/* Add generic CML docs to this sensor */
 		/* generic enable command */
 		try {
-			addGenericCMLDesc(k, GENERIC_ENABLE, 0);
+			addGenericCommand(k, GENERIC_ENABLE, 0);
 		} catch (Exception e) {
 			logger.error("We shouldnt be here - cant add generic ENABLE command to sensor '"+k+"'");
 			throw new SALRunTimeException("Cant add generic ENABLE command to sensor '"+k+"'");
@@ -234,7 +243,7 @@ public abstract class AbstractStore {
 		
 		/* generic disable command */
 		try {
-			addGenericCMLDesc(k, GENERIC_DISABLE, 0);
+			addGenericCommand(k, GENERIC_DISABLE, 0);
 		} catch (Exception e) {
 			logger.error("We shouldnt be here - cant add generic DISABLE command to sensor '"+k+"'");
 			throw new SALRunTimeException("Cant add generic DISABLE command to sensor '"+k+"'");
@@ -244,7 +253,7 @@ public abstract class AbstractStore {
 
 	}
 	
-	private void dumpCML(String k){
+	protected void dumpCML(String k){
 		Hashtable<Integer, CMLDescription> t = cmls.get(k);
 		Integer i;
 		if(t!=null){

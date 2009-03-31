@@ -1,5 +1,6 @@
 package jcu.sal.client.gui.view;
 
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
@@ -31,7 +32,7 @@ public class TextResponseFrame{
 		JScrollPane scroll = new JScrollPane(mainPane);
 		mainPane.setLayout(new BoxLayout(mainPane, BoxLayout.PAGE_AXIS));
 		mainFrame.getContentPane().add(scroll);
-		mainFrame.setSize(600, 300);
+		mainFrame.setSize(650, 300);
 		//mainFrame.pack();
 		mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 	}
@@ -81,6 +82,10 @@ public class TextResponseFrame{
 			close.addActionListener(this);
 			id = new JLabel();
 			value = new JLabel("Value: ");
+			Dimension d = new Dimension(100, (int)value.getSize().getHeight());
+			value.setMinimumSize(d);
+			value.setPreferredSize(d);
+			value.setSize(d);
 			mainPane.add(close);
 			mainPane.add(Box.createHorizontalGlue());
 			mainPane.add(id);

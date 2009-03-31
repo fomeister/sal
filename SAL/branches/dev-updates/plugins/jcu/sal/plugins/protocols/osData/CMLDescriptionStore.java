@@ -38,9 +38,9 @@ public class CMLDescriptionStore extends AbstractStore{
 		name = "Get"+OSDataConstants.FreeMem;
 		desc = "Reads the amount of free memory";
 		r = new ResponseType(CMLConstants.RET_TYPE_INT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_MBYTES);
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.FreeMem, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.FreeMem, GENERIC_GETREADING, i);
 		
 		/* 
 		 * UserTime
@@ -50,9 +50,9 @@ public class CMLDescriptionStore extends AbstractStore{
 		name = "Get"+OSDataConstants.UserTime;
 		desc = "Reads the percentage of time spent on user mode processes";
 		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT,CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_PERCENT);
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.UserTime, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.UserTime, GENERIC_GETREADING, i);
 
 		/* 
 		 * NiceTime
@@ -61,9 +61,9 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.NiceTime;
 		desc = "Reads the precentage of time spent on nice'd processes";
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.NiceTime, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.NiceTime, GENERIC_GETREADING, i);
 
 		/* 
 		 * SystemTime
@@ -72,9 +72,9 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.SystemTime;
 		desc = "Reads the percentage of time spent in system mode";
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.SystemTime, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.SystemTime, GENERIC_GETREADING, i);
 
 		/* 
 		 * IdleTime
@@ -83,9 +83,9 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.IdleTime;
 		desc = "Reads the percentage of time spent in idle mode";
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.IdleTime, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.IdleTime, GENERIC_GETREADING, i);
 		
 		/* 
 		 * LoadAvg1
@@ -95,9 +95,9 @@ public class CMLDescriptionStore extends AbstractStore{
 		name = "Get"+OSDataConstants.LoadAvg1;
 		desc = "Reads the 1-minute load average";
 		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT);
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.LoadAvg1, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.LoadAvg1, GENERIC_GETREADING, i);
 
 		/* 
 		 * LoadAvg5
@@ -106,9 +106,9 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.LoadAvg5;
 		desc = "Reads the 5-minute load average";
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.LoadAvg5, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.LoadAvg5, GENERIC_GETREADING, i);
 		
 		/* 
 		 * LoadAvg15
@@ -117,9 +117,9 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.LoadAvg15;
 		desc = "Reads the 15-minute load average";
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.LoadAvg15, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.LoadAvg15, GENERIC_GETREADING, i);
 
 		/* 
 		 * CPUTemp
@@ -129,9 +129,9 @@ public class CMLDescriptionStore extends AbstractStore{
 		name = "Get"+OSDataConstants.Temp1;
 		desc = "Reads the CPU temperature";
 		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_DEGREE_C);
-		i = addPrivateCMLDesc(key, mName, name, desc,null, r, new SamplingBounds(1000,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc,null, r, new SamplingBounds(1000,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.Temp1, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.Temp1, GENERIC_GETREADING, i);
 		
 		/* 
 		 * NBTemp
@@ -140,9 +140,9 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.Temp2;
 		desc = "Reads the north bridge temperature";
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(1000,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(1000,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.Temp2, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.Temp2, GENERIC_GETREADING, i);
 	
 		/* 
 		 * SBTemp
@@ -151,8 +151,8 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.Temp3;
 		desc = "Reads the south bridge temperature";
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(1000,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(1000,10*1000,false));
 		//generic 100 GetReading command
-		addGenericCMLDesc(OSDataConstants.Temp3, GENERIC_GETREADING, i);
+		addGenericCommand(OSDataConstants.Temp3, GENERIC_GETREADING, i);
 	}
 }

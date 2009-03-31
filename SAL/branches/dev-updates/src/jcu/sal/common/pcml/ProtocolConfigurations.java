@@ -200,6 +200,7 @@ public class ProtocolConfigurations {
 		} catch (SALDocumentException e) {
 			e.printStackTrace();
 			logger.error("We shouldnt be here - error creating PCML doc");
+			logger.error(getXMLString());
 			throw new SALRunTimeException("Cant create PCML document",e); 
 		}
 	}

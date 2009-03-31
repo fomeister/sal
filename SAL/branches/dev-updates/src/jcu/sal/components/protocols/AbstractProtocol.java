@@ -659,6 +659,7 @@ public abstract class AbstractProtocol extends AbstractComponent<ProtocolID, Pro
 	 * Parse the configuration of the protocol itself. This method should check the values of the parameters in the
 	 * <code>config</code> object, and apply them if sensible. Also, note that the value of <code>autoDetectionInterval</code>
 	 * will be changed to that of the "AutoDetecSensor" parameter if present (If not present, the value is untouched).
+	 * This method must also instanciate the CML store in <code>cmls</code>. 
 	 */
 	protected abstract void internal_parseConfig() throws ConfigurationException;
 

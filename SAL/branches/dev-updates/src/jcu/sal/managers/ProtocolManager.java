@@ -112,7 +112,8 @@ public class ProtocolManager extends AbstractManager<AbstractProtocol, ProtocolC
 		try {
 			p.parseConfig();
 		} catch (ConfigurationException e1) {
-			logger.error("Error in the protocol configuration");
+			logger.error("Error in the protocol configuration:\n"+e1.getMessage());
+			//e1.printStackTrace();
 			throw new ComponentInstantiationException();
 		}
 

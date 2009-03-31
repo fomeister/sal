@@ -1,6 +1,5 @@
 package jcu.sal.components.protocols;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -139,7 +138,7 @@ public class DefaultStreamingThread implements StreamingThread, Runnable {
 			sensor.stopStream();
 			try {
 				cb.collect(new Response(sid, new ClosedStreamException()));
-			} catch (IOException e) {}
+			} catch (Throwable e) {}
 		}
 		//logger.debug("streaming thread "+sid.getID()+" exiting");
 		listener.threadExited(lid);
