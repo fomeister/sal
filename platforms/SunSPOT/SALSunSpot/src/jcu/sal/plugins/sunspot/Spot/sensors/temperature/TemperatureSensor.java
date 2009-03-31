@@ -16,6 +16,7 @@ import java.io.IOException;
 public class TemperatureSensor {
     private static ITemperatureInput sensor = EDemoBoard.getInstance().getADCTemperature();
 
+
     public static String getTempC() throws IOException {
         return String.valueOf(sensor.getCelsius());
     }

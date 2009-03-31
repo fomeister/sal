@@ -5,10 +5,8 @@ import com.sun.spot.peripheral.ILed;
 import com.sun.spot.peripheral.Spot;
 import com.sun.spot.peripheral.TimeoutException;
 import com.sun.spot.peripheral.radio.RadioFactory;
-import com.sun.spot.util.Utils;
 import com.sun.squawk.util.StringTokenizer;
 import java.io.IOException;
-import java.lang.Thread;
 import java.util.Random;
 import javax.microedition.io.Connector;
 import javax.microedition.io.Datagram;
@@ -84,14 +82,14 @@ public class BSFinder {
     private static void startListenforBS(){
         listener = new Thread(new Runnable(){
            public void run(){
-               System.out.println("Starting listener thread");
+//               System.out.println("Starting listener thread");
                 try {
                     listenForBS();
                 } catch (Throwable e) {
                     System.out.println("Error listening for BS");
                     e.printStackTrace();
                 }
-               System.out.println("listener thread exited");
+//               System.out.println("listener thread exited");
            }
         });
         listener.start();
@@ -143,7 +141,7 @@ public class BSFinder {
         broadcaster = new Thread(new Runnable(){
            public void run(){
                Random rand = new Random(ourAddress);
-               System.out.println("Starting broadcasting thread");
+//               System.out.println("Starting broadcasting thread");
                try {
                    bcConnection = (RadiogramConnection) Connector.open("radiogram://broadcast:" + BROADCAST_PORT);
                } catch (IOException ex) {
@@ -165,7 +163,7 @@ public class BSFinder {
                 } catch (IOException ex) {
                     System.out.println("Could not close radiogram broadcast connection");
                 }
-               System.out.println("broadcasting thread exited");
+//               System.out.println("broadcasting thread exited");
            }
         });
         broadcaster.start();

@@ -68,7 +68,7 @@ public class SensorManager implements ISensorManager {
             if (!producers.containsKey(cmd)) {
                 throw new IOException("unknown command " + cmd);
             }
-
+            System.out.println("Starting stream: cmd: "+cmd+" - freq: "+freq);
             if (!threads.addThread(cmd,
                     new DataThread(this, type, cmd, (DataProducer) producers.get(cmd),
                     freq, conn))) {

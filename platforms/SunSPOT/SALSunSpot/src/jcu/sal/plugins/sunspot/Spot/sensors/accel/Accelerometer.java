@@ -17,19 +17,26 @@ public class Accelerometer{
     private static IAccelerometer3D sensor =
         EDemoBoard.getInstance().getAccelerometer();
 
+    private static String trim(String t){
+        if(t.length()>=7)
+                return t.substring(0, 6);
+
+        return t;
+    }
+
     public static String getX() throws IOException {
-        return String.valueOf(sensor.getAccelX());
+        return trim(String.valueOf(sensor.getAccelX()));
     }
     
     public static String getY() throws IOException {
-        return String.valueOf(sensor.getAccelY());
+        return trim(String.valueOf(sensor.getAccelY()));
     }
     
     public static String getZ() throws IOException {
-        return String.valueOf(sensor.getAccelZ());
+        return trim(String.valueOf(sensor.getAccelZ()));
     }
 
     public static String getTotal() throws IOException {
-        return String.valueOf(sensor.getAccel());
+        return trim(String.valueOf(sensor.getAccel()));
     }
 }
