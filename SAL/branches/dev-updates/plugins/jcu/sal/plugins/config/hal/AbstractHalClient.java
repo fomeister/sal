@@ -12,6 +12,7 @@ import jcu.sal.common.exceptions.ConfigurationException;
 import jcu.sal.common.exceptions.NotFoundException;
 import jcu.sal.common.pcml.ProtocolConfiguration;
 import jcu.sal.components.Identifier;
+import jcu.sal.components.protocols.AbstractProtocol;
 import jcu.sal.components.protocols.ProtocolID;
 import jcu.sal.config.FileConfigService;
 import jcu.sal.managers.ProtocolManager;
@@ -105,13 +106,31 @@ public abstract class AbstractHalClient extends AbstractHalFilter {
 		return FileConfigService.getService().findProtocol(param, value);
 	}
 	
+	/**
+	 * this method creates and starts a protocol givne its 
+	 * {@link ProtocolConfiguration} object
+	 * @param pc the configuration object
+	 * @throws ConfigurationException
+	 */
 	protected void createProtocol(ProtocolConfiguration pc) throws ConfigurationException{
 		//logger.debug("Creating new protocol with document: \n"+pc.getXMLString());
-		try {pm.createComponent(pc).start();}
+		AbstractProtocol p;
+		try {p = pm.createComponent(pc);}
 		catch (Throwable t){
 			logger.error("Cant instanciate protocol");
 			t.printStackTrace();
-			throw new ConfigurationException();
+			throw new ConfigurationException("Error instanciating the new protocol",t);
+		}
+		try{p.start();}
+		catch(Throwable t){
+			logger.error("Error starting protocol - removing it");
+			t.printStackTrace();
+			try {
+				pm.destroyComponent(p.getID());
+			} catch (NotFoundException e) {
+				//we shouldnt be here...
+			}
+			throw new ConfigurationException("Error starting the new protocol",t);
 		}
 	}
 	/**

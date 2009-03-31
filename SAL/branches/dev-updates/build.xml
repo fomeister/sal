@@ -24,7 +24,6 @@
 	<!-- define the classpath for building clients package-->
 	<path id="build.clients.classpath">
 		<path refid="project.dependencies.classpath"/>
-		<!-- plugins need abstract classes & interfaces from agent -->
 		<pathelement location="${project.agent.classes}" />
 	</path>
 	
@@ -33,6 +32,9 @@
 		<path refid="project.dependencies.classpath"/>
 		<!-- plugins need abstract classes & interfaces from agent -->
 		<pathelement location="${project.agent.classes}" />
+		<pathelement location="${plugins.deps.sunspot.dir}/" />
+		<filelist dir="${plugins.deps.sunspot.dir}" 
+			files="${plugins.deps.sunspot.jarlist}"/>
 	</path>
 	
 	<!-- define the agent classpath for running -->
@@ -154,7 +156,7 @@
 				<arg value="${project.run.rmi.agent.arg1}"/>
 				<arg value="${project.run.rmi.agent.arg2}"/>
 				<arg value="${project.run.rmi.agent.arg3}"/>
-				<jvmarg value="-Djava.library.path=${platform.standard.JNIlib.location}"/>
+				<jvmarg value="-Djava.library.path=${plugins.deps.JNIlib.list}"/>
 				<jvmarg value="-Djcu.sal.plugin.configFile=${jcu.sal.plugin.configFile}"/>
 				<jvmarg value="-Djava.rmi.server.codebase=file:${basedir}/${project.common.jar}" />
 				<jvmarg value="-Djava.rmi.server.hostname=${project.run.rmi.agent.arg1}" />
@@ -191,7 +193,7 @@
 				<arg value="${project.run.local.client.arg1}"/>
 				<arg value="${project.run.local.client.arg2}"/>
 				<classpath refid="run.agent.classpath" />
-				<jvmarg value="-Djava.library.path=${platform.standard.JNIlib.location}"/>
+				<jvmarg value="-Djava.library.path=${plugins.deps.JNIlib.list}"/>
 				<jvmarg value="-Djcu.sal.plugin.configFile=${jcu.sal.plugin.configFile}"/>
 			</java>
 	</target>

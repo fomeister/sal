@@ -27,11 +27,13 @@ import org.apache.log4j.Logger;
  */
 public class SerialEndPoint extends EndPoint {
 
+	public static final String NOSETUP_TAG = "NoSetup";
 	public static final String PORTDEVICEATTRIBUTE_TAG = "PortDeviceFile";
 	public static final String PORTSPEEDATTRIBUTE_TAG = "PortSpeed";
 	public static final String DATABITSATTRIBUTE_TAG = "DataBits";
 	public static final String PARITYATTRIBUTE_TAG = "Parity";
 	public static final String STOPBITATTRIBUTE_TAG = "StopBit";
+	
 	public static final String ENDPOINT_TYPE = "serial";
 	
 	private static Logger logger = Logger.getLogger(SerialEndPoint.class);
@@ -58,6 +60,15 @@ public class SerialEndPoint extends EndPoint {
 			logger.error("Cant find the serial port device file in the endpoint config");
 			throw new ConfigurationException("Cant find the serial port device file in the EndPoint configuration", e1);
 		}
+		
+		try { 
+			getParameter(NOSETUP_TAG);
+			//if we re here, the tag is present, so skip the rest of this method
+			return;
+		} catch (Exception e1) {
+			//parameter is optional so keep going if not found
+		}
+		
 		int speed;
 		try { speed = Integer.valueOf(getParameter(PORTSPEEDATTRIBUTE_TAG)); } catch (Exception e1) {
 			logger.error("Cant find the serial port speed in the endpoint config");

@@ -39,8 +39,8 @@ public class CMLDescriptionStore extends AbstractStore{
 		name = "ReadValue";
 		desc = "Reads the value of this sensor";
 		r = new ResponseType(CMLConstants.ARG_TYPE_STRING);
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(100,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(100,10*1000,false));
 		//generic GetReading command
-		addGenericCMLDesc(SNMP_KEY, GENERIC_GETREADING, i);
+		addGenericCommand(SNMP_KEY, GENERIC_GETREADING, i);
 		}
 }

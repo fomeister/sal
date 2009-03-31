@@ -49,10 +49,7 @@ public class ProtocolConfiguration implements HWComponentConfiguration {
 	 * @param e the endpoint associated with this protocol 
 	 */
 	public ProtocolConfiguration(String n, String t, EndPointConfiguration e){
-		name = n;
-		type = t;
-		params = new Parameters();
-		epConfig = e;
+		this(n,t,new Parameters(), e);
 	}
 	
 	/**

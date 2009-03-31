@@ -179,9 +179,9 @@ public class V4L2Protocol extends AbstractProtocol {
 				);
 		r = new ResponseType(CMLConstants.RET_TYPE_BYTE_ARRAY,CMLConstants.CONTENT_TYPE_JPEG);
 		try {
-			i = cmls.addPrivateCMLDesc(key, mName, name, desc, args, r, new SamplingBounds(50,10*1000,true));
+			i = cmls.addPrivateCommand(key, mName, name, desc, args, r, new SamplingBounds(50,10*1000,true));
 			//generic GetReading
-			cmls.addGenericCMLDesc(CMLDescriptionStore.CCD_KEY, CMLDescriptionStore.GENERIC_GETREADING, i);
+			cmls.addGenericCommand(CMLDescriptionStore.CCD_KEY, CMLDescriptionStore.GENERIC_GETREADING, i);
 		} catch (AlreadyPresentException e) {
 			//we shouldnt be here
 			e.printStackTrace();
@@ -249,7 +249,7 @@ public class V4L2Protocol extends AbstractProtocol {
 	private void addControl(Control c, String key, String mName, String name, String shortDesc, List<CMLArgument> args, ResponseType r, SamplingBounds b){
 		int cid;
 		try {
-			cid = cmls.addPrivateCMLDesc(key, mName, name, shortDesc, args, r, b);
+			cid = cmls.addPrivateCommand(key, mName, name, shortDesc, args, r, b);
 		} catch (AlreadyPresentException e) {
 			logger.error("we shouldnt be here - trying to insert a duplicate element in CML table");
 			e.printStackTrace();

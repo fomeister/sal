@@ -38,11 +38,11 @@ public class CMLDescriptionStore extends AbstractStore {
 		name = "ReadTemperature";
 		desc = "Reads the temperature";
 		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_DEGREE_C);
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic GetReading command
-		addGenericCMLDesc(OWFSProtocol.DS_10_FAMILY, GENERIC_GETREADING, i);
+		addGenericCommand(OWFSProtocol.DS_10_FAMILY, GENERIC_GETREADING, i);
 		//generic GetTemp command
-		addGenericCMLDesc(OWFSProtocol.DS_10_FAMILY, GENERIC_GETTEMP, i);
+		addGenericCommand(OWFSProtocol.DS_10_FAMILY, GENERIC_GETTEMP, i);
 		
 		/* 
 		 * Family 26. 
@@ -52,20 +52,20 @@ public class CMLDescriptionStore extends AbstractStore {
 		name = "ReadHumidity";
 		desc = "Reads the humidity";
 		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_PERCENT);
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic GetReading command
-		addGenericCMLDesc(OWFSProtocol.DS_26_FAMILY, GENERIC_GETREADING, i);
+		addGenericCommand(OWFSProtocol.DS_26_FAMILY, GENERIC_GETREADING, i);
 		//generic GetHUMIDITY command
-		addGenericCMLDesc(OWFSProtocol.DS_26_FAMILY, GENERIC_GETHUM, i);
+		addGenericCommand(OWFSProtocol.DS_26_FAMILY, GENERIC_GETHUM, i);
 		
 		key = OWFSProtocol.DS_26_FAMILY;
 		mName = OWFSProtocol.GET_TEMPERATURE_METHOD;
 		name = "ReadTemperature";
 		desc = "Reads the temperature";
 		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_DEGREE_C);
-		i = addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		//generic GetTemp command
-		addGenericCMLDesc(OWFSProtocol.DS_26_FAMILY, GENERIC_GETTEMP, i);
+		addGenericCommand(OWFSProtocol.DS_26_FAMILY, GENERIC_GETTEMP, i);
 
 		//private GetHumidityHIH4000 command
 		key = OWFSProtocol.DS_26_FAMILY;
@@ -73,14 +73,14 @@ public class CMLDescriptionStore extends AbstractStore {
 		name = "ReadHIH400Humidity";
 		desc = "Reads the humidity from a HIH4000 sensor";
 		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_PERCENT);
-		addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		
 		//private GetHumidityHTM1735 command
 		key = OWFSProtocol.DS_26_FAMILY;
 		mName = OWFSProtocol.GET_HTM1735_METHOD;
 		name = "ReadHTM1735Humidity";
 		desc = "Reads the humidity from a HTM1735 sensor";
-		addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
 		
 		//private GetVAD command
 		key = OWFSProtocol.DS_26_FAMILY;
@@ -88,20 +88,20 @@ public class CMLDescriptionStore extends AbstractStore {
 		name = "ReadVAD";
 		desc = "Reads the Vad voltage";
 		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_VOLTS);
-		addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(100,10*1000,false));
+		addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(100,10*1000,false));
 		
 		//private GetVDD command
 		key = OWFSProtocol.DS_26_FAMILY;
 		mName = OWFSProtocol.GET_VDD_METHOD;
 		name = "ReadVDD";
 		desc = "Reads the Vdd voltage";
-		addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(100,10*1000,false));
+		addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(100,10*1000,false));
 		
 		//private GetVis command
 		key = OWFSProtocol.DS_26_FAMILY;
 		mName = OWFSProtocol.GET_VIS_METHOD;
 		name = "ReadVIS";
 		desc = "Reads the Vis voltage";
-		addPrivateCMLDesc(key, mName, name, desc, null, r, new SamplingBounds(100,10*1000,false));
+		addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(100,10*1000,false));
 	}
 }
