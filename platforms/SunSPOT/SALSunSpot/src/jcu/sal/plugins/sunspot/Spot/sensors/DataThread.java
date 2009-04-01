@@ -58,12 +58,12 @@ public class DataThread implements IDataThread {
             if (thread.isAlive()) {
                 stop = true;
                 thread.interrupt();
-                try {
-                    thread.join();
-                } catch (InterruptedException ex) {
-                    System.out.println("Interrupted while waiting for '" +
-                            sensor + " "+command + "' to finish");
-                }
+//                try {
+//                    thread.join();
+//                } catch (InterruptedException ex) {
+//                    System.out.println("Interrupted while waiting for '" +
+//                            sensor + " "+command + "' to finish");
+//                }
             }
             thread = null;
         }
