@@ -67,8 +67,9 @@ public class BSFinder {
 
     private static void joinThreads(){
         if (listener != null) {
-            try {listener.join();}
-            catch (InterruptedException ex) {}
+            listener.interrupt();
+//            try {listener.join();}
+//            catch (InterruptedException ex) {}
             listener = null;
         }
         if(broadcaster!=null){
@@ -86,7 +87,8 @@ public class BSFinder {
                 try {
                     listenForBS();
                 } catch (Throwable e) {
-                    System.out.println("Error listening for BS");
+                    System.out.println("Error listening for BS - "
+                            +"listener thread exited");
                     e.printStackTrace();
                 }
 //               System.out.println("listener thread exited");

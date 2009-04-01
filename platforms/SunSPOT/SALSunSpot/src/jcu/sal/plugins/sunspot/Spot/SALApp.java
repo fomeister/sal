@@ -6,14 +6,13 @@ package jcu.sal.plugins.sunspot.Spot;
 
 import com.sun.spot.peripheral.IBattery;
 import com.sun.spot.peripheral.IEventHandler;
-import com.sun.spot.peripheral.ISleepManager;
+import com.sun.spot.peripheral.IUSBPowerDaemon;
 import com.sun.spot.peripheral.Spot;
-import com.sun.spot.peripheral.UnableToDeepSleepException;
 import com.sun.spot.sensorboard.EDemoBoard;
 import com.sun.spot.sensorboard.peripheral.ISwitch;
 import com.sun.spot.sensorboard.peripheral.ISwitchListener;
 import com.sun.spot.sensorboard.peripheral.ITriColorLED;
-import com.sun.spot.util.Utils;
+import com.sun.spot.sensorboard.peripheral.LEDColor;
 import java.io.IOException;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
@@ -27,9 +26,10 @@ public class SALApp extends MIDlet implements Runnable, ISwitchListener{
     private SALNode n = null;
     private boolean stop;
     private IEventHandler previousButton,  previousPowerOff;
-    private Thread t;
+    private Thread showBattLevel;
     private ITriColorLED[] leds = EDemoBoard.getInstance().getLEDs();
     private IBattery batt = Spot.getInstance().getPowerController().getBattery();
+    private IUSBPowerDaemon usbPower = Spot.getInstance().getUsbPowerDaemon();
 
     protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
         System.out.println("destroyApp called ?? ...");
@@ -42,32 +42,44 @@ public class SALApp extends MIDlet implements Runnable, ISwitchListener{
     }
 
     public void run(){
-        ISleepManager m = Spot.getInstance().getSleepManager();
-        m.enableDeepSleep();
-        System.out.println("IS deep sleep enabled: "+m.isDeepSleepEnabled());
-        System.out.println("Minimum sleep time for deep sleep: "+m.getMinimumDeepSleepTime());
-        System.out.println("Maximum sleep time for shallow sleep: "+m.getMaximumShallowSleepTime());
-        while(!stop){
-            System.out.println("Total deep sleep time : "+m.getTotalDeepSleepTime());
-            System.out.println("Total shallow sleep time : "+m.getTotalShallowSleepTime());
-            try {
-                m.ensureDeepSleep(10000);
-            } catch (UnableToDeepSleepException ex) {
-                ex.printStackTrace();
-                Utils.sleep(10000);
+//        ISleepManager m = Spot.getInstance().getSleepManager();
+//        m.enableDeepSleep();
+//        System.out.println("IS deep sleep enabled: "+m.isDeepSleepEnabled());
+//        System.out.println("Minimum sleep time for deep sleep: "+m.getMinimumDeepSleepTime());
+//        System.out.println("Maximum sleep time for shallow sleep: "+m.getMaximumShallowSleepTime());
+//        while(!stop){
+//            System.out.println("Total deep sleep time : "+m.getTotalDeepSleepTime());
+//            System.out.println("Total shallow sleep time : "+m.getTotalShallowSleepTime());
+//            try {
+//                m.ensureDeepSleep(10000);
+//            } catch (UnableToDeepSleepException ex) {
+//                ex.printStackTrace();
+//                Utils.sleep(10000);
+//            }
+//        }
+        boolean prev = !usbPower.isUsbPowered(), curr;
+        try {
+            while (!stop) {
+                curr = usbPower.isUsbPowered();
+                if (prev != curr) {
+                    showBatteryPower(curr);
+                    prev = curr;
+                }
+                Thread.sleep(3000);
             }
-        }
-
+        } catch (InterruptedException ex) {}
+        showBatteryPower(false);
     }
 
     protected void startApp() throws MIDletStateChangeException {
         String url;
+        System.out.println("IS deep sleep enabled: "+Spot.getInstance().getSleepManager().isDeepSleepEnabled());
 
         previousButton = Spot.getInstance().getFiqInterruptDaemon().
                 setButtonHandler(new IEventHandler() {
 
             public void signalEvent() {
-                try{disconnect();} catch (Throwable t){t.printStackTrace();}
+                try{disconnect();} catch (Throwable t){}
                 previousButton.signalEvent();
             }
         });
@@ -76,7 +88,7 @@ public class SALApp extends MIDlet implements Runnable, ISwitchListener{
                 setPowerOffHandler(new IEventHandler() {
 
             public void signalEvent() {
-                disconnect();
+                try{disconnect();} catch (Throwable t){}
                 previousPowerOff.signalEvent();
             }
         });
@@ -84,8 +96,8 @@ public class SALApp extends MIDlet implements Runnable, ISwitchListener{
         EDemoBoard.getInstance().getSwitches()[1].addISwitchListener(this);
 
         stop = false;
-//        t = new Thread(this);
-//        t.start();
+        showBattLevel = new Thread(this);
+        showBattLevel.start();
 
         while (!stop) {
             try {
@@ -98,12 +110,13 @@ public class SALApp extends MIDlet implements Runnable, ISwitchListener{
                 System.out.println("Error creating SALNode");
             }
         }
+        System.out.println("Exiting SAL app");
     }
 
-    public void disconnect() {
+    private void disconnect() {
         System.out.println("Calling DISCONNECT");
         stop = true;
-//        t.interrupt();
+        showBattLevel.interrupt();
         BSFinder.stopThreads();
         if (n != null) {
             n.stopManagers();
@@ -112,28 +125,29 @@ public class SALApp extends MIDlet implements Runnable, ISwitchListener{
         System.out.println("Done calling DISCONNECT");
     }
 
-    private void showBatteryPower(){
-        int nbLeds = leds.length, i;
-        float ratio = batt.getBatteryLevel()*8f/100f;
-//        System.out.println("Battery level: "+batt.getBatteryLevel());
-//        System.out.println("Scaled battery level: "+ratio);
-        for(i=0;i<ratio-1;i++) {
+    private void showBatteryPower(boolean show){
+        if(show){
+            //show battery level with leds
+            int nbLeds = leds.length, i;
+            float ratio = batt.getBatteryLevel()*7f/100f;
+            for(i=0;i<ratio-1;i++) {
+                leds[i].setOn();
+                leds[i].setRGB(0, 20, 0);
+            }
             leds[i].setOn();
-            leds[i].setRGB(0, 50, 0);
-        }
-//        System.out.println("Setting led "+i+" to "+((int) ((ratio - ((int) ratio))*100)));
-        leds[i].setOn();
-        leds[i].setRGB( 0, (int) ((ratio - ((int) ratio))*50) , 0);
-
+            leds[i].setRGB( 0, (int) ((ratio - ((int) ratio))*20) , 0);
+        } else //turn everything off
+            for(int i=0;i<leds.length;i++)
+                leds[i].setOff();
     }
 
     public void switchPressed(ISwitch sw) {
-        showBatteryPower();
+        showBatteryPower(true);
     }
 
     public void switchReleased(ISwitch sw) {
-        for(int i=0;i<leds.length;i++)
-            leds[i].setOff();
+        if(!usbPower.isUsbPowered())
+            showBatteryPower(false);
     }
 
 }
