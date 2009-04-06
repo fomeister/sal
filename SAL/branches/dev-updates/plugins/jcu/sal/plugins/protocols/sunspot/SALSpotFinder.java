@@ -54,7 +54,7 @@ public class SALSpotFinder implements Runnable{
 			bsHandshake = (RadiogramConnection) Connector.open("radiogram://:"+BROADCAST_PORT);
 			bsHandshake.setTimeout(1000);
 	        dg = bsHandshake.newDatagram(bsHandshake.getMaximumLength());
-			t = new Thread(this,"SALSunSpot finder");
+			t = new Thread(this,"SALSpot finder");
 			t.start();
 		}
 	}

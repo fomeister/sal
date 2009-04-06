@@ -58,6 +58,11 @@ public class HalClient extends AbstractHalClient {
 		//logger.debug("Found "+l.get("8-info.product")+" - "+l.get("9-info.vendor")+ " on "+l.get("5-deviceFile"));
 		logger.debug("Found SunSpot "+l.get("5-id")+"  on "+l.get("6-deviceFile"));
 		
+		if(isProtocolRunning(SunSPOTProtocol.PROTOCOL_TYPE)){
+			logger.debug("SALSpot base station already connected - skipping");
+			return;
+		}
+		
 		//wait to carry out the check
 		try {Thread.sleep(2000);} catch (InterruptedException e1) {}
 		
