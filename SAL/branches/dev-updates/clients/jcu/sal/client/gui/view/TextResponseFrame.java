@@ -82,7 +82,7 @@ public class TextResponseFrame{
 			close.addActionListener(this);
 			id = new JLabel();
 			value = new JLabel("Value: ");
-			Dimension d = new Dimension(100, (int)value.getSize().getHeight());
+			Dimension d = new Dimension(200, (int)value.getSize().getHeight());
 			value.setMinimumSize(d);
 			value.setPreferredSize(d);
 			value.setSize(d);

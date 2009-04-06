@@ -10,6 +10,7 @@ public class CMLDescriptionStore extends AbstractStore {
 	public static final String HEIGHT_VALUE_NAME="height";
 	public static final String CHANNEL_VALUE_NAME="channel";
 	public static final String STANDARD_VALUE_NAME="standard";
+	public static final String FORMAT_VALUE_NAME="format";
 	public static final String QUALITY_VALUE_NAME="quality";
 
 	

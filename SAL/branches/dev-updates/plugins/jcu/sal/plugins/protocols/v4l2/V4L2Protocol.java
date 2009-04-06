@@ -34,7 +34,9 @@ import jcu.sal.plugins.endpoints.UsbEndPoint;
 import org.apache.log4j.Logger;
 
 import au.edu.jcu.v4l4j.Control;
+import au.edu.jcu.v4l4j.DeviceInfo;
 import au.edu.jcu.v4l4j.FrameGrabber;
+import au.edu.jcu.v4l4j.ImageFormat;
 import au.edu.jcu.v4l4j.InputInfo;
 import au.edu.jcu.v4l4j.V4L4JConstants;
 import au.edu.jcu.v4l4j.VideoDevice;
@@ -56,6 +58,7 @@ public class V4L2Protocol extends AbstractProtocol {
 	
 	private VideoDevice vd = null;
 	private FrameGrabber fg = null;
+	private DeviceInfo di = null;
 	private Hashtable<String,Control> ctrls = null;
 	
 
@@ -128,6 +131,16 @@ public class V4L2Protocol extends AbstractProtocol {
 	private void createCCDCML(){
 		int i;
 		String key, name, mName, desc;
+		try {
+			di = vd.getDeviceInfo();
+		} catch (V4L4JException e1) {
+			// if we land here, the video device is most likely used by another
+			//app
+			logger.error("Unable to create CCD CML as the video device is used"
+					+" by another application");
+			return;
+			
+		}
 		Map<String,String> values = new Hashtable<String, String>();
 		List<CMLArgument> args;
 		ResponseType r;
@@ -137,58 +150,72 @@ public class V4L2Protocol extends AbstractProtocol {
 		 * */
 		key = CMLDescriptionStore.CCD_KEY;
 		
-		mName = V4L2Protocol.GET_JPEG_FRAME_METHOD;
-		name = "GetJPEGFrame";
-		desc = "Fetches a single JPEG-encoded frame";
-		args = new Vector<CMLArgument>();
-		args.add(new CMLArgument(CMLDescriptionStore.WIDTH_VALUE_NAME, ArgumentType.IntegerArgument, false, null));
-		args.add(new CMLArgument(CMLDescriptionStore.HEIGHT_VALUE_NAME, ArgumentType.IntegerArgument, false, null));
-		
-		
-		for(InputInfo input: vd.getDeviceInfo().getInputs())
-			values.put(String.valueOf(input.getIndex()), input.getName()+" - "+(input.getType()==V4L4JConstants.INPUT_TYPE_CAMERA?"Camera":"Tuner"));
-		
-		args.add(
-				new CMLArgument(CMLDescriptionStore.CHANNEL_VALUE_NAME, 
-						values, 
-						false,
-						null)
-				);
-		values.clear();
-		
-		values.put(String.valueOf(V4L4JConstants.STANDARD_WEBCAM), "Webcam");
-		values.put(String.valueOf(V4L4JConstants.STANDARD_PAL), "PAL");
-		values.put(String.valueOf(V4L4JConstants.STANDARD_NTSC), "NTSC");
-		values.put(String.valueOf(V4L4JConstants.STANDARD_SECAM), "SECAM");
-		args.add(
-				new CMLArgument(CMLDescriptionStore.STANDARD_VALUE_NAME,
-						values,
-						false,
-						null)
-				);
-		values.clear();		
-		
-		args.add(
-				new CMLArgument(CMLDescriptionStore.QUALITY_VALUE_NAME,
-						false,
-						V4L4JConstants.MIN_JPEG_QUALITY,
-						V4L4JConstants.MAX_JPEG_QUALITY,
-						1,
-						80
-						)
-				);
-		r = new ResponseType(CMLConstants.RET_TYPE_BYTE_ARRAY,CMLConstants.CONTENT_TYPE_JPEG);
-		try {
-			i = cmls.addPrivateCommand(key, mName, name, desc, args, r, new SamplingBounds(50,10*1000,true));
-			//generic GetReading
-			cmls.addGenericCommand(CMLDescriptionStore.CCD_KEY, CMLDescriptionStore.GENERIC_GETREADING, i);
-		} catch (AlreadyPresentException e) {
-			//we shouldnt be here
-			e.printStackTrace();
-		} catch (NotFoundException e) {
-			//we shouldnt be here
-			e.printStackTrace();
+		if(vd.supportJPEGConversion()){
+			mName = V4L2Protocol.GET_JPEG_FRAME_METHOD;
+			name = "GetJPEGFrame";
+			desc = "Fetches a single JPEG-encoded frame";
+			args = new Vector<CMLArgument>();
+			args.add(new CMLArgument(CMLDescriptionStore.WIDTH_VALUE_NAME, ArgumentType.IntegerArgument, false, null));
+			args.add(new CMLArgument(CMLDescriptionStore.HEIGHT_VALUE_NAME, ArgumentType.IntegerArgument, false, null));
+			
+			
+			for(InputInfo input: di.getInputs())
+				values.put(String.valueOf(input.getIndex()), input.getName()+" - "+(input.getType()==V4L4JConstants.INPUT_TYPE_CAMERA?"Camera":"Tuner"));
+			
+			args.add(
+					new CMLArgument(CMLDescriptionStore.CHANNEL_VALUE_NAME, 
+							values, 
+							false,
+							null)
+					);
+			values.clear();
+			
+			values.put(String.valueOf(V4L4JConstants.STANDARD_WEBCAM), "Webcam");
+			values.put(String.valueOf(V4L4JConstants.STANDARD_PAL), "PAL");
+			values.put(String.valueOf(V4L4JConstants.STANDARD_NTSC), "NTSC");
+			values.put(String.valueOf(V4L4JConstants.STANDARD_SECAM), "SECAM");
+			args.add(
+					new CMLArgument(CMLDescriptionStore.STANDARD_VALUE_NAME,
+							values,
+							false,
+							null)
+					);
+			values.clear();		
+			
+			for(ImageFormat im: di.getFormatList().getJPEGEncodableFormats())
+				values.put(String.valueOf(im.getIndex()), im.getName());
+			
+			args.add(
+					new CMLArgument(CMLDescriptionStore.FORMAT_VALUE_NAME,
+							values,
+							false,
+							null)
+					);
+				
+			
+			args.add(
+					new CMLArgument(CMLDescriptionStore.QUALITY_VALUE_NAME,
+							false,
+							V4L4JConstants.MIN_JPEG_QUALITY,
+							V4L4JConstants.MAX_JPEG_QUALITY,
+							1,
+							80
+							)
+					);
+			r = new ResponseType(CMLConstants.RET_TYPE_BYTE_ARRAY,CMLConstants.CONTENT_TYPE_JPEG);
+			try {
+				i = cmls.addPrivateCommand(key, mName, name, desc, args, r, new SamplingBounds(50,10*1000,true));
+				//generic GetReading
+				cmls.addGenericCommand(CMLDescriptionStore.CCD_KEY, CMLDescriptionStore.GENERIC_GETREADING, i);
+			} catch (AlreadyPresentException e) {
+				//we shouldnt be here
+				e.printStackTrace();
+			} catch (NotFoundException e) {
+				//we shouldnt be here
+				e.printStackTrace();
+			}
 		}
+
 	}
 	
 	private void createCMLs(Control c, String key){
@@ -376,9 +403,11 @@ public class V4L2Protocol extends AbstractProtocol {
 	
 	public void getJPEGFrameGrabber(Command c, Sensor s) throws SensorControlException{
 		try {
+			ImageFormat imf = di.getFormatList().getJPEGEncodableFormat(c.getIntValue(CMLDescriptionStore.FORMAT_VALUE_NAME));
 			fg = vd.getJPEGFrameGrabber(c.getIntValue(CMLDescriptionStore.WIDTH_VALUE_NAME),
 					c.getIntValue(CMLDescriptionStore.HEIGHT_VALUE_NAME), c.getIntValue(CMLDescriptionStore.CHANNEL_VALUE_NAME),
-					c.getIntValue(CMLDescriptionStore.STANDARD_VALUE_NAME), c.getIntValue(CMLDescriptionStore.QUALITY_VALUE_NAME));
+					c.getIntValue(CMLDescriptionStore.STANDARD_VALUE_NAME), c.getIntValue(CMLDescriptionStore.QUALITY_VALUE_NAME),
+					imf);
 		} catch (V4L4JException e) {
 			logger.error("Error getting JPEG frame grabber");
 			throw new SensorIOException("Error getting JPEG frame grabber: "+e.getMessage());
