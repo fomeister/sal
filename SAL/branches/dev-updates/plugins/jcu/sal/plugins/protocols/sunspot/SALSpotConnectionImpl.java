@@ -226,13 +226,17 @@ public class SALSpotConnectionImpl implements ISALSpotConnection, Runnable{
      * @throws TimeoutException if the read operation times out
      * @throws IOException if there is an error reading from the connection
      */
-    private String readData() throws IOException {
+    private String readData() throws TimeoutException, IOException {
         synchronized (dis) {
         	try{
         		return dis.readUTF();
+        	}catch(TimeoutException e){
+        		throw e;
+        	} catch (IOException e){
+        		throw e;
         	} catch (Throwable t){
-        		//this try-catch stuff is here because
-        		//flush() can throw NullPointerException
+        		//this catch clause is here because
+        		//flush() can throw NullPointerException AFAIHaveExperimented
         		throw new IOException(t);
         	}
         }
@@ -254,7 +258,7 @@ public class SALSpotConnectionImpl implements ISALSpotConnection, Runnable{
         		dos.flush();
         	} catch (Throwable t){
         		//this try-catch stuff is here because
-        		//flush() can throw NullPointerException
+        		//flush() can throw NullPointerException AFAIHaveExperimented
         		throw new IOException(t);
         	}
         }
