@@ -50,7 +50,7 @@ public class CMLDescriptionStore extends AbstractStore{
 		name = "Get"+OSDataConstants.UserTime;
 		desc = "Reads the percentage of time spent on user mode processes";
 		r = new ResponseType(CMLConstants.RET_TYPE_FLOAT,CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_PERCENT);
-		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(1000,10*1000,false));
 		//generic 100 GetReading command
 		addGenericCommand(OSDataConstants.UserTime, GENERIC_GETREADING, i);
 
@@ -61,7 +61,7 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.NiceTime;
 		desc = "Reads the precentage of time spent on nice'd processes";
-		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(1000,10*1000,false));
 		//generic 100 GetReading command
 		addGenericCommand(OSDataConstants.NiceTime, GENERIC_GETREADING, i);
 
@@ -72,7 +72,7 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.SystemTime;
 		desc = "Reads the percentage of time spent in system mode";
-		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(1000,10*1000,false));
 		//generic 100 GetReading command
 		addGenericCommand(OSDataConstants.SystemTime, GENERIC_GETREADING, i);
 
@@ -83,7 +83,7 @@ public class CMLDescriptionStore extends AbstractStore{
 		mName = OSDataProtocol.GET_READING_METHOD;
 		name = "Get"+OSDataConstants.IdleTime;
 		desc = "Reads the percentage of time spent in idle mode";
-		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(500,10*1000,false));
+		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(1000,10*1000,false));
 		//generic 100 GetReading command
 		addGenericCommand(OSDataConstants.IdleTime, GENERIC_GETREADING, i);
 		

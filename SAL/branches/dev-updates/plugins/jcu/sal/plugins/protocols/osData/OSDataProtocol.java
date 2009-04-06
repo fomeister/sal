@@ -52,9 +52,9 @@ public class OSDataProtocol extends AbstractProtocol implements Runnable{
 	private Hashtable<String,String> lastValues;
 	private static Hashtable<String,OSdata> supportedSensors = new Hashtable<String,OSdata>();
 	/**
-	 * User, System, Nice and idle tiem counter update interval in millisecond
+	 * User, System, Nice and idle time counter update interval in millisecond
 	 */
-	private int UPDATE_INTERVAL = 2 * 1000;
+	private int UPDATE_INTERVAL = 1000;
 	
 	
 	/**

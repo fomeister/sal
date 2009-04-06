@@ -25,7 +25,7 @@ public class JPEGViewer extends WindowAdapter implements ResponseHandler{
 	private JLabel image;
 	private String title;
 	private long start = 0;
-	private int n;
+	private int n = 0;
 	private ClientView view;
 	private Context context;
 	
@@ -48,6 +48,7 @@ public class JPEGViewer extends WindowAdapter implements ResponseHandler{
 	}
 
 	public void setImage(byte[] b) {
+		n++;
 		image.setIcon(new ImageIcon(b));
 		if(start==0){
     		start = System.currentTimeMillis();
@@ -56,8 +57,7 @@ public class JPEGViewer extends WindowAdapter implements ResponseHandler{
 			frame.setTitle(title + " - FPS: "+ (((float) 1000*n/(System.currentTimeMillis()-start))  ));
 			start = System.currentTimeMillis();
 			n = 0;
-		} else
-			n++;
+		}
 	}
 	
 	private void terminateStream(){

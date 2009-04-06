@@ -15,7 +15,7 @@
                                 <class>jcu.sal.plugins.protocols.sunspot.HalClient</class>
                         </ConfigPlugin>
 		</Protocol>
-<!--		<Protocol>
+		<Protocol>
 			<name>owfs</name>
 			<class>jcu.sal.plugins.protocols.owfs.OWFSProtocol</class>
 			<ConfigPlugin>
@@ -47,7 +47,6 @@
 			<name>DUMMY</name>
 			<class>jcu.sal.plugins.protocols.dummy.DummyProtocol</class>
 		</Protocol>
--->
 	</ProtocolPlugins>
 	<EndPointPlugins>
 		<EndPoint>
