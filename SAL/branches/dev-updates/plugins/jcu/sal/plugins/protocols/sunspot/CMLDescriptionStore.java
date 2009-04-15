@@ -95,7 +95,7 @@ public class CMLDescriptionStore extends AbstractStore {
 		 * */
 		key = SensorConstants.TYPE_LIGHT;
 		mName = SunSPOTProtocol.SEND_LIGHT_LUX_METHOD;
-		name = "ReadTemp";
+		name = "ReadLux";
 		desc = "Reads the luminance";
 		r = new ResponseType(CMLConstants.RET_TYPE_INT, CMLConstants.CONTENT_TYPE_TEXT_PLAIN, CMLConstants.UNIT_LUX);
 		i = addPrivateCommand(key, mName, name, desc, null, r, new SamplingBounds(100,10*1000,true));

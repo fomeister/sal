@@ -186,7 +186,8 @@ public class SALSpotConnectionImpl implements ISALSpotConnection, Runnable{
         }
         //logger.debug("Closing connection with SAL Spot");
         
-        pingThread.stop();
+        if(pingThread!=null)
+        	pingThread.stop();
 
         //close outputstream
         synchronized (dos) {
