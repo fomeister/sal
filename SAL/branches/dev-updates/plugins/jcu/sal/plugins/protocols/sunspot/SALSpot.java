@@ -31,9 +31,9 @@ public class SALSpot implements SpotResponseHandler, SpotCommandSender{
 	public SALSpot(ISALSpotConnection c, String ourAddress) throws IOException{
 		conn = c;
 		address = ourAddress;
-		c.open(this);
 		streams = new Hashtable<String, StreamDataHandler>();
 		singleCmd = new Vector<String>();
+		c.open(this);
 	}
 
 	/**
